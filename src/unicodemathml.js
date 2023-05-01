@@ -1385,13 +1385,26 @@ function preprocess(dsty, uast) {
                         } else {
                             ret.high = primes;
                         }
-                        ret.base = base.primed.base;
+                        base = ret.base = base.primed.base;
                     } else {
                         if ("low" in value) {
                             ret.low = preprocess(dsty, value.low);
                         }
                         if ("high" in value) {
                             ret.high = preprocess(dsty, value.high);
+                        }
+                    }
+                    if (k(base) == "atoms") {
+                        var str = base.atoms[0].chars;
+                        var cch = str.length;
+                        var cchCh = 1;
+
+                        if (cch >= 2 && str.codePointAt(cch - 2) > 0xFFFF)
+                            cchCh = 2;
+
+                        if (cch > cchCh) {
+                            ret.base.atoms[0].chars = str.substring(cch - cchCh, cch);
+                            return [{ chars: str.substring(0, cch - cchCh) }, { script: ret }];
                         }
                     }
                     break;

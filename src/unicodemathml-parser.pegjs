@@ -469,7 +469,7 @@ mrow = __? h:(exp / emptycell) t:(__? "&" __? (exp / emptycell))* __? {
 
 // n-ary operations such as sums and integrals (this is fairly complex and
 // refers to a bunch of rules defined further down)
-nary = o:opNary m:bitmask? s:(script / abscript)? opNaryand a:element {
+nary = o:opNary m:bitmask? s:(script / abscript)? (opNaryand / " ") a:element {
     if (s == null) {
         s = {type: "subsup"}
     }
