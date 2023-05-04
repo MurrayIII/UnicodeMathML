@@ -431,6 +431,8 @@ mappedOperator  // character translations noted in section 4.1 of the tech note
 element
     = array
     / matrix
+    / nByMmatrix
+    / identitymatrix
     / nary
     / phantomSmash
     / o:operand !(__? (opFraction !rawOperator / opAtop / opChoose)) {return o}  // ⚡ performance optimization
@@ -465,6 +467,14 @@ mrows = h:mrow t:("@" mrow)* {
 }
 mrow = __? h:(exp / emptycell) t:(__? "&" __? (exp / emptycell))* __? {
     return {mrow: [h].concat(t.map(a => a[3]))};
+}
+
+nByMmatrix = n:nASCII "×" m:nASCII "■" {
+    return {nByMmatrix: [n, m]};    
+}
+
+identitymatrix = "■" n:nASCII {
+    return {identitymatrix: n};
 }
 
 // n-ary operations such as sums and integrals (this is fairly complex and

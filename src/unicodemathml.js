@@ -683,6 +683,29 @@ function SimpleTracer() {
     };
 }
 
+function matrixRows(n, m) {
+    const b = [];
+
+    var fIdentity = false;
+    if (!m) {
+        m = n;
+        fIdentity = true;
+    }
+
+    for (var i = 0; i < n; i++) {
+        const a = [];
+
+        for (var j = 0; j < m; j++) {
+            let x = '\u2B1A';
+            if (fIdentity)
+                x = i == j ? 1 : 0;
+            a.push({expr: [[{number: x}]]});
+        }
+        b.push({mrow: a});
+    }
+    return {mrows: b};
+}
+
 // parse a string containing a UnicodeMath term to a UnicodeMath AST
 function parse(unicodemath) {
     if (typeof ummlConfig !== "undefined" && typeof ummlConfig.resolveControlWords !== "undefined" && ummlConfig.resolveControlWords) {
@@ -1240,6 +1263,13 @@ function preprocess(dsty, uast) {
                 ret.push({acol: currAcol});
             }
             return {arow: ret};
+
+        case "nByMmatrix":
+            value = matrixRows(value[0], value[1]);
+            return {matrix: preprocess(dsty, value)};
+
+        case "identitymatrix":
+            value = matrixRows(value, 0);  // Fall thru to "matrix"
 
         case "matrix":
             return {matrix: preprocess(dsty, value)};
