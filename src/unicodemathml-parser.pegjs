@@ -429,11 +429,12 @@ mappedOperator  // character translations noted in section 4.1 of the tech note
 //    operators – thus they are likely to be at the outer level of an expression
 //    imagined in tree form)
 element
-    = array
+    = absoluteValue
+    / array
+    / identityMatrix
     / matrix
-    / nByMmatrix
-    / identitymatrix
     / nary
+    / nByMmatrix
     / phantomSmash
     / o:operand !(__? (opFraction !rawOperator / opAtop / opChoose)) {return o}  // ⚡ performance optimization
     / fraction
@@ -454,6 +455,14 @@ emptycell = "" {
     return {atoms: {spaces: {space: 0}}};
 }
 
+absoluteValue
+    = "⒜(" e:exp ")" {
+        return {bracketed: {open: "|", close: "|", intent: "absolute value", content: e}};
+    }
+    / "⒜" e:exp {
+        return {bracketed: {open: "|", close: "|", intent: "absolute value", content: e}};
+    } 
+
 // matrices
 matrix
     = "■(" r:mrows ")" {
@@ -473,8 +482,8 @@ nByMmatrix = n:nASCII "×" m:nASCII "■" {
     return {nByMmatrix: [n, m]};    
 }
 
-identitymatrix = "■" n:nASCII {
-    return {identitymatrix: n};
+identityMatrix = "■" n:nASCII {
+    return {identityMatrix: n};
 }
 
 // n-ary operations such as sums and integrals (this is fairly complex and

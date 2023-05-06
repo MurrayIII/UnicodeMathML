@@ -29,6 +29,7 @@ var controlWords = {
 
     // from tech note: Appendix B. Character Keywords and Properties
     'above': '2534',
+    'abs': '249C',
     'acute': '0301',
     'aleph': '2135',
     'alpha': '03B1',
@@ -948,6 +949,7 @@ function enclosureAttrs(mask, symbol) {
     // get classes corresponding to mask
     var ret = "";
     if (mask != null) {
+        mask ^= 15;
         var binMask = mask.toString(2).split('').reverse().join('');
         var classes = [];
         for (var i = binMask.length - 1; i >= 0; i--) {
@@ -1268,7 +1270,7 @@ function preprocess(dsty, uast) {
             value = matrixRows(value[0], value[1]);
             return {matrix: preprocess(dsty, value)};
 
-        case "identitymatrix":
+        case "identityMatrix":
             value = matrixRows(value, 0);  // Fall thru to "matrix"
 
         case "matrix":
@@ -1563,7 +1565,7 @@ function preprocess(dsty, uast) {
             } else {
                 content = preprocess(dsty, value.content);
             }
-            return {bracketed: {open: value.open, close: value.close, content: content}};
+            return {bracketed: {open: value.open, close: value.close, intent: value.intent, content: content}};
 
         default:
             return uast;
@@ -2052,7 +2054,7 @@ function mtransform(dsty, puast) {
 
         case "bracketed":
 
-            // handle potential sepator
+            // handle potential separator
             var separator = "";
             if (value.content.hasOwnProperty("separated")) {
                 separator = value.content.separated.separator;

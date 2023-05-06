@@ -539,6 +539,7 @@ var controlWords = {
 
     // from tech note: Appendix B. Character Keywords and Properties
     'above': '2534',
+    'abs': '249C',
     'acute': '0301',
     'aleph': '2135',
     'alpha': '03B1',
