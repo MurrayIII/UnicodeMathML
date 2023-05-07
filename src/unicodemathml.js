@@ -70,6 +70,7 @@ var controlWords = {
     'cdots': '22EF',
     'check': '030C',
     'chi': '03C7',
+    'choose': '249E',
     'circ': '2218',
     'close': '2524',
     'clubsuit': '2663',
@@ -1738,7 +1739,7 @@ function mtransform(dsty, puast) {
 
             // desugar (not done in preprocessing step because LaTeX requires
             // this sugar)
-            return mtransform(dsty, {bracketed: {open: "(", close: ")", content: {atop: [value.top, value.bottom]}}});
+            return mtransform(dsty, {bracketed: {intent: "binomial coefficient", open: "(", close: ")", content: {atop: [value.top, value.bottom]}}});
 
         case "script":
             switch (value.type) {
@@ -2081,7 +2082,11 @@ function mtransform(dsty, puast) {
             // wraps content in an mrow as desired
             var ret = [];
             if (typeof value.open === 'string') {
-                ret.push({mo: noAttr(value.open)});
+                if (value.intent) {
+                    ret.push({mo: withAttrs({intent: value.intent}, value.open)});
+                } else {
+                    ret.push({mo: noAttr(value.open)});
+                }
             }
             ret.push(content);
             if (typeof value.close === 'string') {
