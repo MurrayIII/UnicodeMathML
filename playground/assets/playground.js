@@ -580,6 +580,7 @@ var controlWords = {
     'cdots': '22EF',
     'check': '030C',
     'chi': '03C7',
+    'choose': '249E',
     'circ': '2218',
     'close': '2524',
     'clubsuit': '2663',
