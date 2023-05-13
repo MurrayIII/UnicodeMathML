@@ -1745,7 +1745,7 @@ function mtransform(dsty, puast) {
 
             // desugar (not done in preprocessing step because LaTeX requires
             // this sugar)
-            return mtransform(dsty, {bracketed: {intent: "binomial coefficient", open: "(", close: ")", content: {atop: [value.top, value.bottom]}}});
+            return mtransform(dsty, {bracketed: {intent: "binomial", open: "(", close: ")", content: {atop: [value.top, value.bottom]}}});
 
         case "script":
             switch (value.type) {
@@ -2088,18 +2088,17 @@ function mtransform(dsty, puast) {
             // wraps content in an mrow as desired
             var ret = [];
             if (typeof value.open === 'string') {
-                if (value.intent) {
-                    ret.push({mo: withAttrs({intent: value.intent}, value.open)});
-                } else {
-                    ret.push({mo: noAttr(value.open)});
-                }
+                ret.push({mo: noAttr(value.open)});
             }
             ret.push(content);
             if (typeof value.close === 'string') {
                 ret.push({mo: noAttr(value.close)});
             }
-            ret = [{mrow: noAttr(ret)}];
-
+            if (value.intent) {
+                ret = [{mrow: withAttrs({intent: value.intent}, ret)}];
+            } else {
+                ret = [{mrow: noAttr(ret)}];
+            }
             // now handle potential manually resized brackets. note that
             // value.open.size and value.close.size should be at most 4
             // according to the tech note, but there is no strict need for this
