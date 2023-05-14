@@ -5,8 +5,7 @@
 :root {
     --main-font: "Helvetica Neue", Helvetica, Arial, sans-serif;
     --code-font: "Iosevka Web", PragmataPro, monospace;
-    --math-font: "Cambria Math", serif;
-    --symbol-font: "Segoe UI Symbol", sans-serif;
+    --math-font: "LM Math", serif;
 
     --blackish-color: #111;
     --verydarkgrayish-color: #222;
@@ -197,7 +196,6 @@ p.codepoint, p.examples {
     min-height: 2.2em;
 }
 #codepoints .cp.invisible-char {
-    font-family: var(--symbol-font);
     background-color: var(--verydarkgrayish-color);
 }
 #codepoints .cp .p {
