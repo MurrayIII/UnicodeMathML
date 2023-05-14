@@ -1335,12 +1335,12 @@ function preprocess(dsty, uast) {
                 if (value.limits.script.type != "subsup" && "high" in value.limits.script) {
                     var high = value.limits.script.high;
                     delete value.limits.script.high;
-                    value.limits.script.base = { script: { type: "subsup", base: value.limits.script.base, high: high } };
+                    value.limits.script.base = {script: {type: "subsup", base: value.limits.script.base, high: high}};
                 }
             } else if (dsty) {
                 // in display mode if not integral, display limits abovebelow
                 var op = v(value.limits.script.base);
-                if (op < '\u222B' || op > '\u2233') {   // gets common integral signs
+                if (op < '\u222B' || op > '\u2233') {   // exclude common integral signs
                     value.limits.script.type = "abovebelow";
                 }
             }
