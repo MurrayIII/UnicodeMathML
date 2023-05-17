@@ -210,6 +210,7 @@ var controlWords = {
     'Pi': '03A0',
     'pi': '03C0',
     'pm': '00B1',
+    'pmatrix': '24A8',
     'pppprime': '2057',
     'ppprime': '2034',
     'pprime': '2033',
@@ -686,6 +687,7 @@ function SimpleTracer() {
 }
 
 function matrixRows(n, m) {
+    // Generate matrix rows for identity and null matrices
     const b = [];
 
     var fIdentity = false;
@@ -950,7 +952,7 @@ function enclosureAttrs(mask, symbol) {
     // get classes corresponding to mask
     var ret = "";
     if (mask != null) {
-        mask ^= 15;
+        mask ^= 15;                         // spec inverts low 4 bits
         var binMask = mask.toString(2).split('').reverse().join('');
         var classes = [];
         for (var i = binMask.length - 1; i >= 0; i--) {
@@ -1338,7 +1340,7 @@ function preprocess(dsty, uast) {
                     value.limits.script.base = {script: {type: "subsup", base: value.limits.script.base, high: high}};
                 }
             } else if (dsty) {
-                // in display mode if not integral, display limits abovebelow
+                // in display mode if not an integral, display limits abovebelow
                 var op = v(value.limits.script.base);
                 if (op < '\u222B' || op > '\u2233') {   // exclude common integral signs
                     value.limits.script.type = "abovebelow";
@@ -1434,12 +1436,15 @@ function preprocess(dsty, uast) {
                         }
                     }
                     if (k(base) == "atoms") {
+                        // if str contains more than a single variable, make
+                        // the subsup base be the end variable. e.g., for
+                        // 𝐸 = 𝑚𝑐², make 𝑐 be the base
                         var str = base.atoms[0].chars;
                         var cch = str.length;
                         var cchCh = 1;
 
                         if (cch >= 2 && str.codePointAt(cch - 2) > 0xFFFF)
-                            cchCh = 2;
+                            cchCh = 2;      // surrogate pair
 
                         if (cch > cchCh) {
                             ret.base.atoms[0].chars = str.substring(cch - cchCh, cch);

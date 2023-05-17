@@ -720,6 +720,7 @@ var controlWords = {
     'Pi': '03A0',
     'pi': '03C0',
     'pm': '00B1',
+    'pmatrix': '24A8',
     'pppprime': '2057',
     'ppprime': '2034',
     'pprime': '2033',
