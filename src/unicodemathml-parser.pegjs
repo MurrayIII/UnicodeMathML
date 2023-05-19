@@ -457,10 +457,10 @@ emptycell = "" {
 
 absoluteValue
     = "⒜(" e:exp ")" {
-        return {bracketed: {open: "|", close: "|", intent: "absolute value", content: e}};
+        return {bracketed: {open: "|", close: "|", intent: "absolute-value", content: e}};
     }
-    / "⒜" e:exp {
-        return {bracketed: {open: "|", close: "|", intent: "absolute value", content: e}};
+    / "⒜" o:operand {
+        return {bracketed: {open: "|", close: "|", intent: "absolute-value", content: o}};
     } 
 
 // matrices
@@ -903,7 +903,7 @@ sizeOverride = opSizeOverride s:[A-D] o:(operand / basicOperator) {
     return {sizeoverride: {size: s, of: o}};
 }
 
-// ✎ non-standard extensions: colors, comments and typewriter font
+// ✎ colors and non-standard extensions: comments and typewriter font
 colored
     = opColor "(" c:color "&" o:exp ")" {
         return {colored: {color: c, of: o}};
