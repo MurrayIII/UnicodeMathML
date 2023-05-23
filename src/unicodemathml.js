@@ -1435,7 +1435,7 @@ function preprocess(dsty, uast) {
                             ret.high = preprocess(dsty, value.high);
                         }
                     }
-                    if (k(base) == "atoms") {
+                    if (k(base) == "atoms" && value.funct == undefined) {
                         // if str contains more than a single variable, make
                         // the subsup base be the end variable. e.g., for
                         // 𝐸 = 𝑚𝑐², make 𝑐 be the base

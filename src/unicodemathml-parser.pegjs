@@ -318,6 +318,7 @@ opPhantom = "⟡" / "⬄" / "⇳"
 opSmash = "⬍" / "⬆" / "⬇" / "⬌"
 opAbstractBox = "□"
 opRoot = "√" / "∛" / "∜"
+opScript = [_^┬┴'′″‴⁗‼₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎⁰¹²³⁴⁵⁶⁷⁸⁹ⁱⁿ⁺⁻⁼⁽⁾]
 opSubSup = "_" / "^"
 opAboveBelow = "┬" / "┴"
 opSizeOverride = "Ⅎ"
@@ -429,8 +430,7 @@ mappedOperator  // character translations noted in section 4.1 of the tech note
 //    operators – thus they are likely to be at the outer level of an expression
 //    imagined in tree form)
 element
-    = absoluteValue
-    / array
+    = array
     / identityMatrix
     / matrix
     / nary
@@ -454,14 +454,6 @@ arow = __? h:(exp / emptycell)? t:(__? "&" __? (exp / emptycell))* __? {
 emptycell = "" {
     return {atoms: {spaces: {space: 0}}};
 }
-
-absoluteValue
-    = "⒜(" e:exp ")" {
-        return {bracketed: {open: "|", close: "|", intent: "absolute-value", content: e}};
-    }
-    / "⒜" o:operand {
-        return {bracketed: {open: "|", close: "|", intent: "absolute-value", content: o}};
-    } 
 
 // matrices
 matrix
@@ -537,8 +529,13 @@ atop
 //    hence the separation between factor and sfactor)
 operand = factor+
 factor
-    = preScript
-    / !(functionName) e:entity !("_" / "^" / "┬" / "┴" / "'" / "′" / "″" / "‴" / "⁗" / "‼" / "!" / [₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎⁰¹²³⁴⁵⁶⁷⁸⁹ⁱⁿ⁺⁻⁼⁽⁾]) {return e}  // ⚡ performance optimization
+    = f:functionName &opScript s:script __? o:operand {
+        s.base = {atoms: {chars: f}};
+        s.funct = true;
+        return {function: {f: {script: s}, of: o}};
+    }
+    / preScript
+    / !(functionName) e:entity !opScript {return e}  // ⚡ performance optimization
     / subsupScript
     / abovebelowScript
     / sfactor  // covers all other constructs
@@ -800,7 +797,7 @@ root
     }
     / "√" o:operand {
         return {sqrt: o};  // could return {root: {degree: null, of: o}} here,
-                           // but treating this as a special case allows
+                        // but treating this as a special case allows
                            // emitting the more semantically meaningful <msqrt>
                            // tag
     }
@@ -809,16 +806,17 @@ root
     }
     / "∜" o:operand {
         return {root: {degree: {number: "4"}, of: o}};
-    }
+    }   
 
 // "built-in" functions. the invisible function apply character can be used to
 // glue function name and operand together. tech note, section 3.5: "If the
 // Function Apply operator is immediately followed by a subscript or superscript
 // expression, that expression should be applied to the function name"
 function
-    = f:functionName ("\u2061" / opNaryand) s:script? __? o:operand {
-        if (s != null) {
+    = f:functionName __? ("\u2061" / opNaryand)? s:script? __? o:operand {
+        if (s) {
             s.base = {atoms: {chars: f}};
+            s.funct = true;
             return {function: {f: {script: s}, of: o}};
         } else {
             return {function: {f: {atoms: {chars: f}}, of: o}};
@@ -960,6 +958,7 @@ factorial
 //    wrt their contents, which are full, standalone expressions)
 entity
     = e:expBracket !("\u00A0" / diacritic) {return e}  // ⚡ performance optimization
+    / absoluteValue
     / atoms
     / doublestruck
     / number
@@ -1025,6 +1024,14 @@ diacriticbase
 diacritics = d:diacritic+ {
     return d;
 }
+
+absoluteValue
+    = "⒜(" e:exp ")" {
+        return {bracketed: {open: "|", close: "|", intent: "absolute-value", content: e}};
+    }
+    / "⒜" o:operand {
+        return {bracketed: {open: "|", close: "|", intent: "absolute-value", content: o}};
+    } 
 
 // math spaces (can also be used as operators, see way further up)
 mathspaces = s:mathspace+ {
