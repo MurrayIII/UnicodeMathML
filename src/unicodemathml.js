@@ -1249,8 +1249,7 @@ function preprocess(dsty, uast) {
             var ret = []
             var i = 0;
             var currAcol = [];
-            if (value[0] == null) {  // align mark immediately at the start of
-                                     // the row
+            if (value[0] == null) {  // align mark immediately at start of row
                 i = 1;
             }
             for (; i < value.length; i++) {
@@ -1305,7 +1304,6 @@ function preprocess(dsty, uast) {
                     value.limits.script.low = value.limits.script.high;
                     delete value.limits.script.high;
                 } else {
-
                     // can only occur in a nary without sub or sup set
                 }
             }
@@ -1435,7 +1433,7 @@ function preprocess(dsty, uast) {
                             ret.high = preprocess(dsty, value.high);
                         }
                     }
-                    if (k(base) == "atoms" && value.funct == undefined) {
+                    if (k(base) == "atoms" && base.atoms.funct == undefined) {
                         // if str contains more than a single variable, make
                         // the subsup base be the end variable. e.g., for
                         // 𝐸 = 𝑚𝑐², make 𝑐 be the base
@@ -1554,6 +1552,9 @@ function preprocess(dsty, uast) {
             return [preprocess(dsty, value), {operator: "!"}];
 
         case "atoms":
+            if (!value.hasOwnProperty("funct") && Array.isArray(value) && value.hasOwnProperty("chars")) {
+                value[0].chars = italicizeCharacters(value[0].chars);
+            }
             return {atoms: preprocess(dsty, value)};
         case "chars":
             return uast;

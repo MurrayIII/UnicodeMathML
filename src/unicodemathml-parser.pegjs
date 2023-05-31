@@ -522,16 +522,18 @@ atop
                                               // coefficients
         return {binom: {top: r, bottom: t}};
     }
-
 // ❷ operands/factors: medium-precedence constructs, comprising constructs
 //    which may occur inside scripts as well as the various kinds of scripts
 //    themselves (which may not in all cases occur directly within each other,
 //    hence the separation between factor and sfactor)
 operand = factor+
+trigName = 'a'? ('sin' / 'cos' / 'tan' / 'sec' / 'csc' / 'cot') 'h'?
+
 factor
-    = f:functionName &opScript s:script __? o:operand {
-        s.base = {atoms: {chars: f}};
-        s.funct = true;
+    = f:trigName &opScript s:script __? o:operand {
+        var c = {chars: f.join('')};
+        c.funct = true;
+        s.base = {atoms: c};
         return {function: {f: {script: s}, of: o}};
     }
     / preScript
@@ -797,7 +799,7 @@ root
     }
     / "√" o:operand {
         return {sqrt: o};  // could return {root: {degree: null, of: o}} here,
-                        // but treating this as a special case allows
+                           // but treating this as a special case allows
                            // emitting the more semantically meaningful <msqrt>
                            // tag
     }
@@ -814,55 +816,25 @@ root
 // expression, that expression should be applied to the function name"
 function
     = f:functionName __? ("\u2061" / opNaryand)? s:script? __? o:operand {
-        if (s) {
-            s.base = {atoms: {chars: f}};
-            s.funct = true;
-            return {function: {f: {script: s}, of: o}};
-        } else {
-            return {function: {f: {atoms: {chars: f}}, of: o}};
+        if (Array.isArray(f)) {
+            f = f.join("");
         }
+        var c = {chars: f};
+        c.funct = true;
+
+        if (s) {
+            s.base = {atoms: c};
+            return {function: {f: {script: s}, of: o}};
+        }
+        return {function: {f: {atoms: c}, of: o}};
     }
     / f:functionName __? o:operand {
-        return {function: {f: {atoms: {chars: f}}, of: o}};
+        return {function: {f: {atoms: {chars: f.join("")}}, of: o}};
     }
+arctrigName = ("arcsin" / "arcsec" / "arctan" / "arccot" / "arccos" / "arccsc") "h"?
 functionName
     // via https://www.cs.bgu.ac.il/~khitron/Equation%20Editor.pdf
-    = "sin"
-    / "sec"
-    / "asin"
-    / "asec"
-    / "arcsin"
-    / "arcsec"
-    / "sinh"
-    / "sech"
-    / "asinh"
-    / "asech"
-    / "arcsinh"
-    / "arcsech"
-    / "cos"
-    / "csc"
-    / "acos"
-    / "acsc"
-    / "arccos"
-    / "arccsc"
-    / "cosh"
-    / "csch"
-    / "acosh"
-    / "acsch"
-    / "arccosh"
-    / "arccsch"
-    / "tan"
-    / "cot"
-    / "atan"
-    / "acot"
-    / "arctan"
-    / "arccot"
-    / "tanh"
-    / "coth"
-    / "atanh"
-    / "acoth"
-    / "arctanh"
-    / "arccoth"
+    = trigName / arctrigName
     / "arg"
     / "det"
     / "exp"
@@ -1025,14 +997,6 @@ diacritics = d:diacritic+ {
     return d;
 }
 
-absoluteValue
-    = "⒜(" e:exp ")" {
-        return {bracketed: {open: "|", close: "|", intent: "absolute-value", content: e}};
-    }
-    / "⒜" o:operand {
-        return {bracketed: {open: "|", close: "|", intent: "absolute-value", content: o}};
-    } 
-
 // math spaces (can also be used as operators, see way further up)
 mathspaces = s:mathspace+ {
     return {spaces: s};
@@ -1170,3 +1134,11 @@ expBracketContents
         return {separated: {separator: "∣", of: r.map(a => a[0]).concat([t])}};
     }
     /// exp  // ⚡ performance optimization
+
+absoluteValue
+    = "⒜(" e:exp ")" {
+        return {bracketed: {open: "|", close: "|", intent: "absolute-value", content: e}};
+    }
+    / "⒜" o:operand {
+        return {bracketed: {open: "|", close: "|", intent: "absolute-value", content: o}};
+    }
