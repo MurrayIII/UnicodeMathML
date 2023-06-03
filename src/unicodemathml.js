@@ -1437,16 +1437,19 @@ function preprocess(dsty, uast) {
                         // if str contains more than a single variable, make
                         // the subsup base be the end variable. e.g., for
                         // 𝐸 = 𝑚𝑐², make 𝑐 be the base
-                        var str = base.atoms[0].chars;
-                        var cch = str.length;
-                        var cchCh = 1;
+                        var n = base.atoms.length;
+                        var str = base.atoms[n - 1].chars;
+                        if (str != undefined) {
+                            var cch = str.length;
+                            var cchCh = 1;
 
-                        if (cch >= 2 && str.codePointAt(cch - 2) > 0xFFFF)
-                            cchCh = 2;      // surrogate pair
+                            if (cch >= 2 && str.codePointAt(cch - 2) > 0xFFFF)
+                                cchCh = 2;      // surrogate pair
 
-                        if (cch > cchCh) {
-                            ret.base.atoms[0].chars = str.substring(cch - cchCh, cch);
-                            return [{ chars: str.substring(0, cch - cchCh) }, { script: ret }];
+                            if (cch > cchCh) {
+                                ret.base.atoms[0].chars = str.substring(cch - cchCh, cch);
+                                return [{ chars: str.substring(0, cch - cchCh) }, { script: ret }];
+                            }
                         }
                     }
                     break;
