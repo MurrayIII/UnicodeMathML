@@ -318,7 +318,7 @@ opPhantom = "⟡" / "⬄" / "⇳"
 opSmash = "⬍" / "⬆" / "⬇" / "⬌"
 opAbstractBox = "□"
 opRoot = "√" / "∛" / "∜"
-opScript = [_^┬┴'′″‴⁗‼₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎⁰¹²³⁴⁵⁶⁷⁸⁹ⁱⁿ⁺⁻⁼⁽⁾]
+opScript = [_^┬┴'′″‴⁗!‼₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎⁰¹²³⁴⁵⁶⁷⁸⁹ⁱⁿ⁺⁻⁼⁽⁾]
 opSubSup = "_" / "^"
 opAboveBelow = "┬" / "┴"
 opSizeOverride = "Ⅎ"
@@ -829,7 +829,10 @@ function
         return {function: {f: {atoms: c}, of: o}};
     }
     / f:functionName __? o:operand {
-        return {function: {f: {atoms: {chars: f.join("")}}, of: o}};
+        if (Array.isArray(f)) {
+            f = f.join("");
+        }
+        return {function: {f: {atoms: {chars: f}}, of: o}};
     }
 arctrigName = ("arcsin" / "arcsec" / "arctan" / "arccot" / "arccos" / "arccsc") "h"?
 functionName
