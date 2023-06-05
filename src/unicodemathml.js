@@ -1557,7 +1557,7 @@ function preprocess(dsty, uast) {
             return [preprocess(dsty, value), {operator: "!"}];
 
         case "atoms":
-            if (!value.hasOwnProperty("funct") && Array.isArray(value) && value.hasOwnProperty("chars")) {
+            if (!value.hasOwnProperty("funct") && Array.isArray(value) && value[0].hasOwnProperty("chars")) {
                 value[0].chars = italicizeCharacters(value[0].chars);
             }
             return {atoms: preprocess(dsty, value)};
