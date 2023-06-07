@@ -675,7 +675,7 @@
         function loadUncachedScript(path) {
             document.write('<script src="' + path + '?' + Math.random() + '"></scr' + 'ipt>');
         }
-    </script>
+   </script>
     <script>
         var unicodemathmlOptions = {
             resolveControlWords: true,
@@ -691,8 +691,8 @@
         client.onreadystatechange = function () {
             if (client.readyState === 4) {
                 try {
-                    ummlParser = peg.generate(client.responseText, { cache: false, trace: false });
-                } catch (error) {
+                    ummlParser = peg.generate(client.responseText, { cache: true, trace: false });
+              } catch (error) {
                     document.write("Error during parser generation: " + error + "<br>");
                     console.log(error);
                 }
@@ -701,7 +701,7 @@
         client.send();
     </script>
     <script>loadUncachedScript("../src/unicodemathml.js")</script>
-    <script src="unicodemathml-integration.js"></script>
+    <script>loadUncachedScript("unicodemathml-integration.js")</script>
     <script>
         document.body.onload = renderUnicodemath();
     </script>

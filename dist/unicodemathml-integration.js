@@ -144,7 +144,7 @@ async function renderMarkedUnicodemath(node) {
     }
 
     // note that getting the status to update properly took some work – i only
-    // got it to wirk with this weird semi-cps-transformed async/await/
+    // got it to work with this weird semi-cps-transformed async/await/
     // requestAnimationFrame approach, which seems overly complicated
     function showProgress(totalNum) {
         return new Promise((f) => {
@@ -219,6 +219,12 @@ async function renderMarkedUnicodemath(node) {
 
     // initialize cache
     var cache = {};
+    var results = {};
+    results["0a+b"] = "<math class=\"unicodemath\" xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow></math>";
+    results["0lim▒_(n→∞) a_n"] = "<math class=\"unicodemath\" xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mrow><msub><mi>lim</mi><mrow><mi>𝑛</mi><mo stretchy=\"true\">→</mo><mi>∞</mi></mrow></msub><mo>&ApplyFunction;</mo><msub><mi>𝑎</mi><mi>𝑛</mi></msub></mrow></math>";
+    results["1\"A COLLECTION OF 628 UNICODEMATH EXPRESSIONS FROM VARIOUS SOURCES\""] = "<math class=\"unicodemath\" xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mtext>A COLLECTION OF 628 UNICODEMATH EXPRESSIONS FROM VARIOUS SOURCES</mtext></math>";
+    results["1\"So long\" ∧ \"thanks\"   ∀  \"🐟🐠🐡\"."] = "<math class=\"unicodemath\" xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mtext>So long</mtext><mo>∧</mo><mtext>thanks</mtext><mrow><mspace width=\"veryverythinmathspace\" /><mspace width=\"mediummathspace\" /></mrow><mo>∀</mo><mspace width=\"mediummathspace\" /><mtext>🐟🐠🐡</mtext><mo>.</mo></mrow></math>";
+    results["1\"hex\"={■(0@1@2@3@4@5@6@7@8@9@A@B@C@D@E@F)┤ \" with \" |hex|=16"] = "<math class=\"unicodemath\" xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mtext>hex</mtext><mo>=</mo><mrow><mo>{</mo><mtable><mtr><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mn>1</mn></mtd></mtr><mtr><mtd><mn>2</mn></mtd></mtr><mtr><mtd><mn>3</mn></mtd></mtr><mtr><mtd><mn>4</mn></mtd></mtr><mtr><mtd><mn>5</mn></mtd></mtr><mtr><mtd><mn>6</mn></mtd></mtr><mtr><mtd><mn>7</mn></mtd></mtr><mtr><mtd><mn>8</mn></mtd></mtr><mtr><mtd><mn>9</mn></mtd></mtr><mtr><mtd><mi>𝐴</mi></mtd></mtr><mtr><mtd><mi>𝐵</mi></mtd></mtr><mtr><mtd><mi>𝐶</mi></mtd></mtr><mtr><mtd><mi>𝐷</mi></mtd></mtr><mtr><mtd><mi>𝐸</mi></mtd></mtr><mtr><mtd><mi>𝐹</mi></mtd></mtr></mtable><mo></mo></mrow><mtext> with </mtext><mrow><mo>|</mo><mi>ℎ𝑒𝑥</mi><mo>|</mo></mrow><mo>=</mo><mn>16</mn></mrow></math>";
 
     // extract unicodemath expressions from node
     var unicodemathPlaceholders = Array.from(node.querySelectorAll("span.unicodemathml-placeholder"));
@@ -280,7 +286,12 @@ async function renderMarkedUnicodemath(node) {
             await updateProgress(i+1, errors);
         }
     }
-
+    for (const i in results) {
+        console.log(i);
+        console.log(results[i]);
+        console.log(cache[i]);
+    }
+//    console.log(result);
     // hide progress message
     if (ummlConfig.showProgress) await hideProgress();
 

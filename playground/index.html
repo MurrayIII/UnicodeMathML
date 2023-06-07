@@ -55,7 +55,7 @@
 
                     // print buttons and extract tooltip data for later use
                     var buttons = [
-                        {label: '🏁', explanation: 'Operators with a special meaning in UnicodeMath, hover over each button for more information.', symbols: {
+                        {label: 'Build-up operators', explanation: 'Operators with a special meaning in UnicodeMath, hover over each button for more information.', symbols: {
                             '▒': 'n-aryand concatenation operator',
                             '⒜': 'Absolute value operator',
                             '█': 'Array operator',
@@ -109,13 +109,11 @@
                             ' ': ['Digit-width space', 'width: 1.67em'],
                             ' ': ['Space-width space (non-breaking space)', 'width: 1.67em']
                             }},
-                        {label: 'Roots', symbols: '√∛∜'},
-                        {label: 'Superscripts', symbols: '⁰¹²³⁴⁵⁶⁷⁸⁹ⁱⁿ⁺⁻⁼⁽⁾'},
-                        {label: 'Subscripts', symbols: '₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎'},
+                        {label: 'Superscripts & Subscripts', symbols: '⁰¹²³⁴⁵⁶⁷⁸⁹ⁱⁿ⁺⁻⁼⁽⁾₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎'},
                         {label: 'Delimiters', symbols: '()[]{}⟨⟩⌈⌉⌊⌋'},
                         {label: 'Over/underbraces', symbols: '⏜⏝⏞⏟⏠⏡⎴⎵¯'},
                         {label: 'Stretchy arrows', symbols: '←→↔⇐⇒⇔↩↪↼⇀↽⇁⊢⊣⟵⟶⟷⟸⟹⟺↦⊨'},
-                        {label: 'Enclosures', symbols: ['▭', ' ̄', '▁', '▢', '○', '⟌', '⃧', '⬭']},
+                        {label: 'Roots & Enclosures', symbols: ['√', '∛', '∜', '▭', ' ̄', '▁', '▢', '○', '⟌', '⃧', '⬭']},
                         {label: 'Phantoms & Smashes', symbols: {
                             '⟡': 'Phantom operator',
                             '⬄': 'Horizontal phantom (hphantom) operator',
@@ -126,7 +124,7 @@
                             '⬌': 'Horizontal smash (hsmash) operator'
                             }},
                         {label: 'Combining marks', explanation: 'These are just examples – anything from the "Combining Diacritical Marks" and "Combining Diacritical Marks for Symbols" Unicode blocks works.', symbols: ['0302', '030C', '0303', '0301', '0300', '0307', '0308', '20DB', '0304', '20D7']},
-                        {label: 'Differential, Exponential and Imaginary', symbols: 'ⅅⅆⅇⅈⅉ'},
+                        {label: 'Differential, Exponential, Imaginary, Infinity', symbols: 'ⅅⅆⅇⅈⅉ∞'},
                         {label: '🇬🇷 Greek alphabet', symbols: 'ΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΛλΜμΝνΞξΟοΠπΡρΣσΤτΥυΦφΧχΨψΩω'},
                     ];
 
@@ -211,6 +209,7 @@
                             √(n&a + b)
                             sin^2 𝜃+cos^2 𝜃=1
                             x=(-b+-\sqrt(b^2-4ac))/2a
+                            ∫_-∞^∞ e^-x^2 ⅆx=√𝜋
                         `;
                         examples
                             .split("\n")
