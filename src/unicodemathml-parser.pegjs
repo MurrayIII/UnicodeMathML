@@ -377,7 +377,10 @@ exp = __? ex:((element / operator) __?)+ {
 //}
 
 operator
-    = s:mathspaces {  // spaces
+    = '\u2007' {
+        return {operator: "\u2007"};
+    }
+    / s:mathspaces {  // spaces
         return s
     }
     / ",  " {  // tech note, section 3.14: "If two spaces follow, the comma is
@@ -1034,9 +1037,6 @@ mathspace
     }
     / "\u2003" {
         return {space: 18};
-    }
-    / "\u2007" {
-        return {space: "digit"};
     }
     / "\u00A0" {
         return {space: "space"};

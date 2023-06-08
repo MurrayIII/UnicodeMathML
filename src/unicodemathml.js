@@ -2038,13 +2038,16 @@ function mtransform(dsty, puast) {
             if (typeof value == 'number') {
                 return {mspace: withAttrs({width: spaceWidth(value)}, null)};
             } else if (value == 'digit') {
-                // mathml provides no way of getting the width of a number and
+                // mathml provides no way of getting the width of a digit and
                 // using that as a space, so let's use a phantomized 0 here
-                return {mphantom: noAttr({mtext: noAttr(0)})};
+                // return {mphantom: noAttr({mtext: noAttr(0)})};
+                // Let the display engine figure out the spacing
+                return {mo: noAttr('\u2007')};
             } else if (value == 'space') {
                 // same deal: phantomized non-breaking space
-                return {mphantom: noAttr({mtext: noAttr('\xa0')})};
-            } else {
+                //return {mphantom: noAttr({mtext: noAttr('\xa0')})};
+                  return {mo: noAttr('\u00A0')};
+           } else {
                 throw "incorrect space"
             }
 
@@ -2059,6 +2062,8 @@ function mtransform(dsty, puast) {
             // these quantities can be rendered as math italic". also: "Notice
             // that the ⅆ character automatically introduces a small space
             // between the 𝑥 and the 𝑑𝑥"
+            // Note: this is only true if ⅆ is preceded by a character in the
+            // same <mrow>
             switch (value) {
                 case "ⅅ":
                     return {mrow: noAttr([{mspace: withAttrs({width: "thinmathspace"}, null)}, char])};
