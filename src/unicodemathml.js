@@ -338,7 +338,7 @@ var controlWords = {
 // this control word replacement would fly in the face of the UnicodeMath
 // "literal" operator if there were single-character control words
 function resolveCW(unicodemath) {
-    var res = unicodemath.replace(/\\?([A-Za-z0-9]+) ?/g, (match, cw) => {
+    var res = unicodemath.replace(/\\([A-Za-z0-9]+) ?/g, (match, cw) => {
 
         // check custom control words first (i.e. custom ones shadow built-in ones)
         if (typeof ummlConfig !== "undefined" && typeof ummlConfig.customControlWords !== "undefined" && cw in ummlConfig.customControlWords) {

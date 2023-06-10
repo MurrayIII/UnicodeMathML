@@ -728,6 +728,7 @@ scriptbase
     = "|" {  // enable using pipe symbol as scriptbase
         return {atoms: {chars: "|"}};
     }
+    / text
     / e:primedbase (!prime) {return e}  // ⚡ performance optimization
     / primed
     /// primedbase  // ⚡ performance optimization
