@@ -365,7 +365,7 @@ function resolveCW(unicodemath) {
 
             // turns out this wasn't actually a control word, so let's slowly
             // back out of the room
-            return match;
+            return '"' + match + '"';
         }
     });
     return res;
@@ -507,7 +507,7 @@ var mathFonts = {
 
 function italicizeCharacters(chars) {
     return Array.from(chars).map(c => {
-        if (c in mathFonts && 'serif-italic' in mathFonts[c]) {
+        if (c in mathFonts && 'serif-italic' in mathFonts[c] && (c < "Α" || c > "Ω")) {
             return mathFonts[c]['serif-italic'];
         } else {
             return c;
@@ -1557,7 +1557,7 @@ function preprocess(dsty, uast) {
             return [preprocess(dsty, value), {operator: "!"}];
 
         case "atoms":
-            if (!value.hasOwnProperty("funct") && Array.isArray(value) && value[0].hasOwnProperty("chars")) {
+            if (!value.hasOwnProperty("funct") && Array.isArray(value) && value[0].hasOwnProperty("chars") && value[0].chars[0] != 'Ⅎ') {
                 value[0].chars = italicizeCharacters(value[0].chars);
             }
             return {atoms: preprocess(dsty, value)};
@@ -1981,6 +1981,28 @@ function mtransform(dsty, puast) {
             return {mrow: noAttr([mtransform(dsty, value), {mo: noAttr("!")}])};
 
         case "atoms":
+            if (value.funct == undefined) {
+                var n = value.length;
+                if (n != undefined) {
+                    var str = value[n - 1].chars;
+                    if (str != undefined && str[0] != 'Ⅎ') {
+                        var cch = str.length;
+
+                        if (cch > 2 || cch == 2 && str.codePointAt(0) < 0xFFFF) {
+                            var mis = [];
+                            var cchCh = 1;
+
+                            for (let i = 0; i < cch; i += cchCh) {
+                                cchCh = 1;
+                                if (cch >= 2 && str.codePointAt(i) > 0xFFFF)
+                                    cchCh = 2;      // surrogate pair
+                                mis.push({mi: noAttr(str.substring(i, i + cchCh))});
+                            }
+                            return {mrow: noAttr(mis)};
+                        }                        
+                    }
+                }
+            }
             return mtransform(dsty, value);
         case "chars":
 
@@ -1990,7 +2012,11 @@ function mtransform(dsty, puast) {
             // [...] translate letters deemed to be standalone to the
             // appropriate math alphabetic characters"
             if (value.length == 1) {
-                return {mi: noAttr(italicizeCharacters(value))};
+                if (value[0] >= "Α" && value[0] <= "Ω") {
+                    return {mi: withAttrs({mathvariant: "normal"}, value)};
+                } else {
+                    return {mi: noAttr(italicizeCharacters(value))};
+                }
             } else {
                 return {mi: noAttr(value)};
             }
