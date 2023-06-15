@@ -1449,7 +1449,7 @@ function preprocess(dsty, uast) {
 
                                 if (cch > cchCh) {
                                     ret.base.atoms[0].chars = str.substring(cch - cchCh, cch);
-                                    return [{ chars: str.substring(0, cch - cchCh) }, { script: ret }];
+                                    return [{atoms: [{chars: str.substring(0, cch - cchCh)}]}, {script: ret}];
                                 }
                             }
                         }

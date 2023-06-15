@@ -531,12 +531,20 @@ atop
 //    hence the separation between factor and sfactor)
 operand = factor+
 trigName = 'a'? ('sin' / 'cos' / 'tan' / 'sec' / 'csc' / 'cot') 'h'?
+limName = "lim" / "log" / "lg"
 
 factor
-    = f:trigName &opScript s:script __? o:operand {
-        var c = {chars: f.join('')};
-        c.funct = true;
+    = f:(trigName / limName) &opScript s:script __? o:operand {
+        if (Array.isArray(f)) {
+            f = f.join("");
+        }
+        var c = {chars: f, funct: true};
         s.base = {atoms: c};
+        return {function: {f: {script: s}, of: o}};
+    }
+    / f:limName "┬" l:operand __? o:operand {
+        var c = {chars: f, funct: true};
+        var s = {base: {atoms: c}, low: l, type: "abovebelow"};
         return {function: {f: {script: s}, of: o}};
     }
     / preScript
@@ -839,13 +847,13 @@ function
         return {function: {f: {atoms: {chars: f}}, of: o}};
     }
 arctrigName = ("arcsin" / "arcsec" / "arctan" / "arccot" / "arccos" / "arccsc") "h"?
+
 functionName
     // via https://www.cs.bgu.ac.il/~khitron/Equation%20Editor.pdf
-    = trigName / arctrigName
+    = trigName / arctrigName / limName
     / "arg"
     / "det"
     / "exp"
-    / "lim"
     / "def"
     / "dim"
     / "gcd"
@@ -854,8 +862,6 @@ functionName
     / "deg"
     / "erf"
     / "hom"
-    / "log"
-    / "lg"
     / "ln"
     / "min"
     / "max"
