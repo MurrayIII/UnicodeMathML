@@ -1993,13 +1993,21 @@ function mtransform(dsty, puast) {
                             var cchCh = 1;
 
                             for (let i = 0; i < cch; i += cchCh) {
-                                cchCh = 1;
-                                if (cch >= 2 && str.codePointAt(i) > 0xFFFF)
-                                    cchCh = 2;      // surrogate pair
-                                mis.push({mi: noAttr(str.substring(i, i + cchCh))});
+                                cchCh = (cch >= 2 && str.codePointAt(i) > 0xFFFF) ? 2 : 1;
+
+                                if (str[i] >= 'ⅅ' && str[i] <= 'ⅉ') {
+                                    if (i && str[i] <= 'ⅆ') {
+                                        mis.push({ mi: noAttr('\u2009') });
+                                    }
+                                    mis.push(doublestruckChar(str[i]));
+                                } else {
+                                    mis.push({ mi: noAttr(str.substring(i, i + cchCh)) });
+                                }
                             }
-                            return {mrow: noAttr(mis)};
-                        }                        
+                            return { mrow: noAttr(mis) };
+                        } else if (str[0] >= 'ⅅ' && str[0] <= 'ⅉ') {
+                            return doublestruckChar(str[0]);
+                        }
                     }
                 }
             }
