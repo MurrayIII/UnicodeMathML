@@ -1,6 +1,6 @@
 # UnicodeMathML
 
-*This is a clone of Noah Doersing's UnicodeMathML repo with added commits by Murray Sargent III.*
+*This is a clone of Noah Doersing's UnicodeMathML repo with added commits by Murray Sargent III. The changes are summarized at the end of this document.*
 
 *This repository provides a JavaScript-based translation of [UnicodeMath](https://www.unicode.org/notes/tn28/) to [MathML](https://developer.mozilla.org/en-US/docs/Web/MathML) (hence "UnicodeMathML"). An interactive "playground" allows for experimentation with UnicodeMath's syntax and insight into the translation pipeline. UnicodeMathML can be easily integrated into arbitrary HTML or [Markdeep](https://casual-effects.com/markdeep/) documents.*
 
@@ -304,3 +304,25 @@ Lastly, the `docs/` subdirectory contains two PDF files:
 
 * Murray Sargent III's technical note "UnicodeMath, A Nearly Plain-Text Encoding of Mathematics" (located at `docs/sargent-unicodemathml-tech-note.pdf` is © 2006-2017 Murray Sargent III and Unicode, Inc. but used in accordance with the [Unicode Terms of Use](https://www.unicode.org/copyright.html).
 * My own Master's thesis is located at `docs/doersing-unicodemath-to-mathml.pdf`. I've primarily included it in this repository as a reference for some implementation details, it's not intended (or relevant) for general distribution.
+
+Changes in Murray Sargent's forked version (https://github.com/MurrayIII/UnicodeMathML-1)
+* All ASCII letters and Greek lower-case letters are automatically converted to math italic unless they comprise a mathematical function name, e.g., a trigonometric function, or are quoted.
+* The subscript and superscript operators apply to the variable or enclosed expression that immediately precedes them. For example, in “E=mc^2”, the base of the superscript object is “c”, not “mc”.
+* The integrand can be attached to the integral via a space instead of the “glue” operator ▒.
+* The trigonometric function names are defined by the expression
+       'a'? ['sin' | 'cos' | 'tan' | 'sec' | 'csc' | 'cot'] 'h'?
+* The identity and n×m matrix short cuts are implemented.
+* \rect border flags are fixed (needed to be inverted).
+* Display mode n-ary operators are changed to <munderover> instead of <msubsup>, except for integrals.
+* Convert math functions with or without the function-apply operator U+2061.
+* Only insert a thin space in front of differential d or D if it is preceded by one or more letters in the same run. Ideally the thin space should be added by the display engine along with the choice of math style (math italic, upright, double-struck italic) instead of by the converter. The MathML would then retain the original semantics.
+
+In addition, the following features are implemented:
+* \abs is added for unambiguous entry of absolute value and the absolute-value intent attribute is added. \choose is added along with its intent attribute (binomial).
+* Add MathML tests to the display of example.html.
+
+
+To do:
+* Partial conversions instead of displaying errors. E.g., “(a^2+” would convert to “(𝑎² +” instead of displaying an error message.
+* Implement MathML 4.0 intent attributes (in addition to the \abs and \choose cases already implemented).
+* Update the set of LaTeX control words.

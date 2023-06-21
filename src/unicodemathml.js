@@ -1607,13 +1607,15 @@ function preprocess(dsty, uast) {
 function mtransform(dsty, puast) {
 
     // map transformation over lists, wrap the result in an mrow
+    var fMath = dsty & 4;
+    dsty &= ~4;
+
     if (Array.isArray(puast)) {
         return {mrow: noAttr(puast.map(e => mtransform(dsty, e)))};
     }
 
     var key = k(puast);
     var value = v(puast);
-
     switch (key) {
         case "unicodemath":
             var attrs = {class: "unicodemath", xmlns: "http://www.w3.org/1998/Math/MathML", display: dsty? "block" : "inline"}
@@ -1997,14 +1999,14 @@ function mtransform(dsty, puast) {
 
                                 if (str[i] >= 'ⅅ' && str[i] <= 'ⅉ') {
                                     if (i && str[i] <= 'ⅆ') {
-                                        mis.push({ mi: noAttr('\u2009') });
+                                        mis.push({mi: noAttr('\u2009')});
                                     }
                                     mis.push(doublestruckChar(str[i]));
                                 } else {
-                                    mis.push({ mi: noAttr(str.substring(i, i + cchCh)) });
+                                    mis.push({mi: noAttr(str.substring(i, i + cchCh))});
                                 }
                             }
-                            return { mrow: noAttr(mis) };
+                            return {mrow: noAttr(mis)};
                         } else if (str[0] >= 'ⅅ' && str[0] <= 'ⅉ') {
                             return doublestruckChar(str[0]);
                         }
@@ -2285,7 +2287,7 @@ function escapeHTMLSpecialChars(str) {
     });
 };
 
-function unicodemathml(unicodemath, displaystyle = false) {
+function unicodemathml(unicodemath, displaystyle) {
     debugGroup(unicodemath);
     try {
         var t1s = performance.now();
