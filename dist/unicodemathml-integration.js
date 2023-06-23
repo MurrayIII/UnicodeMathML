@@ -839,6 +839,7 @@ async function renderMarkedUnicodemath(node) {
     results["1123a_11+1234ab/2/W_v_v_v_v_v_v/4/a"] = "<math class=\"unicodemath\" xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mrow><mn>123</mn><msub><mi>𝑎</mi><mn>11</mn></msub></mrow><mo>+</mo><mfrac><mfrac><mfrac><mfrac><mrow><mn>1234</mn><mrow><mi>𝑎</mi><mi>𝑏</mi></mrow></mrow><mn>2</mn></mfrac><msub><mi>𝑊</mi><msub><msub><msub><msub><msub><mi>𝑣</mi><mi>𝑣</mi></msub><mi>𝑣</mi></msub><mi>𝑣</mi></msub><mi>𝑣</mi></msub><mi>𝑣</mi></msub></msub></mfrac><mn>4</mn></mfrac><mi>𝑎</mi></mfrac></mrow></math>";
     results["1123┴↔ + ↔┴123."] = "<math class=\"unicodemath\" xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mover><mn>123</mn><mo stretchy=\"true\">↔</mo></mover><mo>+</mo><mover><mo stretchy=\"true\">↔</mo><mn>123</mn></mover><mo>.</mo></mrow></math>";
     results["1300-3.14^10000^2"] = "<math class=\"unicodemath\" xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mn>300</mn><mo>−</mo><msup><mn>3.14</mn><msup><mn>10000</mn><mn>2</mn></msup></msup></mrow></math>";
+    results["1\\scriptH+\\frakturH=\\doubleH"] = "<math class=\"unicodemath\" xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mi>ℋ</mi><mo>+</mo><mi>ℌ</mi><mo>=</mo><mi>ℍ</mi></mrow></math>";
 
     // extract unicodemath expressions from node
     var unicodemathPlaceholders = Array.from(node.querySelectorAll("span.unicodemathml-placeholder"));
