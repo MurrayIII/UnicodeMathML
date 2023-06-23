@@ -804,7 +804,7 @@ root
                                       // be switched into a less greedy mode)
         return {root: {degree: d, of: o}};
     }
-    / "√" d:exp opNaryand o:operand {  // alternate notation, e.g. √a+b▒c
+    / "\u24AD" d:exp opNaryand o:operand {  // alternate notation, e.g. √a+b▒c
         return {root: {degree: d, of: o}};
     }
     / "√" o:operand {

@@ -689,7 +689,7 @@ async function renderMarkedUnicodemath(node) {
     results["1√(n&✎(#e01f32&α))"] = "<math class=\"unicodemath\" xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mroot><mstyle mathcolor=\"#e01f32\"><mi>𝛼</mi></mstyle><mi>𝑛</mi></mroot></math>";
     results["1√(δ&α)"] = "<math class=\"unicodemath\" xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mroot><mi>𝛼</mi><mi>𝛿</mi></mroot></math>";
     results["1√a + √b"] = "<math class=\"unicodemath\" xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msqrt><mi>𝑎</mi></msqrt><mo>+</mo><msqrt><mi>𝑏</mi></msqrt></mrow></math>";
-    results["1√a+b+d+1/b\\of (c/d)"] = "<math class=\"unicodemath\" xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mroot><mfrac><mi>𝑐</mi><mi>𝑑</mi></mfrac><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi><mo>+</mo><mi>𝑑</mi><mo>+</mo><mfrac><mn>1</mn><mi>𝑏</mi></mfrac></mrow></mroot></math>";
+    results["1⒭a+b+d+1/b\\of (c/d)"] = "<math class=\"unicodemath\" xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mroot><mfrac><mi>𝑐</mi><mi>𝑑</mi></mfrac><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi><mo>+</mo><mi>𝑑</mi><mo>+</mo><mfrac><mn>1</mn><mi>𝑏</mi></mfrac></mrow></mroot></math>";
     results["1√α"] = "<math class=\"unicodemath\" xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><msqrt><mi>𝛼</mi></msqrt></math>";
     results["1√✎(#e01f32&α)"] = "<math class=\"unicodemath\" xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><msqrt><mstyle mathcolor=\"#e01f32\"><mi>𝛼</mi></mstyle></msqrt></math>";
     results["1∧"] = "<math class=\"unicodemath\" xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mo>∧</mo></math>";
