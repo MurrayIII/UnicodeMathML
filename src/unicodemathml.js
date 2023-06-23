@@ -27,7 +27,9 @@ function debugLog(x) {
 // should match controlWords variable in playground.js
 var controlWords = {
 
-    // from tech note: Appendix B. Character Keywords and Properties
+    // from tech note: Appendix B. Character Keywords and Properties and
+    // updates from Microsoft implementation. See also the UnicodeMath
+    // cheat sheet https://www.cs.bgu.ac.il/~khitron/Equation%20Editor.pdf
     'above': '2534',
     'abs': '249C',
     'acute': '0301',
@@ -405,7 +407,7 @@ var controlWords = {
     'Rbrack': '27E7',
     'rceil': '2309',
     'rddots': '22F0',
-     'Re': '211C',
+    'Re': '211C',
     'rect': '25AD',
     'rfloor': '230B',
     'rho': '03C1',
@@ -538,8 +540,6 @@ var controlWords = {
     'zeta': '03B6',
     'zwnj': '200C',
     'zwsp': '200B',
-
-    // see also https://www.cs.bgu.ac.il/~khitron/Equation%20Editor.pdf
 };
 
 // replace control words with the specific characters. note that a control word
@@ -566,15 +566,31 @@ function resolveCW(unicodemath) {
             }
         }
 
+        // check for control words like \scriptH. note: bold and italic math styles
+        // are handled by bold/italic UI in apps like Word.
+        var cch = cw.length;
+        if (cch >= 7) {
+            var c = cw[cch - 1];
+            var style = cw.substr(0, cch - 1);
+
+            if (["script", "fraktur", "double"].includes(style) && c in mathFonts) {
+                if (style == "double") {
+                    style += "struck";
+                }
+                style += "-normal";
+                if (style in mathFonts[c]) {
+                    return mathFonts[c][style];
+                }
+            }
+        }
+
         // check built-in control words (we can use try..except here since
         // String.fromCodePoint throws up when it eats an undefined)
         try {
             var symbol = String.fromCodePoint("0x" + controlWords[cw]);
             return symbol;
-        } catch(error) {
-
-            // turns out this wasn't actually a control word, so let's slowly
-            // back out of the room
+        } catch (error) {
+            // not a control word: display it in upright type
             return '"' + match + '"';
         }
     });
