@@ -4,7 +4,7 @@
 
 *This repository provides a JavaScript-based translation of [UnicodeMath](https://www.unicode.org/notes/tn28/) to [MathML](https://developer.mozilla.org/en-US/docs/Web/MathML) (hence "UnicodeMathML"). An interactive "playground" allows for experimentation with UnicodeMath's syntax and insight into the translation pipeline. UnicodeMathML can be easily integrated into arbitrary HTML or [Markdeep](https://casual-effects.com/markdeep/) documents.*
 
-#### 🎮 Get familiar with the syntax via [the playground](https://MurrayIII.github.io/UnicodeMathML-1/playground/)!
+#### 🎮 Get familiar with the syntax via [the playground](https://MurrayIII.github.io/UnicodeMathML/playground/)!
 
 #### 📑 [Learn how to](#getting-started) integrate UnicodeMathML into your website or Markdeep document.
 
@@ -314,15 +314,18 @@ Changes in Murray Sargent's forked version (https://github.com/MurrayIII/Unicode
 * The identity and n×m matrix short cuts are implemented.
 * \rect border flags are fixed (needed to be inverted).
 * Display mode n-ary operators are changed to <munderover> instead of <msubsup>, except for integrals.
-* Convert math functions with or without the function-apply operator U+2061.
+* Convert default math functions with or without the function-apply operator U+2061.
 * Only insert a thin space in front of differential d or D if it is preceded by one or more letters in the same run. Ideally the thin space should be added by the display engine along with the choice of math style (math italic, upright, double-struck italic) instead of by the converter. The MathML would then retain the original semantics.
 
 In addition, the following features are implemented:
 * \abs is added for unambiguous entry of absolute value and the absolute-value intent attribute is added. \choose is added along with its intent attribute (binomial).
 * Add MathML tests to the display of example.html.
+* To resolve control words, the playground calls resolveCW() defined in unicodemathml.js. Similarly to convert characters to math styles, it uses the mathFonts[] defined in unicodemathml.js.
+* Add many more LaTeX control words.
 
 
 To do:
 * Partial conversions instead of displaying errors. E.g., “(a^2+” would convert to “(𝑎² +” instead of displaying an error message.
 * Implement MathML 4.0 intent attributes (in addition to the \abs and \choose cases already implemented).
-* Update the set of LaTeX control words.
+* Add autocomplete drop down for \xx or longer control words; else display current history drop down.
+* Support \bcancel, \bmatrix, etc.
