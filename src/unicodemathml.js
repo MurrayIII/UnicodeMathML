@@ -2967,5 +2967,7 @@ function unicodemathtex(unicodemath, displaystyle = false) {
 
 root.unicodemathml = unicodemathml;
 root.unicodemathtex = unicodemathtex;
+root.resolveCW = resolveCW;
+root.mathFonts = mathFonts;
 
 })(this);
