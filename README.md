@@ -220,11 +220,9 @@ UnicodeMath's Sargent [notes](docs/sargent-unicodemathml-tech-note.pdf): "MathML
 
 ### Isn't browser support for MathML really lackluster?
 
-Sort of – according to [caniuse.com](https://caniuse.com/#search=mathml), **native support for MathML is available for around 21% of users as of late 2020** since only Firefox and Safari presently support MathML.
+Sort of – according to [caniuse.com](https://caniuse.com/#search=mathml), native support for MathML is available for around 21% of users as of late 2020** since only Firefox and Safari supported MathML.
 
-However, Igalia [is working](https://mathml.igalia.com) on adding MathML rendering support to Chromium, which should push this number upwards quite significantly once merged. They've been making steady progress since early 2019, which is why I expect Chromium – and by extension Chrome – to gain MathML support sooner rather than later.
-
-***Update:* As of January 2023, MathML support [has arrived in Chrome 109](https://www.igalia.com/2023/01/10/Igalia-Brings-MathML-Back-to-Chromium.html).**
+However, [Igalia](https://mathml.igalia.com) added MathML rendering support to Chromium and as of Spring 2023, MathML support has arrived in Chrome, Edge, and Opera. To see how it looks with your browser, click on https://murrayiii.github.io/UnicodeMathML/dist/example.html.
 
 All of this isn't really an issue: [MathJax](https://www.mathjax.org), which you'd probably use to render LaTeX math on the web anyway, provides a polyfill for MathML rendering.
 
