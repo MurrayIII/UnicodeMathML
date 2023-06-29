@@ -273,6 +273,7 @@ diacritic
     = [\u0300-\u036F\u20D0-\u20FF]  // Combining Diacritical Marks Block +
                                     // Combining Diacritical Marks for Symbols Block
 unicodeFraction = [↉½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅐⅛⅜⅝⅞⅑]
+opEnclosedMatrix = [⒨⒩ⓢⓈ⒱]
 opArray
     = "█"  // array
     / "■"  // matrix
@@ -461,8 +462,8 @@ matrix
     = "■(" r:mrows ")" {
         return {matrix: r};
     }
-    / "⒨(" r:mrows ")" {
-        return {bracketed: {open: "(", close: ")", content: {matrix: r}}};
+    / t:opEnclosedMatrix "(" r:mrows ")" {
+        return {bracketedMatrix: {type: t, content: {matrix: r}}};
     }
 mrows = h:mrow t:("@" mrow)* {
     return {mrows: [h].concat(t.map(a => a[1]))};

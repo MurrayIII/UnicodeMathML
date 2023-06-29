@@ -222,7 +222,7 @@ UnicodeMath's Sargent [notes](docs/sargent-unicodemathml-tech-note.pdf): "MathML
 
 Sort of – according to [caniuse.com](https://caniuse.com/#search=mathml), native support for MathML is available for around 21% of users as of late 2020** since only Firefox and Safari supported MathML.
 
-However, [Igalia](https://mathml.igalia.com) added MathML rendering support to Chromium and as of Spring 2023, MathML support has arrived in Chrome, Edge, and Opera. To see how it looks with your browser, click on https://murrayiii.github.io/UnicodeMathML/dist/example.html.
+However, [Igalia](https://mathml.igalia.com) added MathML rendering support to Chromium and as of Spring 2023, MathML support has arrived in Chrome, Edge, and Opera. To see how it looks with your browser, click [here](https://murrayiii.github.io/UnicodeMathML/dist/example.html).
 
 All of this isn't really an issue: [MathJax](https://www.mathjax.org), which you'd probably use to render LaTeX math on the web anyway, provides a polyfill for MathML rendering.
 
@@ -306,27 +306,26 @@ Lastly, the `docs/` subdirectory contains two PDF files:
 ## Changes in Murray Sargent's forked version
 Murray Sargent's forked version is located at https://github.com/MurrayIII/UnicodeMathML/tree/main.
 
-* All ASCII letters and Greek lower-case letters are automatically converted to math italic unless they comprise a mathematical function name, e.g., a trigonometric function, or are quoted.
+* Consert all ASCII letters and Greek lower-case letters to math italic unless they comprise a mathematical function name, e.g., a trigonometric function, are quoted, or are in an unrecognized control word.
 * The subscript and superscript operators apply to the variable or enclosed expression that immediately precedes them. For example, in “E=mc^2”, the base of the superscript object is “c”, not “mc”.
-* The integrand can be attached to the integral via a space instead of the “glue” operator ▒.
+* The integrand can be attached to the integral via a space or the “glue” operator ▒.
 * The trigonometric function names are defined by the expression
        'a'? ['sin' | 'cos' | 'tan' | 'sec' | 'csc' | 'cot'] 'h'?
-* The identity and n×m matrix short cuts are implemented.
-* \rect border flags are fixed (needed to be inverted).
+* The identity matrix and n×m matrix short cuts are implemented.
+* The four \rect border flags are fixed (needed to be inverted).
 * Display mode n-ary operators are changed to &#x3C;munderover> instead of &#x3C;msubsup>, except for integrals.
-* Convert default math functions with or without the function-apply operator U+2061.
-* Only insert a thin space in front of differential d or D if it is preceded by one or more letters in the same run. Ideally the thin space should be added by the display engine along with the choice of math style (math italic, upright, double-struck italic) instead of by the converter. The MathML would then retain the original semantics.
+* The default math functions are converted with or without the function-apply operator U+2061.
+* A thin space is inserted in front of differential d or D only if it is preceded by one or more letters in the same run. Ideally the thin space should be added by the display engine along with the choice of math style (math italic, upright, double-struck italic) instead of by the converter. The MathML would then retain the original semantics.
 
 In addition, the following features are implemented:
-* \abs is added for unambiguous entry of absolute value and the absolute-value intent attribute is added. \choose is added along with its intent attribute (binomial).
-* Add MathML tests to the display of example.html.
-* To resolve control words, the playground calls resolveCW() defined in unicodemathml.js. Similarly to convert characters to math styles, it uses the mathFonts[] defined in unicodemathml.js.
+* \abs for unambiguous entry of absolute value with the absolute-value intent attribute. \choose along with its intent attribute (binomial).
+* Add MathML tests to the display of example.html. The results are reported in the Console log.
+* The Playground calls resolveCW() defined in unicodemathml.js to resolve control words instead of having a duplicate control-word list. Similarly to convert characters to math styles, the Playground uses the mathFonts[] defined in unicodemathml.js.
 * Add many more LaTeX control words.
 
-
 To do:
-* Partial conversions instead of displaying errors. E.g., “(a^2+” would convert to “(𝑎² +” instead of displaying an error message.
-* Implement MathML 4.0 intent attributes (in addition to the \abs and \choose cases already implemented).
+* Do partial conversions instead of displaying errors. E.g., “(a^2+” would convert to “(𝑎² +” instead of displaying an error message.
+* Implement MathML 4.0 intent attributes in addition to the \abs and \choose cases already implemented.
 * Add autocomplete drop down for \xx or longer control words; else display current history drop down.
-* Support \bcancel, \bmatrix, etc.
+* Support \bcancel, etc.
 * If possible, remove more redundant &#x3C;mrow>’s. E.g., the &#x3C;math> tag acts as an &#x3C;mrow>; and its content does not need to be enclosed in &#x3C;mrow>…&#x3C;/mrow>.
