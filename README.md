@@ -306,7 +306,7 @@ Lastly, the `docs/` subdirectory contains two PDF files:
 ## Changes in Murray Sargent's forked version
 Murray Sargent's forked version is located at https://github.com/MurrayIII/UnicodeMathML/tree/main.
 
-* Consert all ASCII letters and Greek lower-case letters to math italic unless they comprise a mathematical function name, e.g., a trigonometric function, are quoted, or are in an unrecognized control word.
+* Convert all ASCII letters and Greek lower-case letters to math italic unless they comprise a mathematical function name, e.g., a trigonometric function, are quoted, or are in an unrecognized control word.
 * The subscript and superscript operators apply to the variable or enclosed expression that immediately precedes them. For example, in “E=mc^2”, the base of the superscript object is “c”, not “mc”.
 * The integrand can be attached to the integral via a space or the “glue” operator ▒.
 * The trigonometric function names are defined by the expression
@@ -328,3 +328,4 @@ To do:
 * Implement MathML 4.0 intent attributes in addition to the \abs and \choose cases already implemented.
 * Add autocomplete drop down for \xx or longer control words; else display current history drop down.
 * If possible, remove more redundant &#x3C;mrow>’s. E.g., the &#x3C;math> tag acts as an &#x3C;mrow>; and its content does not need to be enclosed in &#x3C;mrow>…&#x3C;/mrow>.
+* Add ummlConfig properties for more document default properties such as the current ummlConfig.doubleStruckMode
