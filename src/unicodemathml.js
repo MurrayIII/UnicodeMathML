@@ -1165,7 +1165,10 @@ function enclosureAttrs(mask, symbol) {
         '○': 'circle',
         '⟌': 'longdiv',
         "⃧"  : 'actuarial',
-        '⬭': 'circle'
+        '⬭': 'circle',
+        '╱': 'cancel',
+        '╲': 'bcancel',
+        '╳': 'xcancel'
     };
     var maskClasses = {
         1: 'top',
@@ -1724,6 +1727,10 @@ function preprocess(dsty, uast) {
             return {script: ret};
 
         case "enclosed":
+            if (value.symbol >= "╱" && value.symbol <= "╳") {
+                // set mask for \cancel, \bcancel, \xcancel
+                value.mask = (value.symbol == "╱") ? 79 : (value.symbol == "╲") ? 143 : 207;
+            }
             return {enclosed: {mask: value.mask, symbol: value.symbol, of: preprocess(dsty, value.of)}};
 
         case "abstractbox":

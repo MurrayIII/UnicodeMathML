@@ -320,12 +320,11 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 In addition, the following features are implemented:
 * \abs for unambiguous entry of absolute value with the absolute-value intent attribute. \choose along with its intent attribute (binomial).
 * Add MathML tests to the display of example.html. The results are reported in the Console log.
-* The Playground calls resolveCW() defined in unicodemathml.js to resolve control words instead of having a duplicate control-word list. Similarly to convert characters to math styles, the Playground uses the mathFonts[] defined in unicodemathml.js.
-* Add many more LaTeX control words.
+* The Playground calls resolveCW() defined in unicodemathml.js to resolve control words instead of having a duplicate control-word list. Similarly to convert characters to math styles, the Playground uses the mathFonts[] defined in unicodemathml.js. ASCII lookalike upper-case letters are removed from the Greek letter gallery and Greek lower-case letter variations are added.
+* Add many more LaTeX control words and implement \pmatrix, \bmatrix, \Bmatrix, \nmatrix, \vmatrix, \cancel, \bcancel, and \xcancel
 
 To do:
 * Do partial conversions instead of displaying errors. E.g., “(a^2+” would convert to “(𝑎² +” instead of displaying an error message.
 * Implement MathML 4.0 intent attributes in addition to the \abs and \choose cases already implemented.
 * Add autocomplete drop down for \xx or longer control words; else display current history drop down.
-* Support \bcancel, etc.
 * If possible, remove more redundant &#x3C;mrow>’s. E.g., the &#x3C;math> tag acts as an &#x3C;mrow>; and its content does not need to be enclosed in &#x3C;mrow>…&#x3C;/mrow>.
