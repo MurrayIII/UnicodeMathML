@@ -1063,14 +1063,7 @@ digits = n:nn+ {
 
 // bracketed expressions
 expBracket
-    = expBracketOpen (expBracketContents / ε) !expBracketClose {
-
-        // better error message than PEG.js would emit, also removes long
-        // blocking (which stems almost entirely from PEG.js's error message
-        // assembly) when parens are not matched in some situations
-        error("Non-matching brackets present or error within brackets")
-    }
-    / ("||" / "‖") e:exp ("||" / "‖") {
+    = ("||" / "‖") e:exp ("||" / "‖") {
         return {bracketed: {open: "‖", close: "‖", content: e}};
     }
     / "|" e:exp "|" {
@@ -1089,6 +1082,9 @@ expBracket
     }
     / "©(" r:arows ")" {  // cases
         return {bracketed: {open: "{", close: "", content: {array: r}}};  // }
+    }
+    / op:expBracketOpen {
+        return {operator: op};
     }
 expBracketOpen
     = "〖" {
