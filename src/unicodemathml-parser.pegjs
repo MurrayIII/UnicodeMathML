@@ -441,6 +441,7 @@ element
     / o:operand !(__? (opFraction !rawOperator / opAtop / opChoose)) {return o}  // ⚡ performance optimization
     / fraction
     / atop
+    / o:opNary {return {opnary: o}}
     ///operand  // ⚡ performance optimization
 
 // equation arrays
@@ -550,6 +551,7 @@ factor
     / !(functionName) e:entity !opScript {return e}  // ⚡ performance optimization
     / subsupScript
     / abovebelowScript
+    / b:scriptbase o:[_^] {return [b, {operator: o}];}
     / sfactor  // covers all other constructs
 
 // normal subscripts and superscripts – these are fairly involved since there's
