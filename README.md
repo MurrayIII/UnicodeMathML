@@ -316,17 +316,16 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Display mode n-ary operators are changed to &#x3C;munderover> instead of &#x3C;msubsup>, except for integrals.
 * The default math functions are converted with or without the function-apply operator U+2061.
 * A thin space is inserted in front of differential d or D only if it is preceded by one or more letters in the same run. Ideally the thin space should be added by the display engine along with the choice of math style (math italic, upright, double-struck italic) instead of by the converter. The MathML would then retain the original semantics.
-* Treat unmatched opening brackets as operators rather than as errors. E.g., “(a^2+” displays as “(𝑎² +” instead of displaying an error message. Similarly, don't display error messages for lone n_ary and subsup operators. 
+* Treat unmatched opening brackets as operators rather than as errors. E.g., “(a^2+” displays as “(𝑎² +” instead of displaying an error message. Similarly, don't display error messages for lone n_ary, fraction, root, and subsup operators. 
 
 In addition, the following features are implemented:
 * \abs for unambiguous entry of absolute value with the absolute-value intent attribute. \choose along with its intent attribute (binomial).
 * Add MathML tests to the display of example.html. The results are reported in the Console log.
-* The Playground calls resolveCW() defined in unicodemathml.js to resolve control words instead of having a duplicate control-word list. Similarly to convert characters to math styles, the Playground uses the mathFonts[] defined in unicodemathml.js. ASCII lookalike upper-case letters are removed from the Greek letter gallery and Greek lower-case letter variations are added.
+* The Playground calls resolveCW() defined in unicodemathml.js to resolve control words instead of having a duplicate control-word list. Similarly to convert characters to math styles, the Playground uses the mathFonts[] defined in unicodemathml.js. Greek upper-case letters that look like ASCII letters are removed from the Greek letter gallery and Greek lower-case letter variants are added. Control words are autocorrected in the input text area.
 * Add many more LaTeX control words and implement \pmatrix, \bmatrix, \Bmatrix, \nmatrix, \vmatrix, \cancel, \bcancel, and \xcancel
 
 To do:
-* Autocorrect control words in the Playground
 * Implement MathML 4.0 intent attributes in addition to the \abs and \choose cases already implemented.
-* Add autocomplete drop down for \xx or longer control words; else display current history drop down.
+* Add autocomplete drop down for \xx or longer control words
 * If possible, remove more redundant &#x3C;mrow>’s. E.g., the &#x3C;math> tag acts as an &#x3C;mrow>; and its content does not need to be enclosed in &#x3C;mrow>…&#x3C;/mrow>.
 * Add ummlConfig properties for more document default properties such as the current ummlConfig.doubleStruckMode

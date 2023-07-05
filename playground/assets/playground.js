@@ -214,6 +214,23 @@ async function draw() {
     if (input.value == prevInputValue) {
         return;
     }
+
+    // autocorrect control words
+    var cch = input.value.length;
+    if (cch == prevInputValue.length + 1 && !/[a-zA-Z0-9]/.test(input.value[cch - 1])) {
+        var i = input.value.lastIndexOf("\\");
+        if (i != -1) {
+            var symbol = resolveCW(input.value.substr(i, cch - i - 1));
+            if (symbol[0] != "\\") {
+                var delim = input.value[cch - 1];
+                if (delim == " ") {
+                    delim = "";
+                }
+                input.value = input.value.substr(0, i) + symbol + delim;
+            }
+        }
+    }
+
     prevInputValue = input.value;
 
     // clear some stuff

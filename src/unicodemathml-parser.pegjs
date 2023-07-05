@@ -515,6 +515,7 @@ fraction
     / r:(operand __? opFraction __?)+ t:operand {
         return nestRight2("fraction", r.map(a => [a[0], a[2]]).concat([t]));
     }
+    / opa:operand op:opFraction {return [opa, {operator: op}]}
 
 // fractions without a horizontal rule, e.g. for binomial coefficients
 atop
@@ -821,9 +822,10 @@ root
     }
     / "∜" o:operand {
         return {root: {degree: {number: "4"}, of: o}};
-    }   
+    }
+    / o:opRoot {return {operator: o}}
 
-// "built-in" functions. the invisible function apply character can be used to
+// "built-in" functions. the invisible function-apply character can be used to
 // glue function name and operand together. tech note, section 3.5: "If the
 // Function Apply operator is immediately followed by a subscript or superscript
 // expression, that expression should be applied to the function name"
