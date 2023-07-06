@@ -217,20 +217,25 @@ async function draw() {
 
     // autocorrect control words
     var cch = input.value.length;
-    if (cch == prevInputValue.length + 1 && !/[a-zA-Z0-9]/.test(input.value[cch - 1])) {
-        var i = input.value.lastIndexOf("\\");
-        if (i != -1) {
-            var symbol = resolveCW(input.value.substr(i, cch - i - 1));
-            if (symbol[0] != "\\") {
-                var delim = input.value[cch - 1];
-                if (delim == " ") {
-                    delim = "";
+    if (cch == prevInputValue.length + 1) {
+        var delim = input.value[cch - 1];
+
+        if (!/[a-zA-Z0-9]/.test(delim)) {
+            var i = cch - 2;
+            while(i > 0 && /[a-zA-Z0-9]/.test(input.value[i])) {
+                i--;                    // move back alphanumeric span
+            }
+            if (i >= 0 && input.value[i] == '\\') {
+                var symbol = resolveCW(input.value.substr(i, cch - i - 1));
+                if (symbol[0] != '\"') {
+                    if (delim == " ") {
+                        delim = "";
+                    }
+                    input.value = input.value.substr(0, i) + symbol + delim;
                 }
-                input.value = input.value.substr(0, i) + symbol + delim;
             }
         }
     }
-
     prevInputValue = input.value;
 
     // clear some stuff

@@ -639,7 +639,7 @@ supU
         return {high: p};
     }
 supL
-    = p:("^" (soperand))+ {  // allow nested subscripts
+    = p:("^" (soperand))+ {  // allow nested superscripts
         var prevHigh = p[0][1];
         for (let x of p.slice(1)) {
             prevHigh = {script: {type: "subsup", base: prevHigh, high: x[1]}};
