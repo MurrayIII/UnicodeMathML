@@ -316,7 +316,7 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Display mode n-ary operators are changed to &#x3C;munderover> instead of &#x3C;msubsup>, except for integrals.
 * The default math functions are converted with or without the function-apply operator U+2061.
 * A thin space is inserted in front of differential d or D only if it is preceded by one or more letters in the same run. Ideally the thin space should be added by the display engine along with the choice of math style (math italic, upright, double-struck italic) instead of by the converter. The MathML would then retain the original semantics.
-* Treat unmatched opening brackets as operators rather than as errors. E.g., “(a^2+” displays as “(𝑎² +” instead of displaying an error message. Similarly, don't display error messages for lone n_ary, fraction, root, and subsup operators. 
+* Treat unmatched opening brackets as operators rather than as errors. E.g., “(a^2+” displays as “(𝑎² +” instead of displaying an error message. Similarly, don't display error messages for lone n-ary, fraction, root, and subsup operators. 
 
 In addition, the following features are implemented:
 * \abs for unambiguous entry of absolute value with the absolute-value intent attribute. \choose along with its intent attribute (binomial).

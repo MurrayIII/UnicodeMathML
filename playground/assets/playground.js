@@ -215,17 +215,18 @@ async function draw() {
         return;
     }
 
-    // autocorrect control words
+    // autocorrect or autocomplete control words
     var cch = input.value.length;
-    if (cch == prevInputValue.length + 1) {
+    if (cch == prevInputValue.length + 1 && cch > 2) {
         var delim = input.value[cch - 1];
+        var i = cch - 2;
 
-        if (!/[a-zA-Z0-9]/.test(delim)) {
-            var i = cch - 2;
-            while(i > 0 && /[a-zA-Z0-9]/.test(input.value[i])) {
-                i--;                    // move back alphanumeric span
-            }
-            if (i >= 0 && input.value[i] == '\\') {
+        while (i > 0 && /[a-zA-Z0-9]/.test(input.value[i])) {
+            i--;                            // move back alphanumeric span
+        }
+        if (i >= 0 && input.value[i] == '\\') {
+            if (!/[a-zA-Z0-9]/.test(delim)) {
+                // delimiter entered: autocorrect control word
                 var symbol = resolveCW(input.value.substr(i, cch - i - 1));
                 if (symbol[0] != '\"') {
                     if (delim == " ") {
@@ -233,6 +234,9 @@ async function draw() {
                     }
                     input.value = input.value.substr(0, i) + symbol + delim;
                 }
+            } else if (cch - i > 2) {
+                // display autocomplete menu of partial matches
+                getPartialMatches(input.value.substr(i + 1, cch - i - 1));
             }
         }
     }

@@ -598,8 +598,57 @@ function resolveCW(unicodemath) {
         }
     });
     return res;
+    }
 
-}
+    const keys = Object.keys(controlWords);
+
+    function getPartialMatches(cw) {
+        var cchCw = cw.length;
+        var cKeys = keys.length;
+	    var i;
+	    var iMid;
+	    var iMin = 0;
+        var iMax = cKeys - 1;
+        var matches = [];
+
+        do {                                // binary search for a partial match
+            iMid = Math.floor((iMin + iMax) / 2);
+            var key = keys[iMid];
+            for (i = 0; i < cchCw && cw[i] == key[i]; i++) {
+                ;
+            }
+            if (i == cchCw) {				// Matched cw
+                matches.push(key);
+                break;
+            }
+            if (cw < key)
+                iMax = iMid - 1;
+            else
+                iMin = iMid + 1;
+        } while (iMin <= iMax);
+
+        if (matches.length) {
+            // Got a partial match. Check for more before and after iMid
+            for (let j = iMid - 1; j >= 0; j--) {
+                key = keys[j];
+                for (i = 0; i < cchCw && cw[i] == key[i]; i++) {
+                }
+                if (i != cchCw)
+                    break;                  // Didn't match all of cw
+                matches.unshift(key);       // Matched: insert at matches start
+            }
+            for (let j = iMid + 1; j < cKeys; j++) {
+                key = keys[j];
+                for (i = 0; i < cchCw && cw[i] == key[i]; i++) {
+                }
+                if (i != cchCw)
+                    break;
+                matches.push(key);
+            }
+        }
+        console.log("Partial matches:" + matches);
+        return matches;
+    }
 
 // math font conversion
 // should match mathFonts variable in playground.js
@@ -2987,5 +3036,6 @@ root.unicodemathml = unicodemathml;
 root.unicodemathtex = unicodemathtex;
 root.resolveCW = resolveCW;
 root.mathFonts = mathFonts;
+root.getPartialMatches = getPartialMatches;
 
 })(this);
