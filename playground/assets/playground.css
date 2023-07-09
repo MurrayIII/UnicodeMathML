@@ -207,6 +207,7 @@ p.codepoint, p.examples {
     overflow-x: scroll;
     /*overflow: scroll;
     max-height: 30em;*/
+    min-height: 5rem;
 }
 #output:empty:after {
     content: "...and MathML will render here!";

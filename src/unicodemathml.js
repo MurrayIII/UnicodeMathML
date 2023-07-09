@@ -601,13 +601,13 @@ function resolveCW(unicodemath) {
     }
 
     const keys = Object.keys(controlWords);
+    var cKeys = keys.length;
 
     function getPartialMatches(cw) {
         var cchCw = cw.length;
-        var cKeys = keys.length;
-	    var i;
-	    var iMid;
-	    var iMin = 0;
+        var i;
+        var iMid;
+        var iMin = 0;
         var iMax = cKeys - 1;
         var matches = [];
 

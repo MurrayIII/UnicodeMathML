@@ -409,7 +409,7 @@ negatedOperator
     }
 rawOperator
     = mappedOperator
-    / o:other {
+    / !'"' o:other {
         return o[1];
     }
 mappedOperator  // character translations noted in section 4.1 of the tech note
