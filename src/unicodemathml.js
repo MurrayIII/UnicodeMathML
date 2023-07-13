@@ -51,7 +51,7 @@ var controlWords = {
     'Leftrightarrow':   '⇔',	// 21D4
     'Lleftarrow':       '⇚',	    // 21DA
     'Longleftarrow':    '⟸',	// 27F8
-    'Longleftrightarrow': '⟺',	// 27FA
+    'Longleftrightarrow':'⟺',	// 27FA
     'Longrightarrow':   '⟹',	// 27F9
     'Lsh':              '↰',    	// 21B0
     'Omega':            'Ω',	// 03A9
@@ -275,8 +275,8 @@ var controlWords = {
     'leftleftarrows':   '⇇',	    // 21C7
     'leftrightarrow':   '↔',	// 2194
     'leftrightarrows':  '⇆',	    // 21C6
-    'leftrightharpoons': '⇋',	// 21CB
-    'leftrightwavearrow': '↭',	// 21AD
+    'leftrightharpoons':'⇋',	    // 21CB
+    'leftrightwavearrow':'↭',	// 21AD
     'leftsquigarrow':   '⇜',    	// 21DC
     'leftthreetimes':   '⋋',    	// 22CB
     'leftwavearrow':    '↜',    	// 219C
@@ -295,7 +295,7 @@ var controlWords = {
     'lnot':             '¬',	// 00AC
     'lnsim':            '⋦',	    // 22E6
     'longleftarrow':    '⟵',	// 27F5
-    'longleftrightarrow': '⟷',	// 27F7
+    'longleftrightarrow':'⟷',	// 27F7
     'longmapsto':       '⟼',	// 27FC
     'longmapstoleft':   '⟻',	// 27FB
     'longrightarrow':   '⟶',	// 27F6
@@ -435,7 +435,7 @@ var controlWords = {
     'rightharpoondown': '⇁',	    // 21C1
     'rightharpoonup':   '⇀',	    // 21C0
     'rightleftarrows':  '⇄',	    // 21C4
-    'rightleftharpoons': '⇌',	// 21CC
+    'rightleftharpoons':'⇌',    	// 21CC
     'rightrightarrows': '⇉',    	// 21C9
     'rightthreetimes':  '⋌',	    // 22CC
     'righttriangle':    '⊿',	// 22BF
@@ -496,7 +496,7 @@ var controlWords = {
     'trianglerighteq':  '⊵',	    // 22B5
     'tvec':             '⃡',	// 20E1
     'twoheadleftarrow': '↞',	    // 219E
-    'twoheadrightarrow': '↠',	// 21A0
+    'twoheadrightarrow':'↠',	    // 21A0
     'ubar':             '̲',	    // 0332
     'underbar':         '▁',	// 2581
     'underbrace':       '⏟',	    // 23DF

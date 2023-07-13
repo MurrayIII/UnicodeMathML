@@ -171,6 +171,52 @@ p.codepoint, p.examples {
 }
 
 /**********/
+/* AUTOCOMPLETE */
+/**********/
+
+/*the container must be positioned relative:*/
+.autocomplete {
+    position: relative;
+    display: inline-block;
+}
+
+input[type=submit] {
+    background-color: DodgerBlue;
+    color: #fff;
+    cursor: pointer;
+}
+
+.autocomplete-items {
+    position: absolute;
+    border: 1px solid #d4d4d4;
+    border-bottom: none;
+    border-top: none;
+    z-index: 99;
+    /*position the autocomplete items to be the same width as the container:*/
+    top: 100%;
+    left: 0;
+    right: 0;
+}
+
+.autocomplete-items div {
+    padding: 10px;
+    cursor: pointer;
+    background-color: #000;
+    border-bottom: 1px solid #d4d4d4;
+}
+
+/*when hovering over an item:*/
+.autocomplete-items div:hover {
+    background-color: #222;
+}
+
+/*when navigating through the items using the arrow keys:*/
+.autocomplete-active {
+    background-color: DodgerBlue !important;
+    color: #000;
+}
+
+/**********/
 /* OUTPUT */
 /**********/
 
@@ -180,7 +226,6 @@ p.codepoint, p.examples {
     padding: 0.8rem 0.5rem 0.5rem !important;
     background-color: var(--darkgrayish-color);
     line-height: 2em;
-    max-height: 4.2em;
     overflow: hidden;
 }
 #codepoints:empty {
@@ -208,6 +253,7 @@ p.codepoint, p.examples {
     /*overflow: scroll;
     max-height: 30em;*/
     min-height: 5rem;
+    background: var(--verydarkgrayish-color);
 }
 #output:empty:after {
     content: "...and MathML will render here!";

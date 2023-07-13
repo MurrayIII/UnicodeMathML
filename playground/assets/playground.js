@@ -150,6 +150,148 @@ function highlightJson(json) {
     });
 }
 
+function closeAutocompleteList() {
+    var x = document.getElementsByClassName("autocomplete-items");
+    if (x == undefined)
+        return;
+
+    var cItem = x.length;
+
+    for (var i = 0; i < cItem; i++) {
+        x[i].parentNode.removeChild(x[i]);
+    }
+}
+
+function autocomplete() {
+    var currentFocus = -1;
+    // execute a function when someone writes in text field
+    input.addEventListener("input", function (e) {
+        var a, b, i;
+        // close any open lists of autocompleted values
+        closeAutocompleteList();
+        var cch = input.value.length;
+        if (cch <= 2) return false;
+        var delim = input.value[cch - 1];
+        i = cch - 2;
+
+        while (i > 0 && /[a-zA-Z0-9]/.test(input.value[i])) {
+            i--;                            // move back alphanumeric span
+        }
+        if (i < 0 || input.value[i] != '\\') return;
+
+        if (!/[a-zA-Z0-9]/.test(delim)) {
+            // delimiter entered: try to autocorrect control word
+            var symbol = resolveCW(input.value.substr(i, cch - i - 1));
+            if (symbol[0] != '\"') {
+                if (delim == " ") {
+                    delim = "";
+                }
+                input.value = input.value.substr(0, i) + symbol + delim;
+            }
+            return;
+        }
+        if (cch - i < 2) return;
+        var cw = input.value.substr(i + 1, cch - i);
+        var matches = getPartialMatches(cw);
+        if (!matches.length) return;
+        console.log("Partial matches: " + matches);
+
+        // display autocomplete menu of partial matches
+
+        currentFocus = -1;
+        // create DIV element to contain matching control words
+        var autocl = document.createElement("DIV");
+        autocl.setAttribute("id", this.id + "autocomplete-list");
+        autocl.setAttribute("class", "autocomplete-items");
+        // append DIV element as a child of autocomplete container
+        this.parentNode.appendChild(autocl);
+
+        // create a DIV element for each matching element
+        for (i = 0; i < matches.length; i++) {
+            b = document.createElement("DIV");
+            // bold the matching letters
+            b.innerHTML = "<strong>" + matches[i].substr(0, cw.length) + "</strong>";
+            b.innerHTML += matches[i].substr(cw.length);
+            // insert an input field to hold the current control word and symbol
+            b.innerHTML += "<input type='hidden' value='" + matches[i] + "'>";
+
+            // execute a function when someone clicks on the item value (DIV element)
+            b.addEventListener("click", function (e) {
+                // insert the control-word symbol 
+                var val = this.getElementsByTagName("input")[0].value;
+                var i = input.value.lastIndexOf("\\");
+                input.value = input.value.substr(0, i) + val[val.length - 1];
+                // close the list of autocompleted values (and any other
+                // open lists of autocompleted values)
+                closeAutocompleteList();
+                draw();
+            });
+            autocl.appendChild(b);
+        }
+    });
+    // execute a function when user presses a key on the keyboard
+    input.addEventListener("keydown", function (e) {
+        var x = document.getElementById(this.id + "autocomplete-list");
+        if (!x) return;
+        x = x.getElementsByTagName("div");
+
+        switch (e.keyCode) {
+        case 40:
+            // Arrow DOWN key pressed: increase currentFocus and make the
+            // current item more visible
+            currentFocus++;
+            addActive(x);
+            break;
+
+        case 38:
+            // Arrow UP key pressed: decrease currentFocus and make the
+            // current item more visible
+            currentFocus--;
+            addActive(x);
+            break;
+
+        case 13:
+        case 9:
+            // ENTER or TAB key pressed: prevent form from being submitted
+            // and simulate a click on the "active" item
+            e.preventDefault();
+            if (currentFocus > -1 && x) {
+                x[currentFocus].click();
+            }
+        }
+    });
+    function addActive(x) {
+        // function to classify an item as "active"
+        if (!x) return false;
+        // start by removing the "active" class on all items
+        removeActive(x);
+        if (currentFocus >= x.length) currentFocus = 0;
+        if (currentFocus < 0) currentFocus = (x.length - 1);
+        // add class "autocomplete-active"
+        console.log("x[" + currentFocus + "] = " + x[currentFocus].innerText);
+        x[currentFocus].classList.add("autocomplete-active");
+    }
+    function removeActive(x) {
+        // function to remove the "active" class from all autocomplete items
+        for (var i = 0; i < x.length; i++) {
+            x[i].classList.remove("autocomplete-active");
+        }
+    }
+    function closeAllLists(elmnt) {
+        // Close all autocomplete lists in the document except elmnt
+        var x = document.getElementsByClassName("autocomplete-items");
+        for (var i = 0; i < x.length; i++) {
+            if (elmnt != x[i] && elmnt != inp) {
+                x[i].parentNode.removeChild(x[i]);
+            }
+        }
+    }
+    // Execute a function when user clicks in the document
+    document.addEventListener("click", function (e) {
+        closeAllLists(e.target);
+    });
+}
+
 // only use mathjax where mathml is not natively supported (i.e.
 // anything but firefox and safari)
 function browserIs(candidate) {
@@ -197,6 +339,9 @@ if (window.localStorage.getItem('history')) {
     displayHistory();
 }
 
+// Enable autocorrect and autocomplete
+autocomplete();
+
 // compile and draw mathml code from input field
 async function draw() {
 
@@ -214,33 +359,6 @@ async function draw() {
     if (input.value == prevInputValue) {
         return;
     }
-
-    // autocorrect or autocomplete control words
-    var cch = input.value.length;
-    if (cch == prevInputValue.length + 1 && cch > 2) {
-        var delim = input.value[cch - 1];
-        var i = cch - 2;
-
-        while (i > 0 && /[a-zA-Z0-9]/.test(input.value[i])) {
-            i--;                            // move back alphanumeric span
-        }
-        if (i >= 0 && input.value[i] == '\\') {
-            if (!/[a-zA-Z0-9]/.test(delim)) {
-                // delimiter entered: autocorrect control word
-                var symbol = resolveCW(input.value.substr(i, cch - i - 1));
-                if (symbol[0] != '\"') {
-                    if (delim == " ") {
-                        delim = "";
-                    }
-                    input.value = input.value.substr(0, i) + symbol + delim;
-                }
-            } else if (cch - i > 2) {
-                // display autocomplete menu of partial matches
-                getPartialMatches(input.value.substr(i + 1, cch - i - 1));
-            }
-        }
-    }
-    prevInputValue = input.value;
 
     // clear some stuff
     codepoints.innerHTML = "";
@@ -263,8 +381,12 @@ async function draw() {
         measurements_transform.title = "";
         measurements_pretty.title = "";
         window.localStorage.setItem('unicodemath', "");
+        closeAutocompleteList();
+        prevInputValue = "";
         return;
     }
+
+    prevInputValue = input.value;
 
     // display code points corresponding to the characters
     var codepoints_HTML = "";
