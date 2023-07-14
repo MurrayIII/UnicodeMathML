@@ -322,10 +322,12 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 In addition, the following features are implemented:
 * \abs for unambiguous entry of absolute value with the absolute-value intent attribute. \choose along with its intent attribute (binomial).
 * Add MathML tests to the display of example.html. The results are reported in the Console log.
-* The Playground calls resolveCW() defined in unicodemathml.js to resolve control words instead of having a duplicate control-word list. Similarly to convert characters to math styles, the Playground uses the mathFonts[] defined in unicodemathml.js. Greek upper-case letters that look like ASCII letters are removed from the Greek letter gallery and Greek lower-case letter variants are added. Control words are autocorrected in the input text area. Unicode character codes in controlWords[] are replaced by the characters themselves. An autocomplete menu appears when a conrtrol word is entered partially. The user can use up/dow arrows to select a matching control word.
+* The Playground calls resolveCW() defined in unicodemathml.js to resolve control words instead of having a duplicate control-word list. Similarly to convert characters to math styles, the Playground uses the mathFonts[] defined in unicodemathml.js. Greek upper-case letters that look like ASCII letters are removed from the Greek letter gallery and Greek lower-case letter variants are added. 
+* Control words typed into the Playground input text area are autocorrected directly there. An autocomplete menu appears when a control word is entered partially. The user can use up/down arrows to select the desired control word and enter it by typing Enter or Tab. The most common choice is highlighted by default.
 * Add many more LaTeX control words and implement \pmatrix, \bmatrix, \Bmatrix, \nmatrix, \vmatrix, \cancel, \bcancel, and \xcancel
 
 To do:
 * Implement MathML 4.0 intent attributes in addition to the \abs and \choose cases already implemented.
 * If possible, remove more redundant &#x3C;mrow>’s. E.g., the &#x3C;math> tag acts as an &#x3C;mrow>; and its content does not need to be enclosed in &#x3C;mrow>…&#x3C;/mrow>.
 * Add ummlConfig properties for more document default properties such as the current ummlConfig.doubleStruckMode
+* Improve the LaTeX output mode
