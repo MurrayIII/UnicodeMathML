@@ -162,27 +162,28 @@ function closeAutocompleteList() {
     }
 }
 
+var szSymbolCommon = "αβδθλχϕϵ⁡←√∞⒨■"; // 03B1 03B2 03B4 03B8 03BB 03C7 03D5 03F5 2061 2190 221A 221E 24A8 25A0
 function autocomplete() {
     var currentFocus = -1;
-    // execute a function when someone writes in text field
+    // Execute a function when someone writes in text field
     input.addEventListener("input", function (e) {
-        var a, b, i;
-        // close any open lists of autocompleted values
+        // Close any open lists of autocompleted values
         closeAutocompleteList();
         var cch = input.value.length;
         if (cch <= 2) return false;
-        var delim = input.value[cch - 1];
-        i = cch - 2;
+        var i = cch - 2;
 
         while (i > 0 && /[a-zA-Z0-9]/.test(input.value[i])) {
-            i--;                            // move back alphanumeric span
+            i--;                            // Move back alphanumeric span
         }
         if (i < 0 || input.value[i] != '\\') return;
 
+        var delim = input.value[cch - 1];
         if (!/[a-zA-Z0-9]/.test(delim)) {
-            // delimiter entered: try to autocorrect control word
+            // Delimiter entered: try to autocorrect control word
             var symbol = resolveCW(input.value.substr(i, cch - i - 1));
             if (symbol[0] != '\"') {
+                // Control word found: replace it with symbol
                 if (delim == " ") {
                     delim = "";
                 }
@@ -190,70 +191,72 @@ function autocomplete() {
             }
             return;
         }
-        if (cch - i < 2) return;
+        if (cch - i < 3) return;
+
         var cw = input.value.substr(i + 1, cch - i);
         var matches = getPartialMatches(cw);
         if (!matches.length) return;
         console.log("Partial matches: " + matches);
 
-        // display autocomplete menu of partial matches
-
+        // Create autocomplete menu of partial matches. Start by creating
+        // the <div> element autocl to contain matching control words
         currentFocus = -1;
-        // create DIV element to contain matching control words
-        var autocl = document.createElement("DIV");
+        var autocl = document.createElement("div");
         autocl.setAttribute("id", this.id + "autocomplete-list");
         autocl.setAttribute("class", "autocomplete-items");
-        // append DIV element as a child of autocomplete container
+        // Append div element as a child of the autocomplete container
         this.parentNode.appendChild(autocl);
 
-        // create a DIV element for each matching element
+        // Create a div element for each matching control word
         for (i = 0; i < matches.length; i++) {
-            b = document.createElement("DIV");
-            // bold the matching letters
-            b.innerHTML = "<strong>" + matches[i].substr(0, cw.length) + "</strong>";
+            var b = document.createElement("div");
+            var cwOption = matches[i];
+            // Bold the matching letters
+            b.innerHTML = "<strong>" + cwOption.substr(0, cw.length) + "</strong>";
             b.innerHTML += matches[i].substr(cw.length);
-            // insert an input field to hold the current control word and symbol
-            b.innerHTML += "<input type='hidden' value='" + matches[i] + "'>";
+            // Insert an input field to hold the current control word and symbol
+            b.innerHTML += "<input type='hidden' value='" + cwOption + "'>";
 
-            // execute a function when someone clicks on the item value (DIV element)
+            if (matches.length == 1 || szSymbolCommon.includes(cwOption[cwOption.length - 1])) {
+                // Activate only or most common option, e.g., for '\be'
+                // highlight '\beta β'
+                currentFocus = i;
+                b.classList.add("autocomplete-active");
+            }
+            // Add click function for when user clicks on a control word
             b.addEventListener("click", function (e) {
-                // insert the control-word symbol 
+                // Insert control-word symbol 
                 var val = this.getElementsByTagName("input")[0].value;
                 var i = input.value.lastIndexOf("\\");
                 input.value = input.value.substr(0, i) + val[val.length - 1];
-                // close the list of autocompleted values (and any other
-                // open lists of autocompleted values)
                 closeAutocompleteList();
-                draw();
             });
             autocl.appendChild(b);
         }
     });
-    // execute a function when user presses a key on the keyboard
+    // Execute a function when user presses a key on the keyboard
     input.addEventListener("keydown", function (e) {
         var x = document.getElementById(this.id + "autocomplete-list");
         if (!x) return;
         x = x.getElementsByTagName("div");
 
-        switch (e.keyCode) {
-        case 40:
-            // Arrow DOWN key pressed: increase currentFocus and make the
-            // current item more visible
+        switch (e.key) {
+        case "ArrowDown":
+            // Increase currentFocus and highlight the corresponding control-word
             currentFocus++;
             addActive(x);
             break;
 
-        case 38:
-            // Arrow UP key pressed: decrease currentFocus and make the
-            // current item more visible
+        case "ArrowUp":
+            // Decrease currentFocus and highlight the corresponding control-word
             currentFocus--;
             addActive(x);
             break;
 
-        case 13:
-        case 9:
-            // ENTER or TAB key pressed: prevent form from being submitted
-            // and simulate a click on the "active" item
+        case "Enter":
+        case "Tab":
+            // Prevent form from being submitted and simulate a click on the
+            // "active" item
             e.preventDefault();
             if (currentFocus > -1 && x) {
                 x[currentFocus].click();
@@ -261,18 +264,20 @@ function autocomplete() {
         }
     });
     function addActive(x) {
-        // function to classify an item as "active"
         if (!x) return false;
-        // start by removing the "active" class on all items
+
+        // Classify an option as "active". First, remove the "active" class
+        // on all options
         removeActive(x);
         if (currentFocus >= x.length) currentFocus = 0;
         if (currentFocus < 0) currentFocus = (x.length - 1);
-        // add class "autocomplete-active"
+
+        // Add class "autocomplete-active"
         console.log("x[" + currentFocus + "] = " + x[currentFocus].innerText);
         x[currentFocus].classList.add("autocomplete-active");
     }
     function removeActive(x) {
-        // function to remove the "active" class from all autocomplete items
+        // Remove the "active" class from all autocomplete items
         for (var i = 0; i < x.length; i++) {
             x[i].classList.remove("autocomplete-active");
         }
@@ -292,8 +297,7 @@ function autocomplete() {
     });
 }
 
-// only use mathjax where mathml is not natively supported (i.e.
-// anything but firefox and safari)
+// only use mathjax where mathml is not natively supported
 function browserIs(candidate) {
     return navigator.userAgent.toLowerCase().includes(candidate);
 }
@@ -341,6 +345,7 @@ if (window.localStorage.getItem('history')) {
 
 // Enable autocorrect and autocomplete
 autocomplete();
+console.log('navigator.userAgent = ' + navigator.userAgent);
 
 // compile and draw mathml code from input field
 async function draw() {
