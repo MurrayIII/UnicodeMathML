@@ -152,8 +152,7 @@ function highlightJson(json) {
 
 function closeAutocompleteList() {
     var x = document.getElementsByClassName("autocomplete-items");
-    if (x == undefined)
-        return;
+    if (x == undefined) return;
 
     var cItem = x.length;
 
@@ -162,48 +161,54 @@ function closeAutocompleteList() {
     }
 }
 
+// Symbols whose options should be selected by default
 var szSymbolCommon = "αβδθλχϕϵ⁡←√∞⒨■"; // 03B1 03B2 03B4 03B8 03BB 03C7 03D5 03F5 2061 2190 221A 221E 24A8 25A0
 function autocomplete() {
     var currentFocus = -1;
-    // Execute a function when someone writes in text field
+    // Try autocorrecting or autocompleting a control word when user
+    // modifies text input
     input.addEventListener("input", function (e) {
-        // Close any open lists of autocompleted values
         closeAutocompleteList();
         if (input.selectionStart != input.selectionEnd) return false;
-        var cch = input.value.length;
-        var sel = input.selectionStart;
-        if (sel <= 2) return false;
-        var i = sel - 2;
+
+        var cch = input.value.length;       // Count of characters
+        var ip = input.selectionStart;      // Insertion point
+        if (ip <= 2) return false;          // Want >= 2 letters
+        var i = ip - 2;
 
         while (i > 0 && /[a-zA-Z0-9]/.test(input.value[i])) {
             i--;                            // Move back alphanumeric span
         }
-        if (i < 0 || input.value[i] != '\\') return;
+        if (i < 0 || input.value[i] != '\\') {
+            // Can't be a [partial] control word
+            return;
+        }
+        var delim = input.value[ip - 1];
 
-        var delim = input.value[sel - 1];
         if (!/[a-zA-Z0-9]/.test(delim)) {
             // Delimiter entered: try to autocorrect control word
-            var symbol = resolveCW(input.value.substring(i, sel - 1));
+            var symbol = resolveCW(input.value.substring(i, ip - 1));
             if (symbol[0] != '\"') {
-                // Control word found: replace it with symbol
+                // Control word found: replace it with its symbol and update
+                // the input selection
                 if (delim == " ") {
                     delim = "";
                 }
-                // Replace control word by its symbol
                 input.value = input.value.substring(0, i) + symbol + delim
-                    + input.value.substring(sel, cch);
+                    + input.value.substring(ip, cch);
+                input.selectionStart = input.selectionEnd = i + (delim ? 2 : 1);
             }
             return;
         }
-        if (sel - i < 3) return;
+        if (ip - i < 3) return;
 
-        var cw = input.value.substring(i + 1, sel);
+        var cw = input.value.substring(i + 1, ip);
         var matches = getPartialMatches(cw);
         if (!matches.length) return;
         console.log("Partial matches: " + matches);
 
-        // Create autocomplete menu of partial matches. Start by creating
-        // the <div> element autocl to contain matching control words
+        // Create autocomplete menu of partial control-word matches. Start
+        // by creating a <div> element to contain matching control words
         currentFocus = -1;
         var autocl = document.createElement("div");
         autocl.setAttribute("id", this.id + "autocomplete-list");
@@ -231,13 +236,14 @@ function autocomplete() {
                 // Insert control-word symbol 
                 var val = this.getElementsByTagName("input")[0].value;
                 input.value = input.value.substring(0, i) + val[val.length - 1]
-                    + input.value.substring(sel, cch);
+                    + input.value.substring(ip, cch);
                 input.selectionStart = input.selectionEnd = i + 1;
                 closeAutocompleteList();
             });
             autocl.appendChild(b);
         }
         if (currentFocus == -1) {
+            // No common option identified: highlight first option
             currentFocus = 0;
             autocl.firstChild.classList.add("autocomplete-active");
         }
@@ -264,7 +270,7 @@ function autocomplete() {
         case "Enter":
         case "Tab":
             // Prevent form from being submitted and simulate a click on the
-            // "active" item
+            // "active" control-word option
             e.preventDefault();
             if (currentFocus >= 0 && x) {
                 x[currentFocus].click();
