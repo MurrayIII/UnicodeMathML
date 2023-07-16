@@ -321,7 +321,7 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 
 In addition, the following features are implemented:
 * \abs for unambiguous entry of absolute value with the absolute-value intent attribute. \choose along with its intent attribute (binomial).
-* Add MathML tests to the display of example.html. The results are reported in the Console log.
+* Add MathML tests to the display of example.html. The results are reported in the console log.
 * The Playground calls resolveCW() defined in unicodemathml.js to resolve control words instead of having a duplicate control-word list. Similarly to convert characters to math styles, the Playground uses the mathFonts[] defined in unicodemathml.js. Greek upper-case letters that look like ASCII letters are removed from the Greek letter gallery and Greek lower-case letter variants are added. 
 * Control words typed into the Playground input text area are autocorrected directly there. An autocomplete menu appears when a control word is entered partially. The user can use up/down arrows to select the desired control word and enter it by typing Enter or Tab. The most common choice is highlighted by default.
 * Add many more LaTeX control words and implement \pmatrix, \bmatrix, \Bmatrix, \nmatrix, \vmatrix, \cancel, \bcancel, and \xcancel

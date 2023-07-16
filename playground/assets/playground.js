@@ -169,31 +169,35 @@ function autocomplete() {
     input.addEventListener("input", function (e) {
         // Close any open lists of autocompleted values
         closeAutocompleteList();
+        if (input.selectionStart != input.selectionEnd) return false;
         var cch = input.value.length;
-        if (cch <= 2) return false;
-        var i = cch - 2;
+        var sel = input.selectionStart;
+        if (sel <= 2) return false;
+        var i = sel - 2;
 
         while (i > 0 && /[a-zA-Z0-9]/.test(input.value[i])) {
             i--;                            // Move back alphanumeric span
         }
         if (i < 0 || input.value[i] != '\\') return;
 
-        var delim = input.value[cch - 1];
+        var delim = input.value[sel - 1];
         if (!/[a-zA-Z0-9]/.test(delim)) {
             // Delimiter entered: try to autocorrect control word
-            var symbol = resolveCW(input.value.substr(i, cch - i - 1));
+            var symbol = resolveCW(input.value.substring(i, sel - 1));
             if (symbol[0] != '\"') {
                 // Control word found: replace it with symbol
                 if (delim == " ") {
                     delim = "";
                 }
-                input.value = input.value.substr(0, i) + symbol + delim;
+                // Replace control word by its symbol
+                input.value = input.value.substring(0, i) + symbol + delim
+                    + input.value.substring(sel, cch);
             }
             return;
         }
-        if (cch - i < 3) return;
+        if (sel - i < 3) return;
 
-        var cw = input.value.substr(i + 1, cch - i);
+        var cw = input.value.substring(i + 1, sel);
         var matches = getPartialMatches(cw);
         if (!matches.length) return;
         console.log("Partial matches: " + matches);
@@ -208,30 +212,34 @@ function autocomplete() {
         this.parentNode.appendChild(autocl);
 
         // Create a div element for each matching control word
-        for (i = 0; i < matches.length; i++) {
+        for (var j = 0; j < matches.length; j++) {
             var b = document.createElement("div");
-            var cwOption = matches[i];
+            var cwOption = matches[j];
             // Bold the matching letters
-            b.innerHTML = "<strong>" + cwOption.substr(0, cw.length) + "</strong>";
-            b.innerHTML += matches[i].substr(cw.length);
+            b.innerHTML = "<strong>" + cwOption.substring(0, cw.length) + "</strong>";
+            b.innerHTML += matches[j].substr(cw.length);
             // Insert an input field to hold the current control word and symbol
             b.innerHTML += "<input type='hidden' value='" + cwOption + "'>";
 
-            if (matches.length == 1 || szSymbolCommon.includes(cwOption[cwOption.length - 1])) {
-                // Activate only or most common option, e.g., for '\be'
-                // highlight '\beta β'
-                currentFocus = i;
+            if (szSymbolCommon.includes(cwOption[cwOption.length - 1])) {
+                // Activate most common option, e.g., for '\be' highlight '\beta β'
+                currentFocus = j;
                 b.classList.add("autocomplete-active");
             }
             // Add click function for when user clicks on a control word
             b.addEventListener("click", function (e) {
                 // Insert control-word symbol 
                 var val = this.getElementsByTagName("input")[0].value;
-                var i = input.value.lastIndexOf("\\");
-                input.value = input.value.substr(0, i) + val[val.length - 1];
+                input.value = input.value.substring(0, i) + val[val.length - 1]
+                    + input.value.substring(sel, cch);
+                input.selectionStart = input.selectionEnd = i + 1;
                 closeAutocompleteList();
             });
             autocl.appendChild(b);
+        }
+        if (currentFocus == -1) {
+            currentFocus = 0;
+            autocl.firstChild.classList.add("autocomplete-active");
         }
     });
     // Execute a function when user presses a key on the keyboard
@@ -258,7 +266,7 @@ function autocomplete() {
             // Prevent form from being submitted and simulate a click on the
             // "active" item
             e.preventDefault();
-            if (currentFocus > -1 && x) {
+            if (currentFocus >= 0 && x) {
                 x[currentFocus].click();
             }
         }
@@ -282,19 +290,6 @@ function autocomplete() {
             x[i].classList.remove("autocomplete-active");
         }
     }
-    function closeAllLists(elmnt) {
-        // Close all autocomplete lists in the document except elmnt
-        var x = document.getElementsByClassName("autocomplete-items");
-        for (var i = 0; i < x.length; i++) {
-            if (elmnt != x[i] && elmnt != inp) {
-                x[i].parentNode.removeChild(x[i]);
-            }
-        }
-    }
-    // Execute a function when user clicks in the document
-    document.addEventListener("click", function (e) {
-        closeAllLists(e.target);
-    });
 }
 
 // only use mathjax where mathml is not natively supported
