@@ -565,11 +565,16 @@ factor
 // * LaTeX-style scripts may *contain* Unicode scripts, e.g. a^b₁
 // * LaTeX-style scripts may also repeat, e.g. a_b_c_d (but not a_b^c_d)
 // note that these normal subscripts and superscript (or portions thereof) are
-// also referenced in the grammar rules for prescrips, nary operations and
+// also referenced in the grammar rules for prescripts, nary operations and
 // functions (and they interact with primes in the transformation stage) – they
 // do a lot of heavy lifting!
 subsupScript
     = subsupSubsup
+    / b:scriptbase o:[_^] b1:scriptbase o1:[_^] {
+        // Suppress long error messages for trailing '_' and '^' since user
+        // may just be entering a subscript or superscript.
+        return [b, {operator: o}, b1, {operator: o1}];
+    }
     / subsupSubscript
     / subsupSuperscript
 script = s:(subsup / sub / sup) {
@@ -577,10 +582,6 @@ script = s:(subsup / sub / sup) {
     return s;
 }
 scriptU = s:(subsupU / subU / supU) {
-    s.type = "subsup";
-    return s;
-}
-scriptL = s:(subsupL / subL / supL) {
     s.type = "subsup";
     return s;
 }
@@ -612,10 +613,10 @@ subsupL  // only LaTeX-style
         return {low: b.low, high: p.high};
     }
 subsupSubscript = o:scriptbase s:sub __? {
-    s.base = o;
-    s.type = "subsup";
-    return {script: s};
-}
+        s.base = o;
+        s.type = "subsup";
+        return {script: s};
+    }
 sub = subU / subL
 subU
     = b:unicodeSub {
