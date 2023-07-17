@@ -9,8 +9,8 @@
 
     --blackish-color: #111;
     --verydarkgrayish-color: #222;
-    --darkgrayish-color: #333;
-    --grayish-color: #444;
+    --darkgrayish-color: #222;
+    --grayish-color: #222222;
     --lightgrayish-color: #aaa;
     --faintwhitish-color: #ccc;
     --whitish-color: #eee;
@@ -68,9 +68,9 @@ textarea {
     width: 100%;
     height: 360px;
     outline: none;
-    background: var(--darkgrayish-color);
+    background: var(--verydarkgrayish-color);
     border: none;
-    color: inherit;
+    color: #FFFFFF;
     padding: 0.5rem;
 }
 p {
@@ -224,7 +224,7 @@ input[type=submit] {
     font-family: var(--code-font);
     margin-top: 0.5rem;
     padding: 0.8rem 0.5rem 0.5rem !important;
-    background-color: var(--darkgrayish-color);
+    background-color: var(--verydarkgrayish-color);
     line-height: 2em;
     overflow: hidden;
 }
@@ -244,7 +244,7 @@ input[type=submit] {
     background-color: var(--verydarkgrayish-color);
 }
 #codepoints .cp .p {
-    font-size: 0.5em;
+    font-size: 0.7em;
     padding: 0 0.5em 0.25em;
     color: var(--lightgrayish-color);
 }

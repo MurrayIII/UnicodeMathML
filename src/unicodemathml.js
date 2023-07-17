@@ -129,6 +129,7 @@ var controlWords = {
     'breve':            '̆',	    // 0306
     'bullet':           '∙',	// 2219
     'bumpeq':           '≏',	    // 224F
+    'by':               '×',	// 00D7
     'cancel':           '╱',	// 2571
     'cap':              '∩',	// 2229
     'cases':            'Ⓒ',	// 24B8
@@ -186,6 +187,7 @@ var controlWords = {
     'dotminus':         '∸',	    // 2238
     'dotplus':          '∔',	    // 2214
     'dots':             '…',	// 2026
+    'doubleH':          'ℍ',    // 210D
     'downarrow':        '↓',	// 2193
     'downdownarrows':   '⇊',    	// 21CA
     'downharpoonleft':  '⇃',    	// 21C3
@@ -210,6 +212,7 @@ var controlWords = {
     'exists':           '∃',	// 2203
     'fallingdotseq':    '≒',	// 2252
     'forall':           '∀',	// 2200
+    'frakturH':         'ℌ',    // 210C
     'frown':            '⌢',	    // 2322
     'funcapply':        '⁡',	    // 2061
     'gamma':            'γ',	// 03B3
@@ -446,6 +449,7 @@ var controlWords = {
     'root':             '⒭',	// 24AD
     'rrect':            '▢',	// 25A2
     'rtimes':           '⋊',    	// 22CA
+    'scriptH':          'ℋ',    // 210B
     'sdiv':             '⁄',	// 2044
     'sdivide':          '⁄',	// 2044
     'searrow':          '↘',	    // 2198
@@ -551,22 +555,24 @@ function resolveCW(unicodemath) {
     var res = unicodemath.replace(/\\([A-Za-z0-9]+) ?/g, (match, cw) => {
 
         // check custom control words first (i.e. custom ones shadow built-in ones)
-        if (typeof ummlConfig !== "undefined" && typeof ummlConfig.customControlWords !== "undefined" && cw in ummlConfig.customControlWords) {
+        if (typeof ummlConfig !== "undefined" &&
+            typeof ummlConfig.customControlWords !== "undefined" &&
+            cw in ummlConfig.customControlWords) {
             return ummlConfig.customControlWords[cw];
         }
 
-        // if the control word begins with "u", try parsing the rest of it as a Unicode code point
+        // if the control word begins with "u", try parsing the rest of it as
+        // a Unicode code point
         if (cw.startsWith("u") && cw.length >= 5) {
             try {
-                var symbol = String.fromCodePoint("0x" + cw.substr(1));
+                var symbol = String.fromCodePoint("0x" + cw.substring(1));
                 return symbol;
             } catch(error) {
-
                 // do nothing – it could be a regular control word starting with "u"
             }
         }
 
-        // check for control words like \scriptH. note: bold and italic math styles
+        // Check for control words like \scriptH. Note: bold and italic math styles
         // are handled by bold/italic UI in apps like Word.
         var cch = cw.length;
         if (cch >= 7) {
@@ -584,11 +590,11 @@ function resolveCW(unicodemath) {
             }
         }
 
-        // check built-in control words
+        // Check built-in control words
         var symbol = controlWords[cw];
         if (symbol != undefined)
             return symbol;
-        // not a control word: display it in upright type
+        // Not a control word: display it in upright type
         return '"' + match + '"';
     });
     return res;
@@ -597,17 +603,18 @@ function resolveCW(unicodemath) {
     const keys = Object.keys(controlWords);
     var cKeys = keys.length;
 
-    function getPartialMatches(cw) {        // used for autocomplete
+    function getPartialMatches(cw) {
+        // Get array of control-word partial matches for autocomplete drop down
         var cchCw = cw.length;
+        var iMax = cKeys - 1;
         var iMid;
         var iMin = 0;
-        var iMax = cKeys - 1;
         var matches = [];
 
-        do {                                // binary search for a partial match
+        do {                                // Binary search for a partial match
             iMid = Math.floor((iMin + iMax) / 2);
             var key = keys[iMid];
-            if (key.substr(0, cchCw) == cw) {
+            if (key.substring(0, cchCw) == cw) {
                 matches.push(key + ' ' + controlWords[key]);
                 break;
             }
@@ -621,15 +628,15 @@ function resolveCW(unicodemath) {
             // Check for partial matches preceding iMid
             for (let j = iMid - 1; j >= 0; j--) {
                 key = keys[j];
-                if (key.substr(0, cchCw) != cw)
+                if (key.substring(0, cchCw) != cw)
                     break;
-                // matched: insert at start of matches[]
+                // Matched: insert at start of matches[]
                 matches.unshift(key + ' ' + controlWords[key]);
             }
             // Check for partial matches following iMid
             for (let j = iMid + 1; j < cKeys; j++) {
                 key = keys[j];
-                if (key.substr(0, cchCw) != cw)
+                if (key.substring(0, cchCw) != cw)
                     break;
                 matches.push(key + ' ' + controlWords[key]);
             }
@@ -1440,6 +1447,7 @@ function dropSingletonLists(uast) {
     return uast;
 }
 
+var brackets = { '⒨': '()', '⒩': '‖‖', 'ⓢ': '[]', 'Ⓢ': '{}', '⒱': '||' };
 
 ////////////////
 // PREPROCESS //
@@ -1456,6 +1464,7 @@ function preprocess(dsty, uast) {
 
     var key = k(uast);
     var value = v(uast);
+    var intent;
 
     switch (key) {
         case "unicodemath":
@@ -1536,13 +1545,19 @@ function preprocess(dsty, uast) {
             }
             return {arow: ret};
 
-        case "nByMmatrix":
+        case "specialMatrix":
+            t = value[2];
+            if (t == '⒱' && (!value[1] || value[0] == value[1])) {
+                intent = 'determinant';
+            }
             value = matrixRows(value[0], value[1]);
-            return {matrix: preprocess(dsty, value)};
 
-        case "identityMatrix":
-            value = matrixRows(value, 0);  // Fall thru to "matrix"
-
+            if (t != "■") {
+                var o = brackets[t][0];
+                var c = brackets[t][1];
+                return {bracketed: {open: o, close: c, intent: intent, content: {matrix: value}}};
+            }
+            // Fall through to "matrix"
         case "matrix":
             return {matrix: preprocess(dsty, value)};
         case "mrows":
@@ -1849,10 +1864,10 @@ function preprocess(dsty, uast) {
             return uast;
 
         case "bracketedMatrix":
-            var brackets = {'⒨': '()', '⒩': '‖‖', 'ⓢ': '[]', 'Ⓢ': '{}', '⒱': '||'};
             var t = value.type;
             var o = brackets[t][0];
             var c = brackets[t][1];
+            if (t == '⒱') value.intent = 'determinant';
 
             return {bracketed: {open: o, close: c, intent: value.intent, content: preprocess(dsty, value.content)}};
 

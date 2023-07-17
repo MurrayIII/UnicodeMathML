@@ -473,12 +473,12 @@ mrow = __? h:(exp / emptycell) t:(__? "&" __? (exp / emptycell))* __? {
     return {mrow: [h].concat(t.map(a => a[3]))};
 }
 
-nByMmatrix = n:nASCII "×" m:nASCII "■" {
-    return {nByMmatrix: [n, m]};    
+nByMmatrix = n:nASCII "×" m:nASCII t:("■" / opEnclosedMatrix) {
+    return {specialMatrix: [n, m, t]};    
 }
 
-identityMatrix = "■" n:nASCII {
-    return {identityMatrix: n};
+identityMatrix = t:("■" / opEnclosedMatrix) n:nASCII {
+    return {specialMatrix: [n, 0, t]};
 }
 
 // n-ary operations such as sums and integrals (this is fairly complex and
@@ -515,7 +515,6 @@ fraction
     / r:(operand __? opFraction __?)+ t:operand {
         return nestRight2("fraction", r.map(a => [a[0], a[2]]).concat([t]));
     }
-    / opa:operand op:opFraction {return [opa, {operator: op}]}
 
 // fractions without a horizontal rule, e.g. for binomial coefficients
 atop
@@ -526,6 +525,8 @@ atop
                                               // coefficients
         return {binom: {top: r, bottom: t}};
     }
+    / opa:operand op:(opFraction / opChoose) {return [opa, {operator: op}]}
+
 // ❷ operands/factors: medium-precedence constructs, comprising constructs
 //    which may occur inside scripts as well as the various kinds of scripts
 //    themselves (which may not in all cases occur directly within each other,

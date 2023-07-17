@@ -1,6 +1,6 @@
 # UnicodeMathML
 
-*This is a clone of Noah Doersing's UnicodeMathML repository with added commits by Murray Sargent III. The changes are summarized at the end of this document. To see the changed code, look at the main branch (https://github.com/MurrayIII/UnicodeMathML/tree/main), not the master branch.*
+*This is a fork of Noah Doersing's UnicodeMathML repository with added commits by Murray Sargent III. The changes are summarized at the end of this document. To see the changed code, look at the main branch (https://github.com/MurrayIII/UnicodeMathML/tree/main), not the master branch.*
 
 *This repository provides a JavaScript-based translation of [UnicodeMath](https://www.unicode.org/notes/tn28/) to [MathML](https://developer.mozilla.org/en-US/docs/Web/MathML) (hence "UnicodeMathML"). An interactive "playground" allows for experimentation with UnicodeMath's syntax and insight into the translation pipeline. UnicodeMathML can be easily integrated into arbitrary HTML or [Markdeep](https://casual-effects.com/markdeep/) documents.*
 
@@ -311,7 +311,6 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * The integrand can be attached to the integral via a space or the “glue” operator ▒.
 * The trigonometric function names are defined by the expression
        'a'? ['sin' | 'cos' | 'tan' | 'sec' | 'csc' | 'cot'] 'h'?
-* The identity matrix and n×m matrix short cuts are implemented.
 * The four \rect border flags are fixed (needed to be inverted).
 * Display mode n-ary operators are changed to &#x3C;munderover> instead of &#x3C;msubsup>, except for integrals.
 * The default math functions are converted with or without the function-apply operator U+2061.
@@ -320,6 +319,7 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Don't treat /" as a negated operator
 
 In addition, the following features are implemented:
+* The identity matrix and n×m matrix short cuts are implemented.
 * \abs for unambiguous entry of absolute value with the absolute-value intent attribute. \choose along with its intent attribute (binomial).
 * Add MathML tests to the display of example.html. The results are reported in the console log.
 * The Playground calls resolveCW() defined in unicodemathml.js to resolve control words instead of having a duplicate control-word list. Similarly to convert characters to math styles, the Playground uses the mathFonts[] defined in unicodemathml.js. Greek upper-case letters that look like ASCII letters are removed from the Greek letter gallery and Greek lower-case letter variants are added. 
@@ -331,3 +331,4 @@ To do:
 * If possible, remove more redundant &#x3C;mrow>’s. E.g., the &#x3C;math> tag acts as an &#x3C;mrow>; and its content does not need to be enclosed in &#x3C;mrow>…&#x3C;/mrow>.
 * Add ummlConfig properties for more document default properties such as the current ummlConfig.doubleStruckMode
 * Improve the LaTeX output mode
+* Suppress the large error messages for more cases of UnicodeMath syntax errors. The user may be entering the whole expression and doesn't want to see such error messages. Maybe we should implement a more benign error identification as the code editors do.

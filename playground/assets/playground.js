@@ -171,14 +171,13 @@ function autocomplete() {
         closeAutocompleteList();
         if (input.selectionStart != input.selectionEnd) return false;
 
-        var cch = input.value.length;       // Count of characters
         var ip = input.selectionStart;      // Insertion point
         if (ip <= 2) return false;          // Want >= 2 letters
         var i = ip - 2;
 
-        while (i > 0 && /[a-zA-Z0-9]/.test(input.value[i])) {
-            i--;                            // Move back alphanumeric span
-        }
+        // Move back alphanumeric span
+        while (i > 0 && /[a-zA-Z0-9]/.test(input.value[i])) { i--; }
+
         if (i < 0 || input.value[i] != '\\') {
             // Can't be a [partial] control word
             return;
@@ -195,7 +194,7 @@ function autocomplete() {
                     delim = "";
                 }
                 input.value = input.value.substring(0, i) + symbol + delim
-                    + input.value.substring(ip, cch);
+                    + input.value.substring(ip);
                 input.selectionStart = input.selectionEnd = i + (delim ? 2 : 1);
             }
             return;
@@ -220,10 +219,11 @@ function autocomplete() {
         for (var j = 0; j < matches.length; j++) {
             var b = document.createElement("div");
             var cwOption = matches[j];
-            // Bold the matching letters
+
+            // Bold the matching letters and insert an input field to hold
+            // the current control word and symbol
             b.innerHTML = "<strong>" + cwOption.substring(0, cw.length) + "</strong>";
-            b.innerHTML += matches[j].substr(cw.length);
-            // Insert an input field to hold the current control word and symbol
+            b.innerHTML += matches[j].substring(cw.length);
             b.innerHTML += "<input type='hidden' value='" + cwOption + "'>";
 
             if (szSymbolCommon.includes(cwOption[cwOption.length - 1])) {
@@ -236,7 +236,7 @@ function autocomplete() {
                 // Insert control-word symbol 
                 var val = this.getElementsByTagName("input")[0].value;
                 input.value = input.value.substring(0, i) + val[val.length - 1]
-                    + input.value.substring(ip, cch);
+                    + input.value.substring(ip);
                 input.selectionStart = input.selectionEnd = i + 1;
                 closeAutocompleteList();
             });
@@ -248,7 +248,7 @@ function autocomplete() {
             autocl.firstChild.classList.add("autocomplete-active");
         }
     });
-    // Execute a function when user presses a key on the keyboard
+    // Execute a function when user types
     input.addEventListener("keydown", function (e) {
         var x = document.getElementById(this.id + "autocomplete-list");
         if (!x) return;
