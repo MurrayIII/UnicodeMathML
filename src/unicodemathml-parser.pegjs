@@ -570,10 +570,10 @@ factor
 // do a lot of heavy lifting!
 subsupScript
     = subsupSubsup
-    / b:scriptbase o:[_^] b1:scriptbase o1:[_^] {
-        // Suppress long error messages for trailing '_' and '^' since user
-        // may just be entering a subscript or superscript.
-        return [b, {operator: o}, b1, {operator: o1}];
+    / b:scriptbase '_' b1:scriptbase '^' {
+        // Suppress long error message for trailing '^' since user may
+        // be about to enter a superscript.
+        return [b, {operator: '_'}, b1, {operator: '^'}];
     }
     / subsupSubscript
     / subsupSuperscript
