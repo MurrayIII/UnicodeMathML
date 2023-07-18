@@ -315,7 +315,7 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Display mode n-ary operators are changed to &#x3C;munderover> instead of &#x3C;msubsup>, except for integrals.
 * The default math functions are converted with or without the function-apply operator U+2061.
 * A thin space is inserted in front of differential d or D only if it is preceded by one or more letters in the same run. Ideally the thin space should be added by the display engine along with the choice of math style (math italic, upright, double-struck italic) instead of by the converter. The MathML would then retain the original semantics.
-* Treat unmatched opening brackets as operators rather than as errors. E.g., “(a^2+” displays as “(𝑎² +” instead of displaying an error message. Similarly, don't display error messages for lone n-ary, fraction, root, and subsup operators.
+* Instead of displaying a large error message for a syntatically incorrect operator, display the operator in red. The user may be entering the whole expression and doesn't want to see an error message, but might like a hint that the syntax is wrong.. For example, display “(a^2+” as “(𝑎² +” with the '(' in red instead of an error message.
 * Don't treat /" as a negated operator
 
 In addition, the following features are implemented:
@@ -331,4 +331,3 @@ To do:
 * If possible, remove more redundant &#x3C;mrow>’s. E.g., the &#x3C;math> tag acts as an &#x3C;mrow>; and its content does not need to be enclosed in &#x3C;mrow>…&#x3C;/mrow>.
 * Add ummlConfig properties for more document default properties such as the current ummlConfig.doubleStruckMode
 * Improve the LaTeX output mode
-* Suppress the large error messages for more cases of UnicodeMath syntax errors. The user may be entering the whole expression and doesn't want to see such error messages. Maybe we should implement a more benign error identification as the code editors do.
