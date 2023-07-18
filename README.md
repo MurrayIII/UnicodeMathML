@@ -315,7 +315,7 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Display mode n-ary operators are changed to &#x3C;munderover> instead of &#x3C;msubsup>, except for integrals.
 * The default math functions are converted with or without the function-apply operator U+2061.
 * A thin space is inserted in front of differential d or D only if it is preceded by one or more letters in the same run. Ideally the thin space should be added by the display engine along with the choice of math style (math italic, upright, double-struck italic) instead of by the converter. The MathML would then retain the original semantics.
-* Instead of displaying a large error message for a syntatically incorrect operator, display the operator in red. The user may be entering the whole expression and doesn't want to see an error message, but might like a hint that the syntax is wrong.. For example, display “(a^2+” as “(𝑎² +” with the '(' in red instead of an error message.
+* Instead of displaying a large error message for a syntatically incorrect operator, display the operator in red. The user may be entering the whole expression and doesn't want to see an error message, but might like a hint that the syntax is wrong. For example, display “(a^2+” as “<span style="color:red">(</span>𝑎² +” instead of an error message.
 * Don't treat /" as a negated operator
 
 In addition, the following features are implemented:

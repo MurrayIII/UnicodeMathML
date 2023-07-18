@@ -204,7 +204,7 @@ function autocomplete() {
         var cw = input.value.substring(i + 1, ip);
         var matches = getPartialMatches(cw);
         if (!matches.length) return;
-        console.log("Partial matches: " + matches);
+        //console.log("Partial matches: " + matches);
 
         // Create autocomplete menu of partial control-word matches. Start
         // by creating a <div> element to contain matching control words
