@@ -323,12 +323,14 @@ In addition, the following features are implemented:
 * \abs for unambiguous entry of absolute value with the absolute-value intent attribute. \choose along with its intent attribute (binomial).
 * Add MathML tests to the display of example.html. The results are reported in the console log.
 * The Playground calls resolveCW() defined in unicodemathml.js to resolve control words instead of having a duplicate control-word list. Similarly to convert characters to math styles, the Playground uses the mathFonts[] defined in unicodemathml.js. Greek upper-case letters that look like ASCII letters are removed from the Greek letter gallery and Greek lower-case letter variants are added. 
-* Control words typed into the Playground input text area are autocorrected directly there. An autocomplete menu appears when a control word is entered partially. The user can use up/down arrows to select the desired control word and enter it by typing Enter or Tab. The most common choice is highlighted by default.
+* An autocomplete menu appears when a control word is entered partially. The user can use up/down arrows to select the desired control word and enter it by typing Enter or Tab. The most common choice is highlighted by default.
+* Control words and operator combinations typed into the Playground input text area are autocorrected there as well as in the output window.
 * Variables are displayed in math italic in the Playground input as well as in the output.
-* Add many more LaTeX control words and implement \pmatrix, \bmatrix, \Bmatrix, \nmatrix, \vmatrix, \cancel, \bcancel, and \xcancel
+* Many more LaTeX control words are included. \pmatrix, \bmatrix, \Bmatrix, \nmatrix, \vmatrix, \cancel, \bcancel, and \xcancel are implemented.
 
 To do:
 * Implement MathML 4.0 intent attributes in addition to the \abs and \choose cases already implemented.
 * If possible, remove more redundant &#x3C;mrow>’s. E.g., the &#x3C;math> tag acts as an &#x3C;mrow>; and its content does not need to be enclosed in &#x3C;mrow>…&#x3C;/mrow>.
 * Add ummlConfig properties for more document default properties such as the current ummlConfig.doubleStruckMode
 * Improve the LaTeX output mode
+* More autocorrection in Playground input, e.g., "+-" → "±", "/=" → "≠".

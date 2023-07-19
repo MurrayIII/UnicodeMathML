@@ -598,51 +598,80 @@ function resolveCW(unicodemath) {
         return '"' + match + '"';
     });
     return res;
-    }
+}
 
-    const keys = Object.keys(controlWords);
-    var cKeys = keys.length;
+const keys = Object.keys(controlWords);
+var cKeys = keys.length;
 
-    function getPartialMatches(cw) {
-        // Get array of control-word partial matches for autocomplete drop down
-        var cchCw = cw.length;
-        var iMax = cKeys - 1;
-        var iMid;
-        var iMin = 0;
-        var matches = [];
+function getPartialMatches(cw) {
+    // Get array of control-word partial matches for autocomplete drop down
+    var cchCw = cw.length;
+    var iMax = cKeys - 1;
+    var iMid;
+    var iMin = 0;
+    var matches = [];
 
-        do {                                // Binary search for a partial match
-            iMid = Math.floor((iMin + iMax) / 2);
-            var key = keys[iMid];
-            if (key.substring(0, cchCw) == cw) {
-                matches.push(key + ' ' + controlWords[key]);
-                break;
-            }
-            if (cw < key)
-                iMax = iMid - 1;
-            else
-                iMin = iMid + 1;
-        } while (iMin <= iMax);
-
-        if (matches.length) {
-            // Check for partial matches preceding iMid
-            for (let j = iMid - 1; j >= 0; j--) {
-                key = keys[j];
-                if (key.substring(0, cchCw) != cw)
-                    break;
-                // Matched: insert at start of matches[]
-                matches.unshift(key + ' ' + controlWords[key]);
-            }
-            // Check for partial matches following iMid
-            for (let j = iMid + 1; j < cKeys; j++) {
-                key = keys[j];
-                if (key.substring(0, cchCw) != cw)
-                    break;
-                matches.push(key + ' ' + controlWords[key]);
-            }
+    do {                                // Binary search for a partial match
+        iMid = Math.floor((iMin + iMax) / 2);
+        var key = keys[iMid];
+        if (key.substring(0, cchCw) == cw) {
+            matches.push(key + ' ' + controlWords[key]);
+            break;
         }
-        return matches;
+        if (cw < key)
+            iMax = iMid - 1;
+        else
+            iMin = iMid + 1;
+    } while (iMin <= iMax);
+
+    if (matches.length) {
+        // Check for partial matches preceding iMid
+        for (let j = iMid - 1; j >= 0; j--) {
+            key = keys[j];
+            if (key.substring(0, cchCw) != cw)
+                break;
+            // Matched: insert at start of matches[]
+            matches.unshift(key + ' ' + controlWords[key]);
+        }
+        // Check for partial matches following iMid
+        for (let j = iMid + 1; j < cKeys; j++) {
+            key = keys[j];
+            if (key.substring(0, cchCw) != cw)
+                break;
+            matches.push(key + ' ' + controlWords[key]);
+        }
     }
+    return matches;
+}
+
+var negs = {
+    '<': '≮',
+    '=': '≠',
+    '>': '≯',
+    '∃': '∄',
+    '∈': '∉',
+    '∋': '∌',
+    '∼': '≁',
+    '≃': '≄',
+    '≅': '≇',
+    '≈': '≉',
+    '≍': '≭',
+    '≡': '≢',
+    '≤': '≰',
+    '≥': '≱',
+    '≶': '≸',
+    '≷': '≹',
+    '≽': '⋡',
+    '≺': '⊀',
+    '≻': '⊁',
+    '≼': '⋠',
+    '⊂': '⊄',
+    '⊃': '⊅',
+    '⊆': '⊈',
+    '⊇': '⊉',
+    '⊑': '⋢',
+    '⊒': '⋣'
+};
 
 // math font conversion
 // should match mathFonts variable in playground.js
@@ -1484,34 +1513,6 @@ function preprocess(dsty, uast) {
         case "operator":
             return uast;
         case "negatedoperator":
-            var negs = {
-                '<': '≮',
-                '=': '≠',
-                '>': '≯',
-                '∃': '∄',
-                '∈': '∉',
-                '∋': '∌',
-                '∼': '≁',
-                '≃': '≄',
-                '≅': '≇',
-                '≈': '≉',
-                '≍': '≭',
-                '≡': '≢',
-                '≤': '≰',
-                '≥': '≱',
-                '≶': '≸',
-                '≷': '≹',
-                '≽': '⋡',
-                '≺': '⊀',
-                '≻': '⊁',
-                '≼': '⋠',
-                '⊂': '⊄',
-                '⊃': '⊅',
-                '⊆': '⊈',
-                '⊇': '⊉',
-                '⊑': '⋢',
-                '⊒': '⋣'
-            };
             if (value in negs) {
                 return {operator: negs[value]};
             } else {
@@ -3040,11 +3041,12 @@ function unicodemathtex(unicodemath, displaystyle = false) {
     }
 }
 
+root.getPartialMatches = getPartialMatches;
+root.mathFonts = mathFonts;
+root.italicizeCharacter = italicizeCharacter;
+root.negs = negs;
+root.resolveCW = resolveCW;
 root.unicodemathml = unicodemathml;
 root.unicodemathtex = unicodemathtex;
-root.resolveCW = resolveCW;
-root.mathFonts = mathFonts;
-root.getPartialMatches = getPartialMatches;
-root.italicizeCharacter = italicizeCharacter;
 
 })(this);

@@ -16,6 +16,27 @@ var hist = [];
 
 var prevInputValue = "";
 
+var mappedPair = {
+    "+": "\u2213",
+    "+-": "\u00B1",
+    "<=": "\u2264",
+    ">=": "\u2265",
+    "~=": "\u2245",
+    "::": "\u2237",
+    ":=": "\u2254",
+    "<<": "\u226A",
+    ">>": "\u226B",
+    "−>": "\u2192",
+    "−+": "\u2213",
+    "!!": "\u203C",
+    "...": "…"
+};
+
+var mappedSingle = {
+    "-": "\u2212",
+    "\'": "\u2032"
+};
+
 // escape mathml tags and entities, via https://stackoverflow.com/a/13538245
 function escapeMathMLSpecialChars(str) {
     var replacements = {
@@ -171,14 +192,14 @@ function isFunctionName(fn) {
     if (["cos", "cot", "csc", "sec", "sin", "tan", "ctg"].includes(fn.substring(i, i + 3)))
         return true;
 
-    return ["Pr", "arg", "def", "deg", "det", "dim", "erf", "exp", "gcd", "hom", "inf", "ker", "log", "ln", "max", "min", "mod", "sup", "tg"].includes(fn);
+    return ["Pr", "arg", "def", "deg", "det", "dim", "erf", "exp", "gcd", "hom", "inf", "ker", "lim", "log", "ln", "max", "min", "mod", "sup", "tg"].includes(fn);
 }
 
 function foldMathItalic(code) {
     if (code == 0x210E) return 'h';                     // ℎ
     if (code < 0x1D434 || code > 0x1D467) return '';    // Not math italic
     code += 0x0041 - 0x1D434;                           // Convert to upper-case ASCII
-    if (code > 0x005A) code += 0x0061 - 0x005A - 1;     // Adjust for lower case
+    if (code > 0x005A) code += 0x0061 - 0x005A - 1;     // Adjust for  lower case
     return String.fromCodePoint(code);                  // ASCII letter corresponding to math italic code
 }
 
@@ -217,6 +238,12 @@ function autocomplete() {
         var delim = input.value[ip - 1];    // Last char entered
         var i = ip - 2;
 
+        if (input.value[i] == '/' && delim in negs) {
+            input.value = input.value.substring(0, i) + negs[delim] + input.value.substring(ip);
+            input.selectionStart = input.selectionEnd = ip - 1;
+            return false;
+        }
+
         // Move back alphanumeric span
         while (i > 0 && /[a-zA-Z0-9]/.test(input.value[i])) { i--; }
 
@@ -245,7 +272,16 @@ function autocomplete() {
                     i++;                    // Move to start of span
                     input.value = input.value.substring(0, i) + fn + input.value.substring(ip - 1);
                     input.selectionStart = input.selectionEnd = i + fn.length + 1;
+                    return false;
                 }
+            }
+            if (input.value.substring(ip - 2, ip) in mappedPair) {
+                input.value = input.value.substring(0, ip - 2) + mappedPair[input.value.substring(ip - 2, ip)] + input.value.substring(ip);
+                input.selectionStart = input.selectionEnd = ip - 1;
+                return false;
+            }
+            if (delim in mappedSingle) {
+                input.value = input.value.substring(0, ip - 1) + mappedSingle[delim] + input.value.substring(ip);
             }
             return false;
         }
