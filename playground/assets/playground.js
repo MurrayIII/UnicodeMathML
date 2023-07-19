@@ -150,6 +150,46 @@ function highlightJson(json) {
     });
 }
 
+function isFunctionName(fn) {
+    var cch = fn.length;
+    var i = 0;
+
+    if (!cch) return false;
+
+    if (cch >= 4 && fn[0] == 'a') {
+        // Handle 'a' and 'arc' prefixes
+        cch--;
+        i++;
+        if (fn[i] == 'r' && fn[i + 1] == 'c') {
+            i += 2;
+            cch -= 2;
+        }
+    }
+    if (cch == 4 && fn[i + 3] == 'h')
+        cch--; // Hyperbolic
+
+    if (["cos", "cot", "csc", "sec", "sin", "tan", "ctg"].includes(fn.substring(i, i + 3)))
+        return true;
+
+    return ["Pr", "arg", "def", "deg", "det", "dim", "erf", "exp", "gcd", "hom", "inf", "ker", "log", "ln", "max", "min", "mod", "sup", "tg"].includes(fn);
+}
+
+function foldMathItalic(code) {
+    if (code == 0x210E) return 'h';                     // ℎ
+    if (code < 0x1D434 || code > 0x1D467) return '';    // Not math italic
+    code += 0x0041 - 0x1D434;                           // Convert to upper-case ASCII
+    if (code > 0x005A) code += 0x0061 - 0x005A - 1;     // Adjust for lower case
+    return String.fromCodePoint(code);                  // ASCII letter corresponding to math italic code
+}
+
+function codeAt(chars, i) {
+    // Get UTF-32 code of character at position i, where i can be at a
+    // trail surrogate
+    var code = chars.codePointAt(i);
+    if (code >= 0xDC00 && code <= 0xDFFF) code = chars.codePointAt(i - 1);
+    return code;
+}
+
 function closeAutocompleteList() {
     var x = document.getElementsByClassName("autocomplete-items");
     if (x == undefined) return;
@@ -168,21 +208,49 @@ function autocomplete() {
     // Try autocorrecting or autocompleting a control word when user
     // modifies text input
     input.addEventListener("input", function (e) {
+        if (e.inputType != "insertText") return false;
         closeAutocompleteList();
         if (input.selectionStart != input.selectionEnd) return false;
 
         var ip = input.selectionStart;      // Insertion point
-        if (ip <= 2) return false;          // Want >= 2 letters
+        if (!ip) return false;              // Nothing to check
+        var delim = input.value[ip - 1];    // Last char entered
         var i = ip - 2;
 
         // Move back alphanumeric span
         while (i > 0 && /[a-zA-Z0-9]/.test(input.value[i])) { i--; }
 
         if (i < 0 || input.value[i] != '\\') {
-            // Can't be a [partial] control word
-            return;
+            // Not a [partial] control word. Check for italicization
+            if (input.value[i] == '"') return false;
+
+            var ch = italicizeCharacter(delim);
+            if (ch != delim) {
+                input.value = input.value.substring(0, ip - 1) + ch + input.value.substring(ip);
+                if (input.value.codePointAt(ip - 1) > 0xFFFF) { ip++; } // Bypass trail surrogate
+                input.selectionStart = input.selectionEnd = ip;
+                return false;
+            }
+            if (i == ip - 2 && ip > 4) {
+                // Convert span of math-italic characters to ASCII
+                var fn = "";
+                while (i > 0) {
+                    var code = codeAt(input.value, i);
+                    var ch = foldMathItalic(code);
+                    if (!ch) break;
+                    fn = ch + fn;
+                    i -= code > 0xFFFF ? 2 : 1;
+                }
+                if (isFunctionName(fn)) {
+                    i++;                    // Move to start of span
+                    input.value = input.value.substring(0, i) + fn + input.value.substring(ip - 1);
+                    input.selectionStart = input.selectionEnd = i + fn.length + 1;
+                }
+            }
+            return false;
         }
-        var delim = input.value[ip - 1];
+
+        if (ip <= 2) return false;          // Want >= 2 letters
 
         if (!/[a-zA-Z0-9]/.test(delim)) {
             // Delimiter entered: try to autocorrect control word
@@ -193,6 +261,7 @@ function autocomplete() {
                 if (delim == " ") {
                     delim = "";
                 }
+                symbol = italicizeCharacter(symbol);
                 input.value = input.value.substring(0, i) + symbol + delim
                     + input.value.substring(ip);
                 input.selectionStart = input.selectionEnd = i + (delim ? 2 : 1);
@@ -235,7 +304,7 @@ function autocomplete() {
             b.addEventListener("click", function (e) {
                 // Insert control-word symbol 
                 var val = this.getElementsByTagName("input")[0].value;
-                input.value = input.value.substring(0, i) + val[val.length - 1]
+                input.value = input.value.substring(0, i) + italicizeCharacter(val[val.length - 1])
                     + input.value.substring(ip);
                 input.selectionStart = input.selectionEnd = i + 1;
                 closeAutocompleteList();
@@ -255,26 +324,26 @@ function autocomplete() {
         x = x.getElementsByTagName("div");
 
         switch (e.key) {
-        case "ArrowDown":
-            // Increase currentFocus and highlight the corresponding control-word
-            currentFocus++;
-            addActive(x);
-            break;
+            case "ArrowDown":
+                // Increase currentFocus and highlight the corresponding control-word
+                currentFocus++;
+                addActive(x);
+                break;
 
-        case "ArrowUp":
-            // Decrease currentFocus and highlight the corresponding control-word
-            currentFocus--;
-            addActive(x);
-            break;
+            case "ArrowUp":
+                // Decrease currentFocus and highlight the corresponding control-word
+                currentFocus--;
+                addActive(x);
+                break;
 
-        case "Enter":
-        case "Tab":
-            // Prevent form from being submitted and simulate a click on the
-            // "active" control-word option
-            e.preventDefault();
-            if (currentFocus >= 0 && x) {
-                x[currentFocus].click();
-            }
+            case "Enter":
+            case "Tab":
+                // Prevent form from being submitted and simulate a click on the
+                // "active" control-word option
+                e.preventDefault();
+                if (currentFocus >= 0 && x) {
+                    x[currentFocus].click();
+                }
         }
     });
     function addActive(x) {

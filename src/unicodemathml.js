@@ -777,6 +777,12 @@ var mathFonts = {
     '9': {'serif-bold': '𝟗', 'doublestruck-normal': '𝟡', 'sans-normal': '𝟫', 'sans-bold': '𝟵', 'monospace-normal': '𝟿'},
 };
 
+function italicizeCharacter(c) {
+    if (c in mathFonts && 'serif-italic' in mathFonts[c] && (c < "Α" || c > "Ω"))
+        return mathFonts[c]['serif-italic'];
+    return c;
+}
+
 function italicizeCharacters(chars) {
     return Array.from(chars).map(c => {
         if (c in mathFonts && 'serif-italic' in mathFonts[c] && (c < "Α" || c > "Ω")) {
@@ -3039,5 +3045,6 @@ root.unicodemathtex = unicodemathtex;
 root.resolveCW = resolveCW;
 root.mathFonts = mathFonts;
 root.getPartialMatches = getPartialMatches;
+root.italicizeCharacter = italicizeCharacter;
 
 })(this);
