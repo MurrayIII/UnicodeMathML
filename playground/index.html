@@ -114,8 +114,7 @@
                             ' ': ['Space-width space (non-breaking space)', 'width: 1.67em']
                             }},
                         {label: 'Superscripts & Subscripts', symbols: '⁰¹²³⁴⁵⁶⁷⁸⁹ⁱⁿ⁺⁻⁼⁽⁾₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎'},
-                        {label: 'Delimiters', symbols: '()[]{}⟨⟩⌈⌉⌊⌋'},
-                        {label: 'Over/underbraces', symbols: '⏜⏝⏞⏟⏠⏡⎴⎵¯'},
+                        {label: 'Delimiters & Over/underbraces', symbols: '()[]{}⟨⟩⌈⌉⌊⌋  ⏜⏝⏞⏟⏠⏡⎴⎵¯'},
                         {label: 'Stretchy arrows', symbols: '←→↔⇐⇒⇔↩↪↼⇀↽⇁⊢⊣⟵⟶⟷⟸⟹⟺↦⊨'},
                         {label: 'Roots & Enclosures', symbols: ['√', '∛', '∜', '▭', ' ̄', '▁', '▢', '○', '⟌', '⃧', '⬭']},
                         {label: 'Phantoms & Smashes', symbols: {
@@ -179,12 +178,6 @@
                         symbolTooltips = Object.assign({}, symbolTooltips, syms);
                     });
                 </script>
-                <p class="codepoint"><span class="category" data-explanation="Inserts the character corresponding to the hexadecimal escape into the UnicodeMath input field.">Codepoint</span>
-                    <input type="text" id="codepoint" placeholder="1F52D"><button id="insert_codepoint" class="submit">➥</button>
-                </p>
-                <p class="controlword"><span class="category" data-explanation="By default, the transformation pipeline is configured such that you can <em>also</em> enter control words into the UnicodeMath input field. They will be converted during the transformation stage.">Control word</span>
-                    <input type="text" id="controlword" placeholder="\oint"><button id="insert_controlword" class="submit">➥</button>
-                </p>
                 <p class="mathfonts">
                     <span class="category" data-explanation="If you want to convert multiple characters at a time, enter them into the UnicodeMath input field, select them and click one of these buttons. Any characters that cannot be converted will remain unchanged.">Math fonts</span>
                     <input type="text" id="mathchar" placeholder="A" maxlength="1"><button id="serif-bold" class="submit mathfont" data-tooltip="Serif & Bold">𝐀𝐁𝐂</button><button id="serif-italic" class="mathfont" data-tooltip="Serif & Italic">𝐴𝐵𝐶</button><button id="serif-bolditalic" class="mathfont" data-tooltip="Serif & Bold & Italic">𝑨𝑩𝑪</button><button id="sans-normal" class="mathfont" data-tooltip="Sans-serif">𝖠𝖡𝖢</button><button id="sans-bold" class="mathfont" data-tooltip="Sans-serif & Bold">𝗔𝗕𝗖</button><button id="sans-italic" class="mathfont" data-tooltip="Sans-serif & Italic">𝘈𝘉𝘊</button><button id="sans-bolditalic" class="mathfont" data-tooltip="Sans-serif & Bold & Italic">𝘼𝘽𝘾</button><button id="script-normal" class="mathfont"  data-tooltip="Script">𝒜ℬ𝒞</button><button id="script-bold" class="mathfont" data-tooltip="Script & Bold">𝓐𝓑𝓒</button><button id="fraktur-normal" class="mathfont" data-tooltip="Fraktur">𝔄𝔅ℭ</button><button id="fraktur-bold" class="mathfont" data-tooltip="Fraktur & Bold">𝕬𝕭𝕮</button><button id="monospace-normal" class="mathfont" data-tooltip="Monospace">𝙰𝙱𝙲</button><button id="doublestruck-normal" class="mathfont" data-tooltip="Double-struck">𝔸𝔹ℂ</button>
@@ -193,26 +186,26 @@
                     <script>
                         var examples = `
                             ⅈ²=-1
-                            E = m⁢c²
-                            a²⋅b²=c²
-                            f̂(ξ)=∫_-∞^∞▒f(x)ⅇ^-2πⅈxξ ⅆx
-                            (a + b)^n = ∑_(k=0)^n n⒞k a^k b^(n-k)
-                            _n C_k = n⒞k = n!/(k! ⋅ (n-k)!)
-                            ∏_(k=0)^n▒n⒞k = H²(n) / (n!)^(n+1) = (∏_(h=0)^n▒h^h) / (n!)^(n+1)
-                            sin⁡θ = 1⁄2 𝑒^(ⅈ⁢θ) + "c.c."
-                            W_δ₁ρ₁σ₂^3β=U_δ₁ρ₁^3β+1/8π^2⁢∫_α₁^α₂▒dα'₂[(U_δ₁ρ₁^2β-α'₂U_δ₁ρ₁^1β)/U_δ₁ρ₁^0β]
+                            𝐸=𝑚𝑐^2
+                            𝑎²+𝑏²=𝑐²
+                            𝑓̂(𝜉)=∫_-∞^∞ 𝑓(𝑥)ⅇ^-2𝜋ⅈ𝑥𝜉 ⅆ𝑥
+                            (𝑎 + 𝑏)^𝑛 = ∑_(𝑘=0)^𝑛 𝑛⒞𝑘 𝑎^𝑘 𝑏^(𝑛−𝑘)
+                            _𝑛 C_𝑘 = 𝑛⒞𝑘 = 𝑛!/(𝑘!⋅(𝑛-𝑘)!)
+                            ∏_(𝑘=0)^𝑛 𝑛⒞𝑘 = 𝐻²(𝑛)/(𝑛!)^(𝑛+1) = (∏_(ℎ=0)^𝑛 ℎ^ℎ)/(𝑛!)^(𝑛+1)
+                            sin⁡𝜃 = 1⁄2 𝑒^(ⅈ⁢𝜃) + "c.c."
+                            𝑊_𝛿₁𝜌₁𝜎₂^3𝛽=𝑈_𝛿₁𝜌₁^3𝛽+1/8𝜋^2⁢∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[(𝑈_𝛿₁𝜌₁^2𝛽-𝛼′₂𝑈_𝛿₁𝜌₁^1𝛽)/𝑈_𝛿₁𝜌₁^0𝛽]
                             1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎^2−𝑏^2)
-                            ⏞(x_1+⋯+x_k)^(k " times")
+                            ⏞(𝑥_1+⋯+𝑥_𝑘)^(𝑘 " times")
                             (a + b)┴→
-                            (■(a&b@c&d))
-                            █(10&x+&3&y=2@3&x+&13&y=4)
+                            (■(𝑎&𝑏@𝑐&𝑑))
+                            █(10&𝑥+&3&𝑦=2@3&𝑥+&13&𝑦=4)
                             a /~ b
                             w^h^e^e^e^e
                             𝛼₂³/(𝛽₂³ + 𝛾₂³)
-                            √(n&a + b)
+                            √(𝑛&𝑎 + 𝑏)
                             sin^2 𝜃+cos^2 𝜃=1
-                            x=(-b+-\\sqrt(b^2-4ac))/2a
-                            ∫_-∞^∞ e^-x^2 ⅆx=√𝜋
+                            𝑥 = (−𝑏 ± √(𝑏^2 − 4𝑎𝑐))/2𝑎
+                            ∫_-∞^∞ e^-𝑥^2 ⅆ𝑥=√𝜋
                         `;
                         examples
                             .split("\n")

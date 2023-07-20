@@ -222,6 +222,7 @@ function closeAutocompleteList() {
 }
 
 function opAutocorrect(i, ip, delim) {
+    // Perform operator autocorrections like '+-' → '±' and '/=' → ≠
     if (input.value[i] == '"')
         return false;
 
@@ -282,7 +283,7 @@ function autocomplete() {
             // Not control word; check for italicization & operator autocorrect
             var ch = italicizeCharacter(delim);
             if (ch != delim) {
-                // Change letter to math-italic letter
+                // Change ASCII or lower-case Greek letter to math-italic letter
                 input.value = input.value.substring(0, ip - 1) + ch + input.value.substring(ip);
                 if (input.value.codePointAt(ip - 1) > 0xFFFF) { ip++; } // Bypass trail surrogate
                 input.selectionStart = input.selectionEnd = ip;
@@ -517,47 +518,11 @@ async function draw() {
         // https://www.ptiglobal.com/2018/04/26/the-beauty-of-unicode-zero-width-characters/,
         // https://330k.github.io/misc_tools/unicode_steganography.html)
         var invisibleChar = [
-            "0009",
-            "000A",
-            "000B",
-            "000C",
-            "000D",
-            "0020",
-            "0085",
-            "00A0",
-            "1680",
-            "2000",
-            "2001",
-            "2002",
-            "2003",
-            "2004",
-            "2005",
-            "2006",
-            "2007",
-            "2008",
-            "2009",
-            "200A",
-            "200B",
-            "2028",
-            "2029",
-            "202F",
-            "205F",
-            "3000",
-            "180E",
-            "200B",
-            "200C",
-            "200D",
-            "200E",
-            "202A",
-            "202C",
-            "202D",
-            "2060",
-            "2061",
-            "2062",
-            "2063",
-            "2064",
-            "2800",
-            "FEFF",
+            "0009", "000A", "000B", "000C", "000D", "0020", "0085", "00A0",
+            "1680", "2000", "2001", "2002", "2003", "2004", "2005", "2006",
+            "2007", "2008", "2009", "200A", "200B", "200C", "200D", "200E",
+            "2028", "2029", "202A", "202C", "202D", "202F", "205F", "2060",
+            "2061", "2062", "2063", "2064", "2800", "3000", "180E", "FEFF",
             ].includes(cp);
 
         // lookup unicode data for tooltip
