@@ -17,7 +17,6 @@ var hist = [];
 var prevInputValue = "";
 
 var mappedPair = {
-    "+": "\u2213",
     "+-": "\u00B1",
     "<=": "\u2264",
     ">=": "\u2265",
@@ -380,6 +379,7 @@ function autocomplete() {
                 addActive(x);
                 break;
 
+            case " ":
             case "Enter":
             case "Tab":
                 // Prevent form from being submitted and simulate a click on the
