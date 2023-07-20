@@ -222,6 +222,44 @@ function closeAutocompleteList() {
     }
 }
 
+function opAutocorrect(i, ip, delim) {
+    if (input.value[i] == '"')
+        return false;
+
+    if (input.value[i] == '/' && delim in negs) {
+        input.value = input.value.substring(0, i) + negs[delim] + input.value.substring(ip);
+        input.selectionStart = input.selectionEnd = ip - 1;
+        return false;
+    }
+
+    if (i == ip - 2 && ip > 4) {
+        // Convert span of math-italic characters to ASCII
+        var fn = "";
+        while (i > 0) {
+            var code = codeAt(input.value, i);
+            var ch = foldMathItalic(code);
+            if (!ch) break;
+            fn = ch + fn;
+            i -= code > 0xFFFF ? 2 : 1;
+        }
+        if (isFunctionName(fn)) {
+            i++;                    // Move to start of span
+            input.value = input.value.substring(0, i) + fn + input.value.substring(ip - 1);
+            input.selectionStart = input.selectionEnd = i + fn.length + 1;
+            return false;
+        }
+    }
+    if (input.value.substring(ip - 2, ip) in mappedPair) {
+        input.value = input.value.substring(0, ip - 2) + mappedPair[input.value.substring(ip - 2, ip)] + input.value.substring(ip);
+        input.selectionStart = input.selectionEnd = ip - 1;
+        return false;
+    }
+    if (delim in mappedSingle) {
+        input.value = input.value.substring(0, ip - 1) + mappedSingle[delim] + input.value.substring(ip);
+    }
+    return false;
+}
+
 // Symbols whose options should be selected by default
 var szSymbolCommon = "αβδθλχϕϵ⁡←√∞⒨■"; // 03B1 03B2 03B4 03B8 03BB 03C7 03D5 03F5 2061 2190 221A 221E 24A8 25A0
 function autocomplete() {
@@ -238,55 +276,22 @@ function autocomplete() {
         var delim = input.value[ip - 1];    // Last char entered
         var i = ip - 2;
 
-        if (input.value[i] == '/' && delim in negs) {
-            input.value = input.value.substring(0, i) + negs[delim] + input.value.substring(ip);
-            input.selectionStart = input.selectionEnd = ip - 1;
-            return false;
-        }
-
         // Move back alphanumeric span
         while (i > 0 && /[a-zA-Z0-9]/.test(input.value[i])) { i--; }
 
         if (i < 0 || input.value[i] != '\\') {
-            // Not a [partial] control word. Check for italicization
-            if (input.value[i] == '"') return false;
-
+            // Not control word; check for italicization & operator autocorrect
             var ch = italicizeCharacter(delim);
             if (ch != delim) {
+                // Change letter to math-italic letter
                 input.value = input.value.substring(0, ip - 1) + ch + input.value.substring(ip);
                 if (input.value.codePointAt(ip - 1) > 0xFFFF) { ip++; } // Bypass trail surrogate
                 input.selectionStart = input.selectionEnd = ip;
                 return false;
             }
-            if (i == ip - 2 && ip > 4) {
-                // Convert span of math-italic characters to ASCII
-                var fn = "";
-                while (i > 0) {
-                    var code = codeAt(input.value, i);
-                    var ch = foldMathItalic(code);
-                    if (!ch) break;
-                    fn = ch + fn;
-                    i -= code > 0xFFFF ? 2 : 1;
-                }
-                if (isFunctionName(fn)) {
-                    i++;                    // Move to start of span
-                    input.value = input.value.substring(0, i) + fn + input.value.substring(ip - 1);
-                    input.selectionStart = input.selectionEnd = i + fn.length + 1;
-                    return false;
-                }
-            }
-            if (input.value.substring(ip - 2, ip) in mappedPair) {
-                input.value = input.value.substring(0, ip - 2) + mappedPair[input.value.substring(ip - 2, ip)] + input.value.substring(ip);
-                input.selectionStart = input.selectionEnd = ip - 1;
-                return false;
-            }
-            if (delim in mappedSingle) {
-                input.value = input.value.substring(0, ip - 1) + mappedSingle[delim] + input.value.substring(ip);
-            }
-            return false;
+            return opAutocorrect(i, ip, delim);
         }
-
-        if (ip <= 2) return false;          // Want >= 2 letters
+        if (ip <= 2) return false;          // Autocorrect needs > 1 letter
 
         if (!/[a-zA-Z0-9]/.test(delim)) {
             // Delimiter entered: try to autocorrect control word
@@ -309,7 +314,6 @@ function autocomplete() {
         var cw = input.value.substring(i + 1, ip);
         var matches = getPartialMatches(cw);
         if (!matches.length) return;
-        //console.log("Partial matches: " + matches);
 
         // Create autocomplete menu of partial control-word matches. Start
         // by creating a <div> element to contain matching control words
@@ -340,9 +344,13 @@ function autocomplete() {
             b.addEventListener("click", function (e) {
                 // Insert control-word symbol 
                 var val = this.getElementsByTagName("input")[0].value;
-                input.value = input.value.substring(0, i) + italicizeCharacter(val[val.length - 1])
-                    + input.value.substring(ip);
-                input.selectionStart = input.selectionEnd = i + 1;
+                var ch = italicizeCharacter(val[val.length - 1]);
+                var code = ch.codePointAt(0);
+                input.value = input.value.substring(0, i) + ch + input.value.substring(ip);
+                ip = i + (code > 0xFFFF ? 2 : 1);
+                input.selectionStart = input.selectionEnd = ip;
+                if (code >= 0x2200 && code <= 0x2C00)
+                    opAutocorrect(ip - 2, ip, ch);
                 closeAutocompleteList();
             });
             autocl.appendChild(b);
