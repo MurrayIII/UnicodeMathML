@@ -306,7 +306,7 @@ Lastly, the `docs/` subdirectory contains two PDF files:
 ## Changes in Murray Sargent's forked version
 Murray Sargent's forked version is located at https://github.com/MurrayIII/UnicodeMathML/tree/main.
 
-* Convert all ASCII letters and Greek lower-case letters to math italic unless they comprise a mathematical function name, e.g., a trigonometric function, are quoted, or are in an unrecognized control word.
+* All ASCII letters and Greek lower-case letters are converted to math italic unless they comprise a mathematical function name, e.g., a trigonometric function, are quoted, or are in an unrecognized control word.
 * The subscript and superscript operators apply to the variable or enclosed expression that immediately precedes them. For example, in “E=mc^2”, the base of the superscript object is “c”, not “mc”.
 * The integrand can be attached to the integral via a space or the “glue” operator ▒.
 * The trigonometric function names are defined by the expression
@@ -316,21 +316,22 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * The default math functions are converted with or without the function-apply operator U+2061.
 * A thin space is inserted in front of differential d or D only if it is preceded by one or more letters in the same run. Ideally the thin space should be added by the display engine along with the choice of math style (math italic, upright, double-struck italic) instead of by the converter. The MathML would then retain the original semantics.
 * Instead of displaying a large error message for a syntatically incorrect operator, display the operator in red. The user may be entering the whole expression and doesn't want to see an error message, but might like a hint that the syntax is wrong. For example, display “(a^2+” as “<span style="color:red">(</span>𝑎² +” with '(' in red instead of an error message.
-* Don't treat /" as a negated operator
+* The operator sequence /" isn't treated as a negated quote. Else "distance"/"time" won't convert into a fraction.
 
 In addition, the following features are implemented:
 * The identity matrix and n×m matrix short cuts are implemented.
 * \abs for unambiguous entry of absolute value with the absolute-value intent attribute. \choose along with its intent attribute (binomial).
-* Add MathML tests to the display of example.html. The results are reported in the console log.
+* MathML tests are added to the console display of example.html
 * The Playground calls resolveCW() defined in unicodemathml.js to resolve control words instead of having a duplicate control-word list. Similarly to convert characters to math styles, the Playground uses the mathFonts[] defined in unicodemathml.js. Greek upper-case letters that look like ASCII letters are removed from the Greek letter gallery and Greek lower-case letter variants are added. 
-* An autocomplete menu appears when a control word is entered partially. The user can use up/down arrows to select the desired control word and enter it by typing Enter or Tab. The most common choice is highlighted by default.
+* An autocomplete menu appears when a control word is entered partially. The user can use up/down arrows to select the desired control word and enter it by typing Enter, Tab, or a space. The most common choice is highlighted by default.
 * Control words and operator combinations typed into the Playground input text area are autocorrected there as well as in the output window.
 * Variables are displayed in math italic in the Playground input as well as in the output.
 * Many more LaTeX control words are included. \pmatrix, \bmatrix, \Bmatrix, \nmatrix, \vmatrix, \cancel, \bcancel, and \xcancel are implemented.
 
 To do:
-* Implement MathML 4.0 intent attributes in addition to the \abs and \choose cases already implemented.
+* Implement MathML 4.0 intent attributes in addition to the \abs and \choose cases already implemented
 * If possible, remove more redundant &#x3C;mrow>’s. E.g., the &#x3C;math> tag acts as an &#x3C;mrow>; and its content does not need to be enclosed in &#x3C;mrow>…&#x3C;/mrow>.
 * Add ummlConfig properties for more document default properties such as the current ummlConfig.doubleStruckMode
 * Improve the LaTeX output mode
-* More autocorrection in Playground input, e.g., "+-" → "±", "/=" → "≠".
+* Get rid of display motion encountered when MathJax is active
+* Ultimately it's desirable to have UnicodeMath WYSIWYG editing in the output window with no need for an input window. That's the approach used in math-aware Microsoft apps. For that the editor needs to manipulate the backing store which for the current model would be encoded in MathML.

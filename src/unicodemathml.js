@@ -614,7 +614,7 @@ function getPartialMatches(cw) {
     do {                                // Binary search for a partial match
         iMid = Math.floor((iMin + iMax) / 2);
         var key = keys[iMid];
-        if (key.substring(0, cchCw) == cw) {
+        if (key.startsWith(cw)) {
             matches.push(key + ' ' + controlWords[key]);
             break;
         }
@@ -628,7 +628,7 @@ function getPartialMatches(cw) {
         // Check for partial matches preceding iMid
         for (let j = iMid - 1; j >= 0; j--) {
             key = keys[j];
-            if (key.substring(0, cchCw) != cw)
+            if (!key.startsWith(cw))
                 break;
             // Matched: insert at start of matches[]
             matches.unshift(key + ' ' + controlWords[key]);
@@ -636,7 +636,7 @@ function getPartialMatches(cw) {
         // Check for partial matches following iMid
         for (let j = iMid + 1; j < cKeys; j++) {
             key = keys[j];
-            if (key.substring(0, cchCw) != cw)
+            if (!key.startsWith(cw))
                 break;
             matches.push(key + ' ' + controlWords[key]);
         }

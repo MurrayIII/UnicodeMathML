@@ -36,6 +36,8 @@ var mappedSingle = {
     "\'": "\u2032"
 };
 
+const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
+
 // escape mathml tags and entities, via https://stackoverflow.com/a/13538245
 function escapeMathMLSpecialChars(str) {
     var replacements = {
@@ -221,6 +223,7 @@ function closeAutocompleteList() {
     }
 }
 
+
 function opAutocorrect(i, ip, delim) {
     // Perform operator autocorrections like '+-' → '±' and '/=' → ≠
     if (input.value[i] == '"')
@@ -250,12 +253,23 @@ function opAutocorrect(i, ip, delim) {
         }
     }
     if (input.value.substring(ip - 2, ip) in mappedPair) {
-        input.value = input.value.substring(0, ip - 2) + mappedPair[input.value.substring(ip - 2, ip)] + input.value.substring(ip);
+        input.value = input.value.substring(0, ip - 2)
+            + mappedPair[input.value.substring(ip - 2, ip)] + input.value.substring(ip);
         input.selectionStart = input.selectionEnd = ip - 1;
         return false;
     }
     if (delim in mappedSingle) {
-        input.value = input.value.substring(0, ip - 1) + mappedSingle[delim] + input.value.substring(ip);
+        input.value = input.value.substring(0, ip - 1) + mappedSingle[delim]
+            + input.value.substring(ip);
+        return false;
+    }
+    if (ip >= 4 && input.value[ip - 3] == '^' && '+-= '.includes(delim) &&
+        /[0-9]/.test(input.value[ip - 2])) {
+        // E.g., replace "𝑎^2+" by "𝑎²+"
+        var j = (delim == ' ') ? ip : ip - 1;
+        input.value = input.value.substring(0, ip - 3) + digitSuperscripts[input.value[ip - 2]]
+            + input.value.substring(j);
+        input.selectionStart = input.selectionEnd = j;
     }
     return false;
 }
@@ -356,12 +370,12 @@ function autocomplete() {
             autocl.appendChild(b);
         }
         if (currentFocus == -1) {
-            // No common option identified: highlight first option
+            // No common control-word option identified: highlight first option
             currentFocus = 0;
             autocl.firstChild.classList.add("autocomplete-active");
         }
     });
-    // Execute a function when user types
+
     input.addEventListener("keydown", function (e) {
         var x = document.getElementById(this.id + "autocomplete-list");
         if (!x) return;
@@ -394,18 +408,18 @@ function autocomplete() {
     function addActive(x) {
         if (!x) return false;
 
-        // Classify an option as "active". First, remove the "active" class
-        // on all options
+        // Classify an option as "active". First, remove "autocomplete-active"
+        // class from all options, and ensure the currentFocus is valid
         removeActive(x);
         if (currentFocus >= x.length) currentFocus = 0;
         if (currentFocus < 0) currentFocus = (x.length - 1);
 
-        // Add class "autocomplete-active"
+        // Add class "autocomplete-active" to x[currentFocus]
         console.log("x[" + currentFocus + "] = " + x[currentFocus].innerText);
         x[currentFocus].classList.add("autocomplete-active");
     }
     function removeActive(x) {
-        // Remove the "active" class from all autocomplete items
+        // Remove "autocomplete-active" class from all autocomplete options
         for (var i = 0; i < x.length; i++) {
             x[i].classList.remove("autocomplete-active");
         }
