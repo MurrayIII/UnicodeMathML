@@ -37,6 +37,7 @@ var mappedSingle = {
 };
 
 const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
+const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
 
 // escape mathml tags and entities, via https://stackoverflow.com/a/13538245
 function escapeMathMLSpecialChars(str) {
@@ -258,18 +259,23 @@ function opAutocorrect(i, ip, delim) {
         input.selectionStart = input.selectionEnd = ip - 1;
         return false;
     }
-    if (delim in mappedSingle) {
-        input.value = input.value.substring(0, ip - 1) + mappedSingle[delim]
-            + input.value.substring(ip);
-        return false;
-    }
-    if (ip >= 4 && input.value[ip - 3] == '^' && '+-= '.includes(delim) &&
+    var op = input.value[ip - 3];
+
+    if (ip >= 4 && '_^'.includes(op) && '+-= '.includes(delim) &&
         /[0-9]/.test(input.value[ip - 2])) {
         // E.g., replace "𝑎^2+" by "𝑎²+"
         var j = (delim == ' ') ? ip : ip - 1;
-        input.value = input.value.substring(0, ip - 3) + digitSuperscripts[input.value[ip - 2]]
-            + input.value.substring(j);
+        var c = (op == '^') ? digitSuperscripts[input.value[ip - 2]]
+                            : digitSubscripts[input.value[ip - 2]];
+        input.value = input.value.substring(0, ip - 3) + c + input.value.substring(j);
         input.selectionStart = input.selectionEnd = j;
+        ip = j;
+    }
+    if (delim in mappedSingle) {
+        // Convert ASCII - and ' to Unicode minus (2212) and prime (2032)
+        input.value = input.value.substring(0, ip - 1) + mappedSingle[delim]
+            + input.value.substring(ip);
+        return false;
     }
     return false;
 }

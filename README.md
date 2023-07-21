@@ -307,7 +307,7 @@ Lastly, the `docs/` subdirectory contains two PDF files:
 Murray Sargent's forked version is located at https://github.com/MurrayIII/UnicodeMathML/tree/main.
 
 * All ASCII letters and Greek lower-case letters are converted to math italic unless they comprise a mathematical function name, e.g., a trigonometric function, are quoted, or are in an unrecognized control word.
-* The subscript and superscript operators apply to the variable or enclosed expression that immediately precedes them. For example, in “E=mc^2”, the base of the superscript object is “c”, not “mc”.
+* The subscript and superscript operators apply to the variable or enclosed expression that immediately precedes them. For example, in “𝐸=𝑚𝑐^2”, the base of the superscript object is “𝑐”, not “𝑚𝑐”.
 * The integrand can be attached to the integral via a space or the “glue” operator ▒.
 * The trigonometric function names are defined by the expression
        'a'? ['sin' | 'cos' | 'tan' | 'sec' | 'csc' | 'cot'] 'h'?
