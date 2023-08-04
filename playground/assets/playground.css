@@ -6,7 +6,6 @@
     --main-font: "Helvetica Neue", Helvetica, Arial, sans-serif;
     --code-font: "Iosevka Web", PragmataPro, monospace;
     --math-font: "LM Math", serif;
-
     --blackish-color: #111;
     --verydarkgrayish-color: #222;
     --darkgrayish-color: #222;
@@ -14,7 +13,6 @@
     --lightgrayish-color: #aaa;
     --faintwhitish-color: #ccc;
     --whitish-color: #eee;
-
     --button-radius: 2px;
 }
 
@@ -249,6 +247,8 @@ input[type=submit] {
     color: var(--lightgrayish-color);
 }
 #output {
+    font-family: var(--math-font);
+    font-size: 1.3em;
     overflow-x: scroll;
     /*overflow: scroll;
     max-height: 30em;*/
@@ -353,6 +353,22 @@ math:last-child,
 }
 .tabcontent pre:empty:after {
     content: "Intermediate representations will be shown here. They're useful when debugging!";
+}
+
+@keyframes blink {
+    0% {color: #6161f4;}
+    100% {color: black;}
+}
+
+@-webkit-keyframes blink {
+    0% {color: #6161f4;}
+    100% {color: black;}
+}
+
+.blink {
+    -webkit-animation: blink 2s linear infinite;
+    -moz-animation: blink 2s linear infinite;
+    animation: blink 2s linear infinite;
 }
 
 /* json */

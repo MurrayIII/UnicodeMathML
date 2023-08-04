@@ -19,7 +19,10 @@
     <script>loadUncachedStylesheet("assets/playground.css")</script>
 </head>
 <body>
-    <h1>UnicodeMathML <em>𝐏𝓁𝔞𝚢𝗴𝑟𝖔𝓊𝙣𝕕<!--𝐏𝓁𝔞𝚢͛𝗴𝑟𝖔⃗𝓊𝙣͖𝕕--></em></h1>
+    <h1>
+        UnicodeMathML <em>𝐏𝓁𝔞𝚢𝗴𝑟𝖔𝓊𝙣𝕕<!--𝐏𝓁𝔞𝚢͛𝗴𝑟𝖔⃗𝓊𝙣͖𝕕--></em>
+        <i class="pointer fa fa-4x fa-microphone-slash" id="mic">   mic</i>
+    </h1>
     <aside id="config"><h2>⚙︎</h2></aside>
     <table class="playground">
         <tr>
@@ -302,4 +305,6 @@
     <script src="assets/lib/jquery.min.js"></script>
     <script src="assets/charinfo.js">/* no need to avoid caching here – it's massive and it's not gonna change */</script>
     <script>loadUncachedScript("assets/playground.js")</script>
+    //<script>loadUncachedScript("assets/dictation.js")</script>
+    <script src="assets/lib/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_SVG"></script>
 </body>

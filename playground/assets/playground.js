@@ -224,7 +224,6 @@ function closeAutocompleteList() {
     }
 }
 
-
 function opAutocorrect(i, ip, delim) {
     // Perform operator autocorrections like '+-' → '±' and '/=' → ≠
     if (input.value[i] == '"')
@@ -287,7 +286,8 @@ function autocomplete() {
     // Try autocorrecting or autocompleting a control word when user
     // modifies text input
     input.addEventListener("input", function (e) {
-        if (e.inputType != "insertText") return false;
+        if (e.inputType != "insertText" && e.inputType != "deleteContentBackward")
+            return false;
         closeAutocompleteList();
         if (input.selectionStart != input.selectionEnd) return false;
 
@@ -432,14 +432,21 @@ function autocomplete() {
     }
 }
 
-// only use mathjax where mathml is not natively supported
+/* only use mathjax where mathml is not natively supported
+ * On Firefox, navigator.userAgent (2023/07/29) returns
+
+ * Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0.
+
+ * On Edge, navigator.userAgent returns
+ * Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36
+ */
 function browserIs(candidate) {
     return navigator.userAgent.toLowerCase().includes(candidate);
 }
-var loadMathJax = ummlConfig.outputLaTeX || ummlConfig.forceMathJax || !(browserIs('firefox') || (browserIs('safari') && !browserIs('chrome')));
-if (loadMathJax) {
-    document.write("<script src=\"assets/lib/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_SVG\"></scr" + "ipt>");
-}
+var loadMathJax = true;// ummlConfig.outputLaTeX || ummlConfig.forceMathJax || !(browserIs('firefox') || (browserIs('safari') && !browserIs('chrome')));
+//if (loadMathJax) {
+//    document.write("<script src=\"assets/lib/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_SVG\"></scr" + "ipt>");
+//}
 
 // if latex output is enabled, hide AST tab (since there is no LaTeX AST) and
 // rename source tab
@@ -480,7 +487,6 @@ if (window.localStorage.getItem('history')) {
 
 // Enable autocorrect and autocomplete
 autocomplete();
-console.log('navigator.userAgent = ' + navigator.userAgent);
 
 // compile and draw mathml code from input field
 async function draw() {
@@ -505,6 +511,7 @@ async function draw() {
     if (ummlConfig.tracing) {
         output_trace.innerHTML = "";
     }
+    //output.classList.add("hideAll");
 
     // if the input field is empty (as it is in the beginning), avoid doing much
     // with its contents
@@ -574,16 +581,16 @@ async function draw() {
     window.localStorage.setItem('unicodemath', input.value.replace(/\n\r?/g, 'LINEBREAK'));
 
     // clear old results
-    output.innerHTML = "";
-    output_pegjs_ast.innerHTML = "";
-    output_preprocess_ast.innerHTML = "";
-    output_mathml_ast.innerHTML = "";
-    output_source.innerHTML = "";
+    //output.innerHTML = "";
+    //output_pegjs_ast.innerHTML = "";
+    //output_preprocess_ast.innerHTML = "";
+    //output_mathml_ast.innerHTML = "";
+    //output_source.innerHTML = "";
 
     // get input(s) – depending on the ummlConfig.splitInput option, either...
     var inp;
     if (ummlConfig.splitInput) {
-        inp = input.value.split("\n");  // ...process each line of input seperately...
+        inp = input.value.split("\n");  // ...process each line of input separately...
     } else {
         inp = [input.value];  // ...or treat the entire input as a UnicodeMath expression
     }
@@ -657,14 +664,6 @@ async function draw() {
         }
     });
 
-    // write outputs to dom (doing this inside the loop becomes excruciatingly
-    // slow when more than a few dozen inputs are present)
-    output.innerHTML = output_HTML;
-    output_pegjs_ast.innerHTML = output_pegjs_ast_HTML;
-    output_preprocess_ast.innerHTML = output_preprocess_ast_HTML;
-    output_mathml_ast.innerHTML = output_mathml_ast_HTML;
-    output_source.innerHTML = output_source_HTML;
-
     // display measurements
     var sum = a => a.reduce((a, b) => a + b, 0);
     measurements_parse.innerHTML = sum(m_parse) + 'ms';
@@ -683,7 +682,15 @@ async function draw() {
         measurements_pretty.title = "";
     }
 
+    // write outputs to dom (doing this inside the loop becomes excruciatingly
+    // slow when more than a few dozen inputs are present)
     // if mathjax is loaded, tell it to redraw math
+    output.innerHTML = output_HTML;
+    output_pegjs_ast.innerHTML = output_pegjs_ast_HTML;
+    output_preprocess_ast.innerHTML = output_preprocess_ast_HTML;
+    output_mathml_ast.innerHTML = output_mathml_ast_HTML;
+    output_source.innerHTML = output_source_HTML;
+
     if (loadMathJax && typeof MathJax != "undefined") {
         MathJax.Hub.Queue(["Typeset", MathJax.Hub, output]);
     }
@@ -927,3 +934,44 @@ $('[data-explanation]').hover(function (e) {
     var text = elem.getAttribute("data-explanation");
     showTooltip(x, y, text);
 }, hideTooltip);
+
+var recognition;
+initDictation();
+function initDictation() {
+    const SpeechRecognition = window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        return;
+    }
+    recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.onresult = function (event) {
+        if (event.results.length > 0) {
+            var current = event.results[event.results.length - 1][0];
+            var result = current.transcript.toLowerCase();
+            console.log(result);
+            //result = dictationToUnicodeMath(result);
+            var ip = input.selectionStart + result.length;
+            input.value = input.value.substring(0, input.selectionStart) +
+                          result + input.value.substring(input.selectionEnd);
+            input.selectionEnd = input.selectionStart = ip;
+            draw();
+        }
+    }
+}
+
+$("#mic").click(function () {
+    if (!recognition) {
+        console.log("speech recognition API not available")
+        return;
+    }
+    try {
+        $(this).removeClass("fa-microphone-slash")
+        $(this).addClass("fa-microphone blink")
+        recognition.start()
+    } catch (error) {
+        $(this).removeClass("fa-microphone blink")
+        $(this).addClass("fa-microphone-slash")
+        recognition.stop() //already started - toggle
+    }
+})

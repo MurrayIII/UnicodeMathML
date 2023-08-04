@@ -96,6 +96,7 @@ var controlWords = {
     'asymp':            '≍',    	// 224D
     'atop':             '¦',	// 00A6
     'backcolor':        '☁',	// 2601
+    'backepsilon':      '϶',	// 03F6
     'backsim':          '∽',	// 223D
     'backsimeq':        '⋍',	    // 22CD
     'bar':              '̅',	// 0305
@@ -1453,8 +1454,8 @@ function doublestruckChar(value) {
     }
 }
 
-// if the outer-most node of an AST describes a parenthesized expression, remove
-// the parentheses. used for fractions, exponentiation etc.
+// if the outermost node of an AST describes a parenthesized expression, remove
+// the parentheses. used for fractions, exponentiation, etc.
 function dropOutermostParens(uast) {
     if (uast.hasOwnProperty("expr")) {
         return {expr: dropOutermostParens(uast.expr)};
