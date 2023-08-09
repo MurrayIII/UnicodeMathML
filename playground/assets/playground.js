@@ -815,6 +815,12 @@ $('button#insert_controlword').click(function () {
     insertAtCursorPos(symbol);
 });
 
+$('button#insert_speech').click(function () {
+    var speech = $('#speech').val();
+    var result = dictationToUnicodeMath(speech);
+    insertAtCursorPos(result);
+});
+
 // math font conversion (mathFonts[] is defined in unicodemathml.js)
 $('#mathchar').keyup(function (e) {
     $('.mathfont').removeClass("disabled");
@@ -948,9 +954,9 @@ function initDictation() {
     recognition.onresult = function (event) {
         if (event.results.length > 0) {
             var current = event.results[event.results.length - 1][0];
-            var result = current.transcript.toLowerCase();
+            var result = current.transcript;
             console.log(result);
-            //result = dictationToUnicodeMath(result);
+            result = dictationToUnicodeMath(result);
             var ip = input.selectionStart + result.length;
             input.value = input.value.substring(0, input.selectionStart) +
                           result + input.value.substring(input.selectionEnd);

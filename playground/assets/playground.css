@@ -121,8 +121,13 @@ input {
     top: -1px;
     background-color: var(--whitish-color);
 }
-input#controlword {
-    width: 140px;
+input#speech {
+    font-family: var(--code-font);
+    outline: none;
+    background: var(--verydarkgrayish-color);
+    border: none;
+    color: #FFFFFF;
+    width: 1440px;
 }
 input#mathchar {
     width: 35px;
