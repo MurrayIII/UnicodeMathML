@@ -964,6 +964,10 @@ function initDictation() {
             draw();
         }
     }
+    recognition.addEventListener("error", (event) => {
+        alert(`Speech recognition error detected: ${event.error}`);
+        mic.click();
+    });
 }
 
 $("#mic").click(function () {

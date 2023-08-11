@@ -279,6 +279,7 @@ opArray
     / "■"  // matrix
     / "@"  // row separator
     / "&"  // column separator
+    / "Ⓒ"
 opOpen = [([{⟨〖⌈⌊]
 opClose = [)}⟩〗⌉⌋] / "]"
 opDecimal = "." / ","
@@ -357,7 +358,7 @@ opTt = "ￗ"
     / opCommentOpen
     / opCommentClose
     / opTt*/
-opBuildup = [█■@&([{⟨〖⌈⌊├)}⟩〗⌉⌋┤|│∣⏜⏝⏞⏟⏠⏡⎴⎵¯∑⅀⨊∏∐⨋∫∬∭⨌∮∯∰∱⨑∲∳⨍⨎⨏⨕⨖⨗⨘⨙⨚⨛⨜⨒⨓⨔⋀⋁⋂⋃⨃⨄⨅⨆⨀⨁⨂⨉⫿▒ⅅⅆⅇⅈⅉ¦⒞/\u2044\u2215\u2298▭̄▁▢○⟌⃧⬭#⟡⬄⇳⬍⬆⬇⬌□√∛∜_^┬┴Ⅎ✎☁⫷⫸ￗ╱╲╳] / "]"  // ⚡ performance optimization
+opBuildup = [█⒜Ⓒ■@&([{⟨〖⌈⌊├)}⟩〗⌉⌋┤|│∣⏜⏝⏞⏟⏠⏡⎴⎵¯∑⅀⨊∏∐⨋∫∬∭⨌∮∯∰∱⨑∲∳⨍⨎⨏⨕⨖⨗⨘⨙⨚⨛⨜⨒⨓⨔⋀⋁⋂⋃⨃⨄⨅⨆⨀⨁⨂⨉⫿▒ⅅⅆⅇⅈⅉ¦⒞/\u2044\u2215\u2298▭̄▁▢○⟌⃧⬭#⟡⬄⇳⬍⬆⬇⬌□√∛∜_^┬┴Ⅎ✎☁⫷⫸ￗ╱╲╳] / "]"  // ⚡ performance optimization
 other = !(_ / αn / nn / diacritic / unicodeFraction / opBuildup / "\n") char
 
 
@@ -1088,7 +1089,10 @@ expBracket
     / op:expBracketOpen e:expBracketContents cl:expBracketClose {
         return {bracketed: {open: op, close: cl, content: e}};
     }
-    / "©(" r:arows ")" {  // cases
+    / "Ⓒ(" r:arows ")" {  // cases
+        return {bracketed: {open: "{", close: "", content: {array: r}}};  // }
+    }
+    / "Ⓒ〖" r:arows "〗" {  // cases
         return {bracketed: {open: "{", close: "", content: {array: r}}};  // }
     }
     / op:expBracketOpen {
