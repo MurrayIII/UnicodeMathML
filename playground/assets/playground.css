@@ -121,7 +121,7 @@ input {
     top: -1px;
     background-color: var(--whitish-color);
 }
-input#speech {
+input#dictation {
     font-family: var(--code-font);
     outline: none;
     background: var(--verydarkgrayish-color);

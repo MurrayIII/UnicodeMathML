@@ -1816,18 +1816,35 @@ function preprocess(dsty, uast) {
             if (value.f.hasOwnProperty("script")) {
                 var s = valuef.script;
                 var f = s.base.atoms.chars;
-                if (dsty && s.type == "subsup" && s.low && ["det", "gcd", "inf", "lim", "lim inf", "lim sup", "max", "min", "Pr", "sup"].includes(f)) {
-                    if (!s.high) {  // just convert the script to abovebelow
+                if (dsty && s.type == "subsup" && s.low &&
+                    ["det", "gcd", "inf", "lim", "lim inf", "lim sup", "max", "min", "Pr", "sup"].includes(f)) {
+                    if (!s.high) {
+                        // just convert the script to abovebelow
                         s.type = "abovebelow";
-                    } else {  // create a new belowscript around the base and
-                              // superscript
+                    } else {
+                        // create a new belowscript around the base and superscript
                         s = {base: {script: {base: s.base, type: s.type, high: s.high}}, type: "abovebelow", low: s.low};
                     }
                 }
                 valuef.script = s;
             }
-
-            return {function: {f: preprocess(dsty, valuef), of: preprocess(dsty, value.of)}};
+            // Handle ⒡ "parenthesize argument" dictation option
+            var of = preprocess(dsty, value.of);
+            var x = of[0][0];               // '⒡' as separate array element
+            if (x == undefined) x = of[0];  // '⒡' concatenated with arg
+            if (x != undefined) {
+                var ch = x.atoms[0].chars;
+                if (ch[0] == '⒡') {
+                    // Remove '⒡' and enclose function arg in parens
+                    if (ch.length == 1) {
+                        of[0].shift();
+                    } else {
+                        of[0].atoms[0].chars = ch.substring(1);
+                    }
+                    of = {bracketed: {open: '(', close: ')', content: of}};
+                }
+            }
+            return {function: {f: preprocess(dsty, valuef), of: of}};
 
         case "text":
             return uast;

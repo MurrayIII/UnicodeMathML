@@ -182,9 +182,10 @@
                     <span class="category" data-explanation="If you want to convert multiple characters at a time, enter them into the UnicodeMath input field, select them and click one of these buttons. Any characters that cannot be converted will remain unchanged.">Math fonts</span>
                     <input type="text" id="mathchar" placeholder="A" maxlength="1"><button id="serif-bold" class="submit mathfont" data-tooltip="Serif & Bold">𝐀𝐁𝐂</button><button id="serif-italic" class="mathfont" data-tooltip="Serif & Italic">𝐴𝐵𝐶</button><button id="serif-bolditalic" class="mathfont" data-tooltip="Serif & Bold & Italic">𝑨𝑩𝑪</button><button id="sans-normal" class="mathfont" data-tooltip="Sans-serif">𝖠𝖡𝖢</button><button id="sans-bold" class="mathfont" data-tooltip="Sans-serif & Bold">𝗔𝗕𝗖</button><button id="sans-italic" class="mathfont" data-tooltip="Sans-serif & Italic">𝘈𝘉𝘊</button><button id="sans-bolditalic" class="mathfont" data-tooltip="Sans-serif & Bold & Italic">𝘼𝘽𝘾</button><button id="script-normal" class="mathfont"  data-tooltip="Script">𝒜ℬ𝒞</button><button id="script-bold" class="mathfont" data-tooltip="Script & Bold">𝓐𝓑𝓒</button><button id="fraktur-normal" class="mathfont" data-tooltip="Fraktur">𝔄𝔅ℭ</button><button id="fraktur-bold" class="mathfont" data-tooltip="Fraktur & Bold">𝕬𝕭𝕮</button><button id="monospace-normal" class="mathfont" data-tooltip="Monospace">𝙰𝙱𝙲</button><button id="doublestruck-normal" class="mathfont" data-tooltip="Double-struck">𝔸𝔹ℂ</button>
                 </p>
-                <p class="speech">
-                    <span class="category" data-explanation="Convert speech to UnicodeMath for input field">Speech</span>
-                    <input type="text" id="speech" placeholder="Put math speech here..."><button id="insert_speech" class="submit">➥</button>
+                <p class="dictation">
+                    <span class="category" data-explanation="Convert math dictation to UnicodeMath for input field">Dictation</span>
+                    <input type="text" id="dictation" placeholder="Enter math dictation here..." autocomplete="off" spellcheck="false">
+                    <button id="insert_dictation" class="submit">➥</button>
                 </p>
                 <p class="examples"><span class="category">Examples</span>
                     <script>

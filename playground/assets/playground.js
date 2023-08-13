@@ -815,10 +815,19 @@ $('button#insert_controlword').click(function () {
     insertAtCursorPos(symbol);
 });
 
-$('button#insert_speech').click(function () {
-    var speech = $('#speech').val();
-    var result = dictationToUnicodeMath(speech);
-    insertAtCursorPos(result);
+$('button#insert_dictation').click(function () {
+    var dictation = $('#dictation').val();
+    var unicodeMath = dictationToUnicodeMath(dictation);
+    insertAtCursorPos(unicodeMath);
+});
+
+$('#dictation').keydown(function (e) {
+    if (e.key == 'Enter') {
+        // Prevent form from being submitted and simulate a click on the
+        // dictation button
+        e.preventDefault();
+        $('button#insert_dictation').click();
+    }
 });
 
 // math font conversion (mathFonts[] is defined in unicodemathml.js)
@@ -964,15 +973,16 @@ function initDictation() {
             draw();
         }
     }
-    recognition.addEventListener("error", (event) => {
-        alert(`Speech recognition error detected: ${event.error}`);
+    recognition.onerror = function (event) {
         mic.click();
-    });
+        alert((event.error == 'network') ? 'Not connected to Internet'
+            : `Dictation recognition error detected: ${event.error}`);
+    }
 }
 
 $("#mic").click(function () {
     if (!recognition) {
-        console.log("speech recognition API not available")
+        console.log("dictation recognition API not available")
         return;
     }
     try {
