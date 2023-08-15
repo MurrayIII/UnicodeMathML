@@ -432,22 +432,6 @@ function autocomplete() {
     }
 }
 
-/* only use mathjax where mathml is not natively supported
- * On Firefox, navigator.userAgent (2023/07/29) returns
-
- * Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0.
-
- * On Edge, navigator.userAgent returns
- * Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36
- */
-function browserIs(candidate) {
-    return navigator.userAgent.toLowerCase().includes(candidate);
-}
-var loadMathJax = true;// ummlConfig.outputLaTeX || ummlConfig.forceMathJax || !(browserIs('firefox') || (browserIs('safari') && !browserIs('chrome')));
-//if (loadMathJax) {
-//    document.write("<script src=\"assets/lib/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_SVG\"></scr" + "ipt>");
-//}
-
 // if latex output is enabled, hide AST tab (since there is no LaTeX AST) and
 // rename source tab
 if (ummlConfig.outputLaTeX) {
@@ -691,9 +675,7 @@ async function draw() {
     output_mathml_ast.innerHTML = output_mathml_ast_HTML;
     output_source.innerHTML = output_source_HTML;
 
-    if (loadMathJax && typeof MathJax != "undefined") {
-        MathJax.Hub.Queue(["Typeset", MathJax.Hub, output]);
-    }
+    MathJax.typeset();
 }
 
 // add a symbol (or string) to history
