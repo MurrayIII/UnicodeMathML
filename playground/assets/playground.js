@@ -933,9 +933,11 @@ $('[data-explanation]').hover(function (e) {
 }, hideTooltip);
 
 var recognition;
-if (dictationToUnicodeMath != 'undefined') {
+try {
+    dictationToUnicodeMath('');
     initDictation();
-} else {
+}
+catch {
     alert("Math dictation not available");
 }
 function initDictation() {
