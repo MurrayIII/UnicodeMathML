@@ -935,6 +935,8 @@ $('[data-explanation]').hover(function (e) {
 var recognition;
 if (dictationToUnicodeMath != 'undefined') {
     initDictation();
+} else {
+    alert("Math dictation not available");
 }
 function initDictation() {
     const SpeechRecognition = window.SpeechRecognition ||
