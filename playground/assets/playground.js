@@ -934,12 +934,10 @@ $('[data-explanation]').hover(function (e) {
 
 var recognition;
 try {
-    dictationToUnicodeMath('');
+    dictationToUnicodeMath('');             // Fails if dictation.js is unavailable
     initDictation();
 }
-catch {
-    alert("Math dictation not available");
-}
+catch {}
 function initDictation() {
     const SpeechRecognition = window.SpeechRecognition ||
         window.webkitSpeechRecognition;
