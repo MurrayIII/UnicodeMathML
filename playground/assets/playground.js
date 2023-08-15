@@ -933,7 +933,9 @@ $('[data-explanation]').hover(function (e) {
 }, hideTooltip);
 
 var recognition;
-initDictation();
+if (dictationToUnicodeMath != 'undefined') {
+    initDictation();
+}
 function initDictation() {
     const SpeechRecognition = window.SpeechRecognition ||
         window.webkitSpeechRecognition;
@@ -963,8 +965,8 @@ function initDictation() {
 }
 
 $("#mic").click(function () {
-    if (!recognition) {
-        console.log("dictation recognition API not available")
+    if (recognition == undefined) {
+        alert("dictation recognition API not available");
         return;
     }
     try {
