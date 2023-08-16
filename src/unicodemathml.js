@@ -1830,18 +1830,20 @@ function preprocess(dsty, uast) {
             }
             // Handle ⒡ "parenthesize argument" dictation option
             var of = preprocess(dsty, value.of);
-            var x = of[0][0];               // '⒡' as separate array element
-            if (x == undefined) x = of[0];  // '⒡' concatenated with arg
-            if (x != undefined) {
-                var ch = x.atoms[0].chars;
-                if (ch[0] == '⒡') {
-                    // Remove '⒡' and enclose function arg in parens
-                    if (ch.length == 1) {
-                        of[0].shift();
-                    } else {
-                        of[0].atoms[0].chars = ch.substring(1);
+            if (Array.isArray(of)) {
+                var x = of[0];
+                if (Array.isArray(x)) x = x[0]; // '⒡' as separate array element
+                if (x != undefined && x.hasOwnProperty('atoms')) {
+                    var ch = x.atoms[0].chars;
+                    if (ch[0] == '⒡') {
+                        // Remove '⒡' and enclose function arg in parens
+                        if (ch.length == 1) {
+                            of[0].shift();
+                        } else {
+                            of[0].atoms[0].chars = ch.substring(1);
+                        }
+                        of = {bracketed: {open: '(', close: ')', content: of}};
                     }
-                    of = {bracketed: {open: '(', close: ')', content: of}};
                 }
             }
             return {function: {f: preprocess(dsty, valuef), of: of}};

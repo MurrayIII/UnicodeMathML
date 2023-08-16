@@ -279,7 +279,7 @@ function opAutocorrect(i, ip, delim) {
     return false;
 }
 
-// Symbols whose options should be selected by default
+// Symbols whose autocomplete options should be selected by default
 var szSymbolCommon = "αβδθλχϕϵ⁡←√∞⒨■"; // 03B1 03B2 03B4 03B8 03BB 03C7 03D5 03F5 2061 2190 221A 221E 24A8 25A0
 function autocomplete() {
     var currentFocus = -1;
@@ -564,13 +564,6 @@ async function draw() {
     // update local storage
     window.localStorage.setItem('unicodemath', input.value.replace(/\n\r?/g, 'LINEBREAK'));
 
-    // clear old results
-    //output.innerHTML = "";
-    //output_pegjs_ast.innerHTML = "";
-    //output_preprocess_ast.innerHTML = "";
-    //output_mathml_ast.innerHTML = "";
-    //output_source.innerHTML = "";
-
     // get input(s) – depending on the ummlConfig.splitInput option, either...
     var inp;
     if (ummlConfig.splitInput) {
@@ -799,8 +792,13 @@ $('button#insert_controlword').click(function () {
 
 $('button#insert_dictation').click(function () {
     var dictation = $('#dictation').val();
-    var unicodeMath = dictationToUnicodeMath(dictation);
-    insertAtCursorPos(unicodeMath);
+    try {
+        var unicodeMath = dictationToUnicodeMath(dictation);
+        insertAtCursorPos(unicodeMath);
+    }
+    catch {
+        alert('Math dictation is unavailable');
+    }
 });
 
 $('#dictation').keydown(function (e) {
