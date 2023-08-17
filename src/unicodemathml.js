@@ -2653,12 +2653,12 @@ function unicodemathml(unicodemath, displaystyle) {
         debugLog(error);
 
         // convert error to string and invert any private use area mappings
-        var strError = mapFromPrivate("" + error);
+        var strError = ''; // mapFromPrivate("" + error);
 
         // add variant of input with resolved control words, if any
-        if (typeof ummlConfig !== "undefined" && typeof ummlConfig.resolveControlWords !== "undefined" && ummlConfig.resolveControlWords && resolveCW(unicodemath) != unicodemath) {
-            strError = "(Resolved to \"" + resolveCW(unicodemath) + "\".) " + error;
-        }
+        //if (typeof ummlConfig !== "undefined" && typeof ummlConfig.resolveControlWords !== "undefined" && ummlConfig.resolveControlWords && resolveCW(unicodemath) != unicodemath) {
+        //    strError = "(Resolved to \"" + resolveCW(unicodemath) + "\".) " + error;
+        //}
 
         debugGroup();
         return {
