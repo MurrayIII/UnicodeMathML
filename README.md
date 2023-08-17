@@ -317,6 +317,7 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * A thin space is inserted in front of differential d or D only if it is preceded by one or more letters in the same run. Ideally the thin space should be added by the display engine along with the choice of math style (math italic, upright, double-struck italic) instead of by the converter. The MathML would then retain the original semantics.
 * Instead of displaying a large error message for a syntatically incorrect operator, display the operator in red. The user may be entering the whole expression and doesn't want to see an error message, but might like a hint that the syntax is wrong. For example, display “(a^2+” as “<span style="color:red">(</span>𝑎² +” with '(' in red instead of an error message.
 * The operator sequence /" isn't treated as a negated quote. Else "distance"/"time" won't convert into a fraction.
+* Upgrade to MathJax 3, which is noticably faster than MathJax 2.7.5 and doesn't flash an intermediate display.
 
 In addition, the following features are implemented:
 * The identity matrix and n×m matrix short cuts are implemented.
@@ -327,11 +328,11 @@ In addition, the following features are implemented:
 * Control words and operator combinations typed into the Playground input text area are autocorrected there as well as in the output window.
 * Variables are displayed in math italic in the Playground input as well as in the output.
 * Many more LaTeX control words are included. \pmatrix, \bmatrix, \Bmatrix, \nmatrix, \vmatrix, \cancel, \bcancel, and \xcancel are implemented.
+* Math dictation infrastructure
 
 To do:
 * Implement MathML 4.0 intent attributes in addition to the \abs and \choose cases already implemented
 * If possible, remove more redundant &#x3C;mrow>’s. E.g., the &#x3C;math> tag acts as an &#x3C;mrow>; and its content does not need to be enclosed in &#x3C;mrow>…&#x3C;/mrow>.
 * Add ummlConfig properties for more document default properties such as the current ummlConfig.doubleStruckMode
 * Improve the LaTeX output mode
-* Get rid of display motion encountered when MathJax is active
 * Ultimately it's desirable to have UnicodeMath WYSIWYG editing in the output window with no need for an input window. That's the approach used in math-aware Microsoft apps. For that the editor needs to manipulate the backing store which for the current model would be encoded in MathML.
