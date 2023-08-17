@@ -2132,6 +2132,7 @@ function mtransform(dsty, puast) {
 
                     return {mmultiscripts: noAttr(ret)};
                 case "abovebelow":
+                    value.base = dropOutermostParens(value.base);
                     if ("low" in value && "high" in value) {
                         return {munderover: noAttr([mtransform(dsty, value.base),
                                                     mtransform(dsty, dropOutermostParens(value.low)),
