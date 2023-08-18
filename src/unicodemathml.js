@@ -196,6 +196,7 @@ var controlWords = {
     'dsmash':           '⬇',    	// 2B07
     'ee':               'ⅇ',	// 2147
     'ell':              'ℓ',	// 2113
+    'ellipse':          '⬭',    // 2B2D
     'emptyset':         '∅',	    // 2205
     'emsp':             ' ',	// 2003
     'end':              '〗',	// 3017
@@ -298,6 +299,7 @@ var controlWords = {
     'lneqq':            '≨',	    // 2268
     'lnot':             '¬',	// 00AC
     'lnsim':            '⋦',	    // 22E6
+    'longdiv':          '⟌',    // 27CC
     'longleftarrow':    '⟵',	// 27F5
     'longleftrightarrow':'⟷',	// 27F7
     'longmapsto':       '⟼',	// 27FC

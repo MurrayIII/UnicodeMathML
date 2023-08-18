@@ -100,6 +100,7 @@ button.unicode,
 button.example,
 button.mathfont {
     font-family: var(--code-font);
+    margin-left: 0.6em;
 }
 button.disabled {
     opacity: 0.5;
@@ -156,7 +157,7 @@ p.codepoint, p.examples {
     padding: 0.3rem;
     border: 1px solid var(--darkgrayish-color);
     max-width: 30em;
-    line-height: 1.2em;
+    line-height: 2.5em;
 }
 .tooltip b {
     padding: 0.1rem;
