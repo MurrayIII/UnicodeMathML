@@ -151,7 +151,7 @@ p.codepoint, p.examples {
     pointer-events: none;
     background: var(--verydarkgrayish-color);
     color: var(--faintwhitish-color);
-    font-size: 0.67rem;
+    font-size: 1rem;
     border-radius: var(--button-radius);
     padding: 0.3rem;
     border: 1px solid var(--darkgrayish-color);
