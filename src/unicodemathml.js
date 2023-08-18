@@ -108,7 +108,7 @@ var controlWords = {
     'beth':             'ℶ',    	// 2136
     'between':          '≬',    	// 226C
     'bigcap':           '⋂',    	// 22C2
-    'bigcup':           '⋂',    	// 22C2
+    'bigcup':           '⋃',    	// 22C3
     'bigodot':          '⨀',	// 2A00
     'bigoplus':         '⨁',	// 2A01
     'bigotimes':        '⨂',	// 2A02
@@ -135,6 +135,7 @@ var controlWords = {
     'cap':              '∩',	// 2229
     'cases':            'Ⓒ',	// 24B8
     'cbrt':             '∛',	    // 221B
+    'ccwint':           '⨑',    // 2A11
     'cdot':             '⋅',	    // 22C5
     'cdots':            '⋯',	    // 22EF
     'cents':            '¢',    // 00A2
@@ -253,6 +254,8 @@ var controlWords = {
     'int':              '∫',	// 222B
     'intercal':         '⊺',	    // 22BA
     'iota':             'ι',	// 03B9
+    'iplus':            '⁤',	    // 2064
+    'isep':             '⁣',	    // 2063
     'itimes':           '⁢',	    // 2062
     'jj':               'ⅉ',    	// 2149
     'jmath':            'ȷ',	// 0237

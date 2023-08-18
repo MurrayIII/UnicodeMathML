@@ -93,25 +93,30 @@
                             'ￗ': 'Typewriter/code font (non-standard)'
                             }},
                         {label: 'Operators', explanation: 'These are just examples – most non-alphabetic and non-numeric characters that have no special role in UnicodeMath are recognized as operators.', symbols: '×⋅∈∋∼≃≅≈≍≡≤≥≶≷≽≺≻≼⊂⊃⊆⊇⊑⊒'},
-                        {label: 'N-ary operators', explanation: 'These are just examples – more exist (mostly integral variants).', symbols: '∑∏∫∬∭⨌∮∱⨑⋂⋃⨃⨄⨀⨁⨂'},
+                        {label: 'N-ary operators', explanation: 'These are just examples – more exist (mostly integral variants).', symbols: {
+                            '∑': '\\sum', '∏': '\\prod', '∫': '\\int', '∬': '\\iint',
+                            '∭': '\\iiint', '⨌': '\\iiiint', '∮': '\\oint', '∱': '\\cwint',
+                            '⨑': '\\ccwint', '⋂': '\\bigcap', '⋃': '\\bigcup', '⨃': '\\bigudot',
+                            '⨄': '\\biguplus', '⨀': '\\bigodot', '⨁': '\\bigoplus', '⨂': '\\bigotimes'
+                            }},
                         {label: 'Logic & DB operators', symbols: '∃∀¬∧∨⇒⇔⊕⊤⊥⊢ ⨯⨝⟕⟖⟗⋉⋊▷÷πσ'},
                         {label: 'Invisible operators & spaces', symbols: {
-                            '2061': 'Invisible function application',
-                            '2062': 'Invisible times',
-                            '2063': 'Invisible separator',
-                            '2064': 'Invisible plus',
-                            '​': ['Zero-width space', 'width: 1em'],
-                            ' ': ['1/18em space (veryverythinmathspace)', 'width: 1.1em'],
+                            '2061': '\\funcapply: invisible function apply',
+                            '2062': '\\itimes: invisible times',
+                            '2063': '\\isep: invisible separator',
+                            '2064': '\\iplus: invisible plus',
+                            '​': ['\\zwsp: zero-width space', 'width: 1em'],
+                            ' ': ['\\hairsp: 1/18em space (veryverythinmathspace)', 'width: 1.1em'],
                             '  ': ['2/18em space (verythinmathspace)', 'width: 1.2em'],
-                            ' ': ['3/18em space (thinmathspace)', 'width: 1.3em'],
-                            ' ': ['4/18em space (mediummathspace)', 'width: 1.4em'],
-                            ' ': ['5/18em space (thickmathspace)', 'width: 1.5em'],
-                            ' ': ['6/18em space (verythickmathspace)', 'width: 1.6em'],
+                            ' ': ['\\thinsp: 3/18em space (thinmathspace)', 'width: 1.3em'],
+                            ' ': ['\\medsp: 4/18em space (mediummathspace)', 'width: 1.4em'],
+                            ' ': ['\\thicksp: 5/18em space (thickmathspace)', 'width: 1.5em'],
+                            ' ': ['\\vthicksp: 6/18em space (verythickmathspace)', 'width: 1.6em'],
                             '  ': ['7/18em space (veryverythickmathspace)', 'width: 1.7em'],
-                            ' ': ['9/18em space', 'width: 1.9em'],
-                            ' ': ['1em space', 'width: 2.8em'],
-                            ' ': ['Digit-width space', 'width: 1.67em'],
-                            ' ': ['Space-width space (non-breaking space)', 'width: 1.67em']
+                            ' ': ['\\ensp: 9/18em space', 'width: 1.9em'],
+                            ' ': ['\\emsp: 1em space', 'width: 2.8em'],
+                            ' ': ['\\numsp: Digit-width space', 'width: 1.67em'],
+                            ' ': ['\\nbsp: space-width space (non-breaking space)', 'width: 1.67em']
                             }},
                         {label: 'Superscripts & Subscripts', symbols: '⁰¹²³⁴⁵⁶⁷⁸⁹ⁱⁿ⁺⁻⁼⁽⁾₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎'},
                         {label: 'Delimiters & Over/underbraces', symbols: '()[]{}⟨⟩⌈⌉⌊⌋  ⏜⏝⏞⏟⏠⏡⎴⎵¯'},
@@ -122,21 +127,25 @@
                             '⟌': '\\longdiv', '⬭': '\\ellipse'
                             }},
                         {label: 'Phantoms & Smashes', symbols: {
-                            '⟡': 'Phantom operator',
-                            '⬄': 'Horizontal phantom (hphantom) operator',
-                            '⇳': 'Vertical phantom (vphantom) operator',
-                            '⬍': 'Smash operator',
-                            '⬆': 'Ascender smash (asmash) operator',
-                            '⬇': 'Descender smash (dsmash) operator',
-                            '⬌': 'Horizontal smash (hsmash) operator'
+                            '⟡': '\\phantom: phantom operator',
+                            '⬄': '\\hphantom: horizontal phantom operator',
+                            '⇳': '\\vphantom: vertical phantom operator',
+                            '⬍': '\\smash: smash operator',
+                            '⬆': '\\asmash: ascender smash operator',
+                            '⬇': '\\dsmash: descender smash operator',
+                            '⬌': '\\hsmash: horizontal smash operator'
                             }},
-                        {label: 'Combining marks', explanation: 'These are just examples – anything from the "Combining Diacritical Marks" and "Combining Diacritical Marks for Symbols" Unicode blocks works.', symbols: ['0302', '030C', '0303', '0301', '0300', '0307', '0308', '20DB', '0304', '20D7']},
+                        {label: 'Combining marks', explanation: 'These are just examples – anything from the "Combining Diacritical Marks" and "Combining Diacritical Marks for Symbols" Unicode blocks works.', symbols: {
+                            '0302': '\\hat', '030C': '\\check', '0303': '\\tilde', '0301': '\\acute',
+                            '0300': '\\grave', '0307': '\\dot', '0308': '\\ddot', '20DB': '\\dddot',
+                            '0305': '\\bar', '20D7': '\\vec'
+                            }},
                         {label: 'Differential, Exponential, Imaginary, Infinity', symbols: {
                             'ⅅ': '\\Dd', 'ⅆ': '\\dd', 'ⅇ': '\\ee', 'ⅈ': '\\ii', 'ⅉ': '\\jj', '∞': '\\infty'
                             }},
                         {label: 'Greek', symbols: {
                                 '𝛼': '\\alpha', '𝛽': '\\beta', 'Γ': '\\Gamma', '𝛾': '\\gamma',
-                                'Δ': '\\Delta', '𝛿': '\\delta', '𝜖': '\\epsilon', '𝜀': '\\varepsilon',
+                                'Δ': '\\Delta', '𝛿': '\\delta', '𝜕': '\\partial', '𝜖': '\\epsilon', '𝜀': '\\varepsilon',
                                 '𝜁': '\\zeta', '𝜂': '\\eta', 'Θ': '\\Theta', '𝜃': '\\theta', '𝜗': '\\vartheta',
                                 '𝜄': '\\iota', '𝜅': '\\kappa', '𝜘': '\\varkappa', 'Λ': '\\Lambda', '𝜆': '\\lambda',
                                 '𝜇': '\\mu', '𝜈': '\\nu', 'Ξ': '\\Xi', '𝜉': '\\xi', 'Π': '\\Pi', '𝜋': '\\pi',
