@@ -24,7 +24,7 @@ Generally consistent with version 3.1 of Sargent's tech note, some edge cases th
 
 For a **first look**, check out...
 
-* ...the [UnicodeMathML playground](https://doersino.github.io/UnicodeMathML/playground/), an interactive environment that allows you to play around with UnicodeMath's syntax and its translation into MathML.
+* ...the [UnicodeMathML playground](https://MurrayIII.github.io/UnicodeMathML/playground/), an interactive environment that allows you to play around with UnicodeMath's syntax and its translation into MathML.
 * ...an [example Markdeep document](https://doersino.github.io/UnicodeMathML/src/integration/example.md.html) whose source can be found [here](https://github.com/doersino/UnicodeMathML/blob/master/src/integration/example.md.html).
 * ...or an [example HTML document](https://doersino.github.io/UnicodeMathML/src/integration/example.html) whose source is located [here](https://github.com/doersino/UnicodeMathML/blob/master/src/integration/example.html).
 
@@ -322,17 +322,18 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 In addition, the following features are implemented:
 * The identity matrix and n×m matrix short cuts are implemented.
 * \abs for unambiguous entry of absolute value with the absolute-value intent attribute. \choose along with its intent attribute (binomial).
-* MathML tests are added to the console display of example.html
+* MathML tests are added to the console display of example.html.
 * The Playground calls resolveCW() defined in unicodemathml.js to resolve control words instead of having a duplicate control-word list. Similarly to convert characters to math styles, the Playground uses the mathFonts[] defined in unicodemathml.js. Greek upper-case letters that look like ASCII letters are removed from the Greek letter gallery and Greek lower-case letter variants are added. 
 * An autocomplete menu appears when a control word is entered partially. The user can use up/down arrows to select the desired control word and enter it by typing Enter, Tab, or a space. The most common choice is highlighted by default.
 * Control words and operator combinations typed into the Playground input text area are autocorrected there as well as in the output window.
 * Variables are displayed in math italic in the Playground input as well as in the output.
 * Many more LaTeX control words are included. \pmatrix, \bmatrix, \Bmatrix, \nmatrix, \vmatrix, \cancel, \bcancel, and \xcancel are implemented.
-* Math dictation infrastructure
+* Math dictation infrastructure is added.
+* Most symbols in the Playground galleries have LaTeX control-word tooltips.
 
 To do:
-* Implement MathML 4.0 intent attributes in addition to the \abs and \choose cases already implemented
+* Implement MathML 4.0 intent attributes in addition to the \abs and \choose cases already implemented.
 * If possible, remove more redundant &#x3C;mrow>’s. E.g., the &#x3C;math> tag acts as an &#x3C;mrow>; and its content does not need to be enclosed in &#x3C;mrow>…&#x3C;/mrow>.
-* Add ummlConfig properties for more document default properties such as the current ummlConfig.doubleStruckMode
-* Improve the LaTeX output mode
+* Add ummlConfig properties for more document default properties such as the current ummlConfig.doubleStruckMode.
+* Improve the LaTeX output mode.
 * Ultimately it's desirable to have UnicodeMath WYSIWYG editing in the output window with no need for an input window. That's the approach used in math-aware Microsoft apps. For that the editor needs to manipulate the backing store which for the current model would be encoded in MathML.

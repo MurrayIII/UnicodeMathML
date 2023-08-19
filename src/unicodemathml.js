@@ -44,6 +44,7 @@ var controlWords = {
     'Downarrow':        '⇓',    	// 21D3
     'Gamma':            'Γ',	// 0393
     'Im':               'ℑ',    	// 2111
+    'Join':             '⨝',   // 2A1D
     'Lambda':           'Λ',	// 039B
     'Langle':           '⟪',    	// 27EA
     'Lbrack':           '⟦',    	// 27E6
@@ -215,10 +216,10 @@ var controlWords = {
     'eta':              'η',	// 03B7
     'exists':           '∃',	// 2203
     'fallingdotseq':    '≒',	// 2252
-    'fojoin':           '⟗',    // 27D7
     'forall':           '∀',	// 2200
     'frakturH':         'ℌ',    // 210C
     'frown':            '⌢',	    // 2322
+    'fullouterjoin':    '⟗',    // 27D7
     'funcapply':        '⁡',	    // 2061
     'gamma':            'γ',	// 03B3
     'ge':               '≥',	// 2265
@@ -261,7 +262,6 @@ var controlWords = {
     'itimes':           '⁢',	    // 2062
     'jj':               'ⅉ',    	// 2149
     'jmath':            'ȷ',	// 0237
-    'join':             '⨝',   // 2A1D
     'kappa':            'κ',	// 03BA
     'ket':              '⟩',	    // 27E9
     'labove':           '└',	// 2514
@@ -284,6 +284,7 @@ var controlWords = {
     'leftharpoondown':  '↽',	    // 21BD
     'leftharpoonup':    '↼',	    // 21BC
     'leftleftarrows':   '⇇',	    // 21C7
+    'leftouterjoin':    '⟕',    // 27D5
     'leftrightarrow':   '↔',	// 2194
     'leftrightarrows':  '⇆',	    // 21C6
     'leftrightharpoons':'⇋',	    // 21CB
@@ -305,7 +306,6 @@ var controlWords = {
     'lneqq':            '≨',	    // 2268
     'lnot':             '¬',	// 00AC
     'lnsim':            '⋦',	    // 22E6
-    'lojoin':           '⟕',    // 27D5
     'longdiv':          '⟌',    // 27CC
     'longleftarrow':    '⟵',	// 27F5
     'longleftrightarrow':'⟷',	// 27F7
@@ -315,6 +315,7 @@ var controlWords = {
     'looparrowleft':    '↫',	    // 21AB
     'looparrowright':   '↬',	    // 21AC
     'lor':              '∨',	// 2228
+    'lparen':           '(',    // 0028
     'lrhar':            '⇋',	    // 21CB
     'ltimes':           '⋉',    	// 22C9
     'lvec':             '⃖',	// 20D6
@@ -449,6 +450,7 @@ var controlWords = {
     'rightharpoonup':   '⇀',	    // 21C0
     'rightleftarrows':  '⇄',	    // 21C4
     'rightleftharpoons':'⇌',    	// 21CC
+    'rightouterjoin':   '⟖',    // 27D6
     'rightrightarrows': '⇉',    	// 21C9
     'rightthreetimes':  '⋌',	    // 22CC
     'righttriangle':    '⊿',	// 22BF
@@ -456,8 +458,8 @@ var controlWords = {
     'risingdotseq':     '≓',	    // 2253
     'rlhar':            '⇌',	    // 21CC
     'rmoust':           '⎱',	    // 23B1
-    'rojoin':           '⟖',    // 27D6
     'root':             '⒭',	// 24AD
+    'rparen':           ')',    // 0029
     'rrect':            '▢',	// 25A2
     'rtimes':           '⋊',    	// 22CA
     'scriptH':          'ℋ',    // 210B
@@ -507,7 +509,9 @@ var controlWords = {
     'to':               '→',	// 2192
     'top':              '⊤',	    // 22A4
     'triangle':         '△',	// 25B3
+    'triangleleft':     '◁',    // 25C1
     'trianglelefteq':   '⊴',	    // 22B4
+    'triangleright':    '▷',    // 25B7
     'trianglerighteq':  '⊵',	    // 22B5
     'tvec':             '⃡',	// 20E1
     'twoheadleftarrow': '↞',	    // 219E
@@ -819,14 +823,14 @@ var mathFonts = {
 };
 
 function italicizeCharacter(c) {
-    if (c in mathFonts && 'serif-italic' in mathFonts[c] && (c < "Α" || c > "Ω"))
+    if (c in mathFonts && 'serif-italic' in mathFonts[c] && (c < 'Α' || c > 'Ω' && c != '∇'))
         return mathFonts[c]['serif-italic'];
     return c;
 }
 
 function italicizeCharacters(chars) {
     return Array.from(chars).map(c => {
-        if (c in mathFonts && 'serif-italic' in mathFonts[c] && (c < "Α" || c > "Ω")) {
+        if (c in mathFonts && 'serif-italic' in mathFonts[c] && (c < 'Α' || c > 'Ω' && c != '∇')) {
             return mathFonts[c]['serif-italic'];
         } else {
             return c;
