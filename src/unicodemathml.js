@@ -156,6 +156,7 @@ var controlWords = {
     'cong':             '≅',    	// 2245
     'contain':          '∋',	// 220B
     'coprod':           '∐',	    // 2210
+    'cross':            '⨯',    // 2A2F
     'cup':              '∪',	// 222A
     'curlyeqprec':      '⋞',    	// 22DE
     'curlyeqsucc':      '⋟',    	// 22DF
@@ -214,6 +215,7 @@ var controlWords = {
     'eta':              'η',	// 03B7
     'exists':           '∃',	// 2203
     'fallingdotseq':    '≒',	// 2252
+    'fojoin':           '⟗',    // 27D7
     'forall':           '∀',	// 2200
     'frakturH':         'ℌ',    // 210C
     'frown':            '⌢',	    // 2322
@@ -259,6 +261,7 @@ var controlWords = {
     'itimes':           '⁢',	    // 2062
     'jj':               'ⅉ',    	// 2149
     'jmath':            'ȷ',	// 0237
+    'join':             '⨝',   // 2A1D
     'kappa':            'κ',	// 03BA
     'ket':              '⟩',	    // 27E9
     'labove':           '└',	// 2514
@@ -302,6 +305,7 @@ var controlWords = {
     'lneqq':            '≨',	    // 2268
     'lnot':             '¬',	// 00AC
     'lnsim':            '⋦',	    // 22E6
+    'lojoin':           '⟕',    // 27D5
     'longdiv':          '⟌',    // 27CC
     'longleftarrow':    '⟵',	// 27F5
     'longleftrightarrow':'⟷',	// 27F7
@@ -452,6 +456,7 @@ var controlWords = {
     'risingdotseq':     '≓',	    // 2253
     'rlhar':            '⇌',	    // 21CC
     'rmoust':           '⎱',	    // 23B1
+    'rojoin':           '⟖',    // 27D6
     'root':             '⒭',	// 24AD
     'rrect':            '▢',	// 25A2
     'rtimes':           '⋊',    	// 22CA

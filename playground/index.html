@@ -92,14 +92,28 @@
                             '⫸': 'End of comment (non-standard)',
                             'ￗ': 'Typewriter/code font (non-standard)'
                             }},
-                        {label: 'Operators', explanation: 'These are just examples – most non-alphabetic and non-numeric characters that have no special role in UnicodeMath are recognized as operators.', symbols: '×⋅∈∋∼≃≅≈≍≡≤≥≶≷≽≺≻≼⊂⊃⊆⊇⊑⊒'},
+                        {label: 'Operators', explanation: 'These are just examples – most nonalphanumeric characters that have no special role in UnicodeMath are recognized as operators.', symbols: {
+                            '≠': '\\ne, /=', '≤': '\\le, <=', '≥': '\\ge, >=', '≡': '\\equiv', '∝': '\\propto',
+                            '≪': '\\ll, <<', '≫': '\\gg, >>', '±': '\\pm, +-', '∓': '\\mp, -+',
+                            '≅': '\\cong, ~=', '×': '\\times', '⋅': '\\cdot', '∈': '\\in', '∋': '\\ni',
+                            '∼': '\\sim', '≃': '\\simeq', '≈': '\\approx, ~~', '≍': '\\asymp',
+                            '≶': '\\lessgtr', '≷': '\\gtrless', '≽': '\\succcurlyeq', '≼': '\\preccurlyeq',
+                            '≺': '\\prcue', '≻': '\\succ', '⊂': '\\subset', '⊃': '\\supset',
+                            '⊆': '\\subseteq', '⊇': '\\supseteq', '⊑': '\\sqsubseteq', '⊒': '\\sqsupseteq'
+                            }},
                         {label: 'N-ary operators', explanation: 'These are just examples – more exist (mostly integral variants).', symbols: {
                             '∑': '\\sum', '∏': '\\prod', '∫': '\\int', '∬': '\\iint',
                             '∭': '\\iiint', '⨌': '\\iiiint', '∮': '\\oint', '∱': '\\cwint',
                             '⨑': '\\ccwint', '⋂': '\\bigcap', '⋃': '\\bigcup', '⨃': '\\bigudot',
                             '⨄': '\\biguplus', '⨀': '\\bigodot', '⨁': '\\bigoplus', '⨂': '\\bigotimes'
                             }},
-                        {label: 'Logic & DB operators', symbols: '∃∀¬∧∨⇒⇔⊕⊤⊥⊢ ⨯⨝⟕⟖⟗⋉⋊▷÷πσ'},
+                        {label: 'Logic & DB operators', symbols: {
+                            '∃': '\\exists', '∀': '\\forall', '¬': '\\lnot', '∧': '\\land', '∨': '\\lor',
+                            '⇒': '\\Rightarrow', '⇔': '\\Leftrightarrow', '⊕': '\\oplus', '⊤': '\\top',
+                            '⊥': '\\perp', '⊢': '\\vdash', '⨯': '\\cross', '⨝': '\\join', '⟕': '\\lojoin',
+                            '⟖': '\\rojoin', '⟗': '\\fojoin', '⋉': '\\ltimes', '⋊': '\\rtimes',
+                            '▷': '', '÷': '\\div', 'π': '', 'σ': ''
+                            }},
                         {label: 'Invisible operators & spaces', symbols: {
                             '2061': '\\funcapply: invisible function apply',
                             '2062': '\\itimes: invisible times',
@@ -119,8 +133,22 @@
                             ' ': ['\\nbsp: space-width space (non-breaking space)', 'width: 1.67em']
                             }},
                         {label: 'Superscripts & Subscripts', symbols: '⁰¹²³⁴⁵⁶⁷⁸⁹ⁱⁿ⁺⁻⁼⁽⁾₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎'},
-                        {label: 'Delimiters & Over/underbraces', symbols: '()[]{}⟨⟩⌈⌉⌊⌋  ⏜⏝⏞⏟⏠⏡⎴⎵¯'},
-                        {label: 'Stretchy arrows', symbols: '←→↔⇐⇒⇔↩↪↼⇀↽⇁⊢⊣⟵⟶⟷⟸⟹⟺↦⊨'},
+                        {label: 'Delimiters & Over/underbraces', symbols: {
+                            '(': '(', ')': ')', '[': '[', ']': ']', '{': '}', '}': '}', '⟨': '\\bra', '⟩': '\\ket',
+                            '⌈': '\\lceil', '⌉': '\\rceil', '⌊': '\\lfloor', '⌋': '\\rfloor',
+                            '⏜': '\\overparen', '⏝': '\\underparen', '⏞': '\\overbrace', '⏟': '\\underbrace',
+                            '⏠': '\\overshell', '⏡': '\\undershell', '⎴': '\\overbracket', '⎵': '\\underbracket',
+                            '¯': '\\overline'
+                            }},
+                        {label: 'Stretchy arrows', symbols: {
+                            '←': '\\leftarrow', '→': '\\rightarrow', '↔': '\\leftrightarrow',
+                            '⇐': '\\Leftarrow', '⇒': '\\Rightarrow', '⇔': '\\Leftrightarrow',
+                            '↩': '\\hookleftarrow', '↪': '\\hookrightarrow', '↼': '\\leftharpoonup', '⇀': '\\rightharpoonup',
+                            '↽': '\\leftharpoondown', '⇁': '\\rightharpoondown', '⊢': '\\leftarrowtail', '⊣': '\\rightarrowtail',
+                            '⟵': '\\longleftarrow', '⟶': '\\longrightarrow', '⟷': '\\longleftrightarrow',
+                            '⟸': '\\Longleftarrow', '⟹': '\\Longrightarrow', '⟺': '\\Longleftrightarrow',
+                            '↦': '\\mapsto', '⊨': '\\models'
+                            }},
                         {label: 'Roots & Enclosures', symbols: {
                             '√': '\\sqrt', '∛': '\\cbrt', '∜': '\\qdrt', '▭': '\\rect',
                             '̅': '\\bar', '▁': '\\underbar', '▢': '\\rrect', '○': '\\circle',

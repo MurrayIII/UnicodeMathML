@@ -421,6 +421,7 @@ mappedOperator  // character translations noted in section 4.1 of the tech note
     / "<=" {return "\u2264"}
     / ">=" {return "\u2265"}
     / "~=" {return "\u2245"}
+    / "~~" {return "\u2248"}
     / "::" {return "\u2237"}
     / ":=" {return "\u2254"}
     / "<<" {return "\u226A"}
