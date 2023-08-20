@@ -503,6 +503,9 @@ phantom
     / s:opPhantom "(" e:exp ")" {
         return {phantom: {mask: null, symbol: s, of: e}};
     }
+    / s:opPhantom {                         // Suppress error message
+        return {text: s};
+    }
 smash = s:opSmash "(" e:exp ")" {
     return {smash: {symbol: s, of: e}};
 }
@@ -794,6 +797,9 @@ enclosed
     }
     / e:opEnclosure o:operand {
         return {enclosed: {mask: null, symbol: e, of: o}};
+    }
+    / e:opEnclosure {                       // Suppress error message
+        return {text: e};
     }
     / '⍁' r:exp '&' t:exp '〗' {
         // dictation fraction...end-fraction option; prefer '/' to '&'

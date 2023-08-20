@@ -157,7 +157,6 @@ var controlWords = {
     'cong':             '≅',    	// 2245
     'contain':          '∋',	// 220B
     'coprod':           '∐',	    // 2210
-    'cross':            '⨯',    // 2A2F
     'cup':              '∪',	// 222A
     'curlyeqprec':      '⋞',    	// 22DE
     'curlyeqsucc':      '⋟',    	// 22DF
@@ -544,6 +543,7 @@ var controlWords = {
     'vdash':            '⊢',    	// 22A2
     'vdots':            '⋮',	    // 22EE
     'vec':              '⃗',	// 20D7
+    'vectimes':         '⨯',    // 2A2F
     'vee':              '∨',	// 2228
     'vert':             '|',	// 007C
     'vmatrix':          '⒱',	// 24B1
