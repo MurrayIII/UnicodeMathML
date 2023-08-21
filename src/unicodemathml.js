@@ -26,9 +26,9 @@ function debugLog(x) {
 // control words, to be replaced before parsing proper commences
 // should match controlWords variable in playground.js
 var controlWords = {
-    // from tech note: Appendix B. Character Keywords and Properties and
-    // updates from Microsoft implementation. See also the UnicodeMath
-    // cheat sheet https://www.cs.bgu.ac.il/~khitron/Equation%20Editor.pdf
+    // from tech note: Appendix B. Character Keywords and Properties updated
+    // with the Microsoft math autocorrect list. For a more complete list, see
+    // https://ctan.math.utah.edu/ctan/tex-archive/macros/unicodetex/latex/unicode-math/unimath-symbols.pdf
                                 // Unicode code point
     'Bar':              '̿',	// 033F
     'Bio':              'Ⓞ',	// 24C4
@@ -583,24 +583,45 @@ function resolveCW(unicodemath) {
                 var symbol = String.fromCodePoint("0x" + cw.substring(1));
                 return symbol;
             } catch(error) {
-                // do nothing – it could be a regular control word starting with "u"
+                // do nothing – could be a regular control word starting with "u"
             }
         }
 
-        // Check for control words like \scriptH. Note: bold and italic math styles
-        // are handled by bold/italic UI in apps like Word.
+        // Check for math alphanumeric control words like \mscrH for ℋ defined in
+        // unimath-symbols.pdf (link below)
         var cch = cw.length;
-        if (cch >= 7) {
-            var c = cw[cch - 1];
-            var style = cw.substr(0, cch - 1);
+        if (cch > 3) {
+            var mathStyle = '';
+            var c = '';
+            if (cw.startsWith('Bbb')) {
+                // Blackboard bold (double-struck)
+                mathStyle = 'Bbb';
+            }
+            else if (cw[0] == 'm') {
+                // Check for the 13 other math styles
+                const mathStyles = [
+                    'mup', 'mscr', 'mfrak', 'msans', 'mitsans', 'mit', 'mtt',
+                    'mbfscr', 'mbffrak', 'mbfsans', 'mbfitsans', 'mbfit', 'mbf'];
 
-            if (["script", "fraktur", "double"].includes(style) && c in mathFonts) {
-                if (style == "double") {
-                    style += "struck";
+                for (var i = 0; i < mathStyles.length; i++) {
+                    if (cw.startsWith(mathStyles[i])) {
+                        mathStyle = mathStyles[i];
+                        break;
+                    }
                 }
-                style += "-normal";
-                if (style in mathFonts[c]) {
-                    return mathFonts[c][style];
+            }
+            if (mathStyle) {
+                c = cw.substring(mathStyle.length);
+                if (c != undefined && c.length) {
+                    if (c.length > 1) {
+                        c = controlWords[c];
+                    }
+                    if (c != undefined) {
+                        if (mathStyle == 'mup') {
+                            return '"' + c + '"';
+                        }
+                        return mathFonts[c][mathStyle];
+                    }
                 }
             }
         }
@@ -693,145 +714,146 @@ var negs = {
 // should match mathFonts variable in playground.js
 var mathFonts = {
 
-    // courtesy of
-    // https://en.wikipedia.org/wiki/Mathematical_Alphanumeric_Symbols
-    // and sublime text's multiple cursors
-    'A': {'serif-bold': '𝐀', 'serif-italic': '𝐴', 'serif-bolditalic': '𝑨', 'sans-normal': '𝖠', 'sans-bold': '𝗔', 'sans-italic': '𝘈', 'sans-bolditalic': '𝘼', 'script-normal': '𝒜', 'script-bold': '𝓐', 'fraktur-normal': '𝔄', 'fraktur-bold': '𝕬', 'monospace-normal': '𝙰', 'doublestruck-normal': '𝔸'},
-    'B': {'serif-bold': '𝐁', 'serif-italic': '𝐵', 'serif-bolditalic': '𝑩', 'sans-normal': '𝖡', 'sans-bold': '𝗕', 'sans-italic': '𝘉', 'sans-bolditalic': '𝘽', 'script-normal': 'ℬ', 'script-bold': '𝓑', 'fraktur-normal': '𝔅', 'fraktur-bold': '𝕭', 'monospace-normal': '𝙱', 'doublestruck-normal': '𝔹'},
-    'C': {'serif-bold': '𝐂', 'serif-italic': '𝐶', 'serif-bolditalic': '𝑪', 'sans-normal': '𝖢', 'sans-bold': '𝗖', 'sans-italic': '𝘊', 'sans-bolditalic': '𝘾', 'script-normal': '𝒞', 'script-bold': '𝓒', 'fraktur-normal': 'ℭ', 'fraktur-bold': '𝕮', 'monospace-normal': '𝙲', 'doublestruck-normal': 'ℂ'},
-    'D': {'serif-bold': '𝐃', 'serif-italic': '𝐷', 'serif-bolditalic': '𝑫', 'sans-normal': '𝖣', 'sans-bold': '𝗗', 'sans-italic': '𝘋', 'sans-bolditalic': '𝘿', 'script-normal': '𝒟', 'script-bold': '𝓓', 'fraktur-normal': '𝔇', 'fraktur-bold': '𝕯', 'monospace-normal': '𝙳', 'doublestruck-normal': '𝔻'},
-    'E': {'serif-bold': '𝐄', 'serif-italic': '𝐸', 'serif-bolditalic': '𝑬', 'sans-normal': '𝖤', 'sans-bold': '𝗘', 'sans-italic': '𝘌', 'sans-bolditalic': '𝙀', 'script-normal': 'ℰ', 'script-bold': '𝓔', 'fraktur-normal': '𝔈', 'fraktur-bold': '𝕰', 'monospace-normal': '𝙴', 'doublestruck-normal': '𝔼'},
-    'F': {'serif-bold': '𝐅', 'serif-italic': '𝐹', 'serif-bolditalic': '𝑭', 'sans-normal': '𝖥', 'sans-bold': '𝗙', 'sans-italic': '𝘍', 'sans-bolditalic': '𝙁', 'script-normal': 'ℱ', 'script-bold': '𝓕', 'fraktur-normal': '𝔉', 'fraktur-bold': '𝕱', 'monospace-normal': '𝙵', 'doublestruck-normal': '𝔽'},
-    'G': {'serif-bold': '𝐆', 'serif-italic': '𝐺', 'serif-bolditalic': '𝑮', 'sans-normal': '𝖦', 'sans-bold': '𝗚', 'sans-italic': '𝘎', 'sans-bolditalic': '𝙂', 'script-normal': '𝒢', 'script-bold': '𝓖', 'fraktur-normal': '𝔊', 'fraktur-bold': '𝕲', 'monospace-normal': '𝙶', 'doublestruck-normal': '𝔾'},
-    'H': {'serif-bold': '𝐇', 'serif-italic': '𝐻', 'serif-bolditalic': '𝑯', 'sans-normal': '𝖧', 'sans-bold': '𝗛', 'sans-italic': '𝘏', 'sans-bolditalic': '𝙃', 'script-normal': 'ℋ', 'script-bold': '𝓗', 'fraktur-normal': 'ℌ', 'fraktur-bold': '𝕳', 'monospace-normal': '𝙷', 'doublestruck-normal': 'ℍ'},
-    'I': {'serif-bold': '𝐈', 'serif-italic': '𝐼', 'serif-bolditalic': '𝑰', 'sans-normal': '𝖨', 'sans-bold': '𝗜', 'sans-italic': '𝘐', 'sans-bolditalic': '𝙄', 'script-normal': 'ℐ', 'script-bold': '𝓘', 'fraktur-normal': 'ℑ', 'fraktur-bold': '𝕴', 'monospace-normal': '𝙸', 'doublestruck-normal': '𝕀'},
-    'J': {'serif-bold': '𝐉', 'serif-italic': '𝐽', 'serif-bolditalic': '𝑱', 'sans-normal': '𝖩', 'sans-bold': '𝗝', 'sans-italic': '𝘑', 'sans-bolditalic': '𝙅', 'script-normal': '𝒥', 'script-bold': '𝓙', 'fraktur-normal': '𝔍', 'fraktur-bold': '𝕵', 'monospace-normal': '𝙹', 'doublestruck-normal': '𝕁'},
-    'K': {'serif-bold': '𝐊', 'serif-italic': '𝐾', 'serif-bolditalic': '𝑲', 'sans-normal': '𝖪', 'sans-bold': '𝗞', 'sans-italic': '𝘒', 'sans-bolditalic': '𝙆', 'script-normal': '𝒦', 'script-bold': '𝓚', 'fraktur-normal': '𝔎', 'fraktur-bold': '𝕶', 'monospace-normal': '𝙺', 'doublestruck-normal': '𝕂'},
-    'L': {'serif-bold': '𝐋', 'serif-italic': '𝐿', 'serif-bolditalic': '𝑳', 'sans-normal': '𝖫', 'sans-bold': '𝗟', 'sans-italic': '𝘓', 'sans-bolditalic': '𝙇', 'script-normal': 'ℒ', 'script-bold': '𝓛', 'fraktur-normal': '𝔏', 'fraktur-bold': '𝕷', 'monospace-normal': '𝙻', 'doublestruck-normal': '𝕃'},
-    'M': {'serif-bold': '𝐌', 'serif-italic': '𝑀', 'serif-bolditalic': '𝑴', 'sans-normal': '𝖬', 'sans-bold': '𝗠', 'sans-italic': '𝘔', 'sans-bolditalic': '𝙈', 'script-normal': 'ℳ', 'script-bold': '𝓜', 'fraktur-normal': '𝔐', 'fraktur-bold': '𝕸', 'monospace-normal': '𝙼', 'doublestruck-normal': '𝕄'},
-    'N': {'serif-bold': '𝐍', 'serif-italic': '𝑁', 'serif-bolditalic': '𝑵', 'sans-normal': '𝖭', 'sans-bold': '𝗡', 'sans-italic': '𝘕', 'sans-bolditalic': '𝙉', 'script-normal': '𝒩', 'script-bold': '𝓝', 'fraktur-normal': '𝔑', 'fraktur-bold': '𝕹', 'monospace-normal': '𝙽', 'doublestruck-normal': 'ℕ'},
-    'O': {'serif-bold': '𝐎', 'serif-italic': '𝑂', 'serif-bolditalic': '𝑶', 'sans-normal': '𝖮', 'sans-bold': '𝗢', 'sans-italic': '𝘖', 'sans-bolditalic': '𝙊', 'script-normal': '𝒪', 'script-bold': '𝓞', 'fraktur-normal': '𝔒', 'fraktur-bold': '𝕺', 'monospace-normal': '𝙾', 'doublestruck-normal': '𝕆'},
-    'P': {'serif-bold': '𝐏', 'serif-italic': '𝑃', 'serif-bolditalic': '𝑷', 'sans-normal': '𝖯', 'sans-bold': '𝗣', 'sans-italic': '𝘗', 'sans-bolditalic': '𝙋', 'script-normal': '𝒫', 'script-bold': '𝓟', 'fraktur-normal': '𝔓', 'fraktur-bold': '𝕻', 'monospace-normal': '𝙿', 'doublestruck-normal': 'ℙ'},
-    'Q': {'serif-bold': '𝐐', 'serif-italic': '𝑄', 'serif-bolditalic': '𝑸', 'sans-normal': '𝖰', 'sans-bold': '𝗤', 'sans-italic': '𝘘', 'sans-bolditalic': '𝙌', 'script-normal': '𝒬', 'script-bold': '𝓠', 'fraktur-normal': '𝔔', 'fraktur-bold': '𝕼', 'monospace-normal': '𝚀', 'doublestruck-normal': 'ℚ'},
-    'R': {'serif-bold': '𝐑', 'serif-italic': '𝑅', 'serif-bolditalic': '𝑹', 'sans-normal': '𝖱', 'sans-bold': '𝗥', 'sans-italic': '𝘙', 'sans-bolditalic': '𝙍', 'script-normal': 'ℛ', 'script-bold': '𝓡', 'fraktur-normal': 'ℜ', 'fraktur-bold': '𝕽', 'monospace-normal': '𝚁', 'doublestruck-normal': 'ℝ'},
-    'S': {'serif-bold': '𝐒', 'serif-italic': '𝑆', 'serif-bolditalic': '𝑺', 'sans-normal': '𝖲', 'sans-bold': '𝗦', 'sans-italic': '𝘚', 'sans-bolditalic': '𝙎', 'script-normal': '𝒮', 'script-bold': '𝓢', 'fraktur-normal': '𝔖', 'fraktur-bold': '𝕾', 'monospace-normal': '𝚂', 'doublestruck-normal': '𝕊'},
-    'T': {'serif-bold': '𝐓', 'serif-italic': '𝑇', 'serif-bolditalic': '𝑻', 'sans-normal': '𝖳', 'sans-bold': '𝗧', 'sans-italic': '𝘛', 'sans-bolditalic': '𝙏', 'script-normal': '𝒯', 'script-bold': '𝓣', 'fraktur-normal': '𝔗', 'fraktur-bold': '𝕿', 'monospace-normal': '𝚃', 'doublestruck-normal': '𝕋'},
-    'U': {'serif-bold': '𝐔', 'serif-italic': '𝑈', 'serif-bolditalic': '𝑼', 'sans-normal': '𝖴', 'sans-bold': '𝗨', 'sans-italic': '𝘜', 'sans-bolditalic': '𝙐', 'script-normal': '𝒰', 'script-bold': '𝓤', 'fraktur-normal': '𝔘', 'fraktur-bold': '𝖀', 'monospace-normal': '𝚄', 'doublestruck-normal': '𝕌'},
-    'V': {'serif-bold': '𝐕', 'serif-italic': '𝑉', 'serif-bolditalic': '𝑽', 'sans-normal': '𝖵', 'sans-bold': '𝗩', 'sans-italic': '𝘝', 'sans-bolditalic': '𝙑', 'script-normal': '𝒱', 'script-bold': '𝓥', 'fraktur-normal': '𝔙', 'fraktur-bold': '𝖁', 'monospace-normal': '𝚅', 'doublestruck-normal': '𝕍'},
-    'W': {'serif-bold': '𝐖', 'serif-italic': '𝑊', 'serif-bolditalic': '𝑾', 'sans-normal': '𝖶', 'sans-bold': '𝗪', 'sans-italic': '𝘞', 'sans-bolditalic': '𝙒', 'script-normal': '𝒲', 'script-bold': '𝓦', 'fraktur-normal': '𝔚', 'fraktur-bold': '𝖂', 'monospace-normal': '𝚆', 'doublestruck-normal': '𝕎'},
-    'X': {'serif-bold': '𝐗', 'serif-italic': '𝑋', 'serif-bolditalic': '𝑿', 'sans-normal': '𝖷', 'sans-bold': '𝗫', 'sans-italic': '𝘟', 'sans-bolditalic': '𝙓', 'script-normal': '𝒳', 'script-bold': '𝓧', 'fraktur-normal': '𝔛', 'fraktur-bold': '𝖃', 'monospace-normal': '𝚇', 'doublestruck-normal': '𝕏'},
-    'Y': {'serif-bold': '𝐘', 'serif-italic': '𝑌', 'serif-bolditalic': '𝒀', 'sans-normal': '𝖸', 'sans-bold': '𝗬', 'sans-italic': '𝘠', 'sans-bolditalic': '𝙔', 'script-normal': '𝒴', 'script-bold': '𝓨', 'fraktur-normal': '𝔜', 'fraktur-bold': '𝖄', 'monospace-normal': '𝚈', 'doublestruck-normal': '𝕐'},
-    'Z': {'serif-bold': '𝐙', 'serif-italic': '𝑍', 'serif-bolditalic': '𝒁', 'sans-normal': '𝖹', 'sans-bold': '𝗭', 'sans-italic': '𝘡', 'sans-bolditalic': '𝙕', 'script-normal': '𝒵', 'script-bold': '𝓩', 'fraktur-normal': 'ℨ', 'fraktur-bold': '𝖅', 'monospace-normal': '𝚉', 'doublestruck-normal': 'ℤ'},
-    'a': {'serif-bold': '𝐚', 'serif-italic': '𝑎', 'serif-bolditalic': '𝒂', 'sans-normal': '𝖺', 'sans-bold': '𝗮', 'sans-italic': '𝘢', 'sans-bolditalic': '𝙖', 'script-normal': '𝒶', 'script-bold': '𝓪', 'fraktur-normal': '𝔞', 'fraktur-bold': '𝖆', 'monospace-normal': '𝚊', 'doublestruck-normal': '𝕒'},
-    'b': {'serif-bold': '𝐛', 'serif-italic': '𝑏', 'serif-bolditalic': '𝒃', 'sans-normal': '𝖻', 'sans-bold': '𝗯', 'sans-italic': '𝘣', 'sans-bolditalic': '𝙗', 'script-normal': '𝒷', 'script-bold': '𝓫', 'fraktur-normal': '𝔟', 'fraktur-bold': '𝖇', 'monospace-normal': '𝚋', 'doublestruck-normal': '𝕓'},
-    'c': {'serif-bold': '𝐜', 'serif-italic': '𝑐', 'serif-bolditalic': '𝒄', 'sans-normal': '𝖼', 'sans-bold': '𝗰', 'sans-italic': '𝘤', 'sans-bolditalic': '𝙘', 'script-normal': '𝒸', 'script-bold': '𝓬', 'fraktur-normal': '𝔠', 'fraktur-bold': '𝖈', 'monospace-normal': '𝚌', 'doublestruck-normal': '𝕔'},
-    'd': {'serif-bold': '𝐝', 'serif-italic': '𝑑', 'serif-bolditalic': '𝒅', 'sans-normal': '𝖽', 'sans-bold': '𝗱', 'sans-italic': '𝘥', 'sans-bolditalic': '𝙙', 'script-normal': '𝒹', 'script-bold': '𝓭', 'fraktur-normal': '𝔡', 'fraktur-bold': '𝖉', 'monospace-normal': '𝚍', 'doublestruck-normal': '𝕕'},
-    'e': {'serif-bold': '𝐞', 'serif-italic': '𝑒', 'serif-bolditalic': '𝒆', 'sans-normal': '𝖾', 'sans-bold': '𝗲', 'sans-italic': '𝘦', 'sans-bolditalic': '𝙚', 'script-normal': 'ℯ', 'script-bold': '𝓮', 'fraktur-normal': '𝔢', 'fraktur-bold': '𝖊', 'monospace-normal': '𝚎', 'doublestruck-normal': '𝕖'},
-    'f': {'serif-bold': '𝐟', 'serif-italic': '𝑓', 'serif-bolditalic': '𝒇', 'sans-normal': '𝖿', 'sans-bold': '𝗳', 'sans-italic': '𝘧', 'sans-bolditalic': '𝙛', 'script-normal': '𝒻', 'script-bold': '𝓯', 'fraktur-normal': '𝔣', 'fraktur-bold': '𝖋', 'monospace-normal': '𝚏', 'doublestruck-normal': '𝕗'},
-    'g': {'serif-bold': '𝐠', 'serif-italic': '𝑔', 'serif-bolditalic': '𝒈', 'sans-normal': '𝗀', 'sans-bold': '𝗴', 'sans-italic': '𝘨', 'sans-bolditalic': '𝙜', 'script-normal': 'ℊ', 'script-bold': '𝓰', 'fraktur-normal': '𝔤', 'fraktur-bold': '𝖌', 'monospace-normal': '𝚐', 'doublestruck-normal': '𝕘'},
-    'h': {'serif-bold': '𝐡', 'serif-italic': 'ℎ', 'serif-bolditalic': '𝒉', 'sans-normal': '𝗁', 'sans-bold': '𝗵', 'sans-italic': '𝘩', 'sans-bolditalic': '𝙝', 'script-normal': '𝒽', 'script-bold': '𝓱', 'fraktur-normal': '𝔥', 'fraktur-bold': '𝖍', 'monospace-normal': '𝚑', 'doublestruck-normal': '𝕙'},
-    'i': {'serif-bold': '𝐢', 'serif-italic': '𝑖', 'serif-bolditalic': '𝒊', 'sans-normal': '𝗂', 'sans-bold': '𝗶', 'sans-italic': '𝘪', 'sans-bolditalic': '𝙞', 'script-normal': '𝒾', 'script-bold': '𝓲', 'fraktur-normal': '𝔦', 'fraktur-bold': '𝖎', 'monospace-normal': '𝚒', 'doublestruck-normal': '𝕚'},
-    'j': {'serif-bold': '𝐣', 'serif-italic': '𝑗', 'serif-bolditalic': '𝒋', 'sans-normal': '𝗃', 'sans-bold': '𝗷', 'sans-italic': '𝘫', 'sans-bolditalic': '𝙟', 'script-normal': '𝒿', 'script-bold': '𝓳', 'fraktur-normal': '𝔧', 'fraktur-bold': '𝖏', 'monospace-normal': '𝚓', 'doublestruck-normal': '𝕛'},
-    'k': {'serif-bold': '𝐤', 'serif-italic': '𝑘', 'serif-bolditalic': '𝒌', 'sans-normal': '𝗄', 'sans-bold': '𝗸', 'sans-italic': '𝘬', 'sans-bolditalic': '𝙠', 'script-normal': '𝓀', 'script-bold': '𝓴', 'fraktur-normal': '𝔨', 'fraktur-bold': '𝖐', 'monospace-normal': '𝚔', 'doublestruck-normal': '𝕜'},
-    'l': {'serif-bold': '𝐥', 'serif-italic': '𝑙', 'serif-bolditalic': '𝒍', 'sans-normal': '𝗅', 'sans-bold': '𝗹', 'sans-italic': '𝘭', 'sans-bolditalic': '𝙡', 'script-normal': '𝓁', 'script-bold': '𝓵', 'fraktur-normal': '𝔩', 'fraktur-bold': '𝖑', 'monospace-normal': '𝚕', 'doublestruck-normal': '𝕝'},
-    'm': {'serif-bold': '𝐦', 'serif-italic': '𝑚', 'serif-bolditalic': '𝒎', 'sans-normal': '𝗆', 'sans-bold': '𝗺', 'sans-italic': '𝘮', 'sans-bolditalic': '𝙢', 'script-normal': '𝓂', 'script-bold': '𝓶', 'fraktur-normal': '𝔪', 'fraktur-bold': '𝖒', 'monospace-normal': '𝚖', 'doublestruck-normal': '𝕞'},
-    'n': {'serif-bold': '𝐧', 'serif-italic': '𝑛', 'serif-bolditalic': '𝒏', 'sans-normal': '𝗇', 'sans-bold': '𝗻', 'sans-italic': '𝘯', 'sans-bolditalic': '𝙣', 'script-normal': '𝓃', 'script-bold': '𝓷', 'fraktur-normal': '𝔫', 'fraktur-bold': '𝖓', 'monospace-normal': '𝚗', 'doublestruck-normal': '𝕟'},
-    'o': {'serif-bold': '𝐨', 'serif-italic': '𝑜', 'serif-bolditalic': '𝒐', 'sans-normal': '𝗈', 'sans-bold': '𝗼', 'sans-italic': '𝘰', 'sans-bolditalic': '𝙤', 'script-normal': 'ℴ', 'script-bold': '𝓸', 'fraktur-normal': '𝔬', 'fraktur-bold': '𝖔', 'monospace-normal': '𝚘', 'doublestruck-normal': '𝕠'},
-    'p': {'serif-bold': '𝐩', 'serif-italic': '𝑝', 'serif-bolditalic': '𝒑', 'sans-normal': '𝗉', 'sans-bold': '𝗽', 'sans-italic': '𝘱', 'sans-bolditalic': '𝙥', 'script-normal': '𝓅', 'script-bold': '𝓹', 'fraktur-normal': '𝔭', 'fraktur-bold': '𝖕', 'monospace-normal': '𝚙', 'doublestruck-normal': '𝕡'},
-    'q': {'serif-bold': '𝐪', 'serif-italic': '𝑞', 'serif-bolditalic': '𝒒', 'sans-normal': '𝗊', 'sans-bold': '𝗾', 'sans-italic': '𝘲', 'sans-bolditalic': '𝙦', 'script-normal': '𝓆', 'script-bold': '𝓺', 'fraktur-normal': '𝔮', 'fraktur-bold': '𝖖', 'monospace-normal': '𝚚', 'doublestruck-normal': '𝕢'},
-    'r': {'serif-bold': '𝐫', 'serif-italic': '𝑟', 'serif-bolditalic': '𝒓', 'sans-normal': '𝗋', 'sans-bold': '𝗿', 'sans-italic': '𝘳', 'sans-bolditalic': '𝙧', 'script-normal': '𝓇', 'script-bold': '𝓻', 'fraktur-normal': '𝔯', 'fraktur-bold': '𝖗', 'monospace-normal': '𝚛', 'doublestruck-normal': '𝕣'},
-    's': {'serif-bold': '𝐬', 'serif-italic': '𝑠', 'serif-bolditalic': '𝒔', 'sans-normal': '𝗌', 'sans-bold': '𝘀', 'sans-italic': '𝘴', 'sans-bolditalic': '𝙨', 'script-normal': '𝓈', 'script-bold': '𝓼', 'fraktur-normal': '𝔰', 'fraktur-bold': '𝖘', 'monospace-normal': '𝚜', 'doublestruck-normal': '𝕤'},
-    't': {'serif-bold': '𝐭', 'serif-italic': '𝑡', 'serif-bolditalic': '𝒕', 'sans-normal': '𝗍', 'sans-bold': '𝘁', 'sans-italic': '𝘵', 'sans-bolditalic': '𝙩', 'script-normal': '𝓉', 'script-bold': '𝓽', 'fraktur-normal': '𝔱', 'fraktur-bold': '𝖙', 'monospace-normal': '𝚝', 'doublestruck-normal': '𝕥'},
-    'u': {'serif-bold': '𝐮', 'serif-italic': '𝑢', 'serif-bolditalic': '𝒖', 'sans-normal': '𝗎', 'sans-bold': '𝘂', 'sans-italic': '𝘶', 'sans-bolditalic': '𝙪', 'script-normal': '𝓊', 'script-bold': '𝓾', 'fraktur-normal': '𝔲', 'fraktur-bold': '𝖚', 'monospace-normal': '𝚞', 'doublestruck-normal': '𝕦'},
-    'v': {'serif-bold': '𝐯', 'serif-italic': '𝑣', 'serif-bolditalic': '𝒗', 'sans-normal': '𝗏', 'sans-bold': '𝘃', 'sans-italic': '𝘷', 'sans-bolditalic': '𝙫', 'script-normal': '𝓋', 'script-bold': '𝓿', 'fraktur-normal': '𝔳', 'fraktur-bold': '𝖛', 'monospace-normal': '𝚟', 'doublestruck-normal': '𝕧'},
-    'w': {'serif-bold': '𝐰', 'serif-italic': '𝑤', 'serif-bolditalic': '𝒘', 'sans-normal': '𝗐', 'sans-bold': '𝘄', 'sans-italic': '𝘸', 'sans-bolditalic': '𝙬', 'script-normal': '𝓌', 'script-bold': '𝔀', 'fraktur-normal': '𝔴', 'fraktur-bold': '𝖜', 'monospace-normal': '𝚠', 'doublestruck-normal': '𝕨'},
-    'x': {'serif-bold': '𝐱', 'serif-italic': '𝑥', 'serif-bolditalic': '𝒙', 'sans-normal': '𝗑', 'sans-bold': '𝘅', 'sans-italic': '𝘹', 'sans-bolditalic': '𝙭', 'script-normal': '𝓍', 'script-bold': '𝔁', 'fraktur-normal': '𝔵', 'fraktur-bold': '𝖝', 'monospace-normal': '𝚡', 'doublestruck-normal': '𝕩'},
-    'y': {'serif-bold': '𝐲', 'serif-italic': '𝑦', 'serif-bolditalic': '𝒚', 'sans-normal': '𝗒', 'sans-bold': '𝘆', 'sans-italic': '𝘺', 'sans-bolditalic': '𝙮', 'script-normal': '𝓎', 'script-bold': '𝔂', 'fraktur-normal': '𝔶', 'fraktur-bold': '𝖞', 'monospace-normal': '𝚢', 'doublestruck-normal': '𝕪'},
-    'z': {'serif-bold': '𝐳', 'serif-italic': '𝑧', 'serif-bolditalic': '𝒛', 'sans-normal': '𝗓', 'sans-bold': '𝘇', 'sans-italic': '𝘻', 'sans-bolditalic': '𝙯', 'script-normal': '𝓏', 'script-bold': '𝔃', 'fraktur-normal': '𝔷', 'fraktur-bold': '𝖟', 'monospace-normal': '𝚣', 'doublestruck-normal': '𝕫'},
-    'ı': {'serif-italic': '𝚤'},
-    'ȷ': {'serif-italic': '𝚥'},
-    'Α': {'serif-bold': '𝚨', 'serif-italic': '𝛢', 'serif-bolditalic': '𝜜', 'sans-bold': '𝝖', 'sans-bolditalic': '𝞐'},
-    'Β': {'serif-bold': '𝚩', 'serif-italic': '𝛣', 'serif-bolditalic': '𝜝', 'sans-bold': '𝝗', 'sans-bolditalic': '𝞑'},
-    'Γ': {'serif-bold': '𝚪', 'serif-italic': '𝛤', 'serif-bolditalic': '𝜞', 'sans-bold': '𝝘', 'sans-bolditalic': '𝞒'},
-    'Δ': {'serif-bold': '𝚫', 'serif-italic': '𝛥', 'serif-bolditalic': '𝜟', 'sans-bold': '𝝙', 'sans-bolditalic': '𝞓'},
-    'Ε': {'serif-bold': '𝚬', 'serif-italic': '𝛦', 'serif-bolditalic': '𝜠', 'sans-bold': '𝝚', 'sans-bolditalic': '𝞔'},
-    'Ζ': {'serif-bold': '𝚭', 'serif-italic': '𝛧', 'serif-bolditalic': '𝜡', 'sans-bold': '𝝛', 'sans-bolditalic': '𝞕'},
-    'Η': {'serif-bold': '𝚮', 'serif-italic': '𝛨', 'serif-bolditalic': '𝜢', 'sans-bold': '𝝜', 'sans-bolditalic': '𝞖'},
-    'Θ': {'serif-bold': '𝚯', 'serif-italic': '𝛩', 'serif-bolditalic': '𝜣', 'sans-bold': '𝝝', 'sans-bolditalic': '𝞗'},
-    'Ι': {'serif-bold': '𝚰', 'serif-italic': '𝛪', 'serif-bolditalic': '𝜤', 'sans-bold': '𝝞', 'sans-bolditalic': '𝞘'},
-    'Κ': {'serif-bold': '𝚱', 'serif-italic': '𝛫', 'serif-bolditalic': '𝜥', 'sans-bold': '𝝟', 'sans-bolditalic': '𝞙'},
-    'Λ': {'serif-bold': '𝚲', 'serif-italic': '𝛬', 'serif-bolditalic': '𝜦', 'sans-bold': '𝝠', 'sans-bolditalic': '𝞚'},
-    'Μ': {'serif-bold': '𝚳', 'serif-italic': '𝛭', 'serif-bolditalic': '𝜧', 'sans-bold': '𝝡', 'sans-bolditalic': '𝞛'},
-    'Ν': {'serif-bold': '𝚴', 'serif-italic': '𝛮', 'serif-bolditalic': '𝜨', 'sans-bold': '𝝢', 'sans-bolditalic': '𝞜'},
-    'Ξ': {'serif-bold': '𝚵', 'serif-italic': '𝛯', 'serif-bolditalic': '𝜩', 'sans-bold': '𝝣', 'sans-bolditalic': '𝞝'},
-    'Ο': {'serif-bold': '𝚶', 'serif-italic': '𝛰', 'serif-bolditalic': '𝜪', 'sans-bold': '𝝤', 'sans-bolditalic': '𝞞'},
-    'Π': {'serif-bold': '𝚷', 'serif-italic': '𝛱', 'serif-bolditalic': '𝜫', 'sans-bold': '𝝥', 'sans-bolditalic': '𝞟'},
-    'Ρ': {'serif-bold': '𝚸', 'serif-italic': '𝛲', 'serif-bolditalic': '𝜬', 'sans-bold': '𝝦', 'sans-bolditalic': '𝞠'},
-    'ϴ': {'serif-bold': '𝚹', 'serif-italic': '𝛳', 'serif-bolditalic': '𝜭', 'sans-bold': '𝝧', 'sans-bolditalic': '𝞡'},
-    'Σ': {'serif-bold': '𝚺', 'serif-italic': '𝛴', 'serif-bolditalic': '𝜮', 'sans-bold': '𝝨', 'sans-bolditalic': '𝞢'},
-    'Τ': {'serif-bold': '𝚻', 'serif-italic': '𝛵', 'serif-bolditalic': '𝜯', 'sans-bold': '𝝩', 'sans-bolditalic': '𝞣'},
-    'Υ': {'serif-bold': '𝚼', 'serif-italic': '𝛶', 'serif-bolditalic': '𝜰', 'sans-bold': '𝝪', 'sans-bolditalic': '𝞤'},
-    'Φ': {'serif-bold': '𝚽', 'serif-italic': '𝛷', 'serif-bolditalic': '𝜱', 'sans-bold': '𝝫', 'sans-bolditalic': '𝞥'},
-    'Χ': {'serif-bold': '𝚾', 'serif-italic': '𝛸', 'serif-bolditalic': '𝜲', 'sans-bold': '𝝬', 'sans-bolditalic': '𝞦'},
-    'Ψ': {'serif-bold': '𝚿', 'serif-italic': '𝛹', 'serif-bolditalic': '𝜳', 'sans-bold': '𝝭', 'sans-bolditalic': '𝞧'},
-    'Ω': {'serif-bold': '𝛀', 'serif-italic': '𝛺', 'serif-bolditalic': '𝜴', 'sans-bold': '𝝮', 'sans-bolditalic': '𝞨'},
-    '∇': {'serif-bold': '𝛁', 'serif-italic': '𝛻', 'serif-bolditalic': '𝜵', 'sans-bold': '𝝯', 'sans-bolditalic': '𝞩'},
-    'α': {'serif-bold': '𝛂', 'serif-italic': '𝛼', 'serif-bolditalic': '𝜶', 'sans-bold': '𝝰', 'sans-bolditalic': '𝞪'},
-    'β': {'serif-bold': '𝛃', 'serif-italic': '𝛽', 'serif-bolditalic': '𝜷', 'sans-bold': '𝝱', 'sans-bolditalic': '𝞫'},
-    'γ': {'serif-bold': '𝛄', 'serif-italic': '𝛾', 'serif-bolditalic': '𝜸', 'sans-bold': '𝝲', 'sans-bolditalic': '𝞬'},
-    'δ': {'serif-bold': '𝛅', 'serif-italic': '𝛿', 'serif-bolditalic': '𝜹', 'sans-bold': '𝝳', 'sans-bolditalic': '𝞭'},
-    'ε': {'serif-bold': '𝛆', 'serif-italic': '𝜀', 'serif-bolditalic': '𝜺', 'sans-bold': '𝝴', 'sans-bolditalic': '𝞮'},
-    'ζ': {'serif-bold': '𝛇', 'serif-italic': '𝜁', 'serif-bolditalic': '𝜻', 'sans-bold': '𝝵', 'sans-bolditalic': '𝞯'},
-    'η': {'serif-bold': '𝛈', 'serif-italic': '𝜂', 'serif-bolditalic': '𝜼', 'sans-bold': '𝝶', 'sans-bolditalic': '𝞰'},
-    'θ': {'serif-bold': '𝛉', 'serif-italic': '𝜃', 'serif-bolditalic': '𝜽', 'sans-bold': '𝝷', 'sans-bolditalic': '𝞱'},
-    'ι': {'serif-bold': '𝛊', 'serif-italic': '𝜄', 'serif-bolditalic': '𝜾', 'sans-bold': '𝝸', 'sans-bolditalic': '𝞲'},
-    'κ': {'serif-bold': '𝛋', 'serif-italic': '𝜅', 'serif-bolditalic': '𝜿', 'sans-bold': '𝝹', 'sans-bolditalic': '𝞳'},
-    'λ': {'serif-bold': '𝛌', 'serif-italic': '𝜆', 'serif-bolditalic': '𝝀', 'sans-bold': '𝝺', 'sans-bolditalic': '𝞴'},
-    'μ': {'serif-bold': '𝛍', 'serif-italic': '𝜇', 'serif-bolditalic': '𝝁', 'sans-bold': '𝝻', 'sans-bolditalic': '𝞵'},
-    'ν': {'serif-bold': '𝛎', 'serif-italic': '𝜈', 'serif-bolditalic': '𝝂', 'sans-bold': '𝝼', 'sans-bolditalic': '𝞶'},
-    'ξ': {'serif-bold': '𝛏', 'serif-italic': '𝜉', 'serif-bolditalic': '𝝃', 'sans-bold': '𝝽', 'sans-bolditalic': '𝞷'},
-    'ο': {'serif-bold': '𝛐', 'serif-italic': '𝜊', 'serif-bolditalic': '𝝄', 'sans-bold': '𝝾', 'sans-bolditalic': '𝞸'},
-    'π': {'serif-bold': '𝛑', 'serif-italic': '𝜋', 'serif-bolditalic': '𝝅', 'sans-bold': '𝝿', 'sans-bolditalic': '𝞹'},
-    'ρ': {'serif-bold': '𝛒', 'serif-italic': '𝜌', 'serif-bolditalic': '𝝆', 'sans-bold': '𝞀', 'sans-bolditalic': '𝞺'},
-    'ς': {'serif-bold': '𝛓', 'serif-italic': '𝜍', 'serif-bolditalic': '𝝇', 'sans-bold': '𝞁', 'sans-bolditalic': '𝞻'},
-    'σ': {'serif-bold': '𝛔', 'serif-italic': '𝜎', 'serif-bolditalic': '𝝈', 'sans-bold': '𝞂', 'sans-bolditalic': '𝞼'},
-    'τ': {'serif-bold': '𝛕', 'serif-italic': '𝜏', 'serif-bolditalic': '𝝉', 'sans-bold': '𝞃', 'sans-bolditalic': '𝞽'},
-    'υ': {'serif-bold': '𝛖', 'serif-italic': '𝜐', 'serif-bolditalic': '𝝊', 'sans-bold': '𝞄', 'sans-bolditalic': '𝞾'},
-    'φ': {'serif-bold': '𝛗', 'serif-italic': '𝜑', 'serif-bolditalic': '𝝋', 'sans-bold': '𝞅', 'sans-bolditalic': '𝞿'},
-    'χ': {'serif-bold': '𝛘', 'serif-italic': '𝜒', 'serif-bolditalic': '𝝌', 'sans-bold': '𝞆', 'sans-bolditalic': '𝟀'},
-    'ψ': {'serif-bold': '𝛙', 'serif-italic': '𝜓', 'serif-bolditalic': '𝝍', 'sans-bold': '𝞇', 'sans-bolditalic': '𝟁'},
-    'ω': {'serif-bold': '𝛚', 'serif-italic': '𝜔', 'serif-bolditalic': '𝝎', 'sans-bold': '𝞈', 'sans-bolditalic': '𝟂'},
-    '∂': {'serif-bold': '𝛛', 'serif-italic': '𝜕', 'serif-bolditalic': '𝝏', 'sans-bold': '𝞉', 'sans-bolditalic': '𝟃'},
-    'ϵ': {'serif-bold': '𝛜', 'serif-italic': '𝜖', 'serif-bolditalic': '𝝐', 'sans-bold': '𝞊', 'sans-bolditalic': '𝟄'},
-    'ϑ': {'serif-bold': '𝛝', 'serif-italic': '𝜗', 'serif-bolditalic': '𝝑', 'sans-bold': '𝞋', 'sans-bolditalic': '𝟅'},
-    'ϰ': {'serif-bold': '𝛞', 'serif-italic': '𝜘', 'serif-bolditalic': '𝝒', 'sans-bold': '𝞌', 'sans-bolditalic': '𝟆'},
-    'ϕ': {'serif-bold': '𝛟', 'serif-italic': '𝜙', 'serif-bolditalic': '𝝓', 'sans-bold': '𝞍', 'sans-bolditalic': '𝟇'},
-    'ϱ': {'serif-bold': '𝛠', 'serif-italic': '𝜚', 'serif-bolditalic': '𝝔', 'sans-bold': '𝞎', 'sans-bolditalic': '𝟈'},
-    'ϖ': {'serif-bold': '𝛡', 'serif-italic': '𝜛', 'serif-bolditalic': '𝝕', 'sans-bold': '𝞏', 'sans-bolditalic': '𝟉'},
-    'Ϝ': {'serif-bold': '𝟊'},
-    'ϝ': {'serif-bold': '𝟋'},
-    '0': {'serif-bold': '𝟎', 'doublestruck-normal': '𝟘', 'sans-normal': '𝟢', 'sans-bold': '𝟬', 'monospace-normal': '𝟶'},
-    '1': {'serif-bold': '𝟏', 'doublestruck-normal': '𝟙', 'sans-normal': '𝟣', 'sans-bold': '𝟭', 'monospace-normal': '𝟷'},
-    '2': {'serif-bold': '𝟐', 'doublestruck-normal': '𝟚', 'sans-normal': '𝟤', 'sans-bold': '𝟮', 'monospace-normal': '𝟸'},
-    '3': {'serif-bold': '𝟑', 'doublestruck-normal': '𝟛', 'sans-normal': '𝟥', 'sans-bold': '𝟯', 'monospace-normal': '𝟹'},
-    '4': {'serif-bold': '𝟒', 'doublestruck-normal': '𝟜', 'sans-normal': '𝟦', 'sans-bold': '𝟰', 'monospace-normal': '𝟺'},
-    '5': {'serif-bold': '𝟓', 'doublestruck-normal': '𝟝', 'sans-normal': '𝟧', 'sans-bold': '𝟱', 'monospace-normal': '𝟻'},
-    '6': {'serif-bold': '𝟔', 'doublestruck-normal': '𝟞', 'sans-normal': '𝟨', 'sans-bold': '𝟲', 'monospace-normal': '𝟼'},
-    '7': {'serif-bold': '𝟕', 'doublestruck-normal': '𝟟', 'sans-normal': '𝟩', 'sans-bold': '𝟳', 'monospace-normal': '𝟽'},
-    '8': {'serif-bold': '𝟖', 'doublestruck-normal': '𝟠', 'sans-normal': '𝟪', 'sans-bold': '𝟴', 'monospace-normal': '𝟾'},
-    '9': {'serif-bold': '𝟗', 'doublestruck-normal': '𝟡', 'sans-normal': '𝟫', 'sans-bold': '𝟵', 'monospace-normal': '𝟿'},
+    // courtesy of https://en.wikipedia.org/wiki/Mathematical_Alphanumeric_Symbols and
+    // sublime text's multiple cursors. The math style names are the unicode-math style names
+    // in https://mirrors.rit.edu/CTAN/macros/unicodetex/latex/unicode-math/unimath-symbols.pdf
+
+    'A': {'mbf': '𝐀', 'mit': '𝐴', 'mbfit': '𝑨', 'msans': '𝖠', 'mbfsans': '𝗔', 'mitsans': '𝘈', 'mbfitsans': '𝘼', 'mscr': '𝒜', 'mbfscr': '𝓐', 'mfrak': '𝔄', 'mbffrak': '𝕬', 'mtt': '𝙰', 'Bbb': '𝔸'},
+    'B': {'mbf': '𝐁', 'mit': '𝐵', 'mbfit': '𝑩', 'msans': '𝖡', 'mbfsans': '𝗕', 'mitsans': '𝘉', 'mbfitsans': '𝘽', 'mscr': 'ℬ', 'mbfscr': '𝓑', 'mfrak': '𝔅', 'mbffrak': '𝕭', 'mtt': '𝙱', 'Bbb': '𝔹'},
+    'C': {'mbf': '𝐂', 'mit': '𝐶', 'mbfit': '𝑪', 'msans': '𝖢', 'mbfsans': '𝗖', 'mitsans': '𝘊', 'mbfitsans': '𝘾', 'mscr': '𝒞', 'mbfscr': '𝓒', 'mfrak': 'ℭ', 'mbffrak': '𝕮', 'mtt': '𝙲', 'Bbb': 'ℂ'},
+    'D': {'mbf': '𝐃', 'mit': '𝐷', 'mbfit': '𝑫', 'msans': '𝖣', 'mbfsans': '𝗗', 'mitsans': '𝘋', 'mbfitsans': '𝘿', 'mscr': '𝒟', 'mbfscr': '𝓓', 'mfrak': '𝔇', 'mbffrak': '𝕯', 'mtt': '𝙳', 'Bbb': '𝔻'},
+    'E': {'mbf': '𝐄', 'mit': '𝐸', 'mbfit': '𝑬', 'msans': '𝖤', 'mbfsans': '𝗘', 'mitsans': '𝘌', 'mbfitsans': '𝙀', 'mscr': 'ℰ', 'mbfscr': '𝓔', 'mfrak': '𝔈', 'mbffrak': '𝕰', 'mtt': '𝙴', 'Bbb': '𝔼'},
+    'F': {'mbf': '𝐅', 'mit': '𝐹', 'mbfit': '𝑭', 'msans': '𝖥', 'mbfsans': '𝗙', 'mitsans': '𝘍', 'mbfitsans': '𝙁', 'mscr': 'ℱ', 'mbfscr': '𝓕', 'mfrak': '𝔉', 'mbffrak': '𝕱', 'mtt': '𝙵', 'Bbb': '𝔽'},
+    'G': {'mbf': '𝐆', 'mit': '𝐺', 'mbfit': '𝑮', 'msans': '𝖦', 'mbfsans': '𝗚', 'mitsans': '𝘎', 'mbfitsans': '𝙂', 'mscr': '𝒢', 'mbfscr': '𝓖', 'mfrak': '𝔊', 'mbffrak': '𝕲', 'mtt': '𝙶', 'Bbb': '𝔾'},
+    'H': {'mbf': '𝐇', 'mit': '𝐻', 'mbfit': '𝑯', 'msans': '𝖧', 'mbfsans': '𝗛', 'mitsans': '𝘏', 'mbfitsans': '𝙃', 'mscr': 'ℋ', 'mbfscr': '𝓗', 'mfrak': 'ℌ', 'mbffrak': '𝕳', 'mtt': '𝙷', 'Bbb': 'ℍ'},
+    'I': {'mbf': '𝐈', 'mit': '𝐼', 'mbfit': '𝑰', 'msans': '𝖨', 'mbfsans': '𝗜', 'mitsans': '𝘐', 'mbfitsans': '𝙄', 'mscr': 'ℐ', 'mbfscr': '𝓘', 'mfrak': 'ℑ', 'mbffrak': '𝕴', 'mtt': '𝙸', 'Bbb': '𝕀'},
+    'J': {'mbf': '𝐉', 'mit': '𝐽', 'mbfit': '𝑱', 'msans': '𝖩', 'mbfsans': '𝗝', 'mitsans': '𝘑', 'mbfitsans': '𝙅', 'mscr': '𝒥', 'mbfscr': '𝓙', 'mfrak': '𝔍', 'mbffrak': '𝕵', 'mtt': '𝙹', 'Bbb': '𝕁'},
+    'K': {'mbf': '𝐊', 'mit': '𝐾', 'mbfit': '𝑲', 'msans': '𝖪', 'mbfsans': '𝗞', 'mitsans': '𝘒', 'mbfitsans': '𝙆', 'mscr': '𝒦', 'mbfscr': '𝓚', 'mfrak': '𝔎', 'mbffrak': '𝕶', 'mtt': '𝙺', 'Bbb': '𝕂'},
+    'L': {'mbf': '𝐋', 'mit': '𝐿', 'mbfit': '𝑳', 'msans': '𝖫', 'mbfsans': '𝗟', 'mitsans': '𝘓', 'mbfitsans': '𝙇', 'mscr': 'ℒ', 'mbfscr': '𝓛', 'mfrak': '𝔏', 'mbffrak': '𝕷', 'mtt': '𝙻', 'Bbb': '𝕃'},
+    'M': {'mbf': '𝐌', 'mit': '𝑀', 'mbfit': '𝑴', 'msans': '𝖬', 'mbfsans': '𝗠', 'mitsans': '𝘔', 'mbfitsans': '𝙈', 'mscr': 'ℳ', 'mbfscr': '𝓜', 'mfrak': '𝔐', 'mbffrak': '𝕸', 'mtt': '𝙼', 'Bbb': '𝕄'},
+    'N': {'mbf': '𝐍', 'mit': '𝑁', 'mbfit': '𝑵', 'msans': '𝖭', 'mbfsans': '𝗡', 'mitsans': '𝘕', 'mbfitsans': '𝙉', 'mscr': '𝒩', 'mbfscr': '𝓝', 'mfrak': '𝔑', 'mbffrak': '𝕹', 'mtt': '𝙽', 'Bbb': 'ℕ'},
+    'O': {'mbf': '𝐎', 'mit': '𝑂', 'mbfit': '𝑶', 'msans': '𝖮', 'mbfsans': '𝗢', 'mitsans': '𝘖', 'mbfitsans': '𝙊', 'mscr': '𝒪', 'mbfscr': '𝓞', 'mfrak': '𝔒', 'mbffrak': '𝕺', 'mtt': '𝙾', 'Bbb': '𝕆'},
+    'P': {'mbf': '𝐏', 'mit': '𝑃', 'mbfit': '𝑷', 'msans': '𝖯', 'mbfsans': '𝗣', 'mitsans': '𝘗', 'mbfitsans': '𝙋', 'mscr': '𝒫', 'mbfscr': '𝓟', 'mfrak': '𝔓', 'mbffrak': '𝕻', 'mtt': '𝙿', 'Bbb': 'ℙ'},
+    'Q': {'mbf': '𝐐', 'mit': '𝑄', 'mbfit': '𝑸', 'msans': '𝖰', 'mbfsans': '𝗤', 'mitsans': '𝘘', 'mbfitsans': '𝙌', 'mscr': '𝒬', 'mbfscr': '𝓠', 'mfrak': '𝔔', 'mbffrak': '𝕼', 'mtt': '𝚀', 'Bbb': 'ℚ'},
+    'R': {'mbf': '𝐑', 'mit': '𝑅', 'mbfit': '𝑹', 'msans': '𝖱', 'mbfsans': '𝗥', 'mitsans': '𝘙', 'mbfitsans': '𝙍', 'mscr': 'ℛ', 'mbfscr': '𝓡', 'mfrak': 'ℜ', 'mbffrak': '𝕽', 'mtt': '𝚁', 'Bbb': 'ℝ'},
+    'S': {'mbf': '𝐒', 'mit': '𝑆', 'mbfit': '𝑺', 'msans': '𝖲', 'mbfsans': '𝗦', 'mitsans': '𝘚', 'mbfitsans': '𝙎', 'mscr': '𝒮', 'mbfscr': '𝓢', 'mfrak': '𝔖', 'mbffrak': '𝕾', 'mtt': '𝚂', 'Bbb': '𝕊'},
+    'T': {'mbf': '𝐓', 'mit': '𝑇', 'mbfit': '𝑻', 'msans': '𝖳', 'mbfsans': '𝗧', 'mitsans': '𝘛', 'mbfitsans': '𝙏', 'mscr': '𝒯', 'mbfscr': '𝓣', 'mfrak': '𝔗', 'mbffrak': '𝕿', 'mtt': '𝚃', 'Bbb': '𝕋'},
+    'U': {'mbf': '𝐔', 'mit': '𝑈', 'mbfit': '𝑼', 'msans': '𝖴', 'mbfsans': '𝗨', 'mitsans': '𝘜', 'mbfitsans': '𝙐', 'mscr': '𝒰', 'mbfscr': '𝓤', 'mfrak': '𝔘', 'mbffrak': '𝖀', 'mtt': '𝚄', 'Bbb': '𝕌'},
+    'V': {'mbf': '𝐕', 'mit': '𝑉', 'mbfit': '𝑽', 'msans': '𝖵', 'mbfsans': '𝗩', 'mitsans': '𝘝', 'mbfitsans': '𝙑', 'mscr': '𝒱', 'mbfscr': '𝓥', 'mfrak': '𝔙', 'mbffrak': '𝖁', 'mtt': '𝚅', 'Bbb': '𝕍'},
+    'W': {'mbf': '𝐖', 'mit': '𝑊', 'mbfit': '𝑾', 'msans': '𝖶', 'mbfsans': '𝗪', 'mitsans': '𝘞', 'mbfitsans': '𝙒', 'mscr': '𝒲', 'mbfscr': '𝓦', 'mfrak': '𝔚', 'mbffrak': '𝖂', 'mtt': '𝚆', 'Bbb': '𝕎'},
+    'X': {'mbf': '𝐗', 'mit': '𝑋', 'mbfit': '𝑿', 'msans': '𝖷', 'mbfsans': '𝗫', 'mitsans': '𝘟', 'mbfitsans': '𝙓', 'mscr': '𝒳', 'mbfscr': '𝓧', 'mfrak': '𝔛', 'mbffrak': '𝖃', 'mtt': '𝚇', 'Bbb': '𝕏'},
+    'Y': {'mbf': '𝐘', 'mit': '𝑌', 'mbfit': '𝒀', 'msans': '𝖸', 'mbfsans': '𝗬', 'mitsans': '𝘠', 'mbfitsans': '𝙔', 'mscr': '𝒴', 'mbfscr': '𝓨', 'mfrak': '𝔜', 'mbffrak': '𝖄', 'mtt': '𝚈', 'Bbb': '𝕐'},
+    'Z': {'mbf': '𝐙', 'mit': '𝑍', 'mbfit': '𝒁', 'msans': '𝖹', 'mbfsans': '𝗭', 'mitsans': '𝘡', 'mbfitsans': '𝙕', 'mscr': '𝒵', 'mbfscr': '𝓩', 'mfrak': 'ℨ', 'mbffrak': '𝖅', 'mtt': '𝚉', 'Bbb': 'ℤ'},
+    'a': {'mbf': '𝐚', 'mit': '𝑎', 'mbfit': '𝒂', 'msans': '𝖺', 'mbfsans': '𝗮', 'mitsans': '𝘢', 'mbfitsans': '𝙖', 'mscr': '𝒶', 'mbfscr': '𝓪', 'mfrak': '𝔞', 'mbffrak': '𝖆', 'mtt': '𝚊', 'Bbb': '𝕒'},
+    'b': {'mbf': '𝐛', 'mit': '𝑏', 'mbfit': '𝒃', 'msans': '𝖻', 'mbfsans': '𝗯', 'mitsans': '𝘣', 'mbfitsans': '𝙗', 'mscr': '𝒷', 'mbfscr': '𝓫', 'mfrak': '𝔟', 'mbffrak': '𝖇', 'mtt': '𝚋', 'Bbb': '𝕓'},
+    'c': {'mbf': '𝐜', 'mit': '𝑐', 'mbfit': '𝒄', 'msans': '𝖼', 'mbfsans': '𝗰', 'mitsans': '𝘤', 'mbfitsans': '𝙘', 'mscr': '𝒸', 'mbfscr': '𝓬', 'mfrak': '𝔠', 'mbffrak': '𝖈', 'mtt': '𝚌', 'Bbb': '𝕔'},
+    'd': {'mbf': '𝐝', 'mit': '𝑑', 'mbfit': '𝒅', 'msans': '𝖽', 'mbfsans': '𝗱', 'mitsans': '𝘥', 'mbfitsans': '𝙙', 'mscr': '𝒹', 'mbfscr': '𝓭', 'mfrak': '𝔡', 'mbffrak': '𝖉', 'mtt': '𝚍', 'Bbb': '𝕕'},
+    'e': {'mbf': '𝐞', 'mit': '𝑒', 'mbfit': '𝒆', 'msans': '𝖾', 'mbfsans': '𝗲', 'mitsans': '𝘦', 'mbfitsans': '𝙚', 'mscr': 'ℯ', 'mbfscr': '𝓮', 'mfrak': '𝔢', 'mbffrak': '𝖊', 'mtt': '𝚎', 'Bbb': '𝕖'},
+    'f': {'mbf': '𝐟', 'mit': '𝑓', 'mbfit': '𝒇', 'msans': '𝖿', 'mbfsans': '𝗳', 'mitsans': '𝘧', 'mbfitsans': '𝙛', 'mscr': '𝒻', 'mbfscr': '𝓯', 'mfrak': '𝔣', 'mbffrak': '𝖋', 'mtt': '𝚏', 'Bbb': '𝕗'},
+    'g': {'mbf': '𝐠', 'mit': '𝑔', 'mbfit': '𝒈', 'msans': '𝗀', 'mbfsans': '𝗴', 'mitsans': '𝘨', 'mbfitsans': '𝙜', 'mscr': 'ℊ', 'mbfscr': '𝓰', 'mfrak': '𝔤', 'mbffrak': '𝖌', 'mtt': '𝚐', 'Bbb': '𝕘'},
+    'h': {'mbf': '𝐡', 'mit': 'ℎ', 'mbfit': '𝒉', 'msans': '𝗁', 'mbfsans': '𝗵', 'mitsans': '𝘩', 'mbfitsans': '𝙝', 'mscr': '𝒽', 'mbfscr': '𝓱', 'mfrak': '𝔥', 'mbffrak': '𝖍', 'mtt': '𝚑', 'Bbb': '𝕙'},
+    'i': {'mbf': '𝐢', 'mit': '𝑖', 'mbfit': '𝒊', 'msans': '𝗂', 'mbfsans': '𝗶', 'mitsans': '𝘪', 'mbfitsans': '𝙞', 'mscr': '𝒾', 'mbfscr': '𝓲', 'mfrak': '𝔦', 'mbffrak': '𝖎', 'mtt': '𝚒', 'Bbb': '𝕚'},
+    'j': {'mbf': '𝐣', 'mit': '𝑗', 'mbfit': '𝒋', 'msans': '𝗃', 'mbfsans': '𝗷', 'mitsans': '𝘫', 'mbfitsans': '𝙟', 'mscr': '𝒿', 'mbfscr': '𝓳', 'mfrak': '𝔧', 'mbffrak': '𝖏', 'mtt': '𝚓', 'Bbb': '𝕛'},
+    'k': {'mbf': '𝐤', 'mit': '𝑘', 'mbfit': '𝒌', 'msans': '𝗄', 'mbfsans': '𝗸', 'mitsans': '𝘬', 'mbfitsans': '𝙠', 'mscr': '𝓀', 'mbfscr': '𝓴', 'mfrak': '𝔨', 'mbffrak': '𝖐', 'mtt': '𝚔', 'Bbb': '𝕜'},
+    'l': {'mbf': '𝐥', 'mit': '𝑙', 'mbfit': '𝒍', 'msans': '𝗅', 'mbfsans': '𝗹', 'mitsans': '𝘭', 'mbfitsans': '𝙡', 'mscr': '𝓁', 'mbfscr': '𝓵', 'mfrak': '𝔩', 'mbffrak': '𝖑', 'mtt': '𝚕', 'Bbb': '𝕝'},
+    'm': {'mbf': '𝐦', 'mit': '𝑚', 'mbfit': '𝒎', 'msans': '𝗆', 'mbfsans': '𝗺', 'mitsans': '𝘮', 'mbfitsans': '𝙢', 'mscr': '𝓂', 'mbfscr': '𝓶', 'mfrak': '𝔪', 'mbffrak': '𝖒', 'mtt': '𝚖', 'Bbb': '𝕞'},
+    'n': {'mbf': '𝐧', 'mit': '𝑛', 'mbfit': '𝒏', 'msans': '𝗇', 'mbfsans': '𝗻', 'mitsans': '𝘯', 'mbfitsans': '𝙣', 'mscr': '𝓃', 'mbfscr': '𝓷', 'mfrak': '𝔫', 'mbffrak': '𝖓', 'mtt': '𝚗', 'Bbb': '𝕟'},
+    'o': {'mbf': '𝐨', 'mit': '𝑜', 'mbfit': '𝒐', 'msans': '𝗈', 'mbfsans': '𝗼', 'mitsans': '𝘰', 'mbfitsans': '𝙤', 'mscr': 'ℴ', 'mbfscr': '𝓸', 'mfrak': '𝔬', 'mbffrak': '𝖔', 'mtt': '𝚘', 'Bbb': '𝕠'},
+    'p': {'mbf': '𝐩', 'mit': '𝑝', 'mbfit': '𝒑', 'msans': '𝗉', 'mbfsans': '𝗽', 'mitsans': '𝘱', 'mbfitsans': '𝙥', 'mscr': '𝓅', 'mbfscr': '𝓹', 'mfrak': '𝔭', 'mbffrak': '𝖕', 'mtt': '𝚙', 'Bbb': '𝕡'},
+    'q': {'mbf': '𝐪', 'mit': '𝑞', 'mbfit': '𝒒', 'msans': '𝗊', 'mbfsans': '𝗾', 'mitsans': '𝘲', 'mbfitsans': '𝙦', 'mscr': '𝓆', 'mbfscr': '𝓺', 'mfrak': '𝔮', 'mbffrak': '𝖖', 'mtt': '𝚚', 'Bbb': '𝕢'},
+    'r': {'mbf': '𝐫', 'mit': '𝑟', 'mbfit': '𝒓', 'msans': '𝗋', 'mbfsans': '𝗿', 'mitsans': '𝘳', 'mbfitsans': '𝙧', 'mscr': '𝓇', 'mbfscr': '𝓻', 'mfrak': '𝔯', 'mbffrak': '𝖗', 'mtt': '𝚛', 'Bbb': '𝕣'},
+    's': {'mbf': '𝐬', 'mit': '𝑠', 'mbfit': '𝒔', 'msans': '𝗌', 'mbfsans': '𝘀', 'mitsans': '𝘴', 'mbfitsans': '𝙨', 'mscr': '𝓈', 'mbfscr': '𝓼', 'mfrak': '𝔰', 'mbffrak': '𝖘', 'mtt': '𝚜', 'Bbb': '𝕤'},
+    't': {'mbf': '𝐭', 'mit': '𝑡', 'mbfit': '𝒕', 'msans': '𝗍', 'mbfsans': '𝘁', 'mitsans': '𝘵', 'mbfitsans': '𝙩', 'mscr': '𝓉', 'mbfscr': '𝓽', 'mfrak': '𝔱', 'mbffrak': '𝖙', 'mtt': '𝚝', 'Bbb': '𝕥'},
+    'u': {'mbf': '𝐮', 'mit': '𝑢', 'mbfit': '𝒖', 'msans': '𝗎', 'mbfsans': '𝘂', 'mitsans': '𝘶', 'mbfitsans': '𝙪', 'mscr': '𝓊', 'mbfscr': '𝓾', 'mfrak': '𝔲', 'mbffrak': '𝖚', 'mtt': '𝚞', 'Bbb': '𝕦'},
+    'v': {'mbf': '𝐯', 'mit': '𝑣', 'mbfit': '𝒗', 'msans': '𝗏', 'mbfsans': '𝘃', 'mitsans': '𝘷', 'mbfitsans': '𝙫', 'mscr': '𝓋', 'mbfscr': '𝓿', 'mfrak': '𝔳', 'mbffrak': '𝖛', 'mtt': '𝚟', 'Bbb': '𝕧'},
+    'w': {'mbf': '𝐰', 'mit': '𝑤', 'mbfit': '𝒘', 'msans': '𝗐', 'mbfsans': '𝘄', 'mitsans': '𝘸', 'mbfitsans': '𝙬', 'mscr': '𝓌', 'mbfscr': '𝔀', 'mfrak': '𝔴', 'mbffrak': '𝖜', 'mtt': '𝚠', 'Bbb': '𝕨'},
+    'x': {'mbf': '𝐱', 'mit': '𝑥', 'mbfit': '𝒙', 'msans': '𝗑', 'mbfsans': '𝘅', 'mitsans': '𝘹', 'mbfitsans': '𝙭', 'mscr': '𝓍', 'mbfscr': '𝔁', 'mfrak': '𝔵', 'mbffrak': '𝖝', 'mtt': '𝚡', 'Bbb': '𝕩'},
+    'y': {'mbf': '𝐲', 'mit': '𝑦', 'mbfit': '𝒚', 'msans': '𝗒', 'mbfsans': '𝘆', 'mitsans': '𝘺', 'mbfitsans': '𝙮', 'mscr': '𝓎', 'mbfscr': '𝔂', 'mfrak': '𝔶', 'mbffrak': '𝖞', 'mtt': '𝚢', 'Bbb': '𝕪'},
+    'z': {'mbf': '𝐳', 'mit': '𝑧', 'mbfit': '𝒛', 'msans': '𝗓', 'mbfsans': '𝘇', 'mitsans': '𝘻', 'mbfitsans': '𝙯', 'mscr': '𝓏', 'mbfscr': '𝔃', 'mfrak': '𝔷', 'mbffrak': '𝖟', 'mtt': '𝚣', 'Bbb': '𝕫'},
+    'ı': {'mit': '𝚤'},
+    'ȷ': {'mit': '𝚥'},
+    'Α': {'mbf': '𝚨', 'mit': '𝛢', 'mbfit': '𝜜', 'mbfsans': '𝝖', 'mbfitsans': '𝞐'},
+    'Β': {'mbf': '𝚩', 'mit': '𝛣', 'mbfit': '𝜝', 'mbfsans': '𝝗', 'mbfitsans': '𝞑'},
+    'Γ': {'mbf': '𝚪', 'mit': '𝛤', 'mbfit': '𝜞', 'mbfsans': '𝝘', 'mbfitsans': '𝞒'},
+    'Δ': {'mbf': '𝚫', 'mit': '𝛥', 'mbfit': '𝜟', 'mbfsans': '𝝙', 'mbfitsans': '𝞓'},
+    'Ε': {'mbf': '𝚬', 'mit': '𝛦', 'mbfit': '𝜠', 'mbfsans': '𝝚', 'mbfitsans': '𝞔'},
+    'Ζ': {'mbf': '𝚭', 'mit': '𝛧', 'mbfit': '𝜡', 'mbfsans': '𝝛', 'mbfitsans': '𝞕'},
+    'Η': {'mbf': '𝚮', 'mit': '𝛨', 'mbfit': '𝜢', 'mbfsans': '𝝜', 'mbfitsans': '𝞖'},
+    'Θ': {'mbf': '𝚯', 'mit': '𝛩', 'mbfit': '𝜣', 'mbfsans': '𝝝', 'mbfitsans': '𝞗'},
+    'Ι': {'mbf': '𝚰', 'mit': '𝛪', 'mbfit': '𝜤', 'mbfsans': '𝝞', 'mbfitsans': '𝞘'},
+    'Κ': {'mbf': '𝚱', 'mit': '𝛫', 'mbfit': '𝜥', 'mbfsans': '𝝟', 'mbfitsans': '𝞙'},
+    'Λ': {'mbf': '𝚲', 'mit': '𝛬', 'mbfit': '𝜦', 'mbfsans': '𝝠', 'mbfitsans': '𝞚'},
+    'Μ': {'mbf': '𝚳', 'mit': '𝛭', 'mbfit': '𝜧', 'mbfsans': '𝝡', 'mbfitsans': '𝞛'},
+    'Ν': {'mbf': '𝚴', 'mit': '𝛮', 'mbfit': '𝜨', 'mbfsans': '𝝢', 'mbfitsans': '𝞜'},
+    'Ξ': {'mbf': '𝚵', 'mit': '𝛯', 'mbfit': '𝜩', 'mbfsans': '𝝣', 'mbfitsans': '𝞝'},
+    'Ο': {'mbf': '𝚶', 'mit': '𝛰', 'mbfit': '𝜪', 'mbfsans': '𝝤', 'mbfitsans': '𝞞'},
+    'Π': {'mbf': '𝚷', 'mit': '𝛱', 'mbfit': '𝜫', 'mbfsans': '𝝥', 'mbfitsans': '𝞟'},
+    'Ρ': {'mbf': '𝚸', 'mit': '𝛲', 'mbfit': '𝜬', 'mbfsans': '𝝦', 'mbfitsans': '𝞠'},
+    'ϴ': {'mbf': '𝚹', 'mit': '𝛳', 'mbfit': '𝜭', 'mbfsans': '𝝧', 'mbfitsans': '𝞡'},
+    'Σ': {'mbf': '𝚺', 'mit': '𝛴', 'mbfit': '𝜮', 'mbfsans': '𝝨', 'mbfitsans': '𝞢'},
+    'Τ': {'mbf': '𝚻', 'mit': '𝛵', 'mbfit': '𝜯', 'mbfsans': '𝝩', 'mbfitsans': '𝞣'},
+    'Υ': {'mbf': '𝚼', 'mit': '𝛶', 'mbfit': '𝜰', 'mbfsans': '𝝪', 'mbfitsans': '𝞤'},
+    'Φ': {'mbf': '𝚽', 'mit': '𝛷', 'mbfit': '𝜱', 'mbfsans': '𝝫', 'mbfitsans': '𝞥'},
+    'Χ': {'mbf': '𝚾', 'mit': '𝛸', 'mbfit': '𝜲', 'mbfsans': '𝝬', 'mbfitsans': '𝞦'},
+    'Ψ': {'mbf': '𝚿', 'mit': '𝛹', 'mbfit': '𝜳', 'mbfsans': '𝝭', 'mbfitsans': '𝞧'},
+    'Ω': {'mbf': '𝛀', 'mit': '𝛺', 'mbfit': '𝜴', 'mbfsans': '𝝮', 'mbfitsans': '𝞨'},
+    '∇': {'mbf': '𝛁', 'mit': '𝛻', 'mbfit': '𝜵', 'mbfsans': '𝝯', 'mbfitsans': '𝞩'},
+    'α': {'mbf': '𝛂', 'mit': '𝛼', 'mbfit': '𝜶', 'mbfsans': '𝝰', 'mbfitsans': '𝞪'},
+    'β': {'mbf': '𝛃', 'mit': '𝛽', 'mbfit': '𝜷', 'mbfsans': '𝝱', 'mbfitsans': '𝞫'},
+    'γ': {'mbf': '𝛄', 'mit': '𝛾', 'mbfit': '𝜸', 'mbfsans': '𝝲', 'mbfitsans': '𝞬'},
+    'δ': {'mbf': '𝛅', 'mit': '𝛿', 'mbfit': '𝜹', 'mbfsans': '𝝳', 'mbfitsans': '𝞭'},
+    'ε': {'mbf': '𝛆', 'mit': '𝜀', 'mbfit': '𝜺', 'mbfsans': '𝝴', 'mbfitsans': '𝞮'},
+    'ζ': {'mbf': '𝛇', 'mit': '𝜁', 'mbfit': '𝜻', 'mbfsans': '𝝵', 'mbfitsans': '𝞯'},
+    'η': {'mbf': '𝛈', 'mit': '𝜂', 'mbfit': '𝜼', 'mbfsans': '𝝶', 'mbfitsans': '𝞰'},
+    'θ': {'mbf': '𝛉', 'mit': '𝜃', 'mbfit': '𝜽', 'mbfsans': '𝝷', 'mbfitsans': '𝞱'},
+    'ι': {'mbf': '𝛊', 'mit': '𝜄', 'mbfit': '𝜾', 'mbfsans': '𝝸', 'mbfitsans': '𝞲'},
+    'κ': {'mbf': '𝛋', 'mit': '𝜅', 'mbfit': '𝜿', 'mbfsans': '𝝹', 'mbfitsans': '𝞳'},
+    'λ': {'mbf': '𝛌', 'mit': '𝜆', 'mbfit': '𝝀', 'mbfsans': '𝝺', 'mbfitsans': '𝞴'},
+    'μ': {'mbf': '𝛍', 'mit': '𝜇', 'mbfit': '𝝁', 'mbfsans': '𝝻', 'mbfitsans': '𝞵'},
+    'ν': {'mbf': '𝛎', 'mit': '𝜈', 'mbfit': '𝝂', 'mbfsans': '𝝼', 'mbfitsans': '𝞶'},
+    'ξ': {'mbf': '𝛏', 'mit': '𝜉', 'mbfit': '𝝃', 'mbfsans': '𝝽', 'mbfitsans': '𝞷'},
+    'ο': {'mbf': '𝛐', 'mit': '𝜊', 'mbfit': '𝝄', 'mbfsans': '𝝾', 'mbfitsans': '𝞸'},
+    'π': {'mbf': '𝛑', 'mit': '𝜋', 'mbfit': '𝝅', 'mbfsans': '𝝿', 'mbfitsans': '𝞹'},
+    'ρ': {'mbf': '𝛒', 'mit': '𝜌', 'mbfit': '𝝆', 'mbfsans': '𝞀', 'mbfitsans': '𝞺'},
+    'ς': {'mbf': '𝛓', 'mit': '𝜍', 'mbfit': '𝝇', 'mbfsans': '𝞁', 'mbfitsans': '𝞻'},
+    'σ': {'mbf': '𝛔', 'mit': '𝜎', 'mbfit': '𝝈', 'mbfsans': '𝞂', 'mbfitsans': '𝞼'},
+    'τ': {'mbf': '𝛕', 'mit': '𝜏', 'mbfit': '𝝉', 'mbfsans': '𝞃', 'mbfitsans': '𝞽'},
+    'υ': {'mbf': '𝛖', 'mit': '𝜐', 'mbfit': '𝝊', 'mbfsans': '𝞄', 'mbfitsans': '𝞾'},
+    'φ': {'mbf': '𝛗', 'mit': '𝜑', 'mbfit': '𝝋', 'mbfsans': '𝞅', 'mbfitsans': '𝞿'},
+    'χ': {'mbf': '𝛘', 'mit': '𝜒', 'mbfit': '𝝌', 'mbfsans': '𝞆', 'mbfitsans': '𝟀'},
+    'ψ': {'mbf': '𝛙', 'mit': '𝜓', 'mbfit': '𝝍', 'mbfsans': '𝞇', 'mbfitsans': '𝟁'},
+    'ω': {'mbf': '𝛚', 'mit': '𝜔', 'mbfit': '𝝎', 'mbfsans': '𝞈', 'mbfitsans': '𝟂'},
+    '∂': {'mbf': '𝛛', 'mit': '𝜕', 'mbfit': '𝝏', 'mbfsans': '𝞉', 'mbfitsans': '𝟃'},
+    'ϵ': {'mbf': '𝛜', 'mit': '𝜖', 'mbfit': '𝝐', 'mbfsans': '𝞊', 'mbfitsans': '𝟄'},
+    'ϑ': {'mbf': '𝛝', 'mit': '𝜗', 'mbfit': '𝝑', 'mbfsans': '𝞋', 'mbfitsans': '𝟅'},
+    'ϰ': {'mbf': '𝛞', 'mit': '𝜘', 'mbfit': '𝝒', 'mbfsans': '𝞌', 'mbfitsans': '𝟆'},
+    'ϕ': {'mbf': '𝛟', 'mit': '𝜙', 'mbfit': '𝝓', 'mbfsans': '𝞍', 'mbfitsans': '𝟇'},
+    'ϱ': {'mbf': '𝛠', 'mit': '𝜚', 'mbfit': '𝝔', 'mbfsans': '𝞎', 'mbfitsans': '𝟈'},
+    'ϖ': {'mbf': '𝛡', 'mit': '𝜛', 'mbfit': '𝝕', 'mbfsans': '𝞏', 'mbfitsans': '𝟉'},
+    'Ϝ': {'mbf': '𝟊'},
+    'ϝ': {'mbf': '𝟋'},
+    '0': {'mbf': '𝟎', 'Bbb': '𝟘', 'msans': '𝟢', 'mbfsans': '𝟬', 'mtt': '𝟶'},
+    '1': {'mbf': '𝟏', 'Bbb': '𝟙', 'msans': '𝟣', 'mbfsans': '𝟭', 'mtt': '𝟷'},
+    '2': {'mbf': '𝟐', 'Bbb': '𝟚', 'msans': '𝟤', 'mbfsans': '𝟮', 'mtt': '𝟸'},
+    '3': {'mbf': '𝟑', 'Bbb': '𝟛', 'msans': '𝟥', 'mbfsans': '𝟯', 'mtt': '𝟹'},
+    '4': {'mbf': '𝟒', 'Bbb': '𝟜', 'msans': '𝟦', 'mbfsans': '𝟰', 'mtt': '𝟺'},
+    '5': {'mbf': '𝟓', 'Bbb': '𝟝', 'msans': '𝟧', 'mbfsans': '𝟱', 'mtt': '𝟻'},
+    '6': {'mbf': '𝟔', 'Bbb': '𝟞', 'msans': '𝟨', 'mbfsans': '𝟲', 'mtt': '𝟼'},
+    '7': {'mbf': '𝟕', 'Bbb': '𝟟', 'msans': '𝟩', 'mbfsans': '𝟳', 'mtt': '𝟽'},
+    '8': {'mbf': '𝟖', 'Bbb': '𝟠', 'msans': '𝟪', 'mbfsans': '𝟴', 'mtt': '𝟾'},
+    '9': {'mbf': '𝟗', 'Bbb': '𝟡', 'msans': '𝟫', 'mbfsans': '𝟵', 'mtt': '𝟿'},
 };
 
 function italicizeCharacter(c) {
-    if (c in mathFonts && 'serif-italic' in mathFonts[c] && (c < 'Α' || c > 'Ω' && c != '∇'))
-        return mathFonts[c]['serif-italic'];
+    if (c in mathFonts && 'mit' in mathFonts[c] && (c < 'Α' || c > 'Ω' && c != '∇'))
+        return mathFonts[c]['mit'];
     return c;
 }
 
 function italicizeCharacters(chars) {
     return Array.from(chars).map(c => {
-        if (c in mathFonts && 'serif-italic' in mathFonts[c] && (c < 'Α' || c > 'Ω' && c != '∇')) {
-            return mathFonts[c]['serif-italic'];
+        if (c in mathFonts && 'mit' in mathFonts[c] && (c < 'Α' || c > 'Ω' && c != '∇')) {
+            return mathFonts[c]['mit'];
         } else {
             return c;
         }

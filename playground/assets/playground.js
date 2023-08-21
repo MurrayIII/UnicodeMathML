@@ -819,6 +819,7 @@ $('#mathchar').keyup(function (e) {
     if (char == "") {
         return;
     }
+    char = foldMathItalic(char);
     var fonts;
     try {
         fonts = Object.keys(mathFonts[char]);
