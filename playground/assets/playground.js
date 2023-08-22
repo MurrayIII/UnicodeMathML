@@ -212,13 +212,15 @@ function foldMathAlphanumeric(code, ch) {               // Generalization of fol
         'ℛ': 'R', 'ℜ': 'R', 'ℝ': 'R', 'ℤ': 'Z', 'ℬ': 'B', 'ℭ': 'C',
         'ℯ': 'e', 'ℰ': 'E', 'ℱ': 'F', 'ℳ': 'M', 'ℴ': 'o'
     };
-    // Sans-serif upright Greek and
     if (code < 0x1D400) {
         if (code < 0x2102)                  // 1st Letterlike math alphabetic
             return ch;
         var chAscii = letterLikeSymbols[ch];
         return chAscii == undefined ? ch : chAscii;
     }
+    if (code > 0x1D7FF)
+        return ch;                          // Not math alphanumeric
+
     if (code < 0x1D400 + 13 * 52) {         // 13 English math alphabets
         code %= 52;
         if (code >= 26) {
@@ -864,7 +866,7 @@ $('#dictation').keydown(function (e) {
 });
 
 // math font conversion (mathFonts[] is defined in unicodemathml.js)
-$('#mathchar').keyup(function (e) {
+$('#mathchar').on("change keyup paste", function (e) {
     $('.mathfont').removeClass("disabled");
 
     var char = mathchar.value;
@@ -876,7 +878,8 @@ $('#mathchar').keyup(function (e) {
     if (char == "") {
         return;
     }
-    mathchar.value = char = char.substring(0, 1);  // Max of 1 char
+    code = char.codePointAt(0);
+    mathchar.value = char = char.substring(0, code > 0xFFFF ? 2 : 1);  // Max of 1 char
 
     var fonts;
     try {

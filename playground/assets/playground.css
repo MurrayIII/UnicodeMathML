@@ -132,6 +132,9 @@ input#dictation {
 }
 input#mathchar {
     width: 60px;
+    background: var(--verydarkgrayish-color);
+    border: none;
+    color: #FFFFFF;
 }
 button.submit {
     border-radius: 0 var(--button-radius) var(--button-radius) 0;
