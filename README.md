@@ -330,6 +330,7 @@ In addition, the following features are implemented:
 * Many more LaTeX control words are included. \pmatrix, \bmatrix, \Bmatrix, \nmatrix, \vmatrix, \cancel, \bcancel, and \xcancel are implemented.
 * Math dictation infrastructure is added.
 * Most symbols in the Playground galleries have LaTeX control-word tooltips.
+* Unicode LaTeX math alphanumeric control words like \mitX are supported.
 
 To do:
 * Implement MathML 4.0 intent attributes in addition to the \abs and \choose cases already implemented.

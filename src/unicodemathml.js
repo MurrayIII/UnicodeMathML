@@ -197,6 +197,7 @@ var controlWords = {
     'downharpoonright': '⇂',    	// 21C2
     'dsmash':           '⬇',    	// 2B07
     'ee':               'ⅇ',	// 2147
+    'eight':            '8',    // 0038
     'ell':              'ℓ',	// 2113
     'ellipse':          '⬭',    // 2B2D
     'emptyset':         '∅',	    // 2205
@@ -215,7 +216,9 @@ var controlWords = {
     'eta':              'η',	// 03B7
     'exists':           '∃',	// 2203
     'fallingdotseq':    '≒',	// 2252
+    'five':             '5',    // 0035
     'forall':           '∀',	// 2200
+    'four':             '4',    // 0034
     'frakturH':         'ℌ',    // 210C
     'frown':            '⌢',	    // 2322
     'fullouterjoin':    '⟗',    // 27D7
@@ -349,6 +352,7 @@ var controlWords = {
     'ngeq':             '≱',	    // 2271
     'ngt':              '≯',	    // 226F
     'ni':               '∋',	// 220B
+    'nine':             '9',    // 0039
     'nleftarrow':       '↚',	    // 219A
     'nleftrightarrow':  '↮',	    // 21AE
     'nleq':             '≰',	    // 2270
@@ -392,6 +396,7 @@ var controlWords = {
     'oint':             '∮',	// 222E
     'omega':            'ω',	// 03C9
     'ominus':           '⊖',	    // 2296
+    'one':              '1',    // 0031
     'oo':               '∞',	// 221E
     'open':             '├',	// 251C
     'oplus':            '⊕',	    // 2295
@@ -466,9 +471,11 @@ var controlWords = {
     'sdivide':          '⁄',	// 2044
     'searrow':          '↘',	    // 2198
     'setminus':         '∖',	    // 2216
+    'seven':            '7',    // 0037
     'sigma':            'σ',	// 03C3
     'sim':              '∼',	    // 223C
     'simeq':            '≃',	    // 2243
+    'six':              '6',    // 0036
     'smash':            '⬍',	    // 2B0D
     'smile':            '⌣',	    // 2323
     'spadesuit':        '♠',	// 2660
@@ -503,6 +510,7 @@ var controlWords = {
     'theta':            'θ',	// 03B8
     'thicksp':          ' ',	// 2005
     'thinsp':           ' ',	    // 2009
+    'three':            '3',    // 0033
     'tilde':            '̃',	    // 0303
     'times':            '×',	// 00D7
     'to':               '→',	// 2192
@@ -513,6 +521,7 @@ var controlWords = {
     'triangleright':    '▷',    // 25B7
     'trianglerighteq':  '⊵',	    // 22B5
     'tvec':             '⃡',	// 20E1
+    'two':              '2',    // 0032
     'twoheadleftarrow': '↞',	    // 219E
     'twoheadrightarrow':'↠',	    // 21A0
     'ubar':             '̲',	    // 0332
@@ -556,6 +565,7 @@ var controlWords = {
     'wr':               '≀',	    // 2240
     'xcancel':          '╳',	// 2573
     'xi':               'ξ',	// 03BE
+    'zero':             '0',    // 0030
     'zeta':             'ζ',	// 03B6
     'zwnj':             '‌',	    // 200C
     'zwsp':             '',     // 200B

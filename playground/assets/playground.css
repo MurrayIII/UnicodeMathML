@@ -131,7 +131,7 @@ input#dictation {
     width: 1440px;
 }
 input#mathchar {
-    width: 35px;
+    width: 60px;
 }
 button.submit {
     border-radius: 0 var(--button-radius) var(--button-radius) 0;

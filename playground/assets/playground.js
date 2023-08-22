@@ -199,11 +199,63 @@ function isFunctionName(fn) {
 }
 
 function foldMathItalic(code) {
-    if (code == 0x210E) return 'h';                     // ℎ
+    if (code == 0x210E) return 'h';                     // ℎ (Letterlike symbol)
     if (code < 0x1D434 || code > 0x1D467) return '';    // Not math italic
     code += 0x0041 - 0x1D434;                           // Convert to upper-case ASCII
-    if (code > 0x005A) code += 0x0061 - 0x005A - 1;     // Adjust for  lower case
+    if (code > 0x005A) code += 0x0061 - 0x005A - 1;     // Adjust for lower case
     return String.fromCodePoint(code);                  // ASCII letter corresponding to math italic code
+}
+
+function foldMathAlphanumeric(code, ch) {               // Generalization of foldMathItalic()
+    const letterLikeSymbols = {        'ℂ': 'C', 'ℊ': 'g', 'ℋ': 'H', 'ℌ': 'H', 'ℍ': 'H', 'ℎ': 'h',
+        'ℐ': 'I', 'ℑ': 'I', 'ℒ': 'L', 'ℕ': 'N', 'ℙ': 'P', 'ℚ': 'Q',
+        'ℛ': 'R', 'ℜ': 'R', 'ℝ': 'R', 'ℤ': 'Z', 'ℬ': 'B', 'ℭ': 'C',
+        'ℯ': 'e', 'ℰ': 'E', 'ℱ': 'F', 'ℳ': 'M', 'ℴ': 'o'
+    };
+    // Sans-serif upright Greek and
+    if (code < 0x1D400) {
+        if (code < 0x2102)                  // 1st Letterlike math alphabetic
+            return ch;
+        var chAscii = letterLikeSymbols[ch];
+        return chAscii == undefined ? ch : chAscii;
+    }
+    if (code < 0x1D400 + 13 * 52) {         // 13 English math alphabets
+        code %= 52;
+        if (code >= 26) {
+            code += 6;                      // 'a' - 'Z' - 1
+        }
+        return String.fromCodePoint(code + 65);
+    }
+    code -= 0x1D400 + 13 * 52;              // Bypass English math alphabets
+    if (code < 4) {
+        if (code > 2)
+            return ' ';
+        return code ? 'ȷ' : 'ı';
+    }
+    code -= 4;                              // Advance to Greek math alphabets
+    if (code < 5 * 58) {
+        code = (code % 58) + 0x0391;
+        if (code <= 0x03AA) {               // Upper-case Greek
+            if (code == 0x03A2)
+                code = 0x03F4;			    // Upper-case ϴ variant
+            if (code == 0x03AA)
+                code = 0x2207;              // ∇
+        } else {                            // Lower-case Greek
+            code += 6;                      // Advance to α
+            if (code >= 0x03CA && code <= 0x03D1) {
+                return '∂ϵϑϰϕϱϖ'[code - 0x03CA];
+            }
+        }
+        return String.fromCodePoint(code);
+    }
+    code -= 5 * 58;						    // Bypass Greek math alphabets
+    if (code < 4) {
+        if (code > 1)
+            return ' ';						// Not defined (yet)
+        return code ? 'ϝ' : 'Ϝ';  		    // Digammas
+    }
+    code = 0x30 + ((code - 4) % 10);        // Five sets of math digits
+    return String.fromCodePoint(code);
 }
 
 function codeAt(chars, i) {
@@ -815,11 +867,17 @@ $('#dictation').keydown(function (e) {
 $('#mathchar').keyup(function (e) {
     $('.mathfont').removeClass("disabled");
 
-    var char = $('#mathchar').val();
+    var char = mathchar.value;
+    var code = char.codePointAt(0);
+
+    if (code >= 0x2102) {
+        char = foldMathAlphanumeric(code, char);
+    }
     if (char == "") {
         return;
     }
-    char = foldMathItalic(char);
+    mathchar.value = char = char.substring(0, 1);  // Max of 1 char
+
     var fonts;
     try {
         fonts = Object.keys(mathFonts[char]);
@@ -833,6 +891,7 @@ $('#mathchar').keyup(function (e) {
         }
     });
 });
+
 function getInputSelection() {
     if (input.selectionStart || input.selectionStart == '0') {
         var s = input.selectionStart;
@@ -862,38 +921,30 @@ $('button.mathfont').click(function () {
         }
         insertAtCursorPos(symbol);
         addToHistory(symbol);
-    } else if (getInputSelection() != null) {  // if no character entered, try converting
-        var symbols = [];
-        Array.from(getInputSelection()).forEach(char => {
+    } else if (input.selectionStart != input.selectionEnd) {
+        // if no character entered, try converting nondegenerate selection
+        var symbols = '';
+        var chars = getInputSelection();
 
-            // also convert the current character if it already has been
-            // converted to something previously – i.e. look to which "base
-            // char" it corresponds to, and modify the char variable
-            // accordingly
-            Object.keys(mathFonts).forEach(base => {
-                Object.values(mathFonts[base]).forEach(sym => {
-                    if (char == sym) {
-                        char = base;
-                    }
-                });
-            });
+        for (var i = 0; i < chars.length; i++) {
+            var code = chars.codePointAt(i);
+            var ch = chars[i];
+            var chFolded = ch;
 
-            var symbol;
-            try {
-                symbol = mathFonts[char][font];
-                if (symbol == undefined) {
-                    throw undefined;
+            if (code >= 0x2102) {                // Letterlike symbols or beyond
+                if (code > 0xFFFF) {
+                    ch = chars.substring(i, i + 2);
+                    i++;
                 }
-            } catch (e) {
-                symbol = char;
+                chFolded = foldMathAlphanumeric(code, ch);
             }
-            symbols.push(symbol);
-        });
-        insertAtCursorPos(symbols.join(""));
+            symbols += (chFolded in mathFonts && font in mathFonts[chFolded])
+                ? mathFonts[chFolded][font] : ch;
+        }
+        insertAtCursorPos(symbols);
+        input.selectionStart -= symbols.length;
         input.focus();
         draw();
-    } else {
-        // nothing to be done
     }
 });
 
