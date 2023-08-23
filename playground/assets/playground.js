@@ -335,7 +335,7 @@ function opAutocorrect(i, ip, delim) {
 }
 
 // Symbols whose autocomplete options should be selected by default
-var szSymbolCommon = "αβδθλχϕϵ⁡←√∞⒨■"; // 03B1 03B2 03B4 03B8 03BB 03C7 03D5 03F5 2061 2190 221A 221E 24A8 25A0
+var commonSymbols = "αβδθλχϕϵ⁡←√∞⒨■"; // 03B1 03B2 03B4 03B8 03BB 03C7 03D5 03F5 2061 2190 221A 221E 24A8 25A0
 function autocomplete() {
     var currentFocus = -1;
     // Try autocorrecting or autocompleting a control word when user
@@ -390,7 +390,7 @@ function autocomplete() {
         var matches = getPartialMatches(cw);
         if (!matches.length) return;
 
-        // Create autocomplete menu of partial control-word matches. Start
+        // Create autocomplete menu of control-word partial matches. Start
         // by creating a <div> element to contain matching control words
         currentFocus = -1;
         var autocl = document.createElement("div");
@@ -410,12 +410,13 @@ function autocomplete() {
             b.innerHTML += matches[j].substring(cw.length);
             b.innerHTML += "<input type='hidden' value='" + cwOption + "'>";
 
-            if (szSymbolCommon.includes(cwOption[cwOption.length - 1])) {
-                // Activate most common option, e.g., for '\be' highlight '\beta β'
+            if (commonSymbols.includes(cwOption[cwOption.length - 1])) {
+                // Activate option for most common symbol, e.g., for '\be'
+                // highlight '\beta β'
                 currentFocus = j;
                 b.classList.add("autocomplete-active");
             }
-            // Add click function for when user clicks on a control word
+            // Add click function for user click on a control word
             b.addEventListener("click", function (e) {
                 // Insert control-word symbol 
                 var val = this.getElementsByTagName("input")[0].value;
