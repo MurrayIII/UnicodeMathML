@@ -856,6 +856,106 @@ var mathFonts = {
     '9': {'mbf': '𝟗', 'Bbb': '𝟡', 'msans': '𝟫', 'mbfsans': '𝟵', 'mtt': '𝟿'},
 };
 
+function isFunctionName(fn) {
+    var cch = fn.length;
+    var i = 0;
+
+    if (!cch) return false;
+
+    if (cch >= 4 && fn[0] == 'a') {
+        // Handle 'a' and 'arc' prefixes
+        cch--;
+        i++;
+        if (fn[i] == 'r' && fn[i + 1] == 'c') {
+            i += 2;
+            cch -= 2;
+        }
+    }
+    if (cch == 4 && fn[i + 3] == 'h')
+        cch--; // Hyperbolic
+
+    if (["cos", "cot", "csc", "sec", "sin", "tan", "ctg"].includes(fn.substring(i, i + 3)))
+        return true;
+
+    return ["Pr", "arg", "def", "deg", "det", "dim", "erf", "exp", "gcd", "hom", "inf", "ker", "lim", "log", "ln", "max", "min", "mod", "sup", "tg"].includes(fn);
+}
+
+function foldMathItalic(code) {
+    if (code == 0x210E) return 'h';                     // ℎ (Letterlike symbol)
+    if (code < 0x1D434 || code > 0x1D467) return '';    // Not math italic
+    code += 0x0041 - 0x1D434;                           // Convert to upper-case ASCII
+    if (code > 0x005A) code += 0x0061 - 0x005A - 1;     // Adjust for lower case
+    return String.fromCodePoint(code);                  // ASCII letter corresponding to math italic code
+}
+
+function foldMathItalics(chars) {
+    var fn = "";
+    for (var i = 0; i < chars.length; i += code > 0xFFFF ? 2 : 1) {
+        var ch = chars[i];
+        var code = codeAt(chars, i);
+        if (code >= 0x2102) {
+            ch = foldMathItalic(code);
+        }
+        fn += ch;
+    }
+    return fn;
+}
+
+    function foldMathAlphanumeric(code, ch) {   // Generalization of foldMathItalic()
+        const letterLikeSymbols = {
+            'ℂ': 'C', 'ℊ': 'g', 'ℋ': 'H', 'ℌ': 'H', 'ℍ': 'H', 'ℎ': 'h',
+            'ℐ': 'I', 'ℑ': 'I', 'ℒ': 'L', 'ℕ': 'N', 'ℙ': 'P', 'ℚ': 'Q',
+            'ℛ': 'R', 'ℜ': 'R', 'ℝ': 'R', 'ℤ': 'Z', 'ℬ': 'B', 'ℭ': 'C',
+            'ℯ': 'e', 'ℰ': 'E', 'ℱ': 'F', 'ℳ': 'M', 'ℴ': 'o'
+        };
+        if (code < 0x1D400) {
+            if (code < 0x2102)                  // 1st Letterlike math alphabetic
+                return ch;
+            var chAscii = letterLikeSymbols[ch];
+            return chAscii == undefined ? ch : chAscii;
+        }
+        if (code > 0x1D7FF)
+            return ch;                          // Not math alphanumeric
+
+        if (code < 0x1D400 + 13 * 52) {         // 13 English math alphabets
+            code %= 52;
+            if (code >= 26) {
+                code += 6;                      // 'a' - 'Z' - 1
+            }
+            return String.fromCodePoint(code + 65);
+        }
+        code -= 0x1D400 + 13 * 52;              // Bypass English math alphabets
+        if (code < 4) {
+            if (code > 2)
+                return ' ';
+            return code ? 'ȷ' : 'ı';
+        }
+        code -= 4;                              // Advance to Greek math alphabets
+        if (code < 5 * 58) {
+            code = (code % 58) + 0x0391;
+            if (code <= 0x03AA) {               // Upper-case Greek
+                if (code == 0x03A2)
+                    code = 0x03F4;			    // Upper-case ϴ variant
+                if (code == 0x03AA)
+                    code = 0x2207;              // ∇
+            } else {                            // Lower-case Greek
+                code += 6;                      // Advance to α
+                if (code >= 0x03CA && code <= 0x03D1) {
+                    return '∂ϵϑϰϕϱϖ'[code - 0x03CA];
+                }
+            }
+            return String.fromCodePoint(code);
+        }
+        code -= 5 * 58;						    // Bypass Greek math alphabets
+        if (code < 4) {
+            if (code > 1)
+                return ' ';						// Not defined (yet)
+            return code ? 'ϝ' : 'Ϝ';  		    // Digammas
+        }
+        code = 0x30 + ((code - 4) % 10);        // Five sets of math digits
+        return String.fromCodePoint(code);
+    }
+
 function italicizeCharacter(c) {
     if (c in mathFonts && 'mit' in mathFonts[c] && (c < 'Α' || c > 'Ω' && c != '∇'))
         return mathFonts[c]['mit'];
@@ -1774,22 +1874,29 @@ function preprocess(dsty, uast) {
                         }
                     }
                     if (k(base) == "atoms" && base.atoms.funct == undefined) {
-                        // if str contains more than a single variable, make
-                        // the subsup base be the end variable. e.g., for
-                        // 𝐸 = 𝑚𝑐², make 𝑐 be the base
+                        // If str contains more than a single variable and isn't
+                        // a function name, make the subsup base be the end
+                        // variable.e.g., for 𝐸 = 𝑚𝑐², make 𝑐 be the base
                         var n = base.atoms.length;
                         if (n != undefined) {
                             var str = base.atoms[n - 1].chars;
                             if (str != undefined) {
                                 var cch = str.length;
-                                var cchCh = 1;
+                                var fn = foldMathItalics(str);
+                                if (isFunctionName(fn)) {
+                                    if (fn.length < cch) {
+                                        ret.base.atoms[0].chars = fn;
+                                    }
+                                } else {
+                                    var cchCh = 1;
 
-                                if (cch >= 2 && str.codePointAt(cch - 2) > 0xFFFF)
-                                    cchCh = 2;      // surrogate pair
+                                    if (cch >= 2 && str.codePointAt(cch - 2) > 0xFFFF)
+                                        cchCh = 2;      // surrogate pair
 
-                                if (cch > cchCh) {
-                                    ret.base.atoms[0].chars = str.substring(cch - cchCh, cch);
-                                    return [{atoms: [{chars: str.substring(0, cch - cchCh)}]}, {script: ret}];
+                                    if (cch > cchCh) {
+                                        ret.base.atoms[0].chars = str.substring(cch - cchCh, cch);
+                                        return [{atoms: [{chars: str.substring(0, cch - cchCh)}]}, {script: ret}];
+                                    }
                                 }
                             }
                         }
@@ -1920,7 +2027,9 @@ function preprocess(dsty, uast) {
             return [preprocess(dsty, value), {operator: "!"}];
 
         case "atoms":
-            if (!value.hasOwnProperty("funct") && Array.isArray(value) && value[0].hasOwnProperty("chars") && value[0].chars[0] != 'Ⅎ') {
+            if (!value.hasOwnProperty("funct") && Array.isArray(value) &&
+                value[0].hasOwnProperty("chars") && value[0].chars[0] != 'Ⅎ' &&
+                !isFunctionName(value[0].chars)) {
                 value[0].chars = italicizeCharacters(value[0].chars);
             }
             return {atoms: preprocess(dsty, value)};
@@ -2359,7 +2468,7 @@ function mtransform(dsty, puast) {
                 var n = value.length;
                 if (n != undefined) {
                     var str = value[n - 1].chars;
-                    if (str != undefined && str[0] != 'Ⅎ') {
+                    if (str != undefined && str[0] != 'Ⅎ' && !isFunctionName(str)) {
                         var cch = str.length;
 
                         if (cch > 2 || cch == 2 && str.codePointAt(0) < 0xFFFF) {
@@ -3118,5 +3227,8 @@ root.negs = negs;
 root.resolveCW = resolveCW;
 root.unicodemathml = unicodemathml;
 root.unicodemathtex = unicodemathtex;
+root.isFunctionName = isFunctionName;
+root.foldMathItalic = foldMathItalic;
+root.foldMathAlphanumeric = foldMathAlphanumeric;
 
 })(this);
