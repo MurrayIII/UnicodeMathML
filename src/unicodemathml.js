@@ -166,12 +166,14 @@ var controlWords = {
     'curvearrowright':  '↷',    	// 21B7
     'cwint':            '∱',    	// 2231
     'dag':              '†',	// 2020
+    'dagger':           '†',	// 2020
     'daleth':           'ℸ',	    // 2138
     'dashleftarrow':    '⇠',	    // 21E0
     'dashrightarrow':   '⇢',	    // 21E2
     'dashv':            '⊣',	    // 22A3
     'dd':               'ⅆ',	// 2146
     'ddag':             '‡',	// 2021
+    'ddagger':          '‡',	// 2021
     'ddddot':           '⃜',	// 20DC
     'dddot':            '⃛',	// 20DB
     'ddot':             '̈',	    // 0308

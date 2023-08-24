@@ -207,7 +207,8 @@ function foldMathItalic(code) {
 }
 
 function foldMathAlphanumeric(code, ch) {               // Generalization of foldMathItalic()
-    const letterLikeSymbols = {        'ℂ': 'C', 'ℊ': 'g', 'ℋ': 'H', 'ℌ': 'H', 'ℍ': 'H', 'ℎ': 'h',
+    const letterLikeSymbols = {
+        'ℂ': 'C', 'ℊ': 'g', 'ℋ': 'H', 'ℌ': 'H', 'ℍ': 'H', 'ℎ': 'h',
         'ℐ': 'I', 'ℑ': 'I', 'ℒ': 'L', 'ℕ': 'N', 'ℙ': 'P', 'ℚ': 'Q',
         'ℛ': 'R', 'ℜ': 'R', 'ℝ': 'R', 'ℤ': 'Z', 'ℬ': 'B', 'ℭ': 'C',
         'ℯ': 'e', 'ℰ': 'E', 'ℱ': 'F', 'ℳ': 'M', 'ℴ': 'o'
@@ -396,6 +397,7 @@ function autocomplete() {
         var autocl = document.createElement("div");
         autocl.setAttribute("id", this.id + "autocomplete-list");
         autocl.setAttribute("class", "autocomplete-items");
+
         // Append div element as a child of the autocomplete container
         this.parentNode.appendChild(autocl);
 

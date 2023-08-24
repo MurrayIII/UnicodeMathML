@@ -198,8 +198,8 @@ input[type=submit] {
     border: 1px solid #d4d4d4;
     border-bottom: none;
     z-index: 99;
-    top: 30%;
-    left: 5%;
+    top: 4em;
+    left: 4em;
     right: 30%;
 }
 

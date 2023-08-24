@@ -62,7 +62,7 @@
 
                     // print buttons and extract tooltip data for later use
                     var buttons = [
-                        {label: 'Build-up operators', explanation: 'Operators with a special meaning in UnicodeMath, hover over each button for more information.', symbols: {
+                        {label: 'Build-up Operators', explanation: 'Operators with a special meaning in UnicodeMath, hover over each button for more information.', symbols: {
                             '▒': '\\naryand: n-aryand concatenation operator',
                             '⒜': '\\abs: absolute value operator',
                             '█': '\\array: array operator',
@@ -93,15 +93,15 @@
                             'ￗ': 'Typewriter/code font (non-standard)'
                             }},
                         {label: 'Operators', explanation: 'These are just examples – most nonalphanumeric characters that have no special role in UnicodeMath are recognized as operators.', symbols: {
-                            '≠': '\\ne, /=', '≤': '\\le, <=', '≥': '\\ge, >=', '≡': '\\equiv', '∝': '\\propto',
-                            '≪': '\\ll, <<', '≫': '\\gg, >>', '±': '\\pm, +-', '∓': '\\mp, -+',
-                            '≅': '\\cong, ~=', '×': '\\times', '⋅': '\\cdot', '∈': '\\in', '∋': '\\ni',
+                            '±': '\\pm, +-', '∓': '\\mp, -+', '×': '\\times', '⋅': '\\cdot', '∩': '\\cap', '∪': '\\cup',
+                            '≤': '\\le, <=', '≥': '\\ge, >=', '≠': '\\ne, /=', '≡': '\\equiv', '∝': '\\propto',
+                            '≪': '\\ll, <<', '≫': '\\gg, >>', '≅': '\\cong, ~=', '∈': '\\in', '∋': '\\ni',
                             '∼': '\\sim', '≃': '\\simeq', '≈': '\\approx, ~~', '≍': '\\asymp',
                             '≶': '\\lessgtr', '≷': '\\gtrless', '≽': '\\succcurlyeq', '≼': '\\preccurlyeq',
                             '≺': '\\prcue', '≻': '\\succ', '⊂': '\\subset', '⊃': '\\supset',
                             '⊆': '\\subseteq', '⊇': '\\supseteq', '⊑': '\\sqsubseteq', '⊒': '\\sqsupseteq'
                             }},
-                        {label: 'N-ary operators', explanation: 'These are just examples – more exist (mostly integral variants).', symbols: {
+                        {label: 'N-ary Operators', explanation: 'These are just examples – more exist (mostly integral variants).', symbols: {
                             '∑': '\\sum', '∏': '\\prod', '∫': '\\int', '∬': '\\iint',
                             '∭': '\\iiint', '⨌': '\\iiiint', '∮': '\\oint', '∱': '\\cwint',
                             '⨑': '\\ccwint', '⋂': '\\bigcap', '⋃': '\\bigcup', '⨃': '\\bigudot',
@@ -114,7 +114,7 @@
                             '⟖': '\\rightouterjoin', '⟗': '\\fullouterjoin', '⋉': '\\ltimes', '⋊': '\\rtimes',
                             '▷': '\\triangleright', '÷': '\\div', 'π': '', 'σ': ''
                             }},
-                        {label: 'Invisible operators & spaces', symbols: {
+                        {label: 'Invisible Operators & Spaces', symbols: {
                             '2061': '\\funcapply: invisible function apply',
                             '2062': '\\itimes: invisible times',
                             '2063': '\\isep: invisible separator',
@@ -133,7 +133,7 @@
                             ' ': ['\\nbsp: space-width space (non-breaking space)', 'width: 1.67em']
                             }},
                         {label: 'Superscripts & Subscripts', symbols: '⁰¹²³⁴⁵⁶⁷⁸⁹ⁱⁿ⁺⁻⁼⁽⁾₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎'},
-                        {label: 'Delimiters & Over/underbraces', symbols: {
+                        {label: 'Delimiters & Over/Underbraces', symbols: {
                             '(': '\\lparen', ')': '\\rparen', '[': '\\lbrack', ']': '\\rbrack',
                             '{': '\\lbrace', '}': '\\rbrace', '⟨': '\\bra', '⟩': '\\ket',
                             '⌈': '\\lceil', '⌉': '\\rceil', '⌊': '\\lfloor', '⌋': '\\rfloor',
@@ -141,7 +141,7 @@
                             '⏠': '\\overshell', '⏡': '\\undershell', '⎴': '\\overbracket', '⎵': '\\underbracket',
                             '¯': '\\overline'
                             }},
-                        {label: 'Stretchy arrows', symbols: {
+                        {label: 'Stretchy Arrows', symbols: {
                             '←': '\\leftarrow', '→': '\\rightarrow', '↔': '\\leftrightarrow',
                             '⇐': '\\Leftarrow', '⇒': '\\Rightarrow', '⇔': '\\Leftrightarrow',
                             '↩': '\\hookleftarrow', '↪': '\\hookrightarrow', '↼': '\\leftharpoonup', '⇀': '\\rightharpoonup',
@@ -150,13 +150,10 @@
                             '⟸': '\\Longleftarrow', '⟹': '\\Longrightarrow', '⟺': '\\Longleftrightarrow',
                             '↦': '\\mapsto', '⊨': '\\models'
                             }},
-                        {label: 'Roots & Enclosures', symbols: {
+                        {label: 'Roots, Enclosures, Phantoms', symbols: {
                             '√': '\\sqrt', '∛': '\\cbrt', '∜': '\\qdrt', '▭': '\\rect',
                             '̅': '\\bar', '▁': '\\underbar', '▢': '\\rrect', '○': '\\circle',
-                            '⟌': '\\longdiv', '⬭': '\\ellipse'
-                            }},
-                        {label: 'Phantoms & Smashes', symbols: {
-                            '⟡': '\\phantom: phantom operator',
+                            '⟌': '\\longdiv', '⬭': '\\ellipse', '⟡': '\\phantom: phantom operator',
                             '⬄': '\\hphantom: horizontal phantom operator',
                             '⇳': '\\vphantom: vertical phantom operator',
                             '⬍': '\\smash: smash operator',
@@ -164,23 +161,25 @@
                             '⬇': '\\dsmash: descender smash operator',
                             '⬌': '\\hsmash: horizontal smash operator'
                             }},
-                        {label: 'Combining marks', explanation: 'These are just examples – anything from the "Combining Diacritical Marks" and "Combining Diacritical Marks for Symbols" Unicode blocks works.', symbols: {
+                        {label: 'Accents', explanation: 'These are just examples – anything from the "Combining Diacritical Marks" and "Combining Diacritical Marks for Symbols" Unicode blocks works.', symbols: {
                             '0302': '\\hat', '030C': '\\check', '0303': '\\tilde', '0301': '\\acute',
                             '0300': '\\grave', '0307': '\\dot', '0308': '\\ddot', '20DB': '\\dddot',
-                            '0305': '\\bar', '20D7': '\\vec'
+                            '0305': '\\bar', '20D7': '\\vec', '′': '\\prime, \''
                             }},
-                        {label: 'Differential, Exponential, Imaginary, Infinity', symbols: {
-                            'ⅅ': '\\Dd', 'ⅆ': '\\dd', 'ⅇ': '\\ee', 'ⅈ': '\\ii', 'ⅉ': '\\jj', '∞': '\\infty'
+                        {label: 'Miscellaneous Symbols', symbols: {
+                            'ⅅ': '\\Dd: differential D', 'ⅆ': '\\dd: differential d', 'ⅇ': '\\ee: exponential',
+                            'ⅈ': '\\ii: imaginary unit', 'ⅉ': '\\jj: imaginary unit', '∞': '\\infty', '℘': '\\wp',
+                            'ℏ': '\\hbar', 'ℜ': '\\Re', 'ℑ': '\Im', '∇': '\\nabla', '𝜕': '\\partial', '†': '\\dag'
                             }},
-                        {label: 'Greek', symbols: {
-                                '𝛼': '\\alpha', '𝛽': '\\beta', 'Γ': '\\Gamma', '𝛾': '\\gamma', '∇': '\\nabla',
-                                'Δ': '\\Delta', '𝛿': '\\delta', '𝜕': '\\partial', '𝜖': '\\epsilon', '𝜀': '\\varepsilon',
-                                '𝜁': '\\zeta', '𝜂': '\\eta', 'Θ': '\\Theta', '𝜃': '\\theta', '𝜗': '\\vartheta',
-                                '𝜄': '\\iota', '𝜅': '\\kappa', '𝜘': '\\varkappa', 'Λ': '\\Lambda', '𝜆': '\\lambda',
-                                '𝜇': '\\mu', '𝜈': '\\nu', 'Ξ': '\\Xi', '𝜉': '\\xi', 'Π': '\\Pi', '𝜋': '\\pi',
-                                '𝜛': '\\varpi', '𝜌': '\\rho', '𝜚': '\\varrho', 'Σ': '\\Sigma', '𝜎': '\\sigma', '𝜍': '\\varsigma',
-                                '𝜏': '\\tau', '𝜐': '\\upsilon', 'Φ': '\\Phi', '𝜙': '\\phi', '𝜑': '\\varphi',
-                                '𝜒': '\\chi', 'Ψ': '\\Psi', '𝜓': '\\psi', 'Ω': '\\Omega', '𝜔': '\\omega'
+                        {label: 'Greek Letters', symbols: {
+                            '𝛼': '\\alpha', '𝛽': '\\beta', 'Γ': '\\Gamma', '𝛾': '\\gamma', 'Δ': '\\Delta',
+                            '𝛿': '\\delta', '𝜖': '\\epsilon', '𝜀': '\\varepsilon', '𝜁': '\\zeta',
+                            '𝜂': '\\eta', 'Θ': '\\Theta', '𝜃': '\\theta', '𝜗': '\\vartheta', '𝜄': '\\iota',
+                            '𝜅': '\\kappa', '𝜘': '\\varkappa', 'Λ': '\\Lambda', '𝜆': '\\lambda', '𝜇': '\\mu',
+                            '𝜈': '\\nu', 'Ξ': '\\Xi', '𝜉': '\\xi', 'Π': '\\Pi', '𝜋': '\\pi', '𝜛': '\\varpi',
+                            '𝜌': '\\rho', '𝜚': '\\varrho', 'Σ': '\\Sigma', '𝜎': '\\sigma', '𝜍': '\\varsigma',
+                            '𝜏': '\\tau', '𝜐': '\\upsilon', 'Φ': '\\Phi', '𝜙': '\\phi', '𝜑': '\\varphi',
+                            '𝜒': '\\chi', 'Ψ': '\\Psi', '𝜓': '\\psi', 'Ω': '\\Omega', '𝜔': '\\omega'
                             }}
                     ];
 
