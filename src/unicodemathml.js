@@ -892,7 +892,7 @@ function foldMathItalics(chars) {
     var fn = "";
     for (var i = 0; i < chars.length; i += code > 0xFFFF ? 2 : 1) {
         var ch = chars[i];
-        var code = codeAt(chars, i);
+        var code = chars.charCodeAt(i);
         if (code >= 0x2102) {
             ch = foldMathItalic(code);
         }
