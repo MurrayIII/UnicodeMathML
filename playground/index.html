@@ -132,7 +132,15 @@
                             ' ': ['\\numsp: Digit-width space', 'width: 1.67em'],
                             ' ': ['\\nbsp: space-width space (non-breaking space)', 'width: 1.67em']
                             }},
-                        {label: 'Superscripts & Subscripts', symbols: '⁰¹²³⁴⁵⁶⁷⁸⁹ⁱⁿ⁺⁻⁼⁽⁾₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎'},
+                        {label: 'Superscripts & Subscripts', symbols: {
+                            '⁰': '\\u2070', '¹': '\\u00B9', '²': '\\u00B2', '³': '\\u00B3', '⁴': '\\u2074',
+                            '⁵': '\\u2075', '⁶': '\\u2076', '⁷': '\\u2077', '⁸': '\\u2078', '⁹': '\\u2079',
+                            'ⁱ': '\\u2071', 'ⁿ': '\\u207F', '⁺': '\\u207A', '⁻': '\\u207B', '⁼': '\\u207C',
+                            '⁽': '\\u207D', '⁾': '\\u207E', '₀': '\\u2080', '₁': '\\u2081', '₂': '\\u2082',
+                            '₃': '\\u2083', '₄': '\\u2084', '₅': '\\u2085', '₆': '\\u2086', '₇': '\\u2087',
+                            '₈': '\\u2088', '₉': '\\u2089', '₊': '\\u208a', '₋': '\\u208B', '₌': '\\u208C',
+                            '₍': '\\u208D', '₎': '\\U208E'
+                            }},
                         {label: 'Delimiters & Over/Underbraces', symbols: {
                             '(': '\\lparen', ')': '\\rparen', '[': '\\lbrack', ']': '\\rbrack',
                             '{': '\\lbrace', '}': '\\rbrace', '⟨': '\\bra', '⟩': '\\ket',
