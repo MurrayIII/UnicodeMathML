@@ -55,6 +55,9 @@ table {
 .playground td {
     vertical-align: top;
 }
+a {
+    color: cyan;
+}
 
 /*********/
 /* INPUT */
