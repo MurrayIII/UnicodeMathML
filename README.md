@@ -327,10 +327,9 @@ In addition, the following features are implemented:
 * An autocomplete menu appears when a control word is entered partially. The user can use up/down arrows to select the desired control word and enter it by typing Enter, Tab, or a space. The most common choice is highlighted by default.
 * Control words and operator combinations typed into the Playground input text area are autocorrected there as well as in the output window.
 * Variables are displayed in math italic in the Playground input as well as in the output.
-* Many more LaTeX control words are included. \pmatrix, \bmatrix, \Bmatrix, \nmatrix, \vmatrix, \cancel, \bcancel, and \xcancel are implemented.
+* Many more LaTeX control words are included. \pmatrix, \bmatrix, \Bmatrix, \nmatrix, \vmatrix, \cancel, \bcancel, and \xcancel are implemented. Unicode LaTeX math alphanumeric control words like \mitX for 𝑥 are supported.
 * Math dictation infrastructure is added.
 * Most symbols in the Playground galleries have LaTeX control-word tooltips.
-* Unicode LaTeX math alphanumeric control words like \mitX are supported.
 
 To do:
 * Implement MathML 4.0 intent attributes in addition to the \abs and \choose cases already implemented.

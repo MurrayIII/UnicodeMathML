@@ -644,6 +644,8 @@ async function draw() {
 
 // add a symbol (or string) to history
 function addToHistory(symbols) {
+    if (symbols.length > 4)
+        return;         // Probably an example
 
     // remove previous occurrences of symbols from history
     hist = hist.filter(s => s != symbols);
