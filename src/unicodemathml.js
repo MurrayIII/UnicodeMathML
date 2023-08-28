@@ -2229,7 +2229,7 @@ function mtransform(dsty, puast) {
                     var tmp = of.map(e => (mtransform(dsty, dropOutermostParens(e))));
                     return {mrow: noAttr([tmp[0], {mo: noAttr('/')}, tmp[1]])};
                 case "\u2298":  // small fraction
-                    return {mstyle: withAttrs({fontsize: fontSize(-1)}, {mfrac: noAttr(of.map(e => (mtransform(dsty, dropOutermostParens(e)))))})};
+                    return {mstyle: withAttrs({displaystyle:false}, {mfrac: noAttr(of.map(e => (mtransform(dsty, dropOutermostParens(e)))))})};
             }
 
         case "atop":

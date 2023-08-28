@@ -170,9 +170,10 @@ To summarize, here's a **totally-not-biased-and-super-scientific evaluation of t
 
 Not in its canonical form as described in Sargent's tech note – in Section 1, he mentions that such properties should be delegated to a "higher layer", which is perfectly reasonable in GUI-based environments like Microsoft Office – but there is not such layer in HTML/Markdeep.
 
-***Update:* In late 2021, Murray Sargent [adopted part of the notation described below into mainline UnicodeMathML](https://devblogs.microsoft.com/math-in-office/unicodemath-color/).**
+***Update:* In late 2021, Murray Sargent [adopted part of the notation described below into mainline UnicodeMathML](https://devblogs.microsoft.com/math-in-office/unicodemath-color/); this fix was published as part of [UnicodeMath version 3.2](https://www.unicode.org/notes/tn28/UTN28-PlainTextMath-v3.2.pdf).**
+**
 
-To remedy this, **UnicodeMathML supports a few non-standard constructs**:
+To remedy this, **UnicodeMathML introduces a few non-standard constructs**:
 
 ![](docs/readme-images/5-additions.png)
 
@@ -222,7 +223,7 @@ UnicodeMath's Sargent [notes](docs/sargent-unicodemathml-tech-note.pdf): "MathML
 
 Sort of – according to [caniuse.com](https://caniuse.com/#search=mathml), native support for MathML is available for around 21% of users as of late 2020** since only Firefox and Safari supported MathML.
 
-However, [Igalia](https://mathml.igalia.com) added MathML rendering support to Chromium and as of Spring 2023, MathML support has arrived in Chrome, Edge, and Opera. To see how it looks with your browser, click [here](https://murrayiii.github.io/UnicodeMathML/dist/example.html).
+However, [Igalia](https://mathml.igalia.com) added MathML rendering support to Chromium and as of Spring 2023, MathML support has arrived in Chrome, Edge, and Opera, reaching a total of 90% of users. To see how it looks with your browser, click [here](https://murrayiii.github.io/UnicodeMathML/dist/example.html).
 
 All of this isn't really an issue: [MathJax](https://www.mathjax.org), which you'd probably use to render LaTeX math on the web anyway, provides a polyfill for MathML rendering.
 
