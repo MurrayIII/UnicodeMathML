@@ -1798,7 +1798,7 @@ function preprocess(dsty, uast) {
             return {fraction: {symbol: value.symbol, of: preprocess(dsty, value.of)}};
         case "unicodefraction":
             var frac = (numerator, denominator) => {
-                return {fraction: {symbol: "/", of: [{number: numerator}, {number: denominator}]}};
+                return {fraction: {symbol: "⊘", of: [{number: numerator}, {number: denominator}]}};
             }
             switch(value) {
                 case "↉":
