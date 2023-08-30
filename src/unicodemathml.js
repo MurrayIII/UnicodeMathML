@@ -610,9 +610,9 @@ function resolveCW(unicodemath) {
                 mathStyle = 'Bbb';
             }
             else if (cw[0] == 'm') {
-                // Check for the 13 other math styles
+                // Check for the 14 other math styles
                 const mathStyles = [
-                    'mup', 'mscr', 'mfrak', 'msans', 'mitsans', 'mit', 'mtt',
+                    'mup', 'mscr', 'mfrak', 'msans', 'mitBbb', 'mitsans', 'mit', 'mtt',
                     'mbfscr', 'mbffrak', 'mbfsans', 'mbfitsans', 'mbfit', 'mbf'];
 
                 for (var i = 0; i < mathStyles.length; i++) {
@@ -625,12 +625,18 @@ function resolveCW(unicodemath) {
             if (mathStyle) {
                 c = cw.substring(mathStyle.length);
                 if (c != undefined && c.length) {
-                    if (c.length > 1) {
+                    if (c.length > 1) {     // Might be Greek
                         c = controlWords[c];
                     }
                     if (c != undefined) {
-                        if (mathStyle == 'mup') {
+                        if (mathStyle == 'mup') { // Upright
                             return '"' + c + '"';
+                        }
+                        if (mathStyle == 'mitBbb') {
+                            // Short control words are, e.g., \\d for 'ⅆ'.
+                            // The only \mitBbb characters are:
+                            const mitBbb = {'D': 'ⅅ', 'd': 'ⅆ', 'e': 'ⅇ', 'i': 'ⅈ', 'j': 'ⅉ'};
+                            return mitBbb[c];
                         }
                         return mathFonts[c][mathStyle];
                     }
