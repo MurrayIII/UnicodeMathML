@@ -174,11 +174,71 @@ function highlightJson(json) {
     });
 }
 
+function hexToUnicode() {
+    var cchSel = input.selectionEnd - input.selectionStart;
+    if (cchSel > 10)
+        return;
+    var cch = cchSel ? cchSel : 10;         // 10 is enough for 5 surrogate pairs
+    var n = GetCodePoint(cch);
+    var ch = '';
+
+    if (n < 0x20 || n > 0x10FFFF) {
+        if (n || cchSel)
+            return;
+        // Convert character to hex
+        var code = codeAt(input.value, input.selectionEnd - 1);
+        if (code > 0xFFFF)
+            return;                         // toString truncates larger values
+        ch = code.toString(16);
+        input.selectionStart--;
+    } else {
+        ch = String.fromCharCode(n);
+    }
+    input.value = input.value.substring(0, input.selectionStart) + ch +
+        input.value.substring(input.selectionEnd);
+}
+
+function GetCodePoint(cch) {
+    // Code point for hex string of length cch ending at input.selectionEnd
+    var i = input.selectionEnd;
+    if (cch > i)
+        cch = i;
+    if (cch < 2)
+        return 0;
+
+    var n = 0;                              // Accumulates code point
+
+    for (var j = 0; cch > 0; j += 4, cch--) {
+        var code = input.value.codePointAt(--i);
+        if (code < 0x0030)
+            break;                          // Not a hexadigit
+
+        if (code >= 0xDC00 && code <= 0xDFFF) {
+            code = input.value.codePointAt(--i);
+            if (code < 0x1D434 || code > 0x1D467)
+                break;                      // Surrogate pair isn't math italic
+            code -= code >= 0x1D44E ? (0x1D44E - 0x0061) : (0x1D434 - 0x0061);
+            cch--;
+        }
+        code |= 0x0020;                     // Convert to lower case (if ASCII uc letter)
+        if (code >= 0x0061)                 // Map lower-case ASCII letter
+            code -= 0x0061 - 0x003A;        //  to hex digit
+        code -= 0x0030;                     // Convert hex digit to binary number
+        if (code > 15)
+            break;                          // Not a hexadigit
+        n += code << j;					    // Shift left & add in binary hex
+    }
+    if (n)
+        input.selectionStart = i;
+    return n;
+}
+
 function codeAt(chars, i) {
     // Get UTF-32 code of character at position i, where i can be at a
     // trail surrogate
     var code = chars.codePointAt(i);
-    if (code >= 0xDC00 && code <= 0xDFFF) code = chars.codePointAt(i - 1);
+    if (code >= 0xDC00 && code <= 0xDFFF)
+        code = chars.codePointAt(i - 1);
     return code;
 }
 
@@ -355,18 +415,27 @@ function autocomplete() {
 
     input.addEventListener("keydown", function (e) {
         var x = document.getElementById(this.id + "autocomplete-list");
-        if (!x) return;
+        if (!x) {
+            if (e.key == 'x' && e.altKey) {
+                e.preventDefault();
+                //console.log('Alt+x pressed!');
+                hexToUnicode();
+            }
+            return;
+        }
         x = x.getElementsByTagName("div");
 
         switch (e.key) {
             case "ArrowDown":
                 // Increase currentFocus and highlight the corresponding control-word
+                e.preventDefault();
                 currentFocus++;
                 addActive(x);
                 break;
 
             case "ArrowUp":
                 // Decrease currentFocus and highlight the corresponding control-word
+                e.preventDefault();
                 currentFocus--;
                 addActive(x);
                 break;
