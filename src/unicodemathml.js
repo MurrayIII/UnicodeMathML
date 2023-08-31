@@ -2104,7 +2104,8 @@ function mtransform(dsty, puast) {
     var value = v(puast);
     switch (key) {
         case "unicodemath":
-            var attrs = {class: "unicodemath", xmlns: "http://www.w3.org/1998/Math/MathML", display: dsty? "block" : "inline"}
+            //var attrs = {class: "unicodemath", xmlns: "http://www.w3.org/1998/Math/MathML", display: dsty? "block" : "inline"}
+            var attrs = {display: dsty? "block" : "inline"}
             if (value.eqnumber == null) {
                 return {math: withAttrs(attrs, mtransform(dsty, value.content))};
             } else {

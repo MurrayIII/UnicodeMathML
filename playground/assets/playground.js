@@ -512,7 +512,7 @@ function autocomplete() {
     }
 }
 
-if (window.innerWidth < 768) {
+if (window.innerWidth < 768 || !ummlConfig.debug) {
     // Suppress AST tabs for mobile devices
     var tabs = document.getElementsByClassName('tabs');
     tabs[0].style.display = "none";

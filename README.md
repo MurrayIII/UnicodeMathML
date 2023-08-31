@@ -331,7 +331,9 @@ In addition, the following features are implemented:
 * Many more LaTeX control words are included. \pmatrix, \bmatrix, \Bmatrix, \nmatrix, \vmatrix, \cancel, \bcancel, and \xcancel are implemented. Unicode LaTeX math alphanumeric control words like \mitX for 𝑥 are supported.
 * Math dictation infrastructure is added.
 * Most symbols in the Playground galleries have LaTeX control-word tooltips.
-* Alt+x hex-to-Unicode (and vice versa) hot key
+* Alt+x hex-to-Unicode (and vice versa) hot key is implemented in the Playground input.
+* AST tabs appear only in _debug_ mode on screens wider than 786 pixels.
+* The class "unicodemath" and xmlns attributes are omitted on the <​math> tag.
 
 To do:
 * Implement MathML 4.0 intent attributes in addition to the \abs and \choose cases already implemented.
