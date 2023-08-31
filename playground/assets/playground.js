@@ -512,6 +512,12 @@ function autocomplete() {
     }
 }
 
+if (window.innerWidth < 768) {
+    // Suppress AST tabs for mobile devices
+    var tabs = document.getElementsByClassName('tabs');
+    tabs[0].style.display = "none";
+}
+
 // if latex output is enabled, hide AST tab (since there is no LaTeX AST) and
 // rename source tab
 if (ummlConfig.outputLaTeX) {
