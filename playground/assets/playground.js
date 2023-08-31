@@ -516,6 +516,9 @@ if (window.innerWidth < 768 || !ummlConfig.debug) {
     // Suppress AST tabs for mobile devices
     var tabs = document.getElementsByClassName('tabs');
     tabs[0].style.display = "none";
+    var heading = document.getElementById("heading");
+    if (window.innerWidth < 768)
+        heading.innerHTML = 'UnicodeMathML<br><em>𝐏𝓁𝔞𝚢𝗴𝑟𝖔𝓊𝙣𝕕</em><br>';
 }
 
 // if latex output is enabled, hide AST tab (since there is no LaTeX AST) and
