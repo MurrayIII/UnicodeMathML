@@ -179,7 +179,7 @@ function hexToUnicode() {
     if (cchSel > 10)
         return;
     var cch = cchSel ? cchSel : 10;         // 10 is enough for 5 surrogate pairs
-    var n = GetCodePoint(cch);
+    var n = GetCodePoint(input.selectionEnd, cch);
     var ch = '';
 
     if (n < 0x20 || n > 0x10FFFF) {
@@ -210,6 +210,15 @@ function hexToUnicode() {
     } else {
         if (n <= 0xFFFF) {
             ch = String.fromCharCode(n);
+            if (isTrailSurrogate(n) && input.selectionStart > 5) {
+                var chPrev = input.value[input.selectionStart - 1];
+                if (chPrev == ' ' || chPrev == ',') {
+                    var m = GetCodePoint(input.selectionStart - 1, 8);
+                    if (isLeadSurrogate(m)) {
+                        ch = String.fromCharCode(m) + ch;
+                    }
+                }
+            }
         } else {
             ch = String.fromCharCode(0xD7C0 + (n >> 10)) +
                  String.fromCharCode(0xDC00 + (n & 0x3FF));
@@ -219,9 +228,11 @@ function hexToUnicode() {
         input.value.substring(input.selectionEnd);
 }
 
-function GetCodePoint(cch) {
-    // Code point for hex string of length cch ending at input.selectionEnd
-    var i = input.selectionEnd;
+function isTrailSurrogate(code) { return code >= 0xDC00 && code <= 0xDFFF; }
+function isLeadSurrogate(code) { return code >= 0xD800 && code <= 0xDBFF; }
+
+function GetCodePoint(i, cch) {
+    // Code point for hex string of length cch in input.value ending at offset i
     if (cch > i)
         cch = i;
     if (cch < 2)
@@ -238,7 +249,7 @@ function GetCodePoint(cch) {
         if (code < 0x0030)
             break;                          // Not a hexadigit
 
-        if (code >= 0xDC00 && code <= 0xDFFF) {
+        if (isTrailSurrogate(code)) {
             code = input.value.codePointAt(i - 2);
             if (code < 0x1D434 || code > 0x1D467)
                 break;                      // Surrogate pair isn't math italic
@@ -448,7 +459,6 @@ function autocomplete() {
         if (!x) {
             if (e.key == 'x' && e.altKey) {
                 e.preventDefault();
-                //console.log('Alt+x pressed!');
                 hexToUnicode();
             }
             return;
