@@ -185,14 +185,35 @@ function hexToUnicode() {
     if (n < 0x20 || n > 0x10FFFF) {
         if (n || cchSel)
             return;
-        // Convert character to hex
-        var code = codeAt(input.value, input.selectionEnd - 1);
-        if (code > 0xFFFF)
-            return;                         // toString truncates larger values
-        ch = code.toString(16);
+        // Convert ch to hex str. Sadly code.toString(16) only works correctly
+        // for code <= 0xFFFF
+        var n = codeAt(input.value, input.selectionEnd - 1);
         input.selectionStart--;
+        if (n <= 0xFFFF) {               // toString truncates larger values
+            ch = n.toString(16);
+        } else {
+            input.selectionStart--;
+            for (var d = 1; d < n; d <<= 4)	// Get d = smallest power of 16 > n
+                ;
+            if (n && d > n)
+                d >>= 4;
+            for (; d; d >>= 4) {
+                var quot = n / d;
+                var rem = n % d;
+                n = quot + 0x0030;
+                if (n > 0x0039)
+                    n += 0x0041 - 0x0039 - 1;
+                ch += String.fromCharCode(n);
+                n = rem;
+            }
+        }
     } else {
-        ch = String.fromCharCode(n);
+        if (n <= 0xFFFF) {
+            ch = String.fromCharCode(n);
+        } else {
+            ch = String.fromCharCode(0xD7C0 + (n >> 10)) +
+                 String.fromCharCode(0xDC00 + (n & 0x3FF));
+        }
     }
     input.value = input.value.substring(0, input.selectionStart) + ch +
         input.value.substring(input.selectionEnd);
@@ -206,19 +227,24 @@ function GetCodePoint(cch) {
     if (cch < 2)
         return 0;
 
+    var cchCh = 1;
+    var cchChPrev = 1;
+    var code = 0;
     var n = 0;                              // Accumulates code point
 
     for (var j = 0; cch > 0; j += 4, cch--) {
-        var code = input.value.codePointAt(--i);
+        code = input.value.codePointAt(i - 1);
+        cchCh = 1;
         if (code < 0x0030)
             break;                          // Not a hexadigit
 
         if (code >= 0xDC00 && code <= 0xDFFF) {
-            code = input.value.codePointAt(--i);
+            code = input.value.codePointAt(i - 2);
             if (code < 0x1D434 || code > 0x1D467)
                 break;                      // Surrogate pair isn't math italic
             code -= code >= 0x1D44E ? (0x1D44E - 0x0061) : (0x1D434 - 0x0061);
             cch--;
+            cchCh = 2;
         }
         code |= 0x0020;                     // Convert to lower case (if ASCII uc letter)
         if (code >= 0x0061)                 // Map lower-case ASCII letter
@@ -227,7 +253,11 @@ function GetCodePoint(cch) {
         if (code > 15)
             break;                          // Not a hexadigit
         n += code << j;					    // Shift left & add in binary hex
+        i -= cchCh;
+        cchChPrev = cchCh;
     }
+    if (n < 16 && cchChPrev == 2)
+        n = 0;                              // Set up converting single 𝑎...𝑓 to hex
     if (n)
         input.selectionStart = i;
     return n;
