@@ -516,12 +516,15 @@ if (window.innerWidth < 768 || !ummlConfig.debug) {
     // Suppress AST tabs for mobile devices
     var tabs = document.getElementsByClassName('tabs');
     tabs[0].style.display = "none";
-    var heading = document.getElementById("heading");
-    if (window.innerWidth < 768)
+    if (window.innerWidth < 768) {
+        var heading = document.getElementById("heading");
         heading.innerHTML = 'UnicodeMathML<br><em>𝐏𝓁𝔞𝚢𝗴𝑟𝖔𝓊𝙣𝕕</em><br>';
+        var h = document.getElementsByTagName('h1');
+        h[0].style.textAlign = 'center';
+    }
 }
 
-// if latex output is enabled, hide AST tab (since there is no LaTeX AST) and
+// if LaTeX output is enabled, hide AST tab (since there is no LaTeX AST) and
 // rename source tab
 if (ummlConfig.outputLaTeX) {
     document.getElementById("mathml_ast").style.display = "none";
@@ -704,7 +707,7 @@ async function draw() {
             }
         } else {
 
-            // latex output
+            // LaTeX output
             var latex, details;
             ({latex, details} = unicodemathtex(val, ummlConfig.displaystyle));
             output_HTML += latex;
