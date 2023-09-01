@@ -260,6 +260,7 @@ input[type=submit] {
     font-family: var(--math-font);
     font-size: 1.3em;
     overflow-x: scroll;
+    width: 100%
     /*overflow: scroll;
     max-height: 30em;*/
     min-height: 5rem;
