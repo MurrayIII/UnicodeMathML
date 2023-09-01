@@ -516,11 +516,12 @@ if (window.innerWidth < 768 || !ummlConfig.debug) {
     // Suppress AST tabs for mobile devices
     var tabs = document.getElementsByClassName('tabs');
     tabs[0].style.display = "none";
-    //if (window.innerWidth < 768) {
-    //    var heading = document.getElementById("heading");
-    //    heading.innerHTML = 'UnicodeMathML<br><em>𝐏𝓁𝔞𝚢𝗴𝑟𝖔𝓊𝙣𝕕</em><br>';
-    //    var h = document.getElementsByTagName('h1');
-    //    h[0].style.textAlign = 'center';
+    if (window.innerWidth < 768) {
+        var heading = document.getElementById("heading");
+        heading.innerHTML = 'UnicodeMathML<br><em>𝐏𝓁𝔞𝚢𝗴𝑟𝖔𝓊𝙣𝕕</em><br>';
+        var h = document.getElementsByTagName('h1');
+        h[0].style.textAlign = 'center';
+        h[0].style.width = '100%';
     }
 }
 
