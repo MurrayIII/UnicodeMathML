@@ -16,6 +16,10 @@
     --button-radius: 2px;
 }
 
+::-webkit-scrollbar {
+    width: 0px;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -24,9 +28,6 @@
 }
 html {
     font-size: 20px;
-    ::-webkit-scrollbar {
-        width: 0px;
-    }
 }
 body {
     font-family: var(--main-font);
@@ -356,7 +357,7 @@ math:last-child,
 }
 .tabcontent {
     background: var(--grayish-color);
-    height: 330px;
+    height: 332px;
     overflow: scroll;
     padding: 0.5rem;
 }
