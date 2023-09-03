@@ -24,16 +24,14 @@
 }
 html {
     font-size: 20px;
+    ::-webkit-scrollbar {
+        width: 0px;
+    }
 }
 body {
     font-family: var(--main-font);
     background-color: var(--blackish-color);
     color: var(--whitish-color);
-}
-@media only screen and (max-width: 768px) {
-    ::-webkit-scrollbar {
-        width: 0px;
-    }
 }
 h1 {
     padding: 0.9rem 1rem 1rem;
@@ -265,11 +263,12 @@ input[type=submit] {
     font-family: var(--math-font);
     font-size: 1.3em;
     overflow-x: scroll;
-    width: 100%
+    width: 100%;
     /*overflow: scroll;
     max-height: 30em;*/
     min-height: 5rem;
     background: var(--verydarkgrayish-color);
+    margin-bottom: 0.5rem;
 }
 #output:empty:after {
     content: "...and MathML will render here!";
@@ -357,7 +356,7 @@ math:last-child,
 }
 .tabcontent {
     background: var(--grayish-color);
-    height: 300px;
+    height: 330px;
     overflow: scroll;
     padding: 0.5rem;
 }
