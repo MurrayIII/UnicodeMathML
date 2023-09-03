@@ -30,6 +30,11 @@ body {
     background-color: var(--blackish-color);
     color: var(--whitish-color);
 }
+@media only screen and (max-width: 768px) {
+    ::-webkit-scrollbar {
+        width: 0px;
+    }
+}
 h1 {
     padding: 0.9rem 1rem 1rem;
     font-size: 2.2rem;
