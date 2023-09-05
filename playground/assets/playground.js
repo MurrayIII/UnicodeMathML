@@ -1001,6 +1001,8 @@ function hideTooltip() {
     $(".tooltip").remove();
 }
 $('button').hover(function (e) {
+    if (window.innerWidth < 768)            // Hover doesn't work on small devices
+        return;
     var elem = this;
     var x = $(elem).offset().left;
     var y = $(elem).offset().top + $(elem).outerHeight(true) + 1;

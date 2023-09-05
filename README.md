@@ -334,6 +334,7 @@ In addition, the following features are implemented:
 * Alt+x hex-to-Unicode (and vice versa) hot key is implemented in the Playground input.
 * AST tabs appear only in _debug_ mode on screens wider than 786 pixels.
 * The class "unicodemath" and xmlns attributes are omitted on the <​math> tag.
+* The symbol sets are collected into tabbed arrays with one set displayed at a time
 
 To do:
 * Implement MathML 4.0 intent attributes in addition to the \abs and \choose cases already implemented.
