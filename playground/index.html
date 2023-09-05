@@ -29,7 +29,7 @@
     <aside id="config"><h2>⚙︎</h2></aside>
     <script>
         var buttons = [
-            {label: 'Operators', explanation: 'These are just examples – most nonalphanumeric characters that have no special role in UnicodeMath are recognized as operators.', symbols: {
+            {label: 'Operators', symbols: {
                 '±': '\\pm, +-', '∓': '\\mp, -+', '×': '\\times', '⋅': '\\cdot', '∩': '\\cap', '∪': '\\cup',
                 '≤': '\\le, <=', '≥': '\\ge, >=', '≠': '\\ne, /=', '≡': '\\equiv', '∝': '\\propto',
                 '≪': '\\ll, <<', '≫': '\\gg, >>', '≅': '\\cong, ~=', '∈': '\\in', '∋': '\\ni',
@@ -38,37 +38,40 @@
                 '≺': '\\prcue', '≻': '\\succ', '⊂': '\\subset', '⊃': '\\supset',
                 '⊆': '\\subseteq', '⊇': '\\supseteq', '⊑': '\\sqsubseteq', '⊒': '\\sqsupseteq'
                 }},
-            {label: 'Large', explanation: 'These are just examples – more exist (mostly integral variants).', symbols: {
+            {label: 'Large', symbols: {
                 '∑': '\\sum', '∏': '\\prod', '∫': '\\int', '∬': '\\iint',
                 '∭': '\\iiint', '⨌': '\\iiiint', '∮': '\\oint', '∱': '\\cwint',
                 '⨑': '\\ccwint', '⋂': '\\bigcap', '⋃': '\\bigcup', '⨃': '\\bigudot',
                 '⨄': '\\biguplus', '⨀': '\\bigodot', '⨁': '\\bigoplus', '⨂': '\\bigotimes'
                 }},
-            {label: 'Build-up', explanation: 'Operators with a special meaning in UnicodeMath, hover over each button for more information.', symbols: {
-                '▒': '\\naryand: n-aryand concatenation operator',
+            {label: 'Build-up', symbols: {
+                '/': '/: fraction bar operator',
+                '_': '_: start subscript operator',
+                '^': '^: start superscript operator',
                 '⒜': '\\abs: absolute value operator',
+                '⒞': '\\choose: choose operator (for binomial coefficients)',
+                'Ⓒ': '\\cases: cases operator',
+                '⒨': '\\pmatrix: parenthesized matrix operator',
+                '▒': '\\naryand: n-aryand concatenation operator',
+                '■': '\\matrix: matrix operator',
                 '█': '\\array: array operator',
                 '▭': '\\rect: enclosure operator',
                 '□': '\\box: abstract box operator',
-                '■': '\\matrix: matrix operator',
                 '▁': '\\underline: underline operator',
                 '¦': '\\atop: atop operator',
-                '⒞': '\\choose: choose operator (for binomial coefficients)',
                 '├': '\\open: open delimiter',
                 '┤': '\\close: close delimiter',
                 '┬': '\\below: below operator',
                 '┴': '\\above: above operator',
-                'Ⓒ': '\\cases: cases operator',
                 '〖': '\\begin: invisible opening bracket',
                 '〗': '\\end: invisible closing bracket',
-                '⒨': '\\pmatrix: parenthesized matrix operator',
                 'Ⅎ': 'Size override operator',
-                '⁄': '\\sdiv: skewed fraction operator',
-                '∕': '\\ldif: linear fraction operator',
-                '⊘': '\\ndiv: small fraction operator',
+                '⁄': '\\sdiv: skewed fraction bar operator',
+                '∕': '\\ldif: linear fraction bar operator',
+                '⊘': '\\ndiv: small fraction bar operator',
                 '│': '\\vbar: vertical bar separator',
                 '∣': '\\mid',
-                '✎': '\\color: math color operator',
+                '✎': '\\color: math text color operator',
                 '☁': '\\backcolor: math background color operator',
                 '⫷': 'Start of comment (non-standard)',
                 '⫸': 'End of comment (non-standard)',
@@ -143,7 +146,7 @@
                 'ℏ': '\\hbar', 'ℜ': '\\Re', 'ℑ': '\Im', '∇': '\\nabla', '𝜕': '\\partial', '†': '\\dag',
                 '½': '\\u00BD', '⅓': '\\u2153', '⅔': '\\u2154', '¼': '\\u00BC', '¾': '\\u00BE'
                 }},
-            {label: 'Accents', explanation: 'These are just examples – anything from the "Combining Diacritical Marks" and "Combining Diacritical Marks for Symbols" Unicode blocks works.', symbols: {
+            {label: 'Accents', symbols: {
                 '0302': '\\hat', '030C': '\\check', '0303': '\\tilde', '0301': '\\acute',
                 '0300': '\\grave', '0307': '\\dot', '0308': '\\ddot', '20DB': '\\dddot',
                 '0305': '\\bar', '20D7': '\\vec', '′': '\\prime, \''
@@ -244,7 +247,7 @@
                     <button class="categorytablinks" onclick="openCategory(event, 'Scripts')"><span data-explanation='Subscripts and superscripts (also use _ and ^)'>Scripts</span></button>
                     <button class="categorytablinks" onclick="openCategory(event, 'Enclosures')"><span data-explanation='Square roots, enclosures, phantoms and smashes'>Enclosures</span></button>
                     <button class="categorytablinks" onclick="openCategory(event, 'Misc.')">Misc.</button>
-                    <button class="categorytablinks" onclick="openCategory(event, 'Accents')">Accents</button>
+                    <button class="categorytablinks" onclick="openCategory(event, 'Accents')"><span data-explanation='Can use any accent from Unicode "Combining Diacritical Marks" and "Combining Diacritical Marks for Symbols"'>Accents</span></button>
                     <button class="categorytablinks" onclick="openCategory(event, 'Greek')">Greek</button>
                     <button class="categorytablinks" onclick="openCategory(event, 'Examples')">Examples</button>
                 </div>

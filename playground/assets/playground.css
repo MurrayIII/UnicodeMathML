@@ -368,6 +368,7 @@ math:last-child,
     line-height: 0.9rem;
     display: none;
 }
+
 .tabcontent pre:empty:after {
     content: "Intermediate representations will be shown here. They're useful when debugging!";
 }
