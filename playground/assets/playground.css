@@ -38,6 +38,7 @@ h1 {
     padding: 0.9rem 1rem 1rem;
     font-size: 2.2rem;
     background-color: var(--darkgrayish-color);
+    border: 1px solid #ccc;
 }
 h1 em {
     font-style: normal;
@@ -499,4 +500,41 @@ pre .comment {
 }
 #config a:hover {
     color: orangered;
+}
+
+/* Style the categorytab */
+.categorytab {
+    overflow: hidden;
+    border: 1px solid #ccc;
+    background-color: var(--darkgrayish-color);
+}
+
+    /* Style the buttons inside the categorytab */
+    .categorytab button {
+        background-color: inherit;
+        float: left;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        padding: 14px 16px;
+        transition: 0.3s;
+        font-size: 17px;
+    }
+
+        /* Change background color of buttons on hover */
+        .categorytab button:hover {
+            background-color: #ddd;
+        }
+
+        /* Create an active/current categorytablink class */
+        .categorytab button.active {
+            background-color: dodgerblue;
+        }
+
+/* Style the categorytab content */
+.categorytabcontent {
+    display: none;
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    border-top: none;
 }

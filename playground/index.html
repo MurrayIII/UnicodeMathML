@@ -27,6 +27,167 @@
         <span> <a href="https://github.com/MurrayIII/UnicodeMathML/tree/main" target="_blank">About</a></span>
     </h1>
     <aside id="config"><h2>⚙︎</h2></aside>
+    <script>
+        var buttons = [
+            {label: 'Operators', explanation: 'These are just examples – most nonalphanumeric characters that have no special role in UnicodeMath are recognized as operators.', symbols: {
+                '±': '\\pm, +-', '∓': '\\mp, -+', '×': '\\times', '⋅': '\\cdot', '∩': '\\cap', '∪': '\\cup',
+                '≤': '\\le, <=', '≥': '\\ge, >=', '≠': '\\ne, /=', '≡': '\\equiv', '∝': '\\propto',
+                '≪': '\\ll, <<', '≫': '\\gg, >>', '≅': '\\cong, ~=', '∈': '\\in', '∋': '\\ni',
+                '∼': '\\sim', '≃': '\\simeq', '≈': '\\approx, ~~', '≍': '\\asymp',
+                '≶': '\\lessgtr', '≷': '\\gtrless', '≽': '\\succcurlyeq', '≼': '\\preccurlyeq',
+                '≺': '\\prcue', '≻': '\\succ', '⊂': '\\subset', '⊃': '\\supset',
+                '⊆': '\\subseteq', '⊇': '\\supseteq', '⊑': '\\sqsubseteq', '⊒': '\\sqsupseteq'
+                }},
+            {label: 'Large', explanation: 'These are just examples – more exist (mostly integral variants).', symbols: {
+                '∑': '\\sum', '∏': '\\prod', '∫': '\\int', '∬': '\\iint',
+                '∭': '\\iiint', '⨌': '\\iiiint', '∮': '\\oint', '∱': '\\cwint',
+                '⨑': '\\ccwint', '⋂': '\\bigcap', '⋃': '\\bigcup', '⨃': '\\bigudot',
+                '⨄': '\\biguplus', '⨀': '\\bigodot', '⨁': '\\bigoplus', '⨂': '\\bigotimes'
+                }},
+            {label: 'Build-up', explanation: 'Operators with a special meaning in UnicodeMath, hover over each button for more information.', symbols: {
+                '▒': '\\naryand: n-aryand concatenation operator',
+                '⒜': '\\abs: absolute value operator',
+                '█': '\\array: array operator',
+                '▭': '\\rect: enclosure operator',
+                '□': '\\box: abstract box operator',
+                '■': '\\matrix: matrix operator',
+                '▁': '\\underline: underline operator',
+                '¦': '\\atop: atop operator',
+                '⒞': '\\choose: choose operator (for binomial coefficients)',
+                '├': '\\open: open delimiter',
+                '┤': '\\close: close delimiter',
+                '┬': '\\below: below operator',
+                '┴': '\\above: above operator',
+                'Ⓒ': '\\cases: cases operator',
+                '〖': '\\begin: invisible opening bracket',
+                '〗': '\\end: invisible closing bracket',
+                '⒨': '\\pmatrix: parenthesized matrix operator',
+                'Ⅎ': 'Size override operator',
+                '⁄': '\\sdiv: skewed fraction operator',
+                '∕': '\\ldif: linear fraction operator',
+                '⊘': '\\ndiv: small fraction operator',
+                '│': '\\vbar: vertical bar separator',
+                '∣': '\\mid',
+                '✎': '\\color: math color operator',
+                '☁': '\\backcolor: math background color operator',
+                '⫷': 'Start of comment (non-standard)',
+                '⫸': 'End of comment (non-standard)',
+                'ￗ': 'Typewriter/code font (non-standard)'
+                }},
+            {label: 'Invisible', symbols: {
+                '2061': '\\funcapply: invisible function apply',
+                '2062': '\\itimes: invisible times',
+                '2063': '\\isep: invisible separator',
+                '2064': '\\iplus: invisible plus',
+                '​': ['\\zwsp: zero-width space', 'width: 1em'],
+                ' ': ['\\hairsp: 1/18em space (veryverythinmathspace)', 'width: 1.1em'],
+                '  ': ['2/18em space (verythinmathspace)', 'width: 1.2em'],
+                ' ': ['\\thinsp: 3/18em space (thinmathspace)', 'width: 1.3em'],
+                ' ': ['\\medsp: 4/18em space (mediummathspace)', 'width: 1.4em'],
+                ' ': ['\\thicksp: 5/18em space (thickmathspace)', 'width: 1.5em'],
+                ' ': ['\\vthicksp: 6/18em space (verythickmathspace)', 'width: 1.6em'],
+                '  ': ['7/18em space (veryverythickmathspace)', 'width: 1.7em'],
+                ' ': ['\\ensp: 9/18em space', 'width: 1.9em'],
+                ' ': ['\\emsp: 1em space', 'width: 2.8em'],
+                ' ': ['\\numsp: Digit-width space', 'width: 1.67em'],
+                ' ': ['\\nbsp: space-width space (non-breaking space)', 'width: 1.67em']
+                }},
+            {label: 'Delimiters', symbols: {
+                '(': '\\lparen', ')': '\\rparen', '[': '\\lbrack', ']': '\\rbrack',
+                '{': '\\lbrace', '}': '\\rbrace', '⟨': '\\bra', '⟩': '\\ket',
+                '⌈': '\\lceil', '⌉': '\\rceil', '⌊': '\\lfloor', '⌋': '\\rfloor',
+                '⏜': '\\overparen', '⏝': '\\underparen', '⏞': '\\overbrace', '⏟': '\\underbrace',
+                '⏠': '\\overshell', '⏡': '\\undershell', '⎴': '\\overbracket', '⎵': '\\underbracket',
+                '¯': '\\overline'
+                }},
+            {label: 'Arrows', symbols: {
+                '←': '\\leftarrow', '→': '\\rightarrow', '↔': '\\leftrightarrow',
+                '⇐': '\\Leftarrow', '⇒': '\\Rightarrow', '⇔': '\\Leftrightarrow',
+                '↩': '\\hookleftarrow', '↪': '\\hookrightarrow', '↼': '\\leftharpoonup', '⇀': '\\rightharpoonup',
+                '↽': '\\leftharpoondown', '⇁': '\\rightharpoondown', '⊢': '\\leftarrowtail', '⊣': '\\rightarrowtail',
+                '⟵': '\\longleftarrow', '⟶': '\\longrightarrow', '⟷': '\\longleftrightarrow',
+                '⟸': '\\Longleftarrow', '⟹': '\\Longrightarrow', '⟺': '\\Longleftrightarrow',
+                '↦': '\\mapsto', '⊨': '\\models'
+                }},
+            {label: 'Logic', symbols: {
+                '∃': '\\exists', '∀': '\\forall', '¬': '\\lnot', '∧': '\\land', '∨': '\\lor',
+                '⇒': '\\Rightarrow', '⇔': '\\Leftrightarrow', '⊕': '\\oplus', '⊤': '\\top',
+                '⊥': '\\perp', '⊢': '\\vdash', '⨯': '\\vectimes', '⨝': '\\Join', '⟕': '\\leftouterjoin',
+                '⟖': '\\rightouterjoin', '⟗': '\\fullouterjoin', '⋉': '\\ltimes', '⋊': '\\rtimes',
+                '▷': '\\triangleright', '÷': '\\div', 'π': '', 'σ': ''
+                }},
+            {label: 'Scripts', symbols: {
+                '⁰': '\\u2070', '¹': '\\u00B9', '²': '\\u00B2', '³': '\\u00B3', '⁴': '\\u2074',
+                '⁵': '\\u2075', '⁶': '\\u2076', '⁷': '\\u2077', '⁸': '\\u2078', '⁹': '\\u2079',
+                'ⁱ': '\\u2071', 'ⁿ': '\\u207F', 'ˣ': '\\u02E3', '⁺': '\\u207A', '⁻': '\\u207B',
+                '⁼': '\\u207C', '⁽': '\\u207D', '⁾': '\\u207E', '₀': '\\u2080', '₁': '\\u2081',
+                '₂': '\\u2082', '₃': '\\u2083', '₄': '\\u2084', '₅': '\\u2085', '₆': '\\u2086',
+                '₇': '\\u2087', '₈': '\\u2088', '₉': '\\u2089', 'ᵢ': '\\u1D62', 'ⱼ': '\\u2C7C',
+                'ₖ': '\\u2096', 'ₗ': '\\u2097', 'ₘ': '\\u2098', 'ₙ': '\\u2099', '₊': '\\u208a',
+                '₋': '\\u208B', '₌': '\\u208C', '₍': '\\u208D', '₎': '\\U208E'
+                }},
+            {label: 'Enclosures', symbols: {
+                '√': '\\sqrt', '∛': '\\cbrt', '∜': '\\qdrt', '▭': '\\rect',
+                '̅': '\\bar', '▁': '\\underbar', '▢': '\\rrect', '○': '\\circle',
+                '⟌': '\\longdiv', '⬭': '\\ellipse', '⟡': '\\phantom: phantom operator',
+                '⬄': '\\hphantom: horizontal phantom operator',
+                '⇳': '\\vphantom: vertical phantom operator',
+                '⬍': '\\smash: smash operator',
+                '⬆': '\\asmash: ascender smash operator',
+                '⬇': '\\dsmash: descender smash operator',
+                '⬌': '\\hsmash: horizontal smash operator'
+                }},
+            {label: 'Misc.', symbols: {
+                'ⅅ': '\\Dd: differential D', 'ⅆ': '\\dd: differential d', 'ⅇ': '\\ee: exponential',
+                'ⅈ': '\\ii: imaginary unit', 'ⅉ': '\\jj: imaginary unit', '∞': '\\infty', '℘': '\\wp',
+                'ℏ': '\\hbar', 'ℜ': '\\Re', 'ℑ': '\Im', '∇': '\\nabla', '𝜕': '\\partial', '†': '\\dag',
+                '½': '\\u00BD', '⅓': '\\u2153', '⅔': '\\u2154', '¼': '\\u00BC', '¾': '\\u00BE'
+                }},
+            {label: 'Accents', explanation: 'These are just examples – anything from the "Combining Diacritical Marks" and "Combining Diacritical Marks for Symbols" Unicode blocks works.', symbols: {
+                '0302': '\\hat', '030C': '\\check', '0303': '\\tilde', '0301': '\\acute',
+                '0300': '\\grave', '0307': '\\dot', '0308': '\\ddot', '20DB': '\\dddot',
+                '0305': '\\bar', '20D7': '\\vec', '′': '\\prime, \''
+                }},
+            {label: 'Greek', symbols: {
+                '𝛼': '\\alpha', '𝛽': '\\beta', 'Γ': '\\Gamma', '𝛾': '\\gamma', 'Δ': '\\Delta',
+                '𝛿': '\\delta', '𝜖': '\\epsilon', '𝜀': '\\varepsilon', '𝜁': '\\zeta',
+                '𝜂': '\\eta', 'Θ': '\\Theta', '𝜃': '\\theta', '𝜗': '\\vartheta', '𝜄': '\\iota',
+                '𝜅': '\\kappa', '𝜘': '\\varkappa', 'Λ': '\\Lambda', '𝜆': '\\lambda', '𝜇': '\\mu',
+                '𝜈': '\\nu', 'Ξ': '\\Xi', '𝜉': '\\xi', 'Π': '\\Pi', '𝜋': '\\pi', '𝜛': '\\varpi',
+                '𝜌': '\\rho', '𝜚': '\\varrho', 'Σ': '\\Sigma', '𝜎': '\\sigma', '𝜍': '\\varsigma',
+                '𝜏': '\\tau', '𝜐': '\\upsilon', 'Φ': '\\Phi', '𝜙': '\\phi', '𝜑': '\\varphi',
+                '𝜒': '\\chi', 'Ψ': '\\Psi', '𝜓': '\\psi', 'Ω': '\\Omega', '𝜔': '\\omega'
+                }},
+            {label: 'Examples', symbols: {
+                'ⅈ²=- 1': 'Imaginary unit',
+                '𝐸=𝑚𝑐^2': 'Einstein enery equation',
+                '𝑎²+𝑏²=𝑐²': 'Pythagorean theorem',
+                '𝑓̂(𝜉)=∫_-∞^∞ 𝑓(𝑥)ⅇ^-2𝜋ⅈ𝑥𝜉 ⅆ𝑥': 'Fourier transform',
+                '(𝑎+𝑏)^𝑛=∑_(𝑘=0)^𝑛 𝑛⒞𝑘 𝑎^𝑘 𝑏^(𝑛−𝑘)': 'Binomial expansion',
+                '_𝑛 C_𝑘 = 𝑛⒞𝑘 = 𝑛!/(𝑘!(𝑛-𝑘)!)': 'Binomial coefficient',
+                '∏_(𝑘=0)^𝑛 𝑛⒞𝑘 = 𝐻²(𝑛)/(𝑛!)^(𝑛+1) = (∏_(𝑘=0)^𝑛 𝑘^𝑘)/(𝑛!)^(𝑛+1)': 'Product of binomial coefficients',
+                'sin⁡𝜃 = ½𝑒^ⅈ𝜃 + "c.c."': 'Definition of sine',
+                '𝑊_𝛿₁𝜌₁𝜎₂^3𝛽=𝑈_𝛿₁𝜌₁^3𝛽+1/8𝜋^2⁢∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[(𝑈_𝛿₁𝜌₁^2𝛽-𝛼′₂𝑈_𝛿₁𝜌₁^1𝛽)/𝑈_𝛿₁𝜌₁^0𝛽]': '',
+                '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎^2−𝑏^2)': 'Mode-locking equation',
+                '⏞(𝑥_1+⋯+𝑥_𝑘)^(𝑘 " times")': 'Polynomial sum',
+                '(𝑎 + 𝑏)┴→': 'Over-arrow example',
+                '(■(𝑎&𝑏@𝑐&𝑑))': 'Simple matrix',
+                '█(10&𝑥+&3&𝑦=2@3&𝑥+&13&𝑦=4)': 'Equation array',
+                '𝑎 /~ 𝑏': 'Sample not relation',
+                'w^h^e^e^e^e': 'Nested superscripts',
+                '𝛼₂³/(𝛽₂³ + 𝛾₂³)': 'Unicode subsup factors',
+                '√(𝑛&𝑎 + 𝑏)': 'Simple square root',
+                'sin^2 𝜃+cos^2 𝜃=1': 'Trigonometric identity',
+                '𝑥=(−𝑏±√(𝑏^2−4𝑎𝑐))/2𝑎': 'Solution to quadratic equation',
+                '∫_-∞^∞ e^-𝑥^2 ⅆ𝑥=√𝜋': 'Integral over Gaussian',
+                '|𝑥|=Ⓒ("if "𝑥>=0,&𝑥@"if "𝑥<0,&-𝑥)': 'Absolute value',
+                'lim_(𝑛→∞) (1+1/𝑛)^𝑛=𝑒': 'Definition of 𝑒',
+                'ⅇ^𝑥=1+𝑥/1!+𝑥^2/2!+𝑥^3/3!+⋯, -∞ < 𝑥 < ∞': 'Maclaurin series for 𝑒ˣ',
+                '𝛁⨯𝐄=−𝜕𝐁/𝜕𝑡': 'Maxwell equation',
+                'iℏ 𝜕/𝜕𝑡 𝜓(𝑥,𝑡)=[−ℏ^2/2𝑚 𝜕^2/𝜕𝑥^2+𝑉(𝑥,𝑡)]𝜓(𝑥,𝑡)': 'Schrödinger equation',
+                }},
+        ];
+    </script>
     <table class="playground">
         <tr>
             <td>
@@ -60,200 +221,63 @@
                     <span id="history">
                         <button class="unicode disabled">empty</button>
                     </span>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <p class="mathfonts">
+                    <span class="category" data-explanation="If you want to convert multiple characters at a time, enter them into the UnicodeMath input field, select them and click one of these buttons. Any characters that cannot be converted will remain unchanged.">Math styles</span>
+                    <input type="text" id="mathchar" placeholder="A" maxlength="2"><button id="mbf" class="submit mathfont" data-tooltip="\mbf… Serif & Bold">𝐀𝐁𝐂</button><button id="mit" class="mathfont" data-tooltip="\mit… Serif & Italic">𝐴𝐵𝐶</button><button id="mbfit" class="mathfont" data-tooltip="\mbfit… Serif & Bold & Italic">𝑨𝑩𝑪</button><button id="msans" class="mathfont" data-tooltip="\msans… Sans-serif">𝖠𝖡𝖢</button><button id="mbfsans" class="mathfont" data-tooltip="\mbfsans… Sans-serif & Bold">𝗔𝗕𝗖</button><button id="mbfitsans" class="mathfont" data-tooltip="\mbfitsans… Sans-serif & Italic">𝘈𝘉𝘊</button><button id="mitsans" class="mathfont" data-tooltip="\mitsans… Sans-serif & Bold & Italic">𝘼𝘽𝘾</button><button id="mscr" class="mathfont" data-tooltip="\mscr… Script">𝒜ℬ𝒞</button><button id="mbfscr" class="mathfont" data-tooltip="\mbfscr… Script & Bold">𝓐𝓑𝓒</button><button id="mfrak" class="mathfont" data-tooltip="\mfrak… Fraktur">𝔄𝔅ℭ</button><button id="mbffrak" class="mathfont" data-tooltip="\mbffrak… Fraktur & Bold">𝕬𝕭𝕮</button><button id="mtt" class="mathfont" data-tooltip="\mtt… Monospace">𝙰𝙱𝙲</button><button id="Bbb" class="mathfont" data-tooltip="\Bbb… Double-struck (blackboard bold)">𝔸𝔹ℂ</button>
                 </p>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <div class="categorytab">
+                    <button id="operators" class="categorytablinks" onclick="openCategory(event, 'Operators')"><span data-explanation='Common binary and relational operators'>Operators</span></button>
+                    <button class="categorytablinks" onclick="openCategory(event, 'Large')"><span data-explanation='𝑁-ary (large) operators'>Large</span></button>
+                    <button class="categorytablinks" onclick="openCategory(event, 'Build-up')"><span data-explanation='Operators with a special meaning in UnicodeMath, hover over each button for more information'>Build-up</span></button>
+                    <button class="categorytablinks" onclick="openCategory(event, 'Invisible')"><span data-explanation='Function-apply, invisible times, spaces: hover over each button for more information'>Invisible</span></button>
+                    <button class="categorytablinks" onclick="openCategory(event, 'Delimiters')"><span data-explanation='Vertical and horizontal brackets'>Delimiters</span></button>
+                    <button class="categorytablinks" onclick="openCategory(event, 'Arrows')">Arrows</button>
+                    <button class="categorytablinks" onclick="openCategory(event, 'Logic')">Logic</button>
+                    <button class="categorytablinks" onclick="openCategory(event, 'Scripts')"><span data-explanation='Subscripts and superscripts (also use _ and ^)'>Scripts</span></button>
+                    <button class="categorytablinks" onclick="openCategory(event, 'Enclosures')"><span data-explanation='Square roots, enclosures, phantoms and smashes'>Enclosures</span></button>
+                    <button class="categorytablinks" onclick="openCategory(event, 'Misc.')">Misc.</button>
+                    <button class="categorytablinks" onclick="openCategory(event, 'Accents')">Accents</button>
+                    <button class="categorytablinks" onclick="openCategory(event, 'Greek')">Greek</button>
+                    <button class="categorytablinks" onclick="openCategory(event, 'Examples')">Examples</button>
+                </div>
+
                 <script>
-
-                    // print buttons and extract tooltip data for later use
-                    var buttons = [
-                        {label: 'Operators', explanation: 'These are just examples – most nonalphanumeric characters that have no special role in UnicodeMath are recognized as operators.', symbols: {
-                            '±': '\\pm, +-', '∓': '\\mp, -+', '×': '\\times', '⋅': '\\cdot', '∩': '\\cap', '∪': '\\cup',
-                            '≤': '\\le, <=', '≥': '\\ge, >=', '≠': '\\ne, /=', '≡': '\\equiv', '∝': '\\propto',
-                            '≪': '\\ll, <<', '≫': '\\gg, >>', '≅': '\\cong, ~=', '∈': '\\in', '∋': '\\ni',
-                            '∼': '\\sim', '≃': '\\simeq', '≈': '\\approx, ~~', '≍': '\\asymp',
-                            '≶': '\\lessgtr', '≷': '\\gtrless', '≽': '\\succcurlyeq', '≼': '\\preccurlyeq',
-                            '≺': '\\prcue', '≻': '\\succ', '⊂': '\\subset', '⊃': '\\supset',
-                            '⊆': '\\subseteq', '⊇': '\\supseteq', '⊑': '\\sqsubseteq', '⊒': '\\sqsupseteq'
-                            }},
-                        {label: 'Greek Letters', symbols: {
-                            '𝛼': '\\alpha', '𝛽': '\\beta', 'Γ': '\\Gamma', '𝛾': '\\gamma', 'Δ': '\\Delta',
-                            '𝛿': '\\delta', '𝜖': '\\epsilon', '𝜀': '\\varepsilon', '𝜁': '\\zeta',
-                            '𝜂': '\\eta', 'Θ': '\\Theta', '𝜃': '\\theta', '𝜗': '\\vartheta', '𝜄': '\\iota',
-                            '𝜅': '\\kappa', '𝜘': '\\varkappa', 'Λ': '\\Lambda', '𝜆': '\\lambda', '𝜇': '\\mu',
-                            '𝜈': '\\nu', 'Ξ': '\\Xi', '𝜉': '\\xi', 'Π': '\\Pi', '𝜋': '\\pi', '𝜛': '\\varpi',
-                            '𝜌': '\\rho', '𝜚': '\\varrho', 'Σ': '\\Sigma', '𝜎': '\\sigma', '𝜍': '\\varsigma',
-                            '𝜏': '\\tau', '𝜐': '\\upsilon', 'Φ': '\\Phi', '𝜙': '\\phi', '𝜑': '\\varphi',
-                            '𝜒': '\\chi', 'Ψ': '\\Psi', '𝜓': '\\psi', 'Ω': '\\Omega', '𝜔': '\\omega'
-                            }},
-                        {label: 'N-ary Operators', explanation: 'These are just examples – more exist (mostly integral variants).', symbols: {
-                            '∑': '\\sum', '∏': '\\prod', '∫': '\\int', '∬': '\\iint',
-                            '∭': '\\iiint', '⨌': '\\iiiint', '∮': '\\oint', '∱': '\\cwint',
-                            '⨑': '\\ccwint', '⋂': '\\bigcap', '⋃': '\\bigcup', '⨃': '\\bigudot',
-                            '⨄': '\\biguplus', '⨀': '\\bigodot', '⨁': '\\bigoplus', '⨂': '\\bigotimes'
-                            }},
-                        {label: 'Delimiters & Over/Underbraces', symbols: {
-                            '(': '\\lparen', ')': '\\rparen', '[': '\\lbrack', ']': '\\rbrack',
-                            '{': '\\lbrace', '}': '\\rbrace', '⟨': '\\bra', '⟩': '\\ket',
-                            '⌈': '\\lceil', '⌉': '\\rceil', '⌊': '\\lfloor', '⌋': '\\rfloor',
-                            '⏜': '\\overparen', '⏝': '\\underparen', '⏞': '\\overbrace', '⏟': '\\underbrace',
-                            '⏠': '\\overshell', '⏡': '\\undershell', '⎴': '\\overbracket', '⎵': '\\underbracket',
-                            '¯': '\\overline'
-                            }},
-                        {label: 'Logic & DB operators', symbols: {
-                            '∃': '\\exists', '∀': '\\forall', '¬': '\\lnot', '∧': '\\land', '∨': '\\lor',
-                            '⇒': '\\Rightarrow', '⇔': '\\Leftrightarrow', '⊕': '\\oplus', '⊤': '\\top',
-                            '⊥': '\\perp', '⊢': '\\vdash', '⨯': '\\vectimes', '⨝': '\\Join', '⟕': '\\leftouterjoin',
-                            '⟖': '\\rightouterjoin', '⟗': '\\fullouterjoin', '⋉': '\\ltimes', '⋊': '\\rtimes',
-                            '▷': '\\triangleright', '÷': '\\div', 'π': '', 'σ': ''
-                            }},
-                        {label: 'Build-up Operators', explanation: 'Operators with a special meaning in UnicodeMath, hover over each button for more information.', symbols: {
-                            '▒': '\\naryand: n-aryand concatenation operator',
-                            '⒜': '\\abs: absolute value operator',
-                            '█': '\\array: array operator',
-                            '▭': '\\rect: enclosure operator',
-                            '□': '\\box: abstract box operator',
-                            '■': '\\matrix: matrix operator',
-                            '▁': '\\underline: underline operator',
-                            '¦': '\\atop: atop operator',
-                            '⒞': '\\choose: choose operator (for binomial coefficients)',
-                            '├': '\\open: open delimiter',
-                            '┤': '\\close: close delimiter',
-                            '┬': '\\below: below operator',
-                            '┴': '\\above: above operator',
-                            'Ⓒ': '\\cases: cases operator',
-                            '〖': '\\begin: invisible opening bracket',
-                            '〗': '\\end: invisible closing bracket',
-                            '⒨': '\\pmatrix: parenthesized matrix operator',
-                            'Ⅎ': 'Size override operator',
-                            '⁄': '\\sdiv: skewed fraction operator',
-                            '∕': '\\ldif: linear fraction operator',
-                            '⊘': '\\ndiv: small fraction operator',
-                            '│': '\\vbar: vertical bar separator',
-                            '∣': '\\mid',
-                            '✎': '\\color: math color operator',
-                            '☁': '\\backcolor: math background color operator',
-                            '⫷': 'Start of comment (non-standard)',
-                            '⫸': 'End of comment (non-standard)',
-                            'ￗ': 'Typewriter/code font (non-standard)'
-                            }},
-                        {label: 'Invisible Operators & Spaces', symbols: {
-                            '2061': '\\funcapply: invisible function apply',
-                            '2062': '\\itimes: invisible times',
-                            '2063': '\\isep: invisible separator',
-                            '2064': '\\iplus: invisible plus',
-                            '​': ['\\zwsp: zero-width space', 'width: 1em'],
-                            ' ': ['\\hairsp: 1/18em space (veryverythinmathspace)', 'width: 1.1em'],
-                            '  ': ['2/18em space (verythinmathspace)', 'width: 1.2em'],
-                            ' ': ['\\thinsp: 3/18em space (thinmathspace)', 'width: 1.3em'],
-                            ' ': ['\\medsp: 4/18em space (mediummathspace)', 'width: 1.4em'],
-                            ' ': ['\\thicksp: 5/18em space (thickmathspace)', 'width: 1.5em'],
-                            ' ': ['\\vthicksp: 6/18em space (verythickmathspace)', 'width: 1.6em'],
-                            '  ': ['7/18em space (veryverythickmathspace)', 'width: 1.7em'],
-                            ' ': ['\\ensp: 9/18em space', 'width: 1.9em'],
-                            ' ': ['\\emsp: 1em space', 'width: 2.8em'],
-                            ' ': ['\\numsp: Digit-width space', 'width: 1.67em'],
-                            ' ': ['\\nbsp: space-width space (non-breaking space)', 'width: 1.67em']
-                            }},
-                        {label: 'Superscripts & Subscripts', symbols: {
-                            '⁰': '\\u2070', '¹': '\\u00B9', '²': '\\u00B2', '³': '\\u00B3', '⁴': '\\u2074',
-                            '⁵': '\\u2075', '⁶': '\\u2076', '⁷': '\\u2077', '⁸': '\\u2078', '⁹': '\\u2079',
-                            'ⁱ': '\\u2071', 'ⁿ': '\\u207F', 'ˣ': '\\u02E3', '⁺': '\\u207A', '⁻': '\\u207B',
-                            '⁼': '\\u207C', '⁽': '\\u207D', '⁾': '\\u207E', '₀': '\\u2080', '₁': '\\u2081',
-                            '₂': '\\u2082', '₃': '\\u2083', '₄': '\\u2084', '₅': '\\u2085', '₆': '\\u2086',
-                            '₇': '\\u2087', '₈': '\\u2088', '₉': '\\u2089', 'ᵢ': '\\u1D62', 'ⱼ': '\\u2C7C',
-                            'ₖ': '\\u2096', 'ₗ': '\\u2097', 'ₘ': '\\u2098', 'ₙ': '\\u2099', '₊': '\\u208a',
-                            '₋': '\\u208B', '₌': '\\u208C', '₍': '\\u208D', '₎': '\\U208E'
-                            }},
-                        {label: 'Stretchy Arrows', symbols: {
-                            '←': '\\leftarrow', '→': '\\rightarrow', '↔': '\\leftrightarrow',
-                            '⇐': '\\Leftarrow', '⇒': '\\Rightarrow', '⇔': '\\Leftrightarrow',
-                            '↩': '\\hookleftarrow', '↪': '\\hookrightarrow', '↼': '\\leftharpoonup', '⇀': '\\rightharpoonup',
-                            '↽': '\\leftharpoondown', '⇁': '\\rightharpoondown', '⊢': '\\leftarrowtail', '⊣': '\\rightarrowtail',
-                            '⟵': '\\longleftarrow', '⟶': '\\longrightarrow', '⟷': '\\longleftrightarrow',
-                            '⟸': '\\Longleftarrow', '⟹': '\\Longrightarrow', '⟺': '\\Longleftrightarrow',
-                            '↦': '\\mapsto', '⊨': '\\models'
-                            }},
-                        {label: 'Roots, Enclosures, Phantoms', symbols: {
-                            '√': '\\sqrt', '∛': '\\cbrt', '∜': '\\qdrt', '▭': '\\rect',
-                            '̅': '\\bar', '▁': '\\underbar', '▢': '\\rrect', '○': '\\circle',
-                            '⟌': '\\longdiv', '⬭': '\\ellipse', '⟡': '\\phantom: phantom operator',
-                            '⬄': '\\hphantom: horizontal phantom operator',
-                            '⇳': '\\vphantom: vertical phantom operator',
-                            '⬍': '\\smash: smash operator',
-                            '⬆': '\\asmash: ascender smash operator',
-                            '⬇': '\\dsmash: descender smash operator',
-                            '⬌': '\\hsmash: horizontal smash operator'
-                            }},
-                        {label: 'Miscellaneous Symbols', symbols: {
-                            'ⅅ': '\\Dd: differential D', 'ⅆ': '\\dd: differential d', 'ⅇ': '\\ee: exponential',
-                            'ⅈ': '\\ii: imaginary unit', 'ⅉ': '\\jj: imaginary unit', '∞': '\\infty', '℘': '\\wp',
-                            'ℏ': '\\hbar', 'ℜ': '\\Re', 'ℑ': '\Im', '∇': '\\nabla', '𝜕': '\\partial', '†': '\\dag',
-                            '½': '\\u00BD', '⅓': '\\u2153', '⅔': '\\u2154', '¼': '\\u00BC', '¾': '\\u00BE'
-                            }},
-                        {label: 'Accents', explanation: 'These are just examples – anything from the "Combining Diacritical Marks" and "Combining Diacritical Marks for Symbols" Unicode blocks works.', symbols: {
-                            '0302': '\\hat', '030C': '\\check', '0303': '\\tilde', '0301': '\\acute',
-                            '0300': '\\grave', '0307': '\\dot', '0308': '\\ddot', '20DB': '\\dddot',
-                            '0305': '\\bar', '20D7': '\\vec', '′': '\\prime, \''
-                            }},
-                        {label: 'Examples', symbols: {
-                            'ⅈ²=- 1': 'Imaginary unit',
-                            '𝐸=𝑚𝑐^2': 'Einstein enery equation',
-                            '𝑎²+𝑏²=𝑐²': 'Pythagorean theorem',
-                            '𝑓̂(𝜉)=∫_-∞^∞ 𝑓(𝑥)ⅇ^-2𝜋ⅈ𝑥𝜉 ⅆ𝑥': 'Fourier transform',
-                            '(𝑎+𝑏)^𝑛=∑_(𝑘=0)^𝑛 𝑛⒞𝑘 𝑎^𝑘 𝑏^(𝑛−𝑘)': 'Binomial expansion',
-                            '_𝑛 C_𝑘 = 𝑛⒞𝑘 = 𝑛!/(𝑘!(𝑛-𝑘)!)': 'Binomial coefficient',
-                            '∏_(𝑘=0)^𝑛 𝑛⒞𝑘 = 𝐻²(𝑛)/(𝑛!)^(𝑛+1) = (∏_(𝑘=0)^𝑛 𝑘^𝑘)/(𝑛!)^(𝑛+1)': 'Product of binomial coefficients',
-                            'sin⁡𝜃 = ½𝑒^ⅈ𝜃 + "c.c."': 'Definition of sine',
-                            '𝑊_𝛿₁𝜌₁𝜎₂^3𝛽=𝑈_𝛿₁𝜌₁^3𝛽+1/8𝜋^2⁢∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[(𝑈_𝛿₁𝜌₁^2𝛽-𝛼′₂𝑈_𝛿₁𝜌₁^1𝛽)/𝑈_𝛿₁𝜌₁^0𝛽]': '',
-                            '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎^2−𝑏^2)': 'Mode-locking equation',
-                            '⏞(𝑥_1+⋯+𝑥_𝑘)^(𝑘 " times")': 'Polynomial sum',
-                            '(𝑎 + 𝑏)┴→': 'Over-arrow example',
-                            '(■(𝑎&𝑏@𝑐&𝑑))': 'Simple matrix',
-                            '█(10&𝑥+&3&𝑦=2@3&𝑥+&13&𝑦=4)': 'Equation array',
-                            '𝑎 /~ 𝑏': 'Sample not relation',
-                            'w^h^e^e^e^e': 'Nested superscripts',
-                            '𝛼₂³/(𝛽₂³ + 𝛾₂³)': 'Unicode subsup factors',
-                            '√(𝑛&𝑎 + 𝑏)': 'Simple square root',
-                            'sin^2 𝜃+cos^2 𝜃=1': 'Trigonometric identity',
-                            '𝑥=(−𝑏±√(𝑏^2−4𝑎𝑐))/2𝑎': 'Solution to quadratic equation',
-                            '∫_-∞^∞ e^-𝑥^2 ⅆ𝑥=√𝜋': 'Integral over Gaussian',
-                            '|𝑥|=Ⓒ("if "𝑥>=0,&𝑥@"if "𝑥<0,&-𝑥)': 'Absolute value',
-                            'lim_(𝑛→∞) (1+1/𝑛)^𝑛=𝑒': 'Definition of 𝑒',
-                            'ⅇ^𝑥=1+𝑥/1!+𝑥^2/2!+𝑥^3/3!+⋯, -∞ < 𝑥 < ∞': 'Maclaurin series for 𝑒ˣ',
-                            '𝛁⨯𝐄=−𝜕𝐁/𝜕𝑡': 'Maxwell equation',
-                            'iℏ 𝜕/𝜕𝑡 𝜓(𝑥,𝑡)=[−ℏ^2/2𝑚 𝜕^2/𝜕𝑥^2+𝑉(𝑥,𝑡)]𝜓(𝑥,𝑡)': 'Schrödinger equation',
-                            }},
-                    ];
-
-                    // variable used later on
+                    function openCategory(evt, categoryName) {
+                        var i, categorytabcontent, categorytablinks;
+                        categorytabcontent = document.getElementsByClassName("categorytabcontent");
+                        for (i = 0; i < categorytabcontent.length; i++) {
+                            categorytabcontent[i].style.display = "none";
+                        }
+                        categorytablinks = document.getElementsByClassName("categorytablinks");
+                        for (i = 0; i < categorytablinks.length; i++) {
+                            categorytablinks[i].className = categorytablinks[i].className.replace(" active", "");
+                        }
+                        document.getElementById(categoryName).style.display = "block";
+                        evt.currentTarget.className += " active";
+                    }
                     var symbolTooltips = {};
+                    buttons.forEach(function (entry) {
+                        document.write(`<div id=${entry['label']} class="categorytabcontent"><p>`);
+                        let syms = {};
+                        Object.keys(entry['symbols']).forEach(function (c) {
+                            if (/^[0-9A-F]+$/i.test(c)) {
 
-                    buttons.forEach(function(entry) {
-                        var explanation = "";
-                        if ('explanation' in entry) {
-                            explanation = 'data-explanation="' + entry['explanation'].split('"').join("&quot;") + '"';
-                        }
-                        document.write(`<p><span class="category" ${explanation}>${entry['label']}</span> `);
-                        var syms = {};
-                        var specialCss = {};
-                        if (typeof(entry['symbols']) == "string") {  // string
-                            entry['symbols'].split('').forEach(c => syms[c] = "");
-                        } else if (!(entry['symbols'] instanceof Array)) {  // dictionary (with tooltips)
-                            Object.keys(entry['symbols']).forEach(function (c) {
-                                if (/^[0-9A-F]+$/i.test(c)) {
+                                // hex code
+                                syms[String.fromCodePoint("0x" + c)] = entry['symbols'][c];
+                            } else {
 
-                                    // hex code
-                                    syms[String.fromCodePoint("0x" + c)] = entry['symbols'][c];
-                                } else {
-
-                                    // normal character
-                                    syms[c] = entry['symbols'][c];
-                                }
-                            });
-                        } else if (/^[0-9A-F]+$/i.test(entry['symbols'][0])) {  // list of codepoints
-                            entry['symbols'].map(c => String.fromCodePoint("0x" + c)).forEach(c => syms[c] = "");
-                        } else {  // just a list
-                            entry['symbols'].forEach(c => syms[c] = "");;
-                        }
+                                // normal character
+                                syms[c] = entry['symbols'][c];
+                            }
+                        });
 
                         Object.keys(syms).forEach(function (c) {
 
@@ -267,17 +291,12 @@
                             }
                             document.write(`<button class="unicode" ${css} data-tooltip="${tooltip}">${c}</button>`);
                         });
+                        document.write(`</div>`)
                         symbolTooltips = Object.assign({}, symbolTooltips, syms);
                     });
+                    var ops = document.getElementById('operators');
+                    ops.click();
                 </script>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2">
-                <p class="mathfonts">
-                    <span class="category" data-explanation="If you want to convert multiple characters at a time, enter them into the UnicodeMath input field, select them and click one of these buttons. Any characters that cannot be converted will remain unchanged.">Math styles</span>
-                    <input type="text" id="mathchar" placeholder="A" maxlength="2"><button id="mbf" class="submit mathfont" data-tooltip="\mbf… Serif & Bold">𝐀𝐁𝐂</button><button id="mit" class="mathfont" data-tooltip="\mit… Serif & Italic">𝐴𝐵𝐶</button><button id="mbfit" class="mathfont" data-tooltip="\mbfit… Serif & Bold & Italic">𝑨𝑩𝑪</button><button id="msans" class="mathfont" data-tooltip="\msans… Sans-serif">𝖠𝖡𝖢</button><button id="mbfsans" class="mathfont" data-tooltip="\mbfsans… Sans-serif & Bold">𝗔𝗕𝗖</button><button id="mbfitsans" class="mathfont" data-tooltip="\mbfitsans… Sans-serif & Italic">𝘈𝘉𝘊</button><button id="mitsans" class="mathfont" data-tooltip="\mitsans… Sans-serif & Bold & Italic">𝘼𝘽𝘾</button><button id="mscr" class="mathfont"  data-tooltip="\mscr… Script">𝒜ℬ𝒞</button><button id="mbfscr" class="mathfont" data-tooltip="\mbfscr… Script & Bold">𝓐𝓑𝓒</button><button id="mfrak" class="mathfont" data-tooltip="\mfrak… Fraktur">𝔄𝔅ℭ</button><button id="mbffrak" class="mathfont" data-tooltip="\mbffrak… Fraktur & Bold">𝕬𝕭𝕮</button><button id="mtt" class="mathfont" data-tooltip="\mtt… Monospace">𝙰𝙱𝙲</button><button id="Bbb" class="mathfont" data-tooltip="\Bbb… Double-struck (blackboard bold)">𝔸𝔹ℂ</button>
-                </p>
             </td>
         </tr>
     </table>
