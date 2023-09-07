@@ -27,7 +27,7 @@
     box-sizing: border-box;
 }
 html {
-    font-size: 20px;
+    font-size: 16px;
 }
 body {
     font-family: var(--main-font);
@@ -69,10 +69,10 @@ a {
 /*********/
 
 textarea {
-    font-family: var(--code-font);
+    font-family: var(--main-font);
     font-size: 1.5rem;
     width: 100%;
-    height: 360px;
+    height: 280px;
     outline: none;
     background: var(--verydarkgrayish-color);
     border: none;
@@ -139,7 +139,7 @@ input#dictation {
     width: 1440px;
 }
 input#mathchar {
-    width: 60px;
+    width: 40px;
     background: var(--verydarkgrayish-color);
     border: none;
     color: #FFFFFF;
@@ -149,7 +149,6 @@ button.submit {
     vertical-align: top;
 }
 .history {
-    margin-bottom: 0.75rem;
     overflow-x: scroll;
     white-space: nowrap;
     margin-right: -1rem;
@@ -358,19 +357,20 @@ math:last-child,
 }
 .tabcontent {
     background: var(--grayish-color);
-    height: 332px;
+    height: 252px;
     overflow: scroll;
     padding: 0.5rem;
 }
 .tabcontent pre {
-    font-family: var(--code-font);
     font-size: 0.8rem;
     line-height: 0.9rem;
     display: none;
 }
 
 .tabcontent pre:empty:after {
-    content: "Intermediate representations will be shown here. They're useful when debugging!";
+    font-family: var(--main-font);
+    font-size: 1rem;
+    content: "Intermediate representations display here. They're useful when debugging!";
 }
 
 @keyframes blink {
@@ -517,7 +517,7 @@ pre .comment {
         border: none;
         outline: none;
         cursor: pointer;
-        padding: 14px 16px;
+        padding: 10px 12px;
         transition: 0.3s;
         font-size: 17px;
     }

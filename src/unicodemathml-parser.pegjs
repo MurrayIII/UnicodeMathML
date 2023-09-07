@@ -443,7 +443,6 @@ element
     / matrix
     / nary
     / nByMmatrix
-    / phantomSmash
     / o:operand !(__? (opFraction !rawOperator / opAtop / opChoose)) {return o}  // ⚡ performance optimization
     / fraction
     / atop
@@ -510,9 +509,16 @@ phantom
     / s:opPhantom {                         // Suppress error message
         return {text: s};
     }
-smash = s:opSmash "(" e:exp ")" {
-    return {smash: {symbol: s, of: e}};
-}
+smash
+    = s:opSmash "(" e:exp ")" {
+        return {smash: {symbol: s, of: e}};
+    }
+    / s:opSmash e:operand {
+        return {smash: {symbol: s, of: e}};
+    }
+    / s:opSmash {                         // Suppress error message
+        return {text: s};
+    }
 
 // fractions
 fraction
@@ -769,6 +775,7 @@ soperand
 // ❸ high-precedence constructs
 sfactor
     = enclosed
+    / phantomSmash
     / abstractbox
     / hbrack
     / root

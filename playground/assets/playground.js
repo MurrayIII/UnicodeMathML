@@ -330,7 +330,7 @@ function opAutocorrect(i, ip, delim) {
     }
     var op = input.value[ip - 3];
 
-    if (ip >= 4 && '_^'.includes(op) && '+-= '.includes(delim) &&
+    if (ip >= 4 && '_^'.includes(op) && '+-= )]}'.includes(delim) &&
         /[0-9]/.test(input.value[ip - 2])) {
         // E.g., replace "𝑎^2+" by "𝑎²+"
         var j = (delim == ' ') ? ip : ip - 1;
@@ -369,7 +369,7 @@ function autocomplete() {
         // Move back alphanumeric span
         while (i > 0 && /[a-zA-Z0-9]/.test(input.value[i])) { i--; }
 
-        if (i < 0 || input.value[i] != '\\') {
+        if (i < 0 || input.value[i] != '\\' && (!i || input.value.substring(i - 1, i + 1) != '✎(')) {
             // Not control word; check for italicization & operator autocorrect
             var ch = italicizeCharacter(delim);
             if (ch != delim) {

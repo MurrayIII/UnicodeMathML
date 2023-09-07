@@ -24,7 +24,7 @@
         <span id="heading">UnicodeMathML <em>𝐏𝓁𝔞𝚢𝗴𝑟𝖔𝓊𝙣𝕕<!--𝐏𝓁𝔞𝚢͛𝗴𝑟𝖔⃗𝓊𝙣͖𝕕--> </em></span>
         <i class="pointer fa fa-4x fa-microphone-slash" id="mic">mic </i>
         <a href="https://www.unicode.org/notes/tn28/UTN28-PlainTextMath-v3.2.pdf" target="_blank">Help</a>
-        <span> <a href="https://github.com/MurrayIII/UnicodeMathML/tree/main" target="_blank">About</a></span>
+        <span> <a href="https://github.com/MurrayIII/UnicodeMathML/" target="_blank">About</a></span>
     </h1>
     <aside id="config"><h2>⚙︎</h2></aside>
     <script>
@@ -44,14 +44,18 @@
                 '⨑': '\\ccwint', '⋂': '\\bigcap', '⋃': '\\bigcup', '⨃': '\\bigudot',
                 '⨄': '\\biguplus', '⨀': '\\bigodot', '⨁': '\\bigoplus', '⨂': '\\bigotimes'
                 }},
-            {label: 'Build-up', symbols: {
+            {label: 'Build', symbols: {
                 '/': '/: fraction bar operator',
                 '_': '_: start subscript operator',
                 '^': '^: start superscript operator',
-                '⒜': '\\abs: absolute value operator',
+                '⒜': '\\abs: unambiguous absolute value operator',
                 '⒞': '\\choose: choose operator (for binomial coefficients)',
                 'Ⓒ': '\\cases: cases operator',
+                '⒩': '\\Vmatrix: norm operator',
                 '⒨': '\\pmatrix: parenthesized matrix operator',
+                'ⓢ': '\\bmatrix: square brackets matrix operator',
+                'Ⓢ': '\\Bmatrix: curly braces matrix operator',
+                '⒱': '\\vmatrix: determinant operator',
                 '▒': '\\naryand: n-aryand concatenation operator',
                 '■': '\\matrix: matrix operator',
                 '█': '\\eqarray: equation array operator',
@@ -223,14 +227,9 @@
                     <span id="history">
                         <button class="unicode disabled">empty</button>
                     </span>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2">
                 <p class="mathfonts">
                     <span class="category" data-explanation="If you want to convert multiple characters at a time, enter them into the UnicodeMath input field, select them and click one of these buttons. Any characters that cannot be converted will remain unchanged.">Math styles</span>
                     <input type="text" id="mathchar" placeholder="A" maxlength="2"><button id="mbf" class="submit mathfont" data-tooltip="\mbf… Serif & Bold">𝐀𝐁𝐂</button><button id="mit" class="mathfont" data-tooltip="\mit… Serif & Italic">𝐴𝐵𝐶</button><button id="mbfit" class="mathfont" data-tooltip="\mbfit… Serif & Bold & Italic">𝑨𝑩𝑪</button><button id="msans" class="mathfont" data-tooltip="\msans… Sans-serif">𝖠𝖡𝖢</button><button id="mbfsans" class="mathfont" data-tooltip="\mbfsans… Sans-serif & Bold">𝗔𝗕𝗖</button><button id="mbfitsans" class="mathfont" data-tooltip="\mbfitsans… Sans-serif & Italic">𝘈𝘉𝘊</button><button id="mitsans" class="mathfont" data-tooltip="\mitsans… Sans-serif & Bold & Italic">𝘼𝘽𝘾</button><button id="mscr" class="mathfont" data-tooltip="\mscr… Script">𝒜ℬ𝒞</button><button id="mbfscr" class="mathfont" data-tooltip="\mbfscr… Script & Bold">𝓐𝓑𝓒</button><button id="mfrak" class="mathfont" data-tooltip="\mfrak… Fraktur">𝔄𝔅ℭ</button><button id="mbffrak" class="mathfont" data-tooltip="\mbffrak… Fraktur & Bold">𝕬𝕭𝕮</button><button id="mtt" class="mathfont" data-tooltip="\mtt… Monospace">𝙰𝙱𝙲</button><button id="Bbb" class="mathfont" data-tooltip="\Bbb… Double-struck (blackboard bold)">𝔸𝔹ℂ</button>
-                </p>
             </td>
         </tr>
         <tr>
@@ -238,13 +237,13 @@
                 <div class="categorytab">
                     <button id="operators" class="categorytablinks" onclick="openCategory(event, 'Operators')"><span data-explanation='Common binary and relational operators'>Operators</span></button>
                     <button class="categorytablinks" onclick="openCategory(event, 'Large')"><span data-explanation='𝑁-ary (large) operators'>Large</span></button>
-                    <button class="categorytablinks" onclick="openCategory(event, 'Build-up')"><span data-explanation='Operators with a special meaning in UnicodeMath, hover over each button for more information'>Build-up</span></button>
+                    <button class="categorytablinks" onclick="openCategory(event, 'Build')"><span data-explanation='UnicodeMath build-up operators: hover over buttons for more information'>Build</span></button>
                     <button class="categorytablinks" onclick="openCategory(event, 'Invisible')"><span data-explanation='Function-apply, invisible times, spaces: hover over each button for more information'>Invisible</span></button>
                     <button class="categorytablinks" onclick="openCategory(event, 'Delimiters')"><span data-explanation='Vertical and horizontal brackets'>Delimiters</span></button>
                     <button class="categorytablinks" onclick="openCategory(event, 'Arrows')">Arrows</button>
                     <button class="categorytablinks" onclick="openCategory(event, 'Logic')">Logic</button>
                     <button class="categorytablinks" onclick="openCategory(event, 'Scripts')"><span data-explanation='Subscripts and superscripts (also use _ and ^)'>Scripts</span></button>
-                    <button class="categorytablinks" onclick="openCategory(event, 'Enclosures')"><span data-explanation='Square roots, enclosures, phantoms and smashes'>Enclosures</span></button>
+                    <button class="categorytablinks" onclick="openCategory(event, 'Enclosures')"><span data-explanation='Square roots, enclosures, phantoms, smashes'>Enclosures</span></button>
                     <button class="categorytablinks" onclick="openCategory(event, 'Misc.')">Misc.</button>
                     <button class="categorytablinks" onclick="openCategory(event, 'Accents')"><span data-explanation='Can use any accent from Unicode "Combining Diacritical Marks" and "Combining Diacritical Marks for Symbols"'>Accents</span></button>
                     <button class="categorytablinks" onclick="openCategory(event, 'Greek')">Greek</button>
