@@ -386,16 +386,20 @@ function autocomplete() {
         if (!/[a-zA-Z0-9]/.test(delim)) {
             // Delimiter entered: try to autocorrect control word
             var symbol = resolveCW(input.value.substring(i, ip - 1));
-            if (symbol[0] != '\"') {
+            var cch = symbol.length;
+            if (symbol[0] != '\"' || cch == 3) {
                 // Control word found: replace it with its symbol and update
                 // the input selection
                 if (delim == " ") {
                     delim = "";
                 }
-                symbol = italicizeCharacter(symbol);
+                if (cch < 3) {
+                    symbol = italicizeCharacter(symbol);
+                    cch = symbol.length;
+                }
                 input.value = input.value.substring(0, i) + symbol + delim
                     + input.value.substring(ip);
-                input.selectionStart = input.selectionEnd = i + (delim ? 2 : 1);
+                input.selectionStart = input.selectionEnd = i + cch + (delim ? 1 : 0);
             }
             return;
         }
@@ -460,6 +464,16 @@ function autocomplete() {
             if (e.key == 'x' && e.altKey) {
                 e.preventDefault();
                 hexToUnicode();
+            } else if (e.ctrlKey && input.selectionEnd != input.selectionStart) {
+                let ch = input.value[0];
+                switch (e.key) {
+                    case 'i':
+                        console.log("Ctrl+I pressed!");
+                        break;
+                    case 'b':
+                        console.log("Ctrl+B pressed!");
+                        break;
+                }
             }
             return;
         }
@@ -911,9 +925,10 @@ $('#mathchar').on("change keyup paste", function (e) {
 
     var char = mathchar.value;
     var code = char.codePointAt(0);
+    var ancode = 0;
 
     if (code >= 0x2102) {
-        char = foldMathAlphanumeric(code, char);
+        [anCode, char] = foldMathAlphanumeric(code, char);
     }
     if (char == "") {
         return;
@@ -929,7 +944,7 @@ $('#mathchar').on("change keyup paste", function (e) {
     }
 
     $('.mathfont').each(function () {
-        if (!(fonts.includes(this.id))) {
+        if (this.id != 'mup' && !(fonts.includes(this.id))) {
             $(this).addClass("disabled");
         }
     });
@@ -953,14 +968,16 @@ $('button.mathfont').click(function () {
 
     var char = $('#mathchar').val();
     if (char != "") {
-        var symbol;
-        try {
-            symbol = mathFonts[char][font];
-            if (symbol == undefined) {
-                throw undefined;
+        var symbol = char;
+        if (font != 'mup') {
+            try {
+                symbol = mathFonts[char][font];
+                if (symbol == undefined) {
+                    throw undefined;
+                }
+            } catch (e) {
+                return;
             }
-        } catch (e) {
-            return;
         }
         insertAtCursorPos(symbol);
         addToHistory(symbol);
@@ -973,16 +990,21 @@ $('button.mathfont').click(function () {
             var code = chars.codePointAt(i);
             var ch = chars[i];
             var chFolded = ch;
+            var anCode = 0;
 
             if (code >= 0x2102) {                // Letterlike symbols or beyond
                 if (code > 0xFFFF) {
                     ch = chars.substring(i, i + 2);
                     i++;
                 }
-                chFolded = foldMathAlphanumeric(code, ch);
+                [anCode, chFolded] = foldMathAlphanumeric(code, ch);
             }
-            symbols += (chFolded in mathFonts && font in mathFonts[chFolded])
-                ? mathFonts[chFolded][font] : ch;
+            if (font == 'mup') {
+                symbols += chFolded;
+            } else {
+                symbols += (chFolded in mathFonts && font in mathFonts[chFolded])
+                    ? mathFonts[chFolded][font] : ch;
+            }
         }
         insertAtCursorPos(symbols);
         input.selectionStart -= symbols.length;

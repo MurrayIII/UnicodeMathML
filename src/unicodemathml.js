@@ -907,60 +907,73 @@ function foldMathItalics(chars) {
     return fn;
 }
 
-    function foldMathAlphanumeric(code, ch) {   // Generalization of foldMathItalic()
-        const letterLikeSymbols = {
-            'ℂ': 'C', 'ℊ': 'g', 'ℋ': 'H', 'ℌ': 'H', 'ℍ': 'H', 'ℎ': 'h',
-            'ℐ': 'I', 'ℑ': 'I', 'ℒ': 'L', 'ℕ': 'N', 'ℙ': 'P', 'ℚ': 'Q',
-            'ℛ': 'R', 'ℜ': 'R', 'ℝ': 'R', 'ℤ': 'Z', 'ℬ': 'B', 'ℭ': 'C',
-            'ℯ': 'e', 'ℰ': 'E', 'ℱ': 'F', 'ℳ': 'M', 'ℴ': 'o'
-        };
-        if (code < 0x1D400) {
-            if (code < 0x2102)                  // 1st Letterlike math alphabetic
-                return ch;
-            var chAscii = letterLikeSymbols[ch];
-            return chAscii == undefined ? ch : chAscii;
-        }
-        if (code > 0x1D7FF)
-            return ch;                          // Not math alphanumeric
-
-        if (code < 0x1D400 + 13 * 52) {         // 13 English math alphabets
-            code %= 52;
-            if (code >= 26) {
-                code += 6;                      // 'a' - 'Z' - 1
-            }
-            return String.fromCodePoint(code + 65);
-        }
-        code -= 0x1D400 + 13 * 52;              // Bypass English math alphabets
-        if (code < 4) {
-            if (code > 2)
-                return ' ';
-            return code ? 'ȷ' : 'ı';
-        }
-        code -= 4;                              // Advance to Greek math alphabets
-        if (code < 5 * 58) {
-            code = (code % 58) + 0x0391;
-            if (code <= 0x03AA) {               // Upper-case Greek
-                if (code == 0x03A2)
-                    code = 0x03F4;			    // Upper-case ϴ variant
-                if (code == 0x03AA)
-                    code = 0x2207;              // ∇
-            } else {                            // Lower-case Greek
-                code += 6;                      // Advance to α
-                if (code >= 0x03CA && code <= 0x03D1) {
-                    return '∂ϵϑϰϕϱϖ'[code - 0x03CA];
-                }
-            }
-            return String.fromCodePoint(code);
-        }
-        code -= 5 * 58;						    // Bypass Greek math alphabets
-        if (code < 4) {
-            if (code > 1)
-                return ' ';						// Not defined (yet)
-            return code ? 'ϝ' : 'Ϝ';  		    // Digammas
-        }
-        code = 0x30 + ((code - 4) % 10);        // Five sets of math digits
-        return String.fromCodePoint(code);
+function foldMathAlphanumeric(code, ch) {   // Generalization of foldMathItalic()
+    const anCodesEng = [
+        // 0      1       2       3        4        5       6        7
+        'mbf', 'mit', 'mbfit', 'mscr', 'mbfscr', 'mfrac', 'Bbb', 'mbffrac',
+        // 8         9          10          11        12
+        'msans', 'mbfsans', 'mitsans', 'mbfitsans', 'mtt'];
+    const anCodesGr = [
+        'mbf', 'mit', 'mbfit', 'mbfsans', 'mbfitsans'];
+    const anCodesDg = [
+        'mbf', 'Bbb', 'msans', 'mbfsans', 'mtt'];
+    const letterLikeSymbols = {
+        'ℂ': [6, 'C'], 'ℊ': [3, 'g'], 'ℋ': [3, 'H'], 'ℌ': [5, 'H'], 'ℍ': [6, 'H'], 'ℎ': [1, 'h'],
+        'ℐ': [3, 'I'], 'ℑ': [5, 'I'], 'ℒ': [3, 'L'], 'ℕ': [6, 'N'], 'ℙ': [6, 'P'], 'ℚ': [6, 'Q'],
+        'ℛ': [3, 'R'], 'ℜ': [5, 'R'], 'ℝ': [6, 'R'], 'ℤ': [6, 'Z'], 'ℨ': [5, 'Z'], 'ℬ': [3, 'B'],
+        'ℭ': [5, 'C'], 'ℯ': [3, 'e'], 'ℰ': [3, 'E'], 'ℱ': [3, 'F'], 'ℳ':[3, 'M'], 'ℴ': [3, 'o']
+    };
+    if (code < 0x1D400) {
+        if (code < 0x2102)                  // 1st Letterlike math alphabetic
+            return ['mup', ch];
+        var letterLikeSymbol = letterLikeSymbols[ch];
+        return (letterLikeSymbol == undefined) ? ['mup', ch]
+            : [anCodesEng[letterLikeSymbol[0]], letterLikeSymbol[1]];
     }
+    if (code > 0x1D7FF)
+        return ['', ch];                    // Not math alphanumeric
+
+    code -= 0x1D400;
+
+    if (code < 13 * 52) {                   // 13 English math alphabets
+        var anCode = anCodesEng[code/52];
+        code %= 52;
+        if (code >= 26) {code += 6;}        // 'a' - 'Z' - 1
+        return [anCode, String.fromCodePoint(code + 65)];
+    }
+    code -= 13 * 52;                        // Bypass English math alphabets
+    if (code < 4) {
+        if (code > 2)
+            return ['', ' '];
+        return ['mit', code ? 'ȷ' : 'ı'];
+    }
+    code -= 4;                              // Advance to Greek math alphabets
+    if (code < 5 * 58) {
+        var anCode = anCodesGr[code/58];
+        code = (code % 58) + 0x0391;
+        if (code <= 0x03AA) {               // Upper-case Greek
+            if (code == 0x03A2)
+                code = 0x03F4;			    // Upper-case ϴ variant
+            if (code == 0x03AA)
+                code = 0x2207;              // ∇
+        } else {                            // Lower-case Greek
+            code += 6;                      // Advance to α
+            if (code >= 0x03CA && code <= 0x03D1) {
+                return [anCode, '∂ϵϑϰϕϱϖ'[code - 0x03CA]];
+            }
+        }
+        return [anCode, String.fromCodePoint(code)];
+    }
+    code -= 5 * 58;						    // Bypass Greek math alphabets
+    if (code < 4) {
+        if (code > 1)
+            return ['', ' '];			    // Not defined (yet)
+        return ['mbf', code ? 'ϝ' : 'Ϝ'];   // Digammas
+    }
+    code -= 4;                              // Convert to offset of 5 digit sets
+    code = 0x30 + (code % 10);
+    return [anCodesDg[code/10], String.fromCodePoint(code)];
+}
 
 function italicizeCharacter(c) {
     if (c in mathFonts && 'mit' in mathFonts[c] && (c < 'Α' || c > 'Ω' && c != '∇'))
