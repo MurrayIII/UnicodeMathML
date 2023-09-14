@@ -160,14 +160,14 @@ p.codepoint, p.examples {
 .tooltip {
     position: absolute;
     pointer-events: none;
-    background: var(--verydarkgrayish-color);
-    color: var(--faintwhitish-color);
+    background: #FFF;
+    color: #000;
     font-size: 1rem;
     border-radius: var(--button-radius);
     padding: 0.3rem;
     border: 1px solid var(--darkgrayish-color);
     max-width: 30em;
-    line-height: 2.5em;
+    line-height: 1.5em;
 }
 .tooltip b {
     padding: 0.1rem;
@@ -508,6 +508,7 @@ pre .comment {
     overflow: hidden;
     border: 1px solid #ccc;
     background-color: var(--darkgrayish-color);
+    padding: 0;
 }
 
     /* Style the buttons inside the categorytab */

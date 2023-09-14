@@ -247,7 +247,7 @@ function boldItalicToggle(key) {
             i++;
         }
 
-        var [font, chFolded] = foldMathAlphanumeric(code, ch);
+        [font, chFolded] = foldMathAlphanumeric(code, ch);
         switch (key) {
             case 'i':
                 if (italic) {
@@ -694,7 +694,7 @@ async function draw() {
         if (typeof getCodepointData === "function") {
             try {
                 var cpd = getCodepointData(cp);
-                tooltip = `<b>name</b> ${cpd["name"].replace("<", "&amp;lt;").replace(">", "&amp;gt;")}<br><b>block</b> ${cpd["block"]}<br><b>category</b> ${cpd["category"]}`;
+                tooltip = `Name: ${cpd["name"].replace("<", "&amp;lt;").replace(">", "&amp;gt;")}<br>Block: ${cpd["block"]}<br>Category: ${cpd["category"]}`;
             } catch (e) {
                 tooltip = "no info found";
             }
