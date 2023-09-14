@@ -228,6 +228,59 @@ function hexToUnicode() {
         input.value.substring(input.selectionEnd);
 }
 
+function boldItalicToggle(key) {
+    // Get current bold and italic states from first char in selection
+    var chars = getInputSelection();
+    var code = chars.codePointAt(0);
+    var ch = chars[0];
+    var [font, chFolded] = foldMathAlphanumeric(code, ch);
+    var bold = font.startsWith('mbf');
+    var italic = bold ? font.substring(3, 5) == 'it' : font.startsWith('mit');
+    var symbols = '';
+
+    // Toggle bold/italic state of selected characters
+    for (var i = 0; i < chars.length; i++) {
+        code = chars.codePointAt(i);
+        ch = chars[i];
+        if (code > 0xFFFF) {
+            ch = chars.substring(i, i + 2);
+            i++;
+        }
+
+        var [font, chFolded] = foldMathAlphanumeric(code, ch);
+        switch (key) {
+            case 'i':
+                if (italic) {
+                    font = (font.length == 3) ? 'mup'
+                         : bold ? 'mbf' + font.substring(5)
+                         : 'm' + font.substring(3);
+                } else {
+                    font = (font == 'mup') ? font = 'mit'
+                         : bold ? 'mbfit' + font.substring(3)
+                         : 'mit' + font.substring(1);
+                }
+                break;
+            case 'b':
+                if (bold) {
+                    font = (font.length == 3) ? 'mup' : 'm' + font.substring(3);
+                } else {
+                    font = (font == 'mup') ? 'mbf' : 'mbf' + font.substring(1);
+                }
+                break;
+        }
+        if (font == 'mup') {
+            symbols += chFolded;
+        } else {
+            symbols += (chFolded in mathFonts && font in mathFonts[chFolded])
+                ? mathFonts[chFolded][font] : ch;
+        }
+    }
+    insertAtCursorPos(symbols);
+    input.selectionStart -= symbols.length;
+    input.focus();
+    draw();
+}
+
 function isTrailSurrogate(code) { return code >= 0xDC00 && code <= 0xDFFF; }
 function isLeadSurrogate(code) { return code >= 0xD800 && code <= 0xDBFF; }
 
@@ -464,16 +517,9 @@ function autocomplete() {
             if (e.key == 'x' && e.altKey) {
                 e.preventDefault();
                 hexToUnicode();
-            } else if (e.ctrlKey && input.selectionEnd != input.selectionStart) {
-                let ch = input.value[0];
-                switch (e.key) {
-                    case 'i':
-                        console.log("Ctrl+I pressed!");
-                        break;
-                    case 'b':
-                        console.log("Ctrl+B pressed!");
-                        break;
-                }
+            } else if (e.ctrlKey && (e.key == 'b' || e.key == 'i')) {
+                e.preventDefault();
+                boldItalicToggle(e.key);
             }
             return;
         }

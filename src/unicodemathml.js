@@ -907,22 +907,24 @@ function foldMathItalics(chars) {
     return fn;
 }
 
+const anCodesEng = [
+    // 0      1       2       3        4        5       6        7
+    'mbf', 'mit', 'mbfit', 'mscr', 'mbfscr', 'mfrac', 'Bbb', 'mbffrac',
+    // 8         9          10          11        12
+    'msans', 'mbfsans', 'mitsans', 'mbfitsans', 'mtt'];
+const anCodesGr = [
+    'mbf', 'mit', 'mbfit', 'mbfsans', 'mbfitsans'];
+const anCodesDg = [
+    'mbf', 'Bbb', 'msans', 'mbfsans', 'mtt'];
+const letterLikeSymbols = {
+    'ℂ': [6, 'C'], 'ℊ': [3, 'g'], 'ℋ': [3, 'H'], 'ℌ': [5, 'H'], 'ℍ': [6, 'H'], 'ℎ': [1, 'h'],
+    'ℐ': [3, 'I'], 'ℑ': [5, 'I'], 'ℒ': [3, 'L'], 'ℕ': [6, 'N'], 'ℙ': [6, 'P'], 'ℚ': [6, 'Q'],
+    'ℛ': [3, 'R'], 'ℜ': [5, 'R'], 'ℝ': [6, 'R'], 'ℤ': [6, 'Z'], 'ℨ': [5, 'Z'], 'ℬ': [3, 'B'],
+    'ℭ': [5, 'C'], 'ℯ': [3, 'e'], 'ℰ': [3, 'E'], 'ℱ': [3, 'F'], 'ℳ':[3, 'M'], 'ℴ': [3, 'o']
+};
+
 function foldMathAlphanumeric(code, ch) {   // Generalization of foldMathItalic()
-    const anCodesEng = [
-        // 0      1       2       3        4        5       6        7
-        'mbf', 'mit', 'mbfit', 'mscr', 'mbfscr', 'mfrac', 'Bbb', 'mbffrac',
-        // 8         9          10          11        12
-        'msans', 'mbfsans', 'mitsans', 'mbfitsans', 'mtt'];
-    const anCodesGr = [
-        'mbf', 'mit', 'mbfit', 'mbfsans', 'mbfitsans'];
-    const anCodesDg = [
-        'mbf', 'Bbb', 'msans', 'mbfsans', 'mtt'];
-    const letterLikeSymbols = {
-        'ℂ': [6, 'C'], 'ℊ': [3, 'g'], 'ℋ': [3, 'H'], 'ℌ': [5, 'H'], 'ℍ': [6, 'H'], 'ℎ': [1, 'h'],
-        'ℐ': [3, 'I'], 'ℑ': [5, 'I'], 'ℒ': [3, 'L'], 'ℕ': [6, 'N'], 'ℙ': [6, 'P'], 'ℚ': [6, 'Q'],
-        'ℛ': [3, 'R'], 'ℜ': [5, 'R'], 'ℝ': [6, 'R'], 'ℤ': [6, 'Z'], 'ℨ': [5, 'Z'], 'ℬ': [3, 'B'],
-        'ℭ': [5, 'C'], 'ℯ': [3, 'e'], 'ℰ': [3, 'E'], 'ℱ': [3, 'F'], 'ℳ':[3, 'M'], 'ℴ': [3, 'o']
-    };
+    var anCode = '';
     if (code < 0x1D400) {
         if (code < 0x2102)                  // 1st Letterlike math alphabetic
             return ['mup', ch];
@@ -936,7 +938,7 @@ function foldMathAlphanumeric(code, ch) {   // Generalization of foldMathItalic(
     code -= 0x1D400;
 
     if (code < 13 * 52) {                   // 13 English math alphabets
-        var anCode = anCodesEng[code/52];
+        anCode = anCodesEng[Math.floor(code/52)];
         code %= 52;
         if (code >= 26) {code += 6;}        // 'a' - 'Z' - 1
         return [anCode, String.fromCodePoint(code + 65)];
@@ -949,7 +951,7 @@ function foldMathAlphanumeric(code, ch) {   // Generalization of foldMathItalic(
     }
     code -= 4;                              // Advance to Greek math alphabets
     if (code < 5 * 58) {
-        var anCode = anCodesGr[code/58];
+        anCode = anCodesGr[Math.floor(code/58)];
         code = (code % 58) + 0x0391;
         if (code <= 0x03AA) {               // Upper-case Greek
             if (code == 0x03A2)
@@ -971,8 +973,9 @@ function foldMathAlphanumeric(code, ch) {   // Generalization of foldMathItalic(
         return ['mbf', code ? 'ϝ' : 'Ϝ'];   // Digammas
     }
     code -= 4;                              // Convert to offset of 5 digit sets
+    anCode = anCodesDg[Math.floor(code/10)];
     code = 0x30 + (code % 10);
-    return [anCodesDg[code/10], String.fromCodePoint(code)];
+    return [anCode, String.fromCodePoint(code)];
 }
 
 function italicizeCharacter(c) {
