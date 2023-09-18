@@ -830,7 +830,8 @@ async function draw() {
     output_mathml_ast.innerHTML = output_mathml_ast_HTML;
     output_source.innerHTML = output_source_HTML;
 
-    if (ummlConfig.forceMathJax) {
+    if (!ummlConfig.forceMathJax) {
+        // TODO: why is forceMathJax inverted?
         output.attachShadow({ mode: 'open' });
         output.shadowRoot.innerHTML = output_HTML;
         MathJax.typeset([output]);
