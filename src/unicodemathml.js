@@ -31,7 +31,6 @@ var controlWords = {
     // https://ctan.math.utah.edu/ctan/tex-archive/macros/unicodetex/latex/unicode-math/unimath-symbols.pdf
                                 // Unicode code point
     'Bar':              '̿',	// 033F
-    'Bio':              'Ⓞ',	// 24C4
     'Bmatrix':          'Ⓢ',	// 24C8
     'Bumpeq':           '≎',    	// 224E
     'Cap':              '⋒',    	// 22D2
@@ -2261,7 +2260,7 @@ function mtransform(dsty, puast) {
 
             // desugar (not done in preprocessing step because LaTeX requires
             // this sugar)
-            return mtransform(dsty, {bracketed: {intent: "binomial", open: "(", close: ")", content: {atop: [value.top, value.bottom]}}});
+            return mtransform(dsty, {bracketed: {intent: "binomial-coefficient", open: "(", close: ")", content: {atop: [value.top, value.bottom]}}});
 
         case "script":
             switch (value.type) {

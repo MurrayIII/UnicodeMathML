@@ -572,17 +572,26 @@ function autocomplete() {
     }
 }
 
+function checkResize() {
+    var h = document.getElementsByTagName('h1');
+    var heading = document.getElementById("heading");
+
+    if (window.innerWidth < 768) {
+        heading.innerHTML = 'UnicodeMathML<br><em>𝐏𝓁𝔞𝚢𝗴𝑟𝖔𝓊𝙣𝕕</em><br>';
+        h[0].style.textAlign = 'center';
+        h[0].style.width = '100%';
+    } else {
+        heading.innerHTML = 'UnicodeMathML <em>𝐏𝓁𝔞𝚢𝗴𝑟𝖔𝓊𝙣𝕕 </em>';
+        h[0].style.textAlign = 'left';
+    }
+}
+
+checkResize();
+
 if (window.innerWidth < 768 || !ummlConfig.debug) {
     // Suppress AST tabs for mobile devices
     var tabs = document.getElementsByClassName('tabs');
     tabs[0].style.display = "none";
-    if (window.innerWidth < 768) {
-        var heading = document.getElementById("heading");
-        heading.innerHTML = 'UnicodeMathML<br><em>𝐏𝓁𝔞𝚢𝗴𝑟𝖔𝓊𝙣𝕕</em><br>';
-        var h = document.getElementsByTagName('h1');
-        h[0].style.textAlign = 'center';
-        h[0].style.width = '100%';
-    }
 }
 
 // if LaTeX output is enabled, hide AST tab (since there is no LaTeX AST) and
@@ -821,7 +830,11 @@ async function draw() {
     output_mathml_ast.innerHTML = output_mathml_ast_HTML;
     output_source.innerHTML = output_source_HTML;
 
-    MathJax.typeset();
+    if (ummlConfig.forceMathJax) {
+        output.attachShadow({ mode: 'open' });
+        output.shadowRoot.innerHTML = output_HTML;
+        MathJax.typeset([output]);
+    }
 }
 
 // add a symbol (or string) to history
@@ -971,7 +984,7 @@ $('#mathchar').on("change keyup paste", function (e) {
 
     var char = mathchar.value;
     var code = char.codePointAt(0);
-    var ancode = 0;
+    var anCode = '';
 
     if (code >= 0x2102) {
         [anCode, char] = foldMathAlphanumeric(code, char);

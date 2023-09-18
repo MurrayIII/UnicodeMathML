@@ -1,6 +1,6 @@
-/***********/
-/* GENERAL */
-/***********/
+/***********************\
+*        GENERAL        *
+\***********************/
 
 :root {
     --main-font: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -23,7 +23,7 @@
 * {
     margin: 0;
     padding: 0;
-    line-height: 1em;
+    /* line-height: 1em; */
     box-sizing: border-box;
 }
 html {
@@ -55,7 +55,7 @@ abbr {
 table {
     width: 100%;
     table-layout: fixed;
-    border-spacing: 1rem;
+    border-spacing: 0.6rem;
 }
 .playground td {
     vertical-align: top;
@@ -64,9 +64,9 @@ a {
     color: cyan;
 }
 
-/*********/
-/* INPUT */
-/*********/
+/***********************\
+*         INPUT         *
+\***********************/
 
 textarea {
     font-family: var(--main-font);
@@ -77,7 +77,6 @@ textarea {
     background: var(--verydarkgrayish-color);
     border: none;
     color: #FFFFFF;
-    padding: 0.5rem;
 }
 p {
     line-height: 1.7rem;
@@ -164,10 +163,10 @@ p.codepoint, p.examples {
     color: #000;
     font-size: 1rem;
     border-radius: var(--button-radius);
-    padding: 0.3rem;
+    padding-top: 0.6rem;
     border: 1px solid var(--darkgrayish-color);
     max-width: 30em;
-    line-height: 1.5em;
+    line-height: 1.4em;
 }
 .tooltip b {
     padding: 0.1rem;
@@ -184,11 +183,11 @@ p.codepoint, p.examples {
     margin: 0.4em 0;
 }
 
-/**********/
-/* AUTOCOMPLETE */
-/**********/
+/***********************\
+*    AUTOCOMPLETE       *
+\***********************/
 
-/*the container must be positioned relative:*/
+/* The container must be positioned relative  */
 .autocomplete {
     position: relative;
     display: inline-block;
@@ -217,20 +216,20 @@ input[type=submit] {
     border-bottom: 1px solid #d4d4d4;
 }
 
-/*when hovering over an item:*/
+/* When hovering over an item: */
 .autocomplete-items div:hover {
     background-color: #222;
 }
 
-/*when navigating through the items using the arrow keys:*/
+/* When navigating through items using arrow keys: */
 .autocomplete-active {
     background-color: DodgerBlue !important;
     color: #000;
 }
 
-/**********/
-/* OUTPUT */
-/**********/
+/***********************\
+*       OUTPUT          *
+\***********************/
 
 #codepoints {
     font-family: var(--code-font);
@@ -325,7 +324,6 @@ math:last-child,
 }
 .tabs {
     font-size: 0;
-    margin-top: 1rem;
 }
 .tab {
     background: var(--darkgrayish-color);
@@ -439,9 +437,9 @@ pre .comment {
     font-style: italic;
 }
 
-/**********/
-/* CONFIG */
-/**********/
+/***********************\
+*       CONFIG          *
+\***********************/
 
 #config {
     background-color: transparent;
@@ -503,7 +501,9 @@ pre .comment {
     color: orangered;
 }
 
-/* Style the categorytab */
+/***********************\
+*  Symbol Gallery Tabs  *
+\***********************/
 .categorytab {
     overflow: hidden;
     border: 1px solid #ccc;
@@ -511,27 +511,27 @@ pre .comment {
     padding: 0;
 }
 
-    /* Style the buttons inside the categorytab */
-    .categorytab button {
-        background-color: inherit;
-        float: left;
-        border: none;
-        outline: none;
-        cursor: pointer;
-        padding: 10px 12px;
-        transition: 0.3s;
-        font-size: 17px;
-    }
+/* Style the buttons inside the categorytab */
+.categorytab button {
+    background-color: inherit;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 10px 12px;
+    transition: 0.3s;
+    font-size: 17px;
+}
 
-        /* Change background color of buttons on hover */
-        .categorytab button:hover {
-            background-color: #ddd;
-        }
+/* Change background color of buttons on hover */
+.categorytab button:hover {
+    background-color: #ddd;
+}
 
-        /* Create an active/current categorytablink class */
-        .categorytab button.active {
-            background-color: dodgerblue;
-        }
+/* Create an active/current categorytablink class */
+.categorytab button.active {
+    background-color: dodgerblue;
+}
 
 /* Style the categorytab content */
 .categorytabcontent {
