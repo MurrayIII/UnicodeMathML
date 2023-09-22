@@ -830,7 +830,9 @@ async function draw() {
     output_mathml_ast.innerHTML = output_mathml_ast_HTML;
     output_source.innerHTML = output_source_HTML;
 
-    MathJax.typeset([output]);
+    if (ummlConfig.forceMathJax) {
+        MathJax.typeset([output]);
+    }
 }
 
 // add a symbol (or string) to history
