@@ -993,8 +993,36 @@ function italicizeCharacters(chars) {
     }).join("");
 }
 
-// mapping betwen codepoint ranges in astral planes and the bmp's private use
-// area
+function getFirstChar(arg) {
+    if (!Array.isArray(arg))
+        return undefined;
+    arg = arg[0];
+    if (arg == undefined)
+        return undefined;
+
+    if (Array.isArray(arg))                 // E.g., for dx²
+        arg = arg[0];
+
+    if (arg.hasOwnProperty('script')) {     // E.g., for d²f
+        // TODO: decode power
+        arg = arg.script.base;
+    }
+
+    if (!arg.hasOwnProperty('atoms'))
+        return undefined;
+
+    var m = arg.atoms[0].chars.codePointAt(0);
+    return String.fromCodePoint(m);
+}
+
+function getDifferential(arg) {
+    var ch = getFirstChar(arg);
+    if ('dⅆ∂𝑑𝜕'.includes(ch))
+        return ch;
+    return '';
+}
+
+// mapping betwen codepoint ranges in astral planes and bmp's private use area
 var astralPrivateMap = [
 
     // dummy entry
@@ -2242,16 +2270,25 @@ function mtransform(dsty, puast) {
 
         case "fraction":
             var of = value.of;
+            var chDifferential = getDifferential(of[0]);
+            if (chDifferential != getDifferential(of[1])) {
+                chDifferential = '';
+            }
+            of = of.map(e => (mtransform(dsty, dropOutermostParens(e))));
             switch (value.symbol) {
                 case "/":       // normal fraction ¹-₂
-                    return {mfrac: noAttr(of.map(e => (mtransform(dsty, dropOutermostParens(e)))))};
+                    if (chDifferential) {
+                        var value = '∂𝜕'.includes(chDifferential)
+                            ? 'partial-derivative' : 'derivative'; 
+                        return {mfrac: withAttrs({intent: value}, of)};
+                    }
+                    return {mfrac: noAttr(of)};
                 case "\u2044":  // skewed fraction ¹/₂
-                    return {mfrac: withAttrs({bevelled: true}, of.map(e => (mtransform(dsty, dropOutermostParens(e)))))};
+                    return {mfrac: withAttrs({bevelled: true}, of)};
                 case "\u2215":  // linear fraction 1/2
-                    var tmp = of.map(e => (mtransform(dsty, dropOutermostParens(e))));
-                    return {mrow: noAttr([tmp[0], {mo: noAttr('/')}, tmp[1]])};
+                    return {mrow: noAttr([of[0], {mo: noAttr('/')}, of[1]])};
                 case "\u2298":  // small fraction
-                    return {mstyle: withAttrs({displaystyle:false}, {mfrac: noAttr(of.map(e => (mtransform(dsty, dropOutermostParens(e)))))})};
+                    return {mstyle: withAttrs({displaystyle: false}, {mfrac: noAttr(of)})};
             }
 
         case "atop":
