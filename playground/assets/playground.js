@@ -368,7 +368,7 @@ function opAutocorrect(i, ip, delim) {
             fn = ch + fn;
             i -= code > 0xFFFF ? 2 : 1;
         }
-        if (isFunctionName(fn)) {
+        if (isFunctionName(fn) || delim == '\u2061') {
             i++;                    // Move to start of span
             input.value = input.value.substring(0, i) + fn + input.value.substring(ip - 1);
             input.selectionStart = input.selectionEnd = i + fn.length + 1;
@@ -498,7 +498,7 @@ function autocomplete() {
                 input.value = input.value.substring(0, i) + ch + input.value.substring(ip);
                 ip = i + (code > 0xFFFF ? 2 : 1);
                 input.selectionStart = input.selectionEnd = ip;
-                if (code >= 0x2200 && code <= 0x2C00)
+                if (code >= 0x2061 && code <= 0x2C00)
                     opAutocorrect(ip - 2, ip, ch);
                 closeAutocompleteList();
             });
@@ -831,7 +831,10 @@ async function draw() {
     output_source.innerHTML = output_source_HTML;
 
     if (ummlConfig.forceMathJax) {
-        MathJax.typeset([output]);
+        try {
+            MathJax.typeset([output]);
+        }
+        catch { }
     }
 }
 

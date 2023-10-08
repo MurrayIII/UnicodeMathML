@@ -993,33 +993,82 @@ function italicizeCharacters(chars) {
     }).join("");
 }
 
-function getFirstChar(arg) {
-    if (!Array.isArray(arg))
-        return undefined;
-    arg = arg[0];
-    if (arg == undefined)
-        return undefined;
-
-    if (Array.isArray(arg))                 // E.g., for dx²
-        arg = arg[0];
-
-    if (arg.hasOwnProperty('script')) {     // E.g., for d²f
-        // TODO: decode power
-        arg = arg.script.base;
-    }
-
-    if (!arg.hasOwnProperty('atoms'))
-        return undefined;
-
-    var m = arg.atoms[0].chars.codePointAt(0);
+function getCh(str, i) {
+    var m = str.codePointAt(i);
     return String.fromCodePoint(m);
 }
 
-function getDifferential(arg) {
-    var ch = getFirstChar(arg);
-    if ('dⅆ∂𝑑𝜕'.includes(ch))
-        return ch;
+function getOrder(high) {
+    if (high.hasOwnProperty('expr'))
+        return high.expr[0][0].number;
+
+    if (high.hasOwnProperty('atoms'))
+        return high.atoms[0].chars;
+
+    if (Array.isArray(high) && high[0].hasOwnProperty('number'))
+        return high[0].number;
+
     return '';
+}
+
+function getDifferentialInfo(of, n) {
+    var arg = of[n];
+    if (!Array.isArray(arg))
+        return [0, 0, 0];                   // Can't be differential
+    arg = arg[0];
+    if (arg == undefined)
+        return [0, 0, 0];                   // Can't be differential
+
+    var order = '1';
+    var darg = '';                          // Differential argument
+    var ch = '';
+    var cchCh = 0;                          // Length of ch
+
+    if (n == 1) {
+        if (arg.hasOwnProperty('script')) { // For, e.g., dx²
+            order = getOrder(arg.script.high);
+            arg = arg.script.base;
+            ch = getCh(arg.atoms[0].chars, 0);
+            cchCh = ch.length > 1 ? 2 : 1;
+            darg = getCh(arg.atoms[0].chars, cchCh); // wrt
+        }
+    } else {
+        if (arg.hasOwnProperty('script')) { // For, e.g., 𝑑²𝑓(𝑥)
+            order = getOrder(arg.script.high);
+            arg = arg.script.base;
+            if (of[0].length > 1) {
+                var arg1 = of[0][1];
+                if (arg1.hasOwnProperty('atoms')) {
+                    darg = getCh(arg1.atoms[0].chars, 0); // Derivative argument
+                    if (of[0].length > 2) {
+                        darg = '$' + darg;  // Signal need arg ref
+                    }
+                }
+            }
+        } else if (of[0].length > 0 && arg.hasOwnProperty('atoms')) {
+            // For, e.g., 𝑑𝑓(𝑥)
+            ch = getCh(arg.atoms[0].chars, 0);
+            cchCh = ch.length > 1 ? 2 : 1;
+            if (arg.atoms[0].chars.length == cchCh) {
+                return [0, 0, 0];
+            }
+            darg = getCh(arg.atoms[0].chars, cchCh); // Derivative argument
+            if (of[0].length > 1) {
+                darg = '$' + darg;          // Need arg ref
+            }
+        }
+    }
+    if (arg.hasOwnProperty('atoms')) {
+        ch = getCh(arg.atoms[0].chars, 0);
+        cchCh = ch.length > 1 ? 2 : 1;
+
+        if (!darg && arg.atoms[0].chars.length > cchCh) {
+            darg = getCh(arg.atoms[0].chars, cchCh);
+        }
+        if ('dⅆ∂𝑑𝜕'.includes(ch))
+            return [ch, order, darg];
+    }
+    return [0, 0, 0];
 }
 
 // mapping betwen codepoint ranges in astral planes and bmp's private use area
@@ -1844,6 +1893,42 @@ function preprocess(dsty, uast) {
             return {smash: {symbol: value.symbol, of: preprocess(dsty, value.of)}};
 
         case "fraction":
+            if (value.symbol == '/') {
+                var [chDifferential0, order0, arg] = getDifferentialInfo(value.of, 0); // Numerator
+
+                if (chDifferential0) { // Might be a derivative
+                    var [chDifferential1, order1, wrt] = getDifferentialInfo(value.of, 1); // Denominator
+
+                    if (chDifferential0 == chDifferential1 && order0 == order1) {
+                        // It's a derivative
+                        if (arg.startsWith('$')) { // Argument reference
+                            var of = value.of;
+                            arg += wrt;
+                            if (of[0][0].hasOwnProperty('script')) {
+                                // For, e.g., 𝑑²𝑓(𝑥)/𝑑𝑥²
+                                if (of[0].length == 3 &&
+                                    of[0][1].hasOwnProperty('atoms') &&
+                                    of[0][2].hasOwnProperty('bracketed')) {
+                                    value.of[0] = [of[0][0], [{arg: arg}, of[0][1],
+                                         {operator: '\u2061'}, of[0][2]]];
+                                }
+                            } else if (of[0].length == 2 && //; For, e.g., 𝑑𝑓(𝑥)/𝑑𝑥
+                                of[0][0].hasOwnProperty('atoms') &&
+                                of[0][1].hasOwnProperty('bracketed')) {
+                                var ch = getCh(of[0][0].atoms[0].chars, 0);
+
+                                value.of[0] = [{atoms: [{chars: ch}]}, [{arg: arg},
+                                    {atoms: [{chars: getCh(of[0][0].atoms[0].chars, ch.length)}]},
+                                     {operator: '\u2061'}, of[0][1]]];
+                            }
+                        }
+                        var intent = '∂𝜕'.includes(chDifferential0)
+                            ? 'partial-derivative' : 'derivative';
+                        intent += '(' + arg + ',' + order0 + ',' + wrt + ')';
+                        return {fraction: {symbol: value.symbol, intent: intent, of: preprocess(dsty, value.of)}};
+                   }
+                }
+            }
             return {fraction: {symbol: value.symbol, of: preprocess(dsty, value.of)}};
         case "unicodefraction":
             var frac = (numerator, denominator) => {
@@ -2140,7 +2225,8 @@ function mtransform(dsty, puast) {
     dsty &= ~4;
 
     if (Array.isArray(puast)) {
-        return {mrow: noAttr(puast.map(e => mtransform(dsty, e)))};
+        var arg = puast[0].hasOwnProperty("arg") ? puast.shift() : {};
+        return {mrow: withAttrs(arg, puast.map(e => mtransform(dsty, e)))};
     }
 
     var key = k(puast);
@@ -2269,18 +2355,12 @@ function mtransform(dsty, puast) {
             }
 
         case "fraction":
-            var of = value.of;
-            var chDifferential = getDifferential(of[0]);
-            if (chDifferential != getDifferential(of[1])) {
-                chDifferential = '';
-            }
-            of = of.map(e => (mtransform(dsty, dropOutermostParens(e))));
+            var of = value.of.map(e => (mtransform(dsty, dropOutermostParens(e))));
+
             switch (value.symbol) {
                 case "/":       // normal fraction ¹-₂
-                    if (chDifferential) {
-                        var value = '∂𝜕'.includes(chDifferential)
-                            ? 'partial-derivative' : 'derivative'; 
-                        return {mfrac: withAttrs({intent: value}, of)};
+                    if (value.hasOwnProperty("intent")) {
+                        return {mfrac: withAttrs({intent: value.intent}, of)};
                     }
                     return {mfrac: noAttr(of)};
                 case "\u2044":  // skewed fraction ¹/₂
