@@ -430,7 +430,6 @@ pre .attribute {
 }
 pre .value {
     color: cornsilk;
-    font-style: italic;
 }
 pre .comment {
     background-color: gold;

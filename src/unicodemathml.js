@@ -1730,7 +1730,7 @@ function dropSingletonLists(uast) {
     return uast;
 }
 
-var brackets = { '⒨': '()', '⒩': '‖‖', 'ⓢ': '[]', 'Ⓢ': '{}', '⒱': '||' };
+var brackets = {'⒨': '()', '⒩': '‖‖', 'ⓢ': '[]', 'Ⓢ': '{}', '⒱': '||'};
 
 ////////////////
 // PREPROCESS //
@@ -1761,11 +1761,7 @@ function preprocess(dsty, uast) {
         case "operator":
             return uast;
         case "negatedoperator":
-            if (value in negs) {
-                return {operator: negs[value]};
-            } else {
-                return {negatedoperator: value};
-            }
+            return (value in negs) ? {operator: negs[value]} : {negatedoperator: value};
 
         case "element":
             return {element: preprocess(dsty, value)};
@@ -1909,7 +1905,7 @@ function preprocess(dsty, uast) {
                                 if (of[0].length == 3 &&
                                     of[0][1].hasOwnProperty('atoms') &&
                                     of[0][2].hasOwnProperty('bracketed')) {
-                                    value.of[0] = [of[0][0], [{arg: arg}, of[0][1],
+                                    value.of[0] = [of[0][0], [{arg: arg.substring(1)}, of[0][1],
                                          {operator: '\u2061'}, of[0][2]]];
                                 }
                             } else if (of[0].length == 2 && //; For, e.g., 𝑑𝑓(𝑥)/𝑑𝑥
@@ -1917,7 +1913,7 @@ function preprocess(dsty, uast) {
                                 of[0][1].hasOwnProperty('bracketed')) {
                                 var ch = getCh(of[0][0].atoms[0].chars, 0);
 
-                                value.of[0] = [{atoms: [{chars: ch}]}, [{arg: arg},
+                                value.of[0] = [{atoms: [{chars: ch}]}, [{arg: arg.substring(1)},
                                     {atoms: [{chars: getCh(of[0][0].atoms[0].chars, ch.length)}]},
                                      {operator: '\u2061'}, of[0][1]]];
                             }
@@ -2269,6 +2265,8 @@ function mtransform(dsty, puast) {
             if ('←→↔⇐⇒⇔↩↪↼⇀↽⇁⊢⊣⟵⟶⟷⟸⟹⟺↦⊨'.split('').includes(value)) {
                 return {mo: withAttrs({stretchy: true}, value)};
             } else {
+                if (value == '\u2061')
+                    value = '&#x2061;';
                 return {mo: noAttr(value)};
             }
         case "negatedoperator":
