@@ -334,9 +334,11 @@ In addition, the following features are implemented:
 * Alt+x hex-to-Unicode (and vice versa) hot key is implemented in the Playground input.
 * AST tabs appear only in _debug_ mode on screens wider than 786 pixels.
 * The class "unicodemath" and xmlns attributes are omitted on the <​math> tag.
-* The symbol sets are collected into tabbed arrays with one set displayed at a time
+* The symbol sets are collected into tabbed arrays with one set displayed at a time.
+* The derivative, partial-derivative, and cases intents are added.
+* In dictation input, ASCII letters and lower-case Greek letters are converted to math italic unless they comprise a function name, simple digit subscripts and superscripts are converted to the corresponding Unicode characters, ane three-character numeric fractions are converted to Unicode fractions.
 
-To do:
+To do:nd 
 * Implement MathML 4.0 intent attributes in addition to the \abs and \choose cases already implemented.
 * If possible, remove more redundant &#x3C;mrow>’s. E.g., the &#x3C;math> tag acts as an &#x3C;mrow>; and its content does not need to be enclosed in &#x3C;mrow>…&#x3C;/mrow>.
 * Add ummlConfig properties for more document default properties such as the current ummlConfig.doubleStruckMode.

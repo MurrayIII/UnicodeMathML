@@ -31,6 +31,7 @@ var mathDictation = [
     'absolute value of x equals cases if x greater than or equal to 0 comma ampersand x next if x less than 0 comma ampersand - x close',
     'left paren a plus b right paren raised to the nth power equals 1',
     'fraction a plus b over c plus d end fraction',
+    'two thirds',
 ];
 
 var unicodeMath = [
@@ -41,7 +42,7 @@ var unicodeMath = [
     'â +b̃ -ċ +d̈ ',											// 4
     '{a+b}+[c+d]+(q+r)←→',									// 5
     '𝔥/=𝒽/=𝐇',												// 6
-    '1/3 a=b',												// 7
+    '⅓a=b',												    // 7
     '⒭n−1▒x',												// 8
     'a\\le b',												// 9
     'iℏ ∂/∂t Ψ(x,t)=[−ℏ²/2m  ∂²/∂x^2 +V(x,t)]Ψ(x,t)',       // 10
@@ -63,6 +64,7 @@ var unicodeMath = [
     '⒜x=Ⓒ〖"if "x>=0,&x@"if "x<0,&-x〗',		    		// 26
     '(a+b)^n =1',											// 27
     '⍁a+b&c+d〗',											// 28
+    '⅔',                                                    // 29
 ];
 
 function testDictation() {

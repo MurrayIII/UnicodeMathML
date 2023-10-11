@@ -391,15 +391,14 @@ function opAutocorrect(i, ip, delim) {
     }
     var op = input.value[ip - 3];
 
-    if (ip >= 4 && '_^'.includes(op) && '+-= )]}'.includes(delim) &&
-        /[0-9]/.test(input.value[ip - 2])) {
-        // E.g., replace "𝑎^2+" by "𝑎²+"
-        var j = (delim == ' ') ? ip : ip - 1;
-        var c = (op == '^') ? digitSuperscripts[input.value[ip - 2]]
-                            : digitSubscripts[input.value[ip - 2]];
-        input.value = input.value.substring(0, ip - 3) + c + input.value.substring(j);
-        input.selectionStart = input.selectionEnd = j;
-        ip = j;
+    if (ip >= 4) {                          // E.g., replace "𝑎^2+" by "𝑎²+"
+        var ch = getSubSupDigit(op, input.value[ip - 2], delim);
+        if (ch) {
+            var j = (delim == ' ') ? ip : ip - 1;
+            input.value = input.value.substring(0, ip - 3) + ch + input.value.substring(j);
+            input.selectionStart = input.selectionEnd = j;
+            return false;
+        }
     }
     if (delim in mappedSingle) {
         // Convert ASCII - and ' to Unicode minus (2212) and prime (2032)
@@ -1128,6 +1127,8 @@ function isLcAscii(ch) { return /[a-z]/.test(ch); }
 
 function isUcAscii(ch) { return /[A-Z]/.test(ch); }
 
+function isAsciiDigit(ch) { return /[0-9]/.test(ch); }
+
 function initDictation() {
     const SpeechRecognition = window.SpeechRecognition ||
         window.webkitSpeechRecognition;
@@ -1143,11 +1144,14 @@ function initDictation() {
             console.log(result);
             result = dictationToUnicodeMath(result);
             var result1 = '';
+            var ch = '';
+            var chPrev;
 
             // Convert ASCII and lower-case Greek letters to math italic
             // unless they comprise function names
             for (var i = 0; i < result.length; i++) {
-                var ch = result[i];
+                chPrev = ch;
+                ch = result[i];
                 if (isLcAscii(ch) || isUcAscii(ch)) {
                     for (var j = i + 1; j < result.length; j++) {
                         if (!isLcAscii(result[j]) && !isUcAscii(result[j]))
@@ -1166,9 +1170,18 @@ function initDictation() {
                             var delim = result.length > i + 2 ? result[i + 2] : ' ';
                             var chScriptDigit = getSubSupDigit(ch, result[i + 1], delim);
                             if (chScriptDigit) {
-                                ch = chScriptDigit;
+                                result1 += chScriptDigit;
                                 i += (delim == ' ' && result.length > i + 2) ? 2 : 1;
+                                continue;
                             }
+                        }
+                        if (result.length > i + 2 && isAsciiDigit(ch) &&
+                            result[i + 1] == '/' && isAsciiDigit(result[i + 2]) &&
+                            !isAsciiDigit(chPrev) && (result.length == i + 3 ||
+                                !isAsciiDigit(result[i + 3]))) {
+                            // Convert, e.g., 1/3 to ⅓
+                            ch = getUnicodeFraction(ch, result[i + 2]);
+                            i += 2;
                         }
                     }
                     result1 += ch;

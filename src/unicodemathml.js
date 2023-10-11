@@ -1011,6 +1011,38 @@ function getOrder(high) {
     return '';
 }
 
+function getUnicodeFraction(chNum, chDenom)
+{
+    const chNum1 = '½⅓¼⅕⅙⅐⅛⅑⅒';
+
+    switch (chNum)
+    {
+        case '0':
+            return chDenom == '3' ? '↉' : 0;	// Used in baseball scoring
+
+        case '1':			                // ':' (0x003A) is used for '10'
+            return (chDenom >= '2' && chDenom <= ':') ? chNum1[chDenom - '2'] : '';
+
+        case '2':
+            return chDenom == '3' ? '⅔' : chDenom == '5' ? '⅖' : '';
+
+        case '3':
+            return chDenom == '4' ? '¾' : chDenom == '5' ? '⅗'
+                 : chDenom == '8' ? '⅜' : '';
+
+        case '4':
+            return chDenom == '5' ? '⅘' : '';
+
+        case '5':
+            return chDenom == '6' ? '⅚' : chDenom == '8' ? '⅝' : '';
+
+        case '7':
+            return chDenom == '8' ? '⅞' : '';
+
+    }
+    return '';
+}
+
 function getDifferentialInfo(of, n) {
     var arg = of[n];
     if (!Array.isArray(arg))
@@ -3368,5 +3400,6 @@ root.unicodemathtex = unicodemathtex;
 root.isFunctionName = isFunctionName;
 root.foldMathItalic = foldMathItalic;
 root.foldMathAlphanumeric = foldMathAlphanumeric;
+root.getUnicodeFraction = getUnicodeFraction;
 
 })(this);
