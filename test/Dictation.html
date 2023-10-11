@@ -1,0 +1,33 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <style>
+        textarea {
+            height: 4em;
+            width: 1000px;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <textarea id="input" placeholder="Enter speech here..." autocomplete="off" spellcheck="false"></textarea>
+    <textarea id="output" spellcheck="false"></textarea>
+    <p></p>
+    <button type="button" id="myBtn" onclick="testDictation()">Test dictation...</button>
+    <script>
+
+        // prevent caching
+        function loadUncachedStylesheet(path) {
+            document.write('<link rel="stylesheet" href="' + path + '?' + Math.random() + '">');
+        }
+        function loadUncachedScript(path) {
+            document.write('<script src="' + path + '?' + Math.random() + '"></scr' + 'ipt>');
+        }
+    </script>
+    <script>loadUncachedScript("test.js")</script>
+    <script>loadUncachedScript("../playground/assets/dictation.js")</script>
+    <script>loadUncachedScript("../src/unicodemathml.js")</script>
+</body>
+</html>
