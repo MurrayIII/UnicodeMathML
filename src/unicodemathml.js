@@ -3360,6 +3360,7 @@ function unicodemathtex(unicodemath, displaystyle = false) {
 root.getPartialMatches = getPartialMatches;
 root.mathFonts = mathFonts;
 root.italicizeCharacter = italicizeCharacter;
+root.italicizeCharacters = italicizeCharacters;
 root.negs = negs;
 root.resolveCW = resolveCW;
 root.unicodemathml = unicodemathml;

@@ -347,6 +347,14 @@ function closeAutocompleteList() {
     }
 }
 
+function getSubSupDigit(op, ch, delim) {
+    // Return e.g., '²' for '^2 ' (op = '^', ch = '2', delim = ' ')
+    if ('_^'.includes(op) && '+-= )]}'.includes(delim) && /[0-9]/.test(ch)) {
+        return (op == '^') ? digitSuperscripts[ch] : digitSubscripts[ch];
+    }
+    return 0;
+}
+
 function opAutocorrect(i, ip, delim) {
     // Perform operator autocorrections like '+-' → '±' and '/=' → ≠
     if (input.value[i] == '"')
@@ -428,7 +436,7 @@ function autocomplete() {
             if (ch != delim) {
                 // Change ASCII or lower-case Greek letter to math-italic letter
                 input.value = input.value.substring(0, ip - 1) + ch + input.value.substring(ip);
-                if (input.value.codePointAt(ip - 1) > 0xFFFF) { ip++; } // Bypass trail surrogate
+                if (ch.length > 1) { ip++; } // Bypass trail surrogate
                 input.selectionStart = input.selectionEnd = ip;
                 return false;
             }
@@ -902,8 +910,7 @@ function insertAtCursorPos(symbols) {
         input.value = input.value.substring(0, startPos)
             + symbols
             + input.value.substring(endPos, input.value.length);
-        input.selectionStart = startPos + symbols.length;
-        input.selectionEnd = startPos + symbols.length;
+        input.selectionEnd = input.selectionStart = startPos + symbols.length;
     } else {
         input.value += symbols;
     }
@@ -1116,6 +1123,11 @@ try {
     initDictation();
 }
 catch {}
+
+function isLcAscii(ch) { return /[a-z]/.test(ch); }
+
+function isUcAscii(ch) { return /[A-Z]/.test(ch); }
+
 function initDictation() {
     const SpeechRecognition = window.SpeechRecognition ||
         window.webkitSpeechRecognition;
@@ -1130,11 +1142,39 @@ function initDictation() {
             var result = current.transcript;
             console.log(result);
             result = dictationToUnicodeMath(result);
-            var ip = input.selectionStart + result.length;
-            input.value = input.value.substring(0, input.selectionStart) +
-                          result + input.value.substring(input.selectionEnd);
-            input.selectionEnd = input.selectionStart = ip;
-            draw();
+            var result1 = '';
+
+            // Convert ASCII and lower-case Greek letters to math italic
+            // unless they comprise function names
+            for (var i = 0; i < result.length; i++) {
+                var ch = result[i];
+                if (isLcAscii(ch) || isUcAscii(ch)) {
+                    for (var j = i + 1; j < result.length; j++) {
+                        if (!isLcAscii(result[j]) && !isUcAscii(result[j]))
+                            break;
+                    }
+                    if (result[j] == '\u2061') { // Function name?
+                        result1 += result.substring(i, j);
+                    } else {
+                        result1 += italicizeCharacters(result.substring(i, j))
+                    }
+                    i = j - 1;
+                } else {
+                    ch = italicizeCharacter(ch);     // Might be lc Greek
+                    if (ch == result[i]) {           // Isn't
+                        if (result.length > i + 1) { // Convert eg '^2 ' to '²'
+                            var delim = result.length > i + 2 ? result[i + 2] : ' ';
+                            var chScriptDigit = getSubSupDigit(ch, result[i + 1], delim);
+                            if (chScriptDigit) {
+                                ch = chScriptDigit;
+                                i += (delim == ' ' && result.length > i + 2) ? 2 : 1;
+                            }
+                        }
+                    }
+                    result1 += ch;
+                }
+            }
+            insertAtCursorPos(result1);
         }
     }
     recognition.onerror = function (event) {
