@@ -1044,9 +1044,46 @@ $('button.mathfont').click(function () {
             } catch (e) {
                 return;
             }
+        } else {
+            // Quote symbol unless selection is inside a quoted string. Note
+            // that \mup... should map to mi mathvariant=normal rather than
+            // mtext. Probably need an input string parallel to input.value
+            // to track this and maybe other properties as in OfficeMath.
+            // Also code doesn't currently handle selecting part way into
+            // a quoted string.
+            var symbolSave = symbol;
+
+            for (var iOff = 0;; ) {
+                var iQuote = input.value.indexOf('"', iOff);
+                var iQuoteClose = input.value.indexOf('"', iQuote + 1);
+
+                if (iQuote == -1 || iQuoteClose == -1 || iQuote > input.selectionEnd ||
+                    input.selectionStart <= iQuote && input.selectionEnd > iQuoteClose) {
+                    symbol = '"' + symbol + '"';
+                    break;                  // Selection not inside quotes or contains quotes
+                }
+                if (iQuote == input.selectionStart) {
+                    input.selectionStart++; // Move symbol inside quotes
+                    break;
+                }
+                if (iQuote == input.selectionStart - 1)
+                    break;                  // Insert symbol inside quotes
+
+                iOff = iQuoteClose + 2;
+                if (input.selectionStart >= iOff)
+                    continue;               // Selection might be inside a later quoted string
+
+                if (input.selectionEnd == iQuoteClose)
+                    break;                  // Insert symbol inside quotes
+
+                if (input.selectionEnd == iQuoteClose + 1) {
+                    input.selectionEnd--;   // Move symbol inside quotes
+                    break;
+                }
+            }
         }
         insertAtCursorPos(symbol);
-        addToHistory(symbol);
+        addToHistory(symbolSave);
     } else if (input.selectionStart != input.selectionEnd) {
         // if no character entered, try converting nondegenerate selection
         var symbols = '';

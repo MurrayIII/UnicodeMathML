@@ -338,8 +338,8 @@ In addition, the following features are implemented:
 * The derivative, partial-derivative, and cases intents are added.
 * In dictation input, ASCII letters and lower-case Greek letters are converted to math italic unless they comprise a function name, simple digit subscripts and superscripts are converted to the corresponding Unicode characters, ane three-character numeric fractions are converted to Unicode fractions.
 
-To do:nd 
-* Implement MathML 4.0 intent attributes in addition to the \abs and \choose cases already implemented.
+To do:
+* Implement more MathML 4.0 intent attributes.
 * If possible, remove more redundant &#x3C;mrow>’s. E.g., the &#x3C;math> tag acts as an &#x3C;mrow>; and its content does not need to be enclosed in &#x3C;mrow>…&#x3C;/mrow>.
 * Add ummlConfig properties for more document default properties such as the current ummlConfig.doubleStruckMode.
 * Improve the LaTeX output mode.
