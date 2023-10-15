@@ -271,6 +271,7 @@ emoji = [\u231A-\u231B\u23E9-\u23EC\u23F0\u23F3\u25FD-\u25FE\u2614-\u2615\u2648-
     // note that this is all BMP characters from the L* categories, based on https://util.unicode.org/UnicodeJsps/list-unicodeset.jsp and [:BMP:]&[:gc=L:] (with escape option checked) – as suggested by @znjameswu in https://github.com/doersino/UnicodeMathML/issues/2 – with \uFFD2-\uFFD7 replaced by \uFFD2-\uFFD6 to exclude the typewriter font marker
 αn
     = αnMath
+    / [\uFE00-\uFE0F]
     / αnOther
     / emoji
 diacritic

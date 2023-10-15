@@ -810,6 +810,7 @@ async function renderMarkedUnicodemath(node) {
     "1𝑎":  "<math display=\"block\"><mi>𝑎</mi></math>",
     "1𝒢":  "<math display=\"block\"><mi>𝒢</mi></math>",
     "1𝒢_r":  "<math display=\"block\"><msub><mi>𝒢</mi><mi>𝑟</mi></msub></math>",
+    "1𝒦︀":  "<math display=\"block\"><mi>𝒦︀</mi></math>",
     //"1\"𝙲𝙰𝚁𝙳𝚂\\_𝙱𝙰𝙳/":  "<math display=\"block\"><mrow><mi>𝙲𝙰𝚁𝙳𝚂</mi><mo>_</mo><mi>𝙱𝙰𝙳</mi></mrow></math>",
     //"1𝚊𝚛𝚛[i], i \\in ℤ₀⁺":  "<math display=\"block\"><mrow><mrow><mi>𝚊𝚛𝚛</mi><mrow><mo>[</mo><mi>𝑖</mi><mo>]</mo></mrow></mrow><mrow><mo>,</mo><mspace width=\"0.5em\" /></mrow><mi>𝑖</mi><mo>∈</mo><msubsup><mi>ℤ</mi><mn>0</mn><mo>+</mo></msubsup></mrow></math>",
     "1𝛼₂³/(𝛽₂³ + 𝛾₂³)":  "<math display=\"block\"><mfrac><msubsup><mi>𝛼</mi><mn>2</mn><mn>3</mn></msubsup><mrow><msubsup><mi>𝛽</mi><mn>2</mn><mn>3</mn></msubsup><mo>+</mo><msubsup><mi>𝛾</mi><mn>2</mn><mn>3</mn></msubsup></mrow></mfrac></math>",

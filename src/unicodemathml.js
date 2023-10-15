@@ -885,6 +885,10 @@ function isFunctionName(fn) {
     return ["Pr", "arg", "def", "deg", "det", "dim", "erf", "exp", "gcd", "hom", "inf", "ker", "lim", "log", "ln", "max", "min", "mod", "sup", "tg"].includes(fn);
 }
 
+function inRange(ch0, ch, ch1) {
+    return ch >= ch0 && ch <= ch1;
+}
+
 function foldMathItalic(code) {
     if (code == 0x210E) return 'h';                     // ℎ (Letterlike symbol)
     if (code < 0x1D434 || code > 0x1D467) return '';    // Not math italic
@@ -2653,6 +2657,8 @@ function mtransform(dsty, puast) {
                                     }
                                     mis.push(doublestruckChar(str[i]));
                                 } else {
+                                    if (inRange('\uFE00', str[i + cchCh], '\uFE0F'))
+                                        cchCh++; // Include variation selector
                                     mis.push({mi: noAttr(str.substring(i, i + cchCh))});
                                 }
                             }
