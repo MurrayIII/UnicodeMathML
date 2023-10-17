@@ -889,6 +889,10 @@ function inRange(ch0, ch, ch1) {
     return ch >= ch0 && ch <= ch1;
 }
 
+function isAsciiDigit(ch) {
+    return inRange('0', ch, '9');
+}
+
 function foldMathItalic(code) {
     if (code == 0x210E) return 'h';                     // ℎ (Letterlike symbol)
     if (code < 0x1D434 || code > 0x1D467) return '';    // Not math italic
@@ -2639,33 +2643,39 @@ function mtransform(dsty, puast) {
         case "atoms":
             if (value.funct == undefined) {
                 var n = value.length;
-                if (n != undefined) {
-                    var str = value[n - 1].chars;
-                    if (str != undefined && str[0] != 'Ⅎ' && !isFunctionName(str)) {
-                        var cch = str.length;
+                var str = (n != undefined) ? value[n - 1].chars : value.chars;
 
-                        if (cch > 2 || cch == 2 && str.codePointAt(0) < 0xFFFF) {
-                            var mis = [];
-                            var cchCh = 1;
+                if (str != undefined && str[0] != 'Ⅎ' && !isFunctionName(str)) {
+                    var cch = str.length;
 
-                            for (let i = 0; i < cch; i += cchCh) {
-                                cchCh = (cch >= 2 && str.codePointAt(i) > 0xFFFF) ? 2 : 1;
+                    if (cch > 2 || cch == 2 && str.codePointAt(0) < 0xFFFF) {
+                        var mis = [];
+                        var cchCh = 1;
 
-                                if (str[i] >= 'ⅅ' && str[i] <= 'ⅉ') {
-                                    if (i && str[i] <= 'ⅆ') {
-                                        mis.push({mi: noAttr('\u2009')});
-                                    }
-                                    mis.push(doublestruckChar(str[i]));
-                                } else {
-                                    if (inRange('\uFE00', str[i + cchCh], '\uFE0F'))
-                                        cchCh++; // Include variation selector
-                                    mis.push({mi: noAttr(str.substring(i, i + cchCh))});
+                        for (let i = 0; i < cch; i += cchCh) {
+                            cchCh = (cch >= 2 && str.codePointAt(i) > 0xFFFF) ? 2 : 1;
+
+                            if (str[i] >= 'ⅅ' && str[i] <= 'ⅉ') {
+                                if (i && str[i] <= 'ⅆ') {
+                                    mis.push({mi: noAttr('\u2009')});
                                 }
+                                mis.push(doublestruckChar(str[i]));
+                            } else if ("-−,+".includes(str[i])) {
+                                mis.push({mo: noAttr(str[i])});
+                            } else if (isAsciiDigit(str[i])) {
+                                for (var j = i + 1; j < cch && isAsciiDigit(str[j]); j++)
+                                    ;
+                                mis.push({mn: noAttr(str.substring(i, j))});
+                                i = j - 1;
+                            } else {
+                                if (inRange('\uFE00', str[i + cchCh], '\uFE0F'))
+                                    cchCh++; // Include variation selector
+                                mis.push({mi: noAttr(str.substring(i, i + cchCh))});
                             }
-                            return {mrow: noAttr(mis)};
-                        } else if (str[0] >= 'ⅅ' && str[0] <= 'ⅉ') {
-                            return doublestruckChar(str[0]);
                         }
+                        return {mrow: noAttr(mis)};
+                    } else if (str[0] >= 'ⅅ' && str[0] <= 'ⅉ') {
+                        return doublestruckChar(str[0]);
                     }
                 }
             }
@@ -2777,7 +2787,8 @@ function mtransform(dsty, puast) {
             }
 
             var content;
-            if (typeof value.open === 'string' && typeof value.close === 'string' && value.open == "|" && value.close == "|") {
+            if (typeof value.open === 'string' && typeof value.close === 'string' &&
+                value.open == "|" && value.close == "|") {
                 content = mtransform(dsty, dropOutermostParens(value.content));
             } else if (separator == "") {
                 content = mtransform(dsty, value.content);

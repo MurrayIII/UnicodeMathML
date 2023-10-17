@@ -82,6 +82,30 @@
         });
         return aFlat;
     }
+
+    function getIntervalIntent(open, close) {
+        // According to https://en.wikipedia.org/wiki/Interval_(mathematics),
+        // valid interval bracket combinations are (), (], [), [], [[, ]], and ][.
+        // Return intent strings for these combinations except for () which is
+        // ambiguous since it might be a point.
+
+        switch (open) {
+            case '(':
+                return close == ']' ? 'left-open-interval' : '';
+
+            case '[':
+                return close == ']' ? 'closed-interval' : (close == '[' || close == ')') ? 'right-open-interval' : '';
+
+            case ']':
+                return close == ']' ? 'left-open-interval' : close == '[' ? 'open-interval' : '';
+        }
+        return '';
+    }
+
+    function getBracketedInterval(op, e, cl) {
+        e = {atoms: {chars: flatten(e).join('')}};
+        return {bracketed: {open: op, close: cl, intent: getIntervalIntent(op, cl), content: e}};
+    }
 }
 
 ////////////////
@@ -277,6 +301,8 @@ emoji = [\u231A-\u231B\u23E9-\u23EC\u23F0\u23F3\u25FD-\u25FE\u2614-\u2615\u2648-
 diacritic
     = [\u0300-\u036F\u20D0-\u20FF]  // Combining Diacritical Marks Block +
                                     // Combining Diacritical Marks for Symbols Block
+
+αnOrNumber = αn+ / [0-9]+
 unicodeFraction = [↉½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅐⅛⅜⅝⅞⅑]
 opEnclosedMatrix = [⒨⒩ⓢⓈ⒱]
 opArray
@@ -285,8 +311,8 @@ opArray
     / "@"  // row separator
     / "&"  // column separator
     / "Ⓒ"
-opOpen = [([{⟨〖⌈⌊]
-opClose = [)}⟩〗⌉⌋] / "]"
+opOpen = [([{⟨〖⌈⌊❲⟦⟨⟪⟬⟮⦃⦅⦇⦉⦋⦍⦏⦑⦓⦕⦗⧘⧚⧼]
+opClose = [)}⟩〗⌉⌋❳⟧⟩⟫⟭⟯⦄⦆⦈⦊⦌⦎⦐⦒⦔⦖⦘⧙⧛⧽] / "]"
 opDecimal = "." / ","
 opHbracket = [⏜⏝⏞⏟⏠⏡⎴⎵¯]  // no underbar since U+2581 is used for enclosures
 opStretchyArrow = [←→↔⇐⇒⇔↩↪↼⇀↽⇁⊢⊣⟵⟶⟷⟸⟹⟺↦⊨]
@@ -1097,6 +1123,8 @@ digits = n:nn+ {
 }
 
 // bracketed expressions
+interval = (αnOrNumber / "−∞" / "-∞") "," (αnOrNumber / "∞" / "+∞")
+
 expBracket
     = ("||" / "‖") e:exp ("||" / "‖") {
         return {bracketed: {open: "‖", close: "‖", content: e}};
@@ -1108,6 +1136,15 @@ expBracket
                                            // tech note, but enables
                                            // 𝜌 = ∑_𝜓▒P_𝜓 |𝜓⟩⟨𝜓| + 1
         return {bracketed: {open: "|", close: cl, content: e}};
+    }
+    / "(" e:interval "]" {
+        return getBracketedInterval("(", e, "]");
+    }
+    / "[" e:interval ")" {
+        return getBracketedInterval("[", e, ")");
+    }
+    / op:opSquareBrackets e:interval cl:opSquareBrackets {
+        return getBracketedInterval(op, e, cl);
     }
     / op:expBracketOpen __? cl:expBracketClose {  // empty bracket pairs
         return {bracketed: {open: op, close: cl, content: {atoms: {spaces: {space: 0}}}}};
@@ -1124,6 +1161,9 @@ expBracket
     / op:expBracketOpen {
         return {colored: {color: '#F00', of: {operator: op}}};  // Suppress error message
     }
+
+opSquareBrackets = "]" / "["
+
 expBracketOpen
     = "〖" {
         return "";
