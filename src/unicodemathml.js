@@ -2317,7 +2317,7 @@ function mtransform(dsty, puast) {
             return mtransform(dsty, value);
 
         case "array":
-            return {mtable: noAttr(mtransform(dsty, value))};
+            return { mtable: withAttrs({intent: 'equations'}, mtransform(dsty, value))};
         case "arows":
             return value.map(r => ({mtr: noAttr(mtransform(dsty, r))}));
         case "arow":
