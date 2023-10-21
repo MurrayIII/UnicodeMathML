@@ -1051,8 +1051,30 @@ function getUnicodeFraction(chNum, chDenom)
     return '';
 }
 
-function getDifferentialInfo(of, n) {
+function getIntervalEndPoint(arg, content) {
+    if (arg[0] == '$')
+        return {atoms: [{arg: arg}, {chars: content.join('')}]};
+
+    return (isAsciiDigit(arg[0])) ? {number: arg} : {atoms: [{chars: arg}]};
+}
+
+function getIntervalArg(content, n) {
+    if (!Array.isArray(content) || n != 0 && n !=2)
+        return '';                          // Invalid content
+    var arg = content[n];
+    if (Array.isArray(arg))
+        arg = arg.join('');
+    if (content[n].length > 1 && !isAsciiDigit(arg[0]) && !'-−+∞'.includes(arg[0]))
+        arg = '$' + content[n][0];
+    return arg;
+}
+
+ function getDifferentialInfo(of, n) {
+    // Get [differential-d, order, of/wrt] for a derivative of the form dy/dx.
+    // n = 0 is for numerator and 'of' (argument, e.g, y). n = 1 for denominator
+    // and wrt (e.g., x).
     var arg = of[n];
+
     if (!Array.isArray(arg))
         return [0, 0, 0];                   // Can't be differential
     arg = arg[0];
@@ -1064,7 +1086,7 @@ function getDifferentialInfo(of, n) {
     var ch = '';
     var cchCh = 0;                          // Length of ch
 
-    if (n == 1) {
+    if (n == 1) {                           // Denominator
         if (arg.hasOwnProperty('script')) { // For, e.g., dx²
             order = getOrder(arg.script.high);
             arg = arg.script.base;
@@ -1072,7 +1094,7 @@ function getDifferentialInfo(of, n) {
             cchCh = ch.length > 1 ? 2 : 1;
             darg = getCh(arg.atoms[0].chars, cchCh); // wrt
         }
-    } else {
+    } else {                                // Numerator
         if (arg.hasOwnProperty('script')) { // For, e.g., 𝑑²𝑓(𝑥)
             order = getOrder(arg.script.high);
             arg = arg.script.base;
@@ -2231,6 +2253,17 @@ function preprocess(dsty, uast) {
             if (value.content.hasOwnProperty("separated")) {
                 content = {separated: {separator: value.content.separated.separator, of: preprocess(dsty, value.content.separated.of)}};
             } else {
+                if (value.intent && value.intent.endsWith("interval") &&
+                    Array.isArray(value.content) && value.content.length == 3)
+                {
+                    // Get interval endpoint arguments and content
+                    var arg0 = getIntervalArg(value.content, 0);
+                    var arg1 = getIntervalArg(value.content, 2);
+                    value.intent += '(' + arg0 + ',' + arg1 + ')';
+                    value.content = {expr: [getIntervalEndPoint(arg0, value.content[0]),
+                                            {operator: ','},
+                                            getIntervalEndPoint(arg1, value.content[2])]};
+                }
                 content = preprocess(dsty, value.content);
             }
             return {bracketed: {open: value.open, close: value.close, intent: value.intent, content: content}};
@@ -2644,6 +2677,7 @@ function mtransform(dsty, puast) {
             if (value.funct == undefined) {
                 var n = value.length;
                 var str = (n != undefined) ? value[n - 1].chars : value.chars;
+                var arg = (n > 1 && value[0].hasOwnProperty('arg')) ? value.shift() : '';
 
                 if (str != undefined && str[0] != 'Ⅎ' && !isFunctionName(str)) {
                     var cch = str.length;
@@ -2662,18 +2696,13 @@ function mtransform(dsty, puast) {
                                 mis.push(doublestruckChar(str[i]));
                             } else if ("-−,+".includes(str[i])) {
                                 mis.push({mo: noAttr(str[i])});
-                            } else if (isAsciiDigit(str[i])) {
-                                for (var j = i + 1; j < cch && isAsciiDigit(str[j]); j++)
-                                    ;
-                                mis.push({mn: noAttr(str.substring(i, j))});
-                                i = j - 1;
                             } else {
                                 if (inRange('\uFE00', str[i + cchCh], '\uFE0F'))
                                     cchCh++; // Include variation selector
                                 mis.push({mi: noAttr(str.substring(i, i + cchCh))});
                             }
                         }
-                        return {mrow: noAttr(mis)};
+                        return {mrow: withAttrs(arg, mis)};
                     } else if (str[0] >= 'ⅅ' && str[0] <= 'ⅉ') {
                         return doublestruckChar(str[0]);
                     }

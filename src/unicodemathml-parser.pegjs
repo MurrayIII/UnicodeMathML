@@ -87,24 +87,26 @@
         // According to https://en.wikipedia.org/wiki/Interval_(mathematics),
         // valid interval bracket combinations are (), (], [), [], [[, ]], and ][.
         // Return intent strings for these combinations except for () which is
-        // ambiguous since it might be a point.
+        // ambiguous since it might be a point or a math-function argument list.
 
         switch (open) {
-            case '(':
-                return close == ']' ? 'left-open-interval' : '';
+        case '(':
+            return close == ']' ? 'open-closed-interval' : '';
 
-            case '[':
-                return close == ']' ? 'closed-interval' : (close == '[' || close == ')') ? 'right-open-interval' : '';
+        case '[':
+            return close == ']' ? 'closed-interval' : (close == '[' || close == ')') ? 'closed-open-interval' : '';
 
-            case ']':
-                return close == ']' ? 'left-open-interval' : close == '[' ? 'open-interval' : '';
+        case ']':
+            return close == ']' ? 'open-closed-interval' : close == '[' ? 'open-interval' : '';
         }
         return '';
     }
 
     function getBracketedInterval(op, e, cl) {
-        e = {atoms: {chars: flatten(e).join('')}};
-        return {bracketed: {open: op, close: cl, intent: getIntervalIntent(op, cl), content: e}};
+        var intent = getIntervalIntent(op, cl);
+        if(!intent)
+            e = {atoms: {chars: flatten(e).join('')}};
+        return {bracketed: {open: op, close: cl, intent: intent, content: e}};
     }
 }
 
