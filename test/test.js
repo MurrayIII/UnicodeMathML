@@ -32,6 +32,7 @@ var mathDictation = [
     'left paren a plus b right paren raised to the nth power equals 1',
     'fraction a plus b over c plus d end fraction',
     'two thirds',
+    'open interval from minus infinity to 3 end interval',
 ];
 
 var unicodeMath = [
@@ -65,6 +66,7 @@ var unicodeMath = [
     '(a+b)^n =1',											// 27
     '⍁a+b&c+d〗',											// 28
     '⅔',                                                    // 29
+    ']−∞,3[',                                               // 30
 ];
 
 function testDictation() {
