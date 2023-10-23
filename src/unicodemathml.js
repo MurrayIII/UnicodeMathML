@@ -1053,7 +1053,7 @@ function getUnicodeFraction(chNum, chDenom)
 
 function getIntervalEndPoint(arg, content) {
     if (arg[0] == '$')
-        return {atoms: [{arg: arg}, {chars: content.join('')}]};
+        return {atoms: [{arg: arg}, {chars: content.flat().join('')}]};
 
     return (isAsciiDigit(arg[0])) ? {number: arg} : {atoms: [{chars: arg}]};
 }
@@ -1063,9 +1063,10 @@ function getIntervalArg(content, n) {
         return '';                          // Invalid content
     var arg = content[n];
     if (Array.isArray(arg))
-        arg = arg.join('');
-    if (content[n].length > 1 && !isAsciiDigit(arg[0]) && !'-−+∞'.includes(arg[0]))
-        arg = '$' + content[n][0];
+        arg = arg.flat().join('');
+    var ch = getCh(arg, 0);
+    if (arg.length > ch.length && !isAsciiDigit(arg[0]) && !'-−+∞'.includes(arg[0]))
+        arg = '$' + ch;
     return arg;
 }
 
@@ -1858,7 +1859,7 @@ function preprocess(dsty, uast) {
             }
             return {arow: ret};
 
-        case "specialMatrix":
+        case "specialMatrix":               // n×m or identity matrix
             t = value[2];
             if (t == '⒱' && (!value[1] || value[0] == value[1])) {
                 intent = 'determinant';
@@ -1868,7 +1869,7 @@ function preprocess(dsty, uast) {
             if (t != "■") {
                 var o = brackets[t][0];
                 var c = brackets[t][1];
-                return {bracketed: {open: o, close: c, intent: intent, content: {matrix: value}}};
+                return {bracketed: {open: o, close: c, intent: intent, content: {matrix: preprocess(dsty, value)}}};
             }
             // Fall through to "matrix"
         case "matrix":
@@ -2361,7 +2362,7 @@ function mtransform(dsty, puast) {
             return {malignmark: withAttrs({edge: "left"}, null)};
 
         case "matrix":
-            return {mtable: noAttr(mtransform(dsty, value))};
+            return {mtable: withAttrs({intent: 'matrix'}, mtransform(dsty, value))};
         case "mrows":
             return value.map(r => ({mtr: noAttr(mtransform(dsty, r))}));
         case "mrow":
@@ -2677,7 +2678,7 @@ function mtransform(dsty, puast) {
             if (value.funct == undefined) {
                 var n = value.length;
                 var str = (n != undefined) ? value[n - 1].chars : value.chars;
-                var arg = (n > 1 && value[0].hasOwnProperty('arg')) ? value.shift() : '';
+                var arg = (n > 1 && 'arg' in value[0]) ? value.shift() : '';
 
                 if (str != undefined && str[0] != 'Ⅎ' && !isFunctionName(str)) {
                     var cch = str.length;
@@ -2695,6 +2696,10 @@ function mtransform(dsty, puast) {
                                 }
                                 mis.push(doublestruckChar(str[i]));
                             } else if ("-−,+".includes(str[i])) {
+                                if (isAsciiDigit(str[i + 1])) {
+                                    mis.push({mn: noAttr(str.substring(i))});
+                                    break;
+                                }
                                 mis.push({mo: noAttr(str[i])});
                             } else {
                                 if (inRange('\uFE00', str[i + cchCh], '\uFE0F'))

@@ -304,7 +304,7 @@ diacritic
     = [\u0300-\u036F\u20D0-\u20FF]  // Combining Diacritical Marks Block +
                                     // Combining Diacritical Marks for Symbols Block
 
-αnOrNumber = αn+ / [0-9]+
+αnOrNumber = ('-' / '−' / '+')? (αn+ / [0-9]+ / "∞")
 unicodeFraction = [↉½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅐⅛⅜⅝⅞⅑]
 opEnclosedMatrix = [⒨⒩ⓢⓈ⒱]
 opArray
@@ -1125,7 +1125,8 @@ digits = n:nn+ {
 }
 
 // bracketed expressions
-interval = (αnOrNumber / "−∞" / "-∞") "," (αnOrNumber / "∞" / "+∞")
+
+interval =  αnOrNumber ',' αnOrNumber
 
 expBracket
     = ("||" / "‖") e:exp ("||" / "‖") {

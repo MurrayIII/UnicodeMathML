@@ -33,6 +33,7 @@ var mathDictation = [
     'fraction a plus b over c plus d end fraction',
     'two thirds',
     'open interval from minus infinity to 3 end interval',
+    'closed open interval from 3 to b end interval',
 ];
 
 var unicodeMath = [
@@ -67,6 +68,7 @@ var unicodeMath = [
     '⍁a+b&c+d〗',											// 28
     '⅔',                                                    // 29
     ']−∞,3[',                                               // 30
+    '[3,b)',                                                // 31
 ];
 
 function testDictation() {
