@@ -404,6 +404,7 @@ function opAutocorrect(i, ip, delim) {
         // Convert ASCII - and ' to Unicode minus (2212) and prime (2032)
         input.value = input.value.substring(0, ip - 1) + mappedSingle[delim]
             + input.value.substring(ip);
+        input.selectionStart = input.selectionEnd = ip;
         return false;
     }
     return false;
@@ -520,13 +521,16 @@ function autocomplete() {
 
     input.addEventListener("keydown", function (e) {
         var x = document.getElementById(this.id + "autocomplete-list");
-        if (!x) {
+        if (!x) {                           // Target is input
             if (e.key == 'x' && e.altKey) {
                 e.preventDefault();
                 hexToUnicode();
             } else if (e.ctrlKey && (e.key == 'b' || e.key == 'i')) {
                 e.preventDefault();
                 boldItalicToggle(e.key);
+            } else if (e.shiftKey && e.key == 'Enter') {
+                //e.preventDefault();
+                insertAtCursorPos('\u200B');
             }
             return;
         }

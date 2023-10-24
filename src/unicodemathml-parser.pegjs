@@ -85,9 +85,10 @@
 
     function getIntervalIntent(open, close) {
         // According to https://en.wikipedia.org/wiki/Interval_(mathematics),
-        // valid interval bracket combinations are (), (], [), [], [[, ]], and ][.
-        // Return intent strings for these combinations except for () which is
-        // ambiguous since it might be a point or a math-function argument list.
+        // valid interval bracket structures are (…,…), (…,…], […,…), […,…],
+        // […,…[, ]…,…], and ]…,…[. Return intent strings for these combinations
+        // except for (…,…) which is ambiguous since it can be a point or a
+        // math-function argument list. Use ]…,…[ to get an open interval.
 
         switch (open) {
         case '(':
@@ -556,7 +557,7 @@ fraction
                            // fractions, via unicodefractions.com
         return {unicodefraction: f};
     }
-    / r:(operand __? opFraction __?)+ t:operand {
+    / r:(operand __? opFraction)+ t:operand {
         return nestRight2("fraction", r.map(a => [a[0], a[2]]).concat([t]));
     }
 
@@ -676,7 +677,7 @@ subL
         }
         return {low: prevLow};
     }
-subsupSuperscript = o:scriptbase s:sup __? {
+subsupSuperscript = o:scriptbase s:sup _? {
     s.base = o;
     s.type = "subsup";
     return {script: s};
@@ -842,7 +843,7 @@ enclosed
         return {text: e};
     }
     / '⍁' r:exp '&' t:exp '〗' {
-        // dictation fraction...end-fraction option; prefer '/' to '&'
+        // Dictation fraction...end-fraction option; prefer '/' to '&'
         // as in OfficeMath implementation but can't get it to parse
         return {fraction: {symbol: '/', of: [r, t]}};
     }

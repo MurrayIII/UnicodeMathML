@@ -313,7 +313,7 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * The trigonometric function names are defined by the expression
        'a'? ['sin' | 'cos' | 'tan' | 'sec' | 'csc' | 'cot'] 'h'?
 * The four \rect border flags are fixed (needed to be inverted).
-* Display mode n-ary operators are changed to &#x3C;munderover> instead of &#x3C;msubsup>, except for integrals.
+* Display mode n-ary operators are changed to <​munderover> instead of <​msubsup>, except for integrals.
 * The default math functions are converted with or without the function-apply operator U+2061.
 * A thin space is inserted in front of differential d or D only if it is preceded by one or more letters in the same run. Ideally the thin space should be added by the display engine along with the choice of math style (math italic, upright, double-struck italic) instead of by the converter. The MathML would then retain the original semantics.
 * Instead of displaying a large error message for a syntatically incorrect operator, display the operator in red. The user may be entering the whole expression and doesn't want to see an error message, but might like a hint that the syntax is wrong. For example, display “(a^2+” as “<span style="color:red">(</span>𝑎² +” with '(' in red instead of an error message.
@@ -322,25 +322,26 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 
 In addition, the following features are implemented:
 * The identity matrix and n×m matrix short cuts are implemented.
-* \abs for unambiguous entry of absolute value with the absolute-value intent attribute. \choose along with its intent attribute (binomial).
+* \abs for unambiguous entry of absolute value with the absolute-value intent attribute. \choose along with its intent attribute (binomial). Intent attributes are included for UnicodeMath equation arrays, matrices, and determinants.
 * MathML tests are added to the console display of example.html.
 * The Playground calls resolveCW() defined in unicodemathml.js to resolve control words instead of having a duplicate control-word list. Similarly to convert characters to math styles, the Playground uses the mathFonts[] defined in unicodemathml.js. Greek upper-case letters that look like ASCII letters are removed from the Greek letter gallery and Greek lower-case letter variants are added. 
 * An autocomplete menu appears when a control word is entered partially. The user can use up/down arrows to select the desired control word and enter it by typing Enter, Tab, or a space. The most common choice is highlighted by default.
 * Control words and operator combinations typed into the Playground input text area are autocorrected there as well as in the output window.
 * Variables are displayed in math italic in the Playground input as well as in the output.
 * Many more LaTeX control words are included. \pmatrix, \bmatrix, \Bmatrix, \nmatrix, \vmatrix, \cancel, \bcancel, and \xcancel are implemented. Unicode LaTeX math alphanumeric control words like \mitX for 𝑥 are supported.
-* Math dictation infrastructure is added.
+* Math dictation infrastructure is added. Math dictation needs the file dictationljs, which is currently private.
+* In dictation input, ASCII letters and lower-case Greek letters are converted to math italic unless they comprise a function name, simple digit subscripts and superscripts are converted to the corresponding Unicode characters, ane three-character numeric fractions are converted to Unicode fractions.
 * Most symbols in the Playground galleries have LaTeX control-word tooltips.
 * Alt+x hex-to-Unicode (and vice versa) hot key is implemented in the Playground input.
-* AST tabs appear only in _debug_ mode on screens wider than 786 pixels.
+* AST tabs appear only in _debug_ mode and only on screens wider than 786 pixels.
 * The class "unicodemath" and xmlns attributes are omitted on the <​math> tag.
 * The symbol sets are collected into tabbed arrays with one set displayed at a time.
-* The derivative, partial-derivative, and cases intents are added.
-* In dictation input, ASCII letters and lower-case Greek letters are converted to math italic unless they comprise a function name, simple digit subscripts and superscripts are converted to the corresponding Unicode characters, ane three-character numeric fractions are converted to Unicode fractions.
+* The derivative and partial-derivative intent attributes are added for the dy/dx and higher-order derivative styles.
+* The templates […,…], […,…[, ]…,…], and ]…,…[, produce closed-interval, closed-open-interval, open-closed-interval, and open-interval structures, respectively, each including the intent attribute with the interval name and arguments. The … can be a signed number, variable name or ∞. Similarly, the templates (…,…], and […,…) also produce open-closed-interval and closed-open-interval structures with the corresponding intent attribute values. The template (…,…) isn't given an intent attribute since it can be used for a math-function argument list or a point in a 2D plane.
 
 To do:
 * Implement more MathML 4.0 intent attributes.
-* If possible, remove more redundant &#x3C;mrow>’s. E.g., the &#x3C;math> tag acts as an &#x3C;mrow>; and its content does not need to be enclosed in &#x3C;mrow>…&#x3C;/mrow>.
+* If possible, remove more redundant <​mrow>’s. E.g., the <​math> tag acts as an <​mrow>; and its content does not need to be enclosed in <​mrow>…<​/mrow>.
 * Add ummlConfig properties for more document default properties such as the current ummlConfig.doubleStruckMode.
 * Improve the LaTeX output mode.
 * Ultimately it's desirable to have UnicodeMath WYSIWYG editing in the output window with no need for an input window. That's the approach used in math-aware Microsoft apps. For that the editor needs to manipulate the backing store which for the current model would be encoded in MathML.
