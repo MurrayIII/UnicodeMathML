@@ -234,18 +234,18 @@
     <br />
     <div class="categorytab">
         <button id="operators" class="categorytablinks" onclick="openCategory(event, 'Operators')"><span data-explanation='Common binary and relational operators'>Operators</span></button>
-        <button class="categorytablinks" onclick="openCategory(event, 'Large')"><span data-explanation='𝑁-ary (large) operators'>Large</span></button>
-        <button class="categorytablinks" onclick="openCategory(event, 'Build')"><span data-explanation='UnicodeMath build-up operators: hover over buttons for more information'>Build</span></button>
-        <button class="categorytablinks" onclick="openCategory(event, 'Invisible')"><span data-explanation='Function-apply, invisible times, spaces: hover over each button for more information'>Invisible</span></button>
-        <button class="categorytablinks" onclick="openCategory(event, 'Delimiters')"><span data-explanation='Vertical and horizontal brackets'>Delimiters</span></button>
-        <button class="categorytablinks" onclick="openCategory(event, 'Arrows')">Arrows</button>
-        <button class="categorytablinks" onclick="openCategory(event, 'Logic')">Logic</button>
-        <button class="categorytablinks" onclick="openCategory(event, 'Scripts')"><span data-explanation='Subscripts and superscripts (also use _ and ^)'>Scripts</span></button>
-        <button class="categorytablinks" onclick="openCategory(event, 'Enclosures')"><span data-explanation='Square roots, enclosures, phantoms, smashes'>Enclosures</span></button>
-        <button class="categorytablinks" onclick="openCategory(event, 'Misc.')">Misc.</button>
-        <button class="categorytablinks" onclick="openCategory(event, 'Accents')"><span data-explanation='Can use any accent from Unicode "Combining Diacritical Marks" and "Combining Diacritical Marks for Symbols"'>Accents</span></button>
-        <button class="categorytablinks" onclick="openCategory(event, 'Greek')">Greek</button>
-        <button class="categorytablinks" onclick="openCategory(event, 'Examples')">Examples</button>
+        <button id="large" class="categorytablinks" onclick="openCategory(event, 'Large')"><span data-explanation='𝑁-ary (large) operators'>Large</span></button>
+        <button id="build" class="categorytablinks" onclick="openCategory(event, 'Build')"><span data-explanation='UnicodeMath build-up operators: hover over buttons for more information'>Build</span></button>
+        <button id="invisible" class="categorytablinks" onclick="openCategory(event, 'Invisible')"><span data-explanation='Function-apply, invisible times, spaces: hover over each button for more information'>Invisible</span></button>
+        <button id="delimiters" class="categorytablinks" onclick="openCategory(event, 'Delimiters')"><span data-explanation='Vertical and horizontal brackets'>Delimiters</span></button>
+        <button id="arrows" class="categorytablinks" onclick="openCategory(event, 'Arrows')">Arrows</button>
+        <button id="logic" class="categorytablinks" onclick="openCategory(event, 'Logic')">Logic</button>
+        <button id="scripts" class="categorytablinks" onclick="openCategory(event, 'Scripts')"><span data-explanation='Subscripts and superscripts (also use _ and ^)'>Scripts</span></button>
+        <button id="enclosures" class="categorytablinks" onclick="openCategory(event, 'Enclosures')"><span data-explanation='Square roots, enclosures, phantoms, smashes'>Enclosures</span></button>
+        <button id="misc." class="categorytablinks" onclick="openCategory(event, 'Misc.')">Misc.</button>
+        <button id="accents" class="categorytablinks" onclick="openCategory(event, 'Accents')"><span data-explanation='Can use any accent from Unicode "Combining Diacritical Marks" and "Combining Diacritical Marks for Symbols"'>Accents</span></button>
+        <button id="greek" class="categorytablinks" onclick="openCategory(event, 'Greek')">Greek</button>
+        <button id="examples" class="categorytablinks" onclick="openCategory(event, 'Examples')">Examples</button>
     </div>
 
     <script>
@@ -261,6 +261,7 @@
             }
             document.getElementById(categoryName).style.display = "block";
             evt.currentTarget.className += " active";
+            window.localStorage.setItem('categoryButtonId', categoryName.toLowerCase());
         }
         var symbolTooltips = {};
         buttons.forEach(function (entry) {
@@ -293,7 +294,12 @@
             document.write(`</div>`)
             symbolTooltips = Object.assign({}, symbolTooltips, syms);
         });
-        var ops = document.getElementById('operators');
+        var categoryButtonId = 'operators';
+
+        if (window.localStorage.getItem('categoryButtonId')) {
+            categoryButtonId = window.localStorage.getItem('categoryButtonId');
+        }
+        var ops = document.getElementById(categoryButtonId);
         ops.click();
     </script>
 
