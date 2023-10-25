@@ -347,12 +347,27 @@ function closeAutocompleteList() {
     }
 }
 
-function getSubSupDigit(op, ch, delim) {
-    // Return e.g., '²' for '^2 ' (op = '^', ch = '2', delim = ' ')
-    if ('_^'.includes(op) && '+-= )]}'.includes(delim) && /[0-9]/.test(ch)) {
-        return (op == '^') ? digitSuperscripts[ch] : digitSubscripts[ch];
+function getSubSupDigit(str, i, delim) {
+    // Return e.g., '²' for '^2 ' (str[i-1] = '^', str[i] = '2', delim = ' ')
+    var ch = str[i];
+    var op = str[i - 1];
+
+    if (!'_^'.includes(op) || !'+-= )]}'.includes(delim) || !/[0-9]/.test(ch))
+        return '';
+
+    // If the preceding op is the other subsup op, return '', e.g., for a_0^2
+    var opSupSub = op == '^' ? '_' : '^';
+
+    for (var j = i - 2; j > 0; j--) {
+        if (str[j] == opSupSub)
+            return '';
+        if (str[j] < '\u3017' && !isAsciiAlphanumeric(str[j]))
+            break;                          // Could allow other letters...
     }
-    return 0;
+    if (j == i - 2)
+        return '';                          // No base character(s)
+
+    return (op == '^') ? digitSuperscripts[ch] : digitSubscripts[ch];
 }
 
 function opAutocorrect(i, ip, delim) {
@@ -389,10 +404,9 @@ function opAutocorrect(i, ip, delim) {
         input.selectionStart = input.selectionEnd = ip - 1;
         return false;
     }
-    var op = input.value[ip - 3];
 
     if (ip >= 4) {                          // E.g., replace "𝑎^2+" by "𝑎²+"
-        var ch = getSubSupDigit(op, input.value[ip - 2], delim);
+        var ch = getSubSupDigit(input.value, ip - 2, delim);
         if (ch) {
             var j = (delim == ' ') ? ip : ip - 1;
             input.value = input.value.substring(0, ip - 3) + ch + input.value.substring(j);
@@ -926,10 +940,12 @@ function insertAtCursorPos(symbols) {
 // "$('.button').click(...)"
 $(document).on('click', function (e) {
     if ($(e.target).hasClass('unicode')) {
-        insertAtCursorPos(e.target.innerText);
+        var str = e.target.innerText;
+        if (str.length > 4)                 // Add new line after an example
+            str += '\n';
+
+        insertAtCursorPos(str);
         addToHistory(e.target.innerText);
-    } else if ($(e.target).hasClass('example')) {
-        insertAtCursorPos(e.target.innerText);
     }
 });
 
@@ -1170,6 +1186,8 @@ function isUcAscii(ch) { return /[A-Z]/.test(ch); }
 
 function isAsciiDigit(ch) { return /[0-9]/.test(ch); }
 
+function isAsciiAlphanumeric(ch) { return /[\w]/.test(ch); }
+
 function initDictation() {
     const SpeechRecognition = window.SpeechRecognition ||
         window.webkitSpeechRecognition;
@@ -1209,7 +1227,7 @@ function initDictation() {
                     if (ch == result[i]) {           // Isn't
                         if (result.length > i + 1) { // Convert eg '^2 ' to '²'
                             var delim = result.length > i + 2 ? result[i + 2] : ' ';
-                            var chScriptDigit = getSubSupDigit(ch, result[i + 1], delim);
+                            var chScriptDigit = getSubSupDigit(result, i + 1, delim);
                             if (chScriptDigit) {
                                 result1 += chScriptDigit;
                                 i += (delim == ' ' && result.length > i + 2) ? 2 : 1;

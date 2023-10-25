@@ -632,7 +632,7 @@ scriptU = s:(subsupU / subU / supU) {
     s.type = "subsup";
     return s;
 }
-subsupSubsup = o:scriptbase s:subsup __? {
+subsupSubsup = o:scriptbase s:subsup _? {
     s.base = o;
     s.type = "subsup";
     return {script: s};
@@ -659,7 +659,7 @@ subsupL  // only LaTeX-style
     / p:supL b:subL {
         return {low: b.low, high: p.high};
     }
-subsupSubscript = o:scriptbase s:sub __? {
+subsupSubscript = o:scriptbase s:sub _? {
         s.base = o;
         s.type = "subsup";
         return {script: s};
@@ -677,11 +677,16 @@ subL
         }
         return {low: prevLow};
     }
-subsupSuperscript = o:scriptbase s:sup _? {
-    s.base = o;
-    s.type = "subsup";
-    return {script: s};
-}
+subsupSuperscript = o:scriptbase s:supL _? {
+        s.base = o;
+        s.type = "subsup";
+        return {script: s};
+    }
+    / o:scriptbase s:supU {
+        s.base = o;
+        s.type = "subsup";
+        return {script: s};
+    }
 sup = supU / supL
 supU
     = p:unicodeSup {
@@ -765,7 +770,7 @@ abovebelow
     / "┴" p:soperand "┬" b:soperand {
         return {low: b, high: p};
     }
-abovebelowAbove = o:scriptbase s:above __? {
+abovebelowAbove = o:scriptbase s:above _? {
     s.base = o;
     s.type = "abovebelow";
     return {script: s};
@@ -773,7 +778,7 @@ abovebelowAbove = o:scriptbase s:above __? {
 above = "┴" p:(abovebelowAbove / soperand) {
     return {high: p};
 }
-abovebelowBelow = o:scriptbase s:below __? {
+abovebelowBelow = o:scriptbase s:below _? {
     s.base = o;
     s.type = "abovebelow";
     return {script: s};

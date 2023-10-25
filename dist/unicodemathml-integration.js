@@ -450,7 +450,7 @@ async function renderMarkedUnicodemath(node) {
     "1a+b":  "<math display=\"block\"><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow></math>",
     "1a+b\\+c":  "<math display=\"block\"><mrow><mi>𝑎</mi><mo>+</mo><mrow><mi>𝑏</mi><mo>+</mo><mi>𝑐</mi></mrow></mrow></math>",
     "1a+{(1]/4⟩":  "<math display=\"block\"><mrow><mi>𝑎</mi><mo>+</mo><mrow><mo>{</mo><mfrac><mrow><mo>(</mo><mn>1</mn><mo>]</mo></mrow><mn>4</mn></mfrac><mo>⟩</mo></mrow></mrow></math>",
-    "1a+{(1]/4⟩ 📌+1 Jⁱ⁼⁵ |_a":  "<math display=\"block\"><mrow><mi>𝑎</mi><mo>+</mo><mrow><mo>{</mo><mfrac><mrow><mo>(</mo><mn>1</mn><mo>]</mo></mrow><mn>4</mn></mfrac><mo>⟩</mo></mrow><mi>📌</mi><mo>+</mo><mn>1</mn><mrow><msup><mi>𝐽</mi><mrow><mi>𝑖</mi><mo>=</mo><mn>5</mn></mrow></msup><msub><mi>|</mi><mi>𝑎</mi></msub></mrow></mrow></math>",
+    "1a+{(1]/4⟩ 📌+1 Jⁱ⁼⁵ |_a":  "<math display=\"block\"><mrow><mi>𝑎</mi><mo>+</mo><mrow><mo>{</mo><mfrac><mrow><mo>(</mo><mn>1</mn><mo>]</mo></mrow><mn>4</mn></mfrac><mo>⟩</mo></mrow><mi>📌</mi><mo>+</mo><mn>1</mn><msup><mi>𝐽</mi><mrow><mi>𝑖</mi><mo>=</mo><mn>5</mn></mrow></msup><msub><mi>|</mi><mi>𝑎</mi></msub></mrow></math>",
     "1a+⫷stuf\\⫸fandthings+1⫸b":  "<math display=\"block\"><mrow><mi>𝑎</mi><mo>+</mo><mrow><mi>𝑏</mi></mrow></mrow></math>",
     "1a+⫷stuff⫸b":  "<math display=\"block\"><mrow><mi>𝑎</mi><mo>+</mo><mrow><mi>𝑏</mi></mrow></mrow></math>",
     "1a/b":  "<math display=\"block\"><mfrac><mi>𝑎</mi><mi>𝑏</mi></mfrac></math>",
