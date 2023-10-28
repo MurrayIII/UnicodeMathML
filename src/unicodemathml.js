@@ -258,6 +258,7 @@ var controlWords = {
     'inc':              '∆',	// 2206
     'infty':            '∞',	// 221E
     'int':              '∫',	// 222B
+    'intent':           'ⓘ',   // 24D8
     'intercal':         '⊺',	    // 22BA
     'iota':             'ι',	// 03B9
     'iplus':            '⁤',	    // 2064
@@ -1810,7 +1811,7 @@ function preprocess(dsty, uast) {
 
     var key = k(uast);
     var value = v(uast);
-    var intent;
+    var intent = dsty.intent;
 
     switch (key) {
         case "unicodemath":
@@ -1934,7 +1935,7 @@ function preprocess(dsty, uast) {
                     delete value.limits.script.high;
                     value.limits.script.base = {script: {type: "subsup", base: value.limits.script.base, high: high}};
                 }
-            } else if (dsty) {
+            } else if (dsty.display) {
                 // in display mode if not an integral, display limits abovebelow
                 var op = v(value.limits.script.base);
                 if (op < '\u222B' || op > '\u2233') {   // exclude common integral signs
@@ -2147,6 +2148,10 @@ function preprocess(dsty, uast) {
         case "hbrack":
             return {hbrack: {bracket: value.bracket, of: preprocess(dsty, value.of)}};
 
+        case "intend":
+            dsty.intent = value.intent.text;
+            return preprocess(dsty, v(value.content.expr));
+
         case "root":
             return {root: {degree: value.degree, of: preprocess(dsty, value.of)}};
         case "sqrt":
@@ -2164,7 +2169,7 @@ function preprocess(dsty, uast) {
             if (value.f.hasOwnProperty("script")) {
                 var s = valuef.script;
                 var f = s.base.atoms.chars;
-                if (dsty && s.type == "subsup" && s.low &&
+                if (dsty.display && s.type == "subsup" && s.low &&
                     ["det", "gcd", "inf", "lim", "lim inf", "lim sup", "max", "min", "Pr", "sup"].includes(f)) {
                     if (!s.high) {
                         // just convert the script to abovebelow
@@ -2254,6 +2259,8 @@ function preprocess(dsty, uast) {
             if (value.content.hasOwnProperty("separated")) {
                 content = {separated: {separator: value.content.separated.separator, of: preprocess(dsty, value.content.separated.of)}};
             } else {
+                if (intent)
+                    value.intent = intent;
                 if (value.intent && value.intent.endsWith("interval") &&
                     Array.isArray(value.content) && value.content.length == 3)
                 {
@@ -2762,7 +2769,7 @@ function mtransform(dsty, puast) {
 
                     // represent diacritic using an entity to improve
                     // readability of generated mathml code
-                    d = "&#" + d.charCodeAt(0) + ";";
+                    d = "&#x" + d.codePointAt(0).toString(16) + ";";
 
                     ret = {[tag]: withAttrs({accent: "true"}, [ret, {mo: noAttr(d)}])}
                 }
@@ -2996,8 +3003,9 @@ function unicodemathml(unicodemath, displaystyle) {
         var t1e = performance.now();
         debugLog(uast);
 
+        var dsty = {display: displaystyle, intent: ''};
         var t2s = performance.now();
-        var puast = preprocess(displaystyle, uast);
+        var puast = preprocess(dsty, uast);
         var t2e = performance.now();
         debugLog(puast);
 

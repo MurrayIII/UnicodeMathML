@@ -813,6 +813,7 @@ sfactor
     / phantomSmash
     / abstractbox
     / hbrack
+    / intent
     / root
     / function
     / text
@@ -863,10 +864,14 @@ hbrack = b:opHbracket o:operand {
     return {hbrack: {bracket: b, of: o}};
 }
 
+intent = "ⓘ(" i:text "&" c:exp ")" {
+    return {intend: {intent: i, content: c}};
+}
+
 // roots of various degrees
 root
     = "√(" d:operand "&" o:exp ")" {  // *can* use exp here due to the presence
-                                      // of a closing backet (could use it for
+                                      // of a closing bracket (could use it for
                                       // the other roots as well if PEG.js could
                                       // be switched into a less greedy mode)
         return {root: {degree: d, of: o}};

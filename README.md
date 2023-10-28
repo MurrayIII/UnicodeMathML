@@ -345,3 +345,4 @@ To do:
 * Add ummlConfig properties for more document default properties such as the current ummlConfig.doubleStruckMode.
 * Improve the LaTeX output mode.
 * Ultimately it's desirable to have UnicodeMath WYSIWYG editing in the output window with no need for an input window. That's the approach used in math-aware Microsoft apps. For that the editor needs to manipulate the backing store which for the current model would be encoded in MathML.
+* Enable undo for changes not handled by the textarea component.

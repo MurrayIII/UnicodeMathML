@@ -444,7 +444,8 @@ function autocomplete() {
         // Move back alphanumeric span
         while (i > 0 && /[a-zA-Z0-9]/.test(input.value[i])) { i--; }
 
-        if (i < 0 || input.value[i] != '\\' && (!i || input.value.substring(i - 1, i + 1) != '✎(')) {
+        if (i < 0 || input.value[i] != '\\' && input.value[i] != '"' &&
+            (!i || input.value.substring(i - 1, i + 1) != '✎(')) {
             // Not control word; check for italicization & operator autocorrect
             var ch = italicizeCharacter(delim);
             if (ch != delim) {
