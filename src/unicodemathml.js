@@ -1067,7 +1067,7 @@ function getIntervalArg(content, n) {
         arg = arg.flat().join('');
     var ch = getCh(arg, 0);
     if (arg.length > ch.length && !isAsciiDigit(arg[0]) && !'-−+∞'.includes(arg[0]))
-        arg = '$' + ch;
+        arg = '$' + (n ? '2' : '1');
     return arg;
 }
 
@@ -2043,6 +2043,8 @@ function preprocess(dsty, uast) {
 
             switch (value.type) {
                 case "subsup":
+                    if (intent)
+                        ret.intent = intent;
 
                     // if the subsup contains a primed expression, pull the
                     // prime up into the superscript and make the prime's base
@@ -2297,9 +2299,8 @@ function preprocess(dsty, uast) {
 // if multiple mathml nodes should be returned, they must be wrapped in an mrow
 function mtransform(dsty, puast) {
 
-    // map transformation over lists, wrap the result in an mrow
-    var fMath = dsty & 4;
-    dsty &= ~4;
+    // map transformation over lists, wrap the result in an mrow. Note: here dsty
+    // is a boolean; it doesn't include an intent property
 
     if (Array.isArray(puast)) {
         var arg = puast[0].hasOwnProperty("arg") ? puast.shift() : {};
@@ -2459,21 +2460,20 @@ function mtransform(dsty, puast) {
             return mtransform(dsty, {bracketed: {intent: "binomial-coefficient", open: "(", close: ")", content: {atop: [value.top, value.bottom]}}});
 
         case "script":
+            var attrs = value.intent ? {intent: value.intent} : {};
+
             switch (value.type) {
                 case "subsup":
                     if ("low" in value && "high" in value) {
-                        return {msubsup: noAttr([mtransform(dsty, value.base),
-                                                 mtransform(dsty, dropOutermostParens(value.low)),
-                                                 mtransform(dsty, dropOutermostParens(value.high))
-                                                ])};
+                        return {msubsup: withAttrs(attrs, [mtransform(dsty, value.base),
+                                               mtransform(dsty, dropOutermostParens(value.low)),
+                                               mtransform(dsty, dropOutermostParens(value.high)) ])};
                     } else if ("low" in value) {
-                        return {msub: noAttr([mtransform(dsty, value.base),
-                                              mtransform(dsty, dropOutermostParens(value.low))
-                                             ])};
+                        return {msub: withAttrs(attrs, [mtransform(dsty, value.base),
+                                              mtransform(dsty, dropOutermostParens(value.low)) ])};
                     } else if ("high" in value) {
-                        return {msup: noAttr([mtransform(dsty, value.base),
-                                              mtransform(dsty, dropOutermostParens(value.high))
-                                             ])};
+                        return {msup: withAttrs(attrs, [mtransform(dsty, value.base),
+                                              mtransform(dsty, dropOutermostParens(value.high)) ])};
                     } else {  // can only occur in a nary without sub or sup set
                         return mtransform(dsty, value.base);
                     }

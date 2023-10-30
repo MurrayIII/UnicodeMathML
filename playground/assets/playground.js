@@ -431,20 +431,45 @@ function autocomplete() {
     // Try autocorrecting or autocompleting a control word when user
     // modifies text input
     input.addEventListener("input", function (e) {
-        if (e.inputType != "insertText" && e.inputType != "deleteContentBackward")
-            return false;
-        closeAutocompleteList();
-        if (input.selectionStart != input.selectionEnd) return false;
-
         var ip = input.selectionStart;      // Insertion point
-        if (!ip) return false;              // Nothing to check
+
+        if (e.inputType != "insertText" && e.inputType != "deleteContentBackward" ||
+            !ip || ip != input.selectionEnd) {
+            return false;
+        }
+        closeAutocompleteList();
+
         var delim = input.value[ip - 1];    // Last char entered
         var i = ip - 2;
+        var oddQuote = delim == '"';
+        var iQuote = 0;
+
+        // Check if ip is inside a quoted literal
+        for (var iOff = 0; ; iOff = iQuote + 1) {
+            iQuote = input.value.indexOf('"', iOff);
+            if (iQuote == -1 || iQuote >= ip - 1)
+                break;                      // No more quotes before ip
+            oddQuote = !oddQuote;
+        }
+        if (oddQuote) {                     // Inside quoted literal
+            if (delim == '"') {             // Insert matching quote
+                input.value = input.value.substring(0, ip - 1) + '"' + input.value.substring(ip - 1);
+                input.selectionStart = input.selectionEnd = ip;
+            }
+            return false;
+        }
+        if (delim == '"' && input.value.length > ip && input.value[ip] == '"') {
+            // Instead of inserting a quote at ip - 1 when a closing quote is at
+            // ip, move past the closing quote (same as with program editors).
+            input.value = input.value.substring(0, ip - 1) + input.value.substring(ip);
+            input.selectionStart = input.selectionEnd = ip;
+            return false;
+        }
 
         // Move back alphanumeric span
         while (i > 0 && /[a-zA-Z0-9]/.test(input.value[i])) { i--; }
 
-        if (i < 0 || input.value[i] != '\\' && input.value[i] != '"' &&
+        if (i < 0 || input.value[i] != '\\' &&
             (!i || input.value.substring(i - 1, i + 1) != '✎(')) {
             // Not control word; check for italicization & operator autocorrect
             var ch = italicizeCharacter(delim);
