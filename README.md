@@ -338,6 +338,7 @@ In addition, the following features are implemented:
 * The symbol sets are collected into tabbed arrays with one set displayed at a time.
 * The derivative and partial-derivative intent attributes are added for the dy/dx and higher-order derivative styles.
 * The templates […,…], […,…[, ]…,…], and ]…,…[, produce closed-interval, closed-open-interval, open-closed-interval, and open-interval structures, respectively, each including the intent attribute with the interval name and arguments. The … can be a signed number, variable name or ∞. Similarly, the templates (…,…], and […,…) also produce open-closed-interval and closed-open-interval structures with the corresponding intent attribute values. The template (…,…) isn't given an intent attribute since it can be used for a math-function argument list or a point in a 2D plane.
+* Define the \intent option (ⓘ) and apply it to enclosures, factorials, and atoms, thereby enabling the user to add intents explicitly to these constructs.
 
 To do:
 * Implement more MathML 4.0 intent attributes.
