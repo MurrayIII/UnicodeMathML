@@ -1812,20 +1812,14 @@ function preprocess(dsty, uast) {
     var key = k(uast);
     var value = v(uast);
     var intent = dsty.intent;
+    dsty.intent = '';
 
     switch (key) {
         case "unicodemath":
             return {unicodemath: {content: preprocess(dsty, value.content), eqnumber: value.eqnumber}};
-        case "newline":
-            return uast;
 
         case "expr":
             return {expr: preprocess(dsty, value)};
-
-        case "operator":
-            return uast;
-        case "negatedoperator":
-            return (value in negs) ? {operator: negs[value]} : {negatedoperator: value};
 
         case "element":
             return {element: preprocess(dsty, value)};
@@ -1944,8 +1938,9 @@ function preprocess(dsty, uast) {
             }
 
             return {nary: {mask: value.mask, limits: preprocess(dsty, value.limits), naryand: preprocess(dsty, value.naryand)}};
-        case "opnary":
-            return uast;
+
+        case "negatedoperator":
+            return (value in negs) ? {operator: negs[value]} : {negatedoperator: value};
 
         case "phantom":
             return {phantom: {mask: value.mask, symbol: value.symbol, of: preprocess(dsty, value.of)}};
@@ -2142,7 +2137,7 @@ function preprocess(dsty, uast) {
                 // set mask for \cancel, \bcancel, \xcancel
                 value.mask = (value.symbol == "╱") ? 79 : (value.symbol == "╲") ? 143 : 207;
             }
-            return {enclosed: {mask: value.mask, symbol: value.symbol, of: preprocess(dsty, value.of)}};
+            return {enclosed: {mask: value.mask, symbol: value.symbol, intent: intent, of: preprocess(dsty, value.of)}};
 
         case "abstractbox":
             return {abstractbox: {mask: value.mask, of: preprocess(dsty, value.of)}};
@@ -2187,7 +2182,8 @@ function preprocess(dsty, uast) {
             var of = preprocess(dsty, value.of);
             if (Array.isArray(of)) {
                 var x = of[0];
-                if (Array.isArray(x)) x = x[0]; // '⒡' as separate array element
+                if (Array.isArray(x))
+                    x = x[0];                  // '⒡' as separate array element
                 if (x != undefined && x.hasOwnProperty('atoms')) {
                     var ch = x.atoms[0].chars;
                     if (ch[0] == '⒡') {
@@ -2203,8 +2199,8 @@ function preprocess(dsty, uast) {
             }
             return {function: {f: preprocess(dsty, valuef), of: of}};
 
-        case "text":
-            return uast;
+        case "negatedoperator":
+            return (value in negs) ? {operator: negs[value]} : {negatedoperator: value};
 
         case "sizeoverride":
             return {sizeoverride: {size: value.size, of: preprocess(dsty, value.of)}};
@@ -2213,10 +2209,6 @@ function preprocess(dsty, uast) {
             return {colored: {color: value.color, of: preprocess(dsty, value.of)}};
         case "bgcolored":
             return {bgcolored: {color: value.color, of: preprocess(dsty, value.of)}};
-        case "comment":
-            return uast;
-        case "tt":
-            return uast;
 
         case "primed":
             // cannot do anything here since the script transform rule relies on
@@ -2224,7 +2216,9 @@ function preprocess(dsty, uast) {
             return {primed: {base: preprocess(dsty, value.base), primes: value.primes}};
 
         case "factorial":
-            return [preprocess(dsty, value), {operator: "!"}];
+            value = preprocess(dsty, value);
+            value.intent = intent;
+            return {factorial: value};
 
         case "atoms":
             if (!value.hasOwnProperty("funct") && Array.isArray(value) &&
@@ -2232,21 +2226,15 @@ function preprocess(dsty, uast) {
                 !isFunctionName(value[0].chars)) {
                 value[0].chars = italicizeCharacters(value[0].chars);
             }
+            if (Array.isArray(value) && intent) {
+                value.unshift({intent: intent});
+            }
             return {atoms: preprocess(dsty, value)};
-        case "chars":
-            return uast;
+
         case "diacriticized":
             return {diacriticized: {base: preprocess(dsty, value.base), diacritics: value.diacritics}};
         case "spaces":
             return {spaces: preprocess(dsty, value)};
-        case "space":
-            return uast;
-
-        case "number":
-            return uast;
-
-        case "doublestruck":
-            return uast;
 
         case "bracketedMatrix":
             var t = value.type;
@@ -2266,7 +2254,7 @@ function preprocess(dsty, uast) {
                 if (value.intent && value.intent.endsWith("interval") &&
                     Array.isArray(value.content) && value.content.length == 3)
                 {
-                    // Get interval endpoint arguments and content
+                    // Arrange interval endpoint arguments and content
                     var arg0 = getIntervalArg(value.content, 0);
                     var arg1 = getIntervalArg(value.content, 2);
                     value.intent += '(' + arg0 + ',' + arg1 + ')';
@@ -2277,6 +2265,17 @@ function preprocess(dsty, uast) {
                 content = preprocess(dsty, value.content);
             }
             return {bracketed: {open: value.open, close: value.close, intent: value.intent, content: content}};
+
+        case "chars":
+        case "comment":
+        case "doublestruck":
+        case "newline":
+        case "number":
+        case "operator":
+        case "opnary":
+        case "space":
+        case "text":
+        case "tt":
 
         default:
             return uast;
@@ -2532,8 +2531,12 @@ function mtransform(dsty, puast) {
         case "enclosed":
             var mask = value.mask;
             var symbol = value.symbol;
-            return {menclose: withAttrs({notation: enclosureAttrs(mask, symbol)},
-                                        mtransform(dsty, dropOutermostParens(value.of)))};
+            var attrs = {notation: enclosureAttrs(mask, symbol)};
+            if (value.intent)
+                attrs.intent = value.intent;
+
+            return {menclose: withAttrs(attrs, mtransform(dsty,
+                                            dropOutermostParens(value.of)))};
 
         case "abstractbox":
             var options = abstractBoxOptions(value.mask);
@@ -2544,7 +2547,7 @@ function mtransform(dsty, puast) {
             // but potentially helpful class attribute
 
             // TODO remove this class once all options are properly implemented
-            var attrs = {class: options.join(" ")};
+            var attrs = {class: options.join(" "), intent: intent};
 
             // nAlignBaseline, nSpaceDefault, nSizeDefault: do nothing, these
             // are the defaults
@@ -2679,13 +2682,18 @@ function mtransform(dsty, puast) {
                                  ])};
 
         case "factorial":
-            return {mrow: noAttr([mtransform(dsty, value), {mo: noAttr("!")}])};
+            var attrs = value.intent ? {intent: value.intent} : {};
+            return {mrow: withAttrs(attrs, [mtransform(dsty, value), {mo: noAttr("!")}])};
 
         case "atoms":
             if (value.funct == undefined) {
                 var n = value.length;
                 var str = (n != undefined) ? value[n - 1].chars : value.chars;
                 var arg = (n > 1 && 'arg' in value[0]) ? value.shift() : '';
+                n = value.length;
+                if (n > 1 && 'intent' in value[0]) {
+                    arg = value.shift();
+                }
 
                 if (str != undefined && str[0] != 'Ⅎ' && !isFunctionName(str)) {
                     var cch = str.length;
@@ -2717,6 +2725,8 @@ function mtransform(dsty, puast) {
                         return {mrow: withAttrs(arg, mis)};
                     } else if (str[0] >= 'ⅅ' && str[0] <= 'ⅉ') {
                         return doublestruckChar(str[0]);
+                    } else if (arg) {
+                        return {mi: withAttrs(arg, str)};
                     }
                 }
             }
