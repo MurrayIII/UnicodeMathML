@@ -1105,7 +1105,7 @@ function getIntervalArg(content, n) {
                 if (arg1.hasOwnProperty('atoms')) {
                     darg = getCh(arg1.atoms[0].chars, 0); // Derivative argument
                     if (of[0].length > 2) {
-                        darg = '$' + darg;  // Signal need arg ref
+                        darg = '$3';        // Signal need ref for arg 3
                     }
                 }
             }
@@ -1118,7 +1118,7 @@ function getIntervalArg(content, n) {
             }
             darg = getCh(arg.atoms[0].chars, cchCh); // Derivative argument
             if (of[0].length > 1) {
-                darg = '$' + darg;          // Need arg ref
+                darg = '$3';                // Need ref for arg 3
             }
         }
     }
@@ -1958,7 +1958,6 @@ function preprocess(dsty, uast) {
                         // It's a derivative
                         if (arg.startsWith('$')) { // Argument reference
                             var of = value.of;
-                            arg += wrt;
                             if (of[0][0].hasOwnProperty('script')) {
                                 // For, e.g., 𝑑²𝑓(𝑥)/𝑑𝑥²
                                 if (of[0].length == 3 &&
