@@ -1017,7 +1017,7 @@ function getOrder(high) {
     if (Array.isArray(high) && high[0].hasOwnProperty('number'))
         return high[0].number;
 
-    return '';
+    return '$2';
 }
 
 function getUnicodeFraction(chNum, chDenom)
@@ -1956,23 +1956,30 @@ function preprocess(dsty, uast) {
 
                     if (chDifferential0 == chDifferential1 && order0 == order1) {
                         // It's a derivative
-                        if (arg.startsWith('$')) { // Argument reference
+                        if (arg.startsWith('$') || order0.startsWith('$')) {
+                            // Handle argument reference(s)
                             var of = value.of;
-                            if (of[0][0].hasOwnProperty('script')) {
+                            let s = of[0][0];
+                            if (s.hasOwnProperty('script')) {
+                                // For, e.g., 𝑑^(n-1) 𝑓(𝑥)/𝑑𝑥^(n-1)
+                                if (Array.isArray(s.script.high) && s.script.high[0].hasOwnProperty('bracketed'))
+                                    s.script.high[0].bracketed.arg = order0.substring(1);
                                 // For, e.g., 𝑑²𝑓(𝑥)/𝑑𝑥²
                                 if (of[0].length == 3 &&
                                     of[0][1].hasOwnProperty('atoms') &&
                                     of[0][2].hasOwnProperty('bracketed')) {
-                                    value.of[0] = [of[0][0], [{arg: arg.substring(1)}, of[0][1],
-                                         {operator: '\u2061'}, of[0][2]]];
+                                    value.of[0] = [s, [{arg: arg.substring(1)}, of[0][1],
+                                        {operator: '\u2061'}, of[0][2]]];
+                                } else if (of[0].length == 2) {
+                                    value.of[0] = [s, of[0][1]];
                                 }
                             } else if (of[0].length == 2 && //; For, e.g., 𝑑𝑓(𝑥)/𝑑𝑥
-                                of[0][0].hasOwnProperty('atoms') &&
+                                s.hasOwnProperty('atoms') &&
                                 of[0][1].hasOwnProperty('bracketed')) {
-                                var ch = getCh(of[0][0].atoms[0].chars, 0);
+                                var ch = getCh(s.atoms[0].chars, 0);
 
                                 value.of[0] = [{atoms: [{chars: ch}]}, [{arg: arg.substring(1)},
-                                    {atoms: [{chars: getCh(of[0][0].atoms[0].chars, ch.length)}]},
+                                    {atoms: [{chars: getCh(s.atoms[0].chars, ch.length)}]},
                                      {operator: '\u2061'}, of[0][1]]];
                             }
                         }
@@ -2263,7 +2270,7 @@ function preprocess(dsty, uast) {
                 }
                 content = preprocess(dsty, value.content);
             }
-            return {bracketed: {open: value.open, close: value.close, intent: value.intent, content: content}};
+            return {bracketed: {open: value.open, close: value.close, intent: value.intent, arg: value.arg, content: content}};
 
         case "chars":
         case "comment":
@@ -2470,6 +2477,14 @@ function mtransform(dsty, puast) {
                         return {msub: withAttrs(attrs, [mtransform(dsty, value.base),
                                               mtransform(dsty, dropOutermostParens(value.low)) ])};
                     } else if ("high" in value) {
+                        if (Array.isArray(value.high) && value.high[0].hasOwnProperty("bracketed")) {
+                            // Handle arg attribute for superscript
+                            var arg = value.high[0].bracketed.arg;
+                            if (arg) {
+                                value.high = dropOutermostParens(value.high);
+                                value.high[0].expr.unshift({arg: arg});
+                            }
+                        }
                         return {msup: withAttrs(attrs, [mtransform(dsty, value.base),
                                               mtransform(dsty, dropOutermostParens(value.high)) ])};
                     } else {  // can only occur in a nary without sub or sup set
