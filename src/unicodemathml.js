@@ -1943,9 +1943,9 @@ function preprocess(dsty, uast) {
             return (value in negs) ? {operator: negs[value]} : {negatedoperator: value};
 
         case "phantom":
-            return {phantom: {mask: value.mask, symbol: value.symbol, of: preprocess(dsty, value.of)}};
+            return {phantom: {mask: value.mask, symbol: value.symbol, intent: intent, of: preprocess(dsty, value.of)}};
         case "smash":
-            return {smash: {symbol: value.symbol, of: preprocess(dsty, value.of)}};
+            return {smash: {symbol: value.symbol, intent: intent, of: preprocess(dsty, value.of)}};
 
         case "fraction":
             if (value.symbol == '/') {
@@ -1961,16 +1961,17 @@ function preprocess(dsty, uast) {
                             var of = value.of;
                             let s = of[0][0];
                             if (s.hasOwnProperty('script')) {
-                                // For, e.g., 𝑑^(n-1) 𝑓(𝑥)/𝑑𝑥^(n-1)
+                                // For, e.g., 𝑑^(n-1) 𝑓(𝑥)/𝑑𝑥^(n-1) or 𝑑^(n-1) y/𝑑𝑥^(n-1)
                                 if (Array.isArray(s.script.high) && s.script.high[0].hasOwnProperty('bracketed'))
                                     s.script.high[0].bracketed.arg = order0.substring(1);
-                                // For, e.g., 𝑑²𝑓(𝑥)/𝑑𝑥²
+                                // For, e.g., 𝑑²𝑓(𝑥)/𝑑𝑥² or 𝑑^(n-1) 𝑓(𝑥)/𝑑𝑥^(n-1)
                                 if (of[0].length == 3 &&
                                     of[0][1].hasOwnProperty('atoms') &&
                                     of[0][2].hasOwnProperty('bracketed')) {
                                     value.of[0] = [s, [{arg: arg.substring(1)}, of[0][1],
                                         {operator: '\u2061'}, of[0][2]]];
                                 } else if (of[0].length == 2) {
+                                    // For, e.g., 𝑑^(n-1) y/𝑑𝑥^(n-1)
                                     value.of[0] = [s, of[0][1]];
                                 }
                             } else if (of[0].length == 2 && //; For, e.g., 𝑑𝑓(𝑥)/𝑑𝑥
@@ -2035,18 +2036,20 @@ function preprocess(dsty, uast) {
             }
 
         case "atop":
-            return {atop: preprocess(dsty, value)};
+            value = preprocess(dsty, value);
+            if (intent)
+                value.intent = intent;
+            return {atop: value};
         case "binom":
-            return {binom: {top: preprocess(dsty, value.top), bottom: preprocess(dsty, value.bottom)}};
+            return {binom: {intent: intent, top: preprocess(dsty, value.top), bottom: preprocess(dsty, value.bottom)}};
 
         case "script":
             ret = {type: value.type, base: preprocess(dsty, value.base)};
+            if (intent)
+                ret.intent = intent;
 
             switch (value.type) {
                 case "subsup":
-                    if (intent)
-                        ret.intent = intent;
-
                     // if the subsup contains a primed expression, pull the
                     // prime up into the superscript and make the prime's base
                     // the subsup's base
@@ -2135,7 +2138,6 @@ function preprocess(dsty, uast) {
                 default:
                     throw "invalid or missing script type";
             }
-
             return {script: ret};
 
         case "enclosed":
@@ -2219,7 +2221,7 @@ function preprocess(dsty, uast) {
         case "primed":
             // cannot do anything here since the script transform rule relies on
             // this
-            return {primed: {base: preprocess(dsty, value.base), primes: value.primes}};
+            return {primed: {base: preprocess(dsty, value.base), intent: intent, primes: value.primes}};
 
         case "factorial":
             value = preprocess(dsty, value);
@@ -2363,8 +2365,10 @@ function mtransform(dsty, puast) {
         case "element":
             return mtransform(dsty, value);
 
-        case "array":
-            return { mtable: withAttrs({intent: 'equations'}, mtransform(dsty, value))};
+        case "array":                       // Equation array
+            value = mtransform(dsty, value);
+            var attrs = {intent: (value.intent ? value.intent : 'equations')};
+            return {mtable: withAttrs(attrs, value)};
         case "arows":
             return value.map(r => ({mtr: noAttr(mtransform(dsty, r))}));
         case "arow":
@@ -2375,7 +2379,9 @@ function mtransform(dsty, puast) {
             return {malignmark: withAttrs({edge: "left"}, null)};
 
         case "matrix":
-            return {mtable: withAttrs({intent: 'matrix'}, mtransform(dsty, value))};
+            value = mtransform(dsty, value);
+            var attrs = {intent: (value.intent ? value.intent : 'matrix')};
+            return {mtable: withAttrs(attrs, value)};
         case "mrows":
             return value.map(r => ({mtr: noAttr(mtransform(dsty, r))}));
         case "mrow":
@@ -2397,7 +2403,7 @@ function mtransform(dsty, puast) {
                 // if empty, then just emit a phantom. also ignore fPhantomShow
                 // (supposedly this would turn the phantom into a smash, but MS
                 // Word keeps it a phantom, and who am i to question it?)
-                var attrs = {};
+                var attrs = value.intent ? { intent: value.intent } : {};
                 if (options.indexOf('fPhantomZeroWidth') !== -1) {
                     attrs.width = 0;
                 }
@@ -2426,18 +2432,25 @@ function mtransform(dsty, puast) {
                     throw "invalid phantom symbol";
             }
         case "smash":
+            var attrs = value.intent ? {intent: value.intent} : {};
+
             switch (value.symbol) {
                 case "⬍":
-                    return {mpadded: withAttrs({height: 0, depth: 0}, mtransform(dsty, value.of))};
+                    attrs.depth = attrs.height = 0;
+                    break;
                 case "⬆":
-                    return {mpadded: withAttrs({height: "1em"}, mtransform(dsty, value.of))};
+                    attrs.height= "1em";
+                    break;
                 case "⬇":
-                    return {mpadded: withAttrs({depth: 0}, mtransform(dsty, value.of))};
+                    attrs.depth = 0;
+                    break;
                 case "⬌":
-                    return {mpadded: withAttrs({width: 0}, mtransform(dsty, value.of))};
+                    attrs.width = 0;
+                    break;
                 default:
                     throw "invalid smash symbol";
             }
+            return {mpadded: withAttrs(attrs, mtransform(dsty, value.of))};
 
         case "fraction":
             var of = value.of.map(e => (mtransform(dsty, dropOutermostParens(e))));
@@ -2457,12 +2470,15 @@ function mtransform(dsty, puast) {
             }
 
         case "atop":
-            return {mfrac: withAttrs({linethickness: 0}, value.map(e => (mtransform(dsty, dropOutermostParens(e)))))};
+            var attrs = {linethickness: 0};
+            if (value.intent)
+                attrs.intent = value.intent;
+            return {mfrac: withAttrs(attrs, value.map(e => (mtransform(dsty, dropOutermostParens(e)))))};
         case "binom":
-
-            // desugar (not done in preprocessing step because LaTeX requires
-            // this sugar)
-            return mtransform(dsty, {bracketed: {intent: "binomial-coefficient", open: "(", close: ")", content: {atop: [value.top, value.bottom]}}});
+            // desugar (not done in preprocessing step since LaTeX requires this sugar)
+            if (!value.intent)
+                value.intent = "binomial-coefficient";
+            return mtransform(dsty, {bracketed: {intent: value.intent, open: "(", close: ")", content: {atop: [value.top, value.bottom]}}});
 
         case "script":
             var attrs = value.intent ? {intent: value.intent} : {};
@@ -2522,16 +2538,16 @@ function mtransform(dsty, puast) {
                 case "abovebelow":
                     value.base = dropOutermostParens(value.base);
                     if ("low" in value && "high" in value) {
-                        return {munderover: noAttr([mtransform(dsty, value.base),
+                        return {munderover: withAttrs(attrs, [mtransform(dsty, value.base),
                                                     mtransform(dsty, dropOutermostParens(value.low)),
                                                     mtransform(dsty, dropOutermostParens(value.high))
                                                    ])};
                     } else if ("high" in value) {
-                        return {mover: noAttr([mtransform(dsty, value.base),
+                        return {mover: withAttrs(attrs, [mtransform(dsty, value.base),
                                                mtransform(dsty, dropOutermostParens(value.high))
                                               ])};
                     } else if ("low" in value) {
-                        return {munder: noAttr([mtransform(dsty, value.base),
+                        return {munder: withAttrs(attrs, [mtransform(dsty, value.base),
                                                 mtransform(dsty, dropOutermostParens(value.low))
                                                ])};
                     } else {  // can only occur in a nary without sub or sup set
@@ -2691,9 +2707,10 @@ function mtransform(dsty, puast) {
             return {mstyle: withAttrs({fontfamily: "monospace"}, {mtext: noAttr(value.split(" ").join("\xa0"))})};
 
         case "primed":
-            return {msup: noAttr([mtransform(dsty, value.base),
-                                  {mo: noAttr(processPrimes(value.primes))}
-                                 ])};
+            var attrs = value.intent ? {intent: value.intent} : {};
+            return {msup: withAttrs(attrs, [mtransform(dsty, value.base),
+                                      {mo: noAttr(processPrimes(value.primes))}
+                                     ])};
 
         case "factorial":
             var attrs = value.intent ? {intent: value.intent} : {};
