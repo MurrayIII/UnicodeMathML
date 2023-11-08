@@ -2255,13 +2255,14 @@ function preprocess(dsty, uast) {
             return {factorial: value};
 
         case "atoms":
-            if (!value.hasOwnProperty("funct") && Array.isArray(value) &&
-                value[0].hasOwnProperty("chars") && value[0].chars[0] != 'Ⅎ' &&
-                !isFunctionName(value[0].chars)) {
-                value[0].chars = italicizeCharacters(value[0].chars);
-            }
-            if (Array.isArray(value) && intent) {
-                value.unshift({intent: intent});
+            if (Array.isArray(value)) {
+                if (!value.hasOwnProperty("funct") && value[0].hasOwnProperty("chars") &&
+                    value[0].chars[0] != 'Ⅎ' && !isFunctionName(value[0].chars)) {
+                    value[0].chars = italicizeCharacters(value[0].chars);
+                }
+                if (intent) {
+                    value.unshift({intent: intent});
+                }
             }
             return {atoms: preprocess(dsty, value)};
 
@@ -2274,7 +2275,8 @@ function preprocess(dsty, uast) {
             var t = value.type;
             var o = brackets[t][0];
             var c = brackets[t][1];
-            if (t == '⒱') value.intent = 'determinant';
+            if (t == '⒱' && !value.intent)
+                value.intent = 'determinant';
 
             return {bracketed: {open: o, close: c, intent: value.intent, content: preprocess(dsty, value.content)}};
 
@@ -2632,17 +2634,19 @@ function mtransform(dsty, puast) {
             return {mrow: withAttrs(attrs, mtransform(dsty, value.of))}
 
         case "hbrack":
-
             // TODO can probably do most of the work in a preprocessing step.
             // If the bracket precedes a script, put the bracket below or above
             // the script's base and the script's sub or sup text below or above
             // the bracket
             var base = dropSingletonLists(value.of);
             var expLow, expHigh;
-            var attrs = {accent: "true"};
-            var mtag = "mover";
+            var attrs = {};
+            var mtag = '';
 
-            if (!["⏜", "⏞", "⏠", "⎴", "¯"].includes(value.bracket)) {
+            if (["⏜", "⏞", "⏠", "⎴", "¯"].includes(value.bracket)) {
+                mtag = "mover";
+                attrs.accent = true;
+            } else {
                 mtag = "munder";
                 attrs.accentunder = true;
             }
@@ -2763,7 +2767,10 @@ function mtransform(dsty, puast) {
                     arg = value.shift();
                 }
 
-                if (str != undefined && str[0] != 'Ⅎ' && !isFunctionName(str)) {
+                if (str == undefined) {
+                    if (Array.isArray(value) && value[0].hasOwnProperty('diacriticized'))
+                        return {mrow: withAttrs(arg, mtransform(dsty, value))};
+                } else if (str[0] != 'Ⅎ' && !isFunctionName(str)) {
                     var cch = str.length;
 
                     if (cch > 2 || cch == 2 && str.codePointAt(0) < 0xFFFF) {
@@ -2817,40 +2824,37 @@ function mtransform(dsty, puast) {
             }
         case "diacriticized":
 
-            // TODO some of the work could be done in preprocessing step? but need the loop both in preprocessing as well as actual compilation, so doubtful if that would actually be better
+            // TODO some of the work could be done in preprocessing step? but
+            // need the loop both in preprocessing as well as actual compilation,
+            // so doubtful if that would actually be better
             var ret = mtransform(dsty, value.base);
+            var notation = '';
+
             for (let d of value.diacritics) {
-
-                // special cases for overscoring and underscoring (described in
-                // tech note)
-                if (d == "\u0305") {  // U+0305 COMBINING OVERLINE
-                    ret = {menclose: withAttrs({notation: "top"}, ret)};
-                } else if (d == "\u0332") {  // U+0332 COMBINING LOW LINE
-                    ret = {menclose: withAttrs({notation: "bottom"}, ret)};
-
-                // special cases for other diacritics that can be represented by
-                // an enclosure
-                } else if (d == "\u20DD") {  // U+20DD COMBINING ENCLOSING CIRCLE
-                    ret = {menclose: withAttrs({notation: "circle"}, ret)};
-                } else if (d == "\u20DE") {  // U+20DE COMBINING ENCLOSING SQUARE
-                    ret = {menclose: withAttrs({notation: "box"}, ret)};
-                } else if (d == "\u20E0") {  // U+20E0 COMBINING ENCLOSING CIRCLE BACKSLASH
-                    ret = {menclose: withAttrs({notation: "circle"}, {menclose: withAttrs({notation: "downdiagonalstrike"}, ret)})};
-
-                // standard case: place diacritic above or below. there is no
-                // good way for dealing with overlays, so just place them above
-                } else {
-                    var tag = "mover"
-                    if (diacriticPosition(d) == -1) {
-                        tag = "munder"
-                    }
-
-                    // represent diacritic using an entity to improve
-                    // readability of generated mathml code
-                    d = "&#x" + d.codePointAt(0).toString(16) + ";";
-
-                    ret = {[tag]: withAttrs({accent: "true"}, [ret, {mo: noAttr(d)}])}
+                // Handle diacritics that can be represented by an enclosure
+                switch (d) {
+                    case "\u0305":          // U+0305 COMBINING OVERLINE
+                        notation = 'top';
+                        break;
+                    case "\u0332":          // U+0332 COMBINING LOW LINE
+                        notation = 'bottom';
+                        break;
+                    case "\u20E0":          // U+20E0 COMBINING ENCLOSING CIRCLE BACKSLASH
+                        ret = {menclose: withAttrs({notation: "downdiagonalstrike"}, ret)};
+                                            // Fall through to enclosing circle
+                    case "\u20DD":          // U+20DD COMBINING ENCLOSING CIRCLE
+                        notation = 'circle';
+                        break;
+                    case "\u20DE":          // U+20DE COMBINING ENCLOSING SQUARE
+                        notation = 'box';
+                        break;
+                    default:
+                        var tag = (diacriticPosition(d) == -1) ? "munder" : "mover";
+                        d = "&#x" + d.codePointAt(0).toString(16) + ";";
+                        ret = {[tag]: withAttrs({accent: true}, [ret, {mo: noAttr(d)}])};
+                        continue;
                 }
+                ret = {menclose: withAttrs({notation: notation}, ret)};
             }
             return ret;
         case "spaces":
