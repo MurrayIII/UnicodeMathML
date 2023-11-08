@@ -54,13 +54,18 @@ function escapeMathMLSpecialChars(str) {
 
 // via https://stackoverflow.com/a/49458964
 function indentMathML(str) {
-    var formatted = '', indent= '';
+    var formatted = '', indent = '';
     str.split(/>\s*</).forEach(node => {
-        if (node.match( /^\/\w/ )) indent = indent.substring(2);
-        formatted += indent + '<' + node + '>\n';
-        if (node.match( /^<?\w[^>]*[^\/]$/ )) indent += '  ';
+        if (node.match(/^\/\w/)) {
+            indent = indent.substring(2);   // End tag decreases indent
+        } else {
+            formatted += '\n' + indent;     // Start tag gets new line indented
+        }
+        formatted += '<' + node + '>';      // Append tag(s), content
+        if (node.match(/^<?\w[^>]*[^\/]$/))
+            indent += '  ';
     });
-    return formatted.substring(1, formatted.length-2);
+    return formatted.substring(2, formatted.length - 1);
 };
 
 // loosely based on https://www.w3schools.com/howto/howto_syntax_highlight.asp

@@ -862,6 +862,21 @@ var mathFonts = {
     '9': {'mbf': '𝟗', 'Bbb': '𝟡', 'msans': '𝟫', 'mbfsans': '𝟵', 'mtt': '𝟿'},
 };
 
+const narys = {
+    '∏': 'product',
+    '∑': 'summation',
+    '∫': 'integral',
+    '∬': 'double integral',
+    '∭': 'triple integral',
+    '∮': 'contour integral',
+    '∯': 'surface integral',
+    '∰': 'volume integral',
+    '⨌': 'quadruple integral',
+    '∱': 'clockwise integral',
+    '∱': 'clockwise contour integral',
+    '∳': 'anticlockwise contour integral',
+};
+
 function isFunctionName(fn) {
     var cch = fn.length;
     var i = 0;
@@ -1936,8 +1951,13 @@ function preprocess(dsty, uast) {
                     value.limits.script.type = "abovebelow";
                 }
             }
-
-            return {nary: {mask: value.mask, limits: preprocess(dsty, value.limits), naryand: preprocess(dsty, value.naryand)}};
+            if (!intent) {
+                intent = narys[value.limits.script.base.opnary];
+                if (intent == undefined)
+                    intent = 'n-ary';
+            }
+            return {nary: {mask: value.mask, limits: preprocess(dsty, value.limits),
+                           intent: intent, naryand: preprocess(dsty, value.naryand)}};
 
         case "negatedoperator":
             return (value in negs) ? {operator: negs[value]} : {negatedoperator: value};
@@ -2158,9 +2178,12 @@ function preprocess(dsty, uast) {
             return preprocess(dsty, v(value.content.expr));
 
         case "root":
-            return {root: {degree: value.degree, of: preprocess(dsty, value.of)}};
+            return {root: {intent: intent, degree: value.degree, of: preprocess(dsty, value.of)}};
         case "sqrt":
-            return {sqrt: preprocess(dsty, value)};
+            value = preprocess(dsty, value);
+            if (intent)
+                value.intent = intent;
+            return {sqrt: value};
 
         case "function":
 
@@ -2205,7 +2228,10 @@ function preprocess(dsty, uast) {
                     }
                 }
             }
-            return {function: {f: preprocess(dsty, valuef), of: of}};
+            if (!intent) {
+                intent = 'function';
+            }
+            return {function: {f: preprocess(dsty, valuef), intent: intent, of: of}};
 
         case "negatedoperator":
             return (value in negs) ? {operator: negs[value]} : {negatedoperator: value};
@@ -2391,7 +2417,8 @@ function mtransform(dsty, puast) {
             return mtransform(dsty, value);
 
         case "nary":
-            return {mrow: noAttr([mtransform(dsty, value.limits), mtransform(dsty, value.naryand)])};
+            var attrs = {intent: (value.intent ? value.intent : 'n-ary')};
+            return {mrow: withAttrs(attrs, [mtransform(dsty, value.limits), mtransform(dsty, value.naryand)])};
         case "opnary":
             return {mo: noAttr(value)};
 
@@ -2654,14 +2681,17 @@ function mtransform(dsty, puast) {
             }
 
         case "root":
-            return {mroot: noAttr([mtransform(dsty, dropOutermostParens(value.of)),
+            var attrs = value.intent ? {intent: value.intent} : {};
+            return {mroot: withAttrs(attrs, [mtransform(dsty, dropOutermostParens(value.of)),
                                    mtransform(dsty, value.degree)
                                   ])};
         case "sqrt":
-            return {msqrt: noAttr(mtransform(dsty, dropOutermostParens(value)))};
+            var attrs = value.intent ? {intent: value.intent} : {};
+            return {msqrt: withAttrs(attrs, mtransform(dsty, dropOutermostParens(value)))};
 
         case "function":
-            return {mrow: noAttr([mtransform(dsty, value.f), {mo: noAttr("&ApplyFunction;")}, mtransform(dsty, value.of)])};
+            var attrs = {intent: (value.intent ? value.intent : 'function')};
+            return {mrow: withAttrs(attrs, [mtransform(dsty, value.f), {mo: noAttr("&ApplyFunction;")}, mtransform(dsty, value.of)])};
 
         case "text":
 
@@ -2895,6 +2925,7 @@ function mtransform(dsty, puast) {
             if (typeof value.close === 'string') {
                 ret.push({mo: noAttr(value.close)});
             }
+            //var attrs = {intent: (value.intent ? value.intent : 'fenced')};
             if (value.intent) {
                 ret = [{mrow: withAttrs({intent: value.intent}, ret)}];
             } else {
