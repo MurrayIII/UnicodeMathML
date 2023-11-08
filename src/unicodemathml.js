@@ -2171,7 +2171,7 @@ function preprocess(dsty, uast) {
             return {abstractbox: {mask: value.mask, of: preprocess(dsty, value.of)}};
 
         case "hbrack":
-            return {hbrack: {bracket: value.bracket, of: preprocess(dsty, value.of)}};
+            return {hbrack: {intent: intent, bracket: value.bracket, of: preprocess(dsty, value.of)}};
 
         case "intend":
             dsty.intent = value.intent.text;
@@ -2633,20 +2633,27 @@ function mtransform(dsty, puast) {
 
         case "hbrack":
 
-            // TODO can probably do most of the work in a preprocessing step
-
-            // determine if the bracket should be above or below contents
-            var mtag = ["⏜", "⏞", "⏠", "⎴", "¯"].includes(value.bracket) ? "mover" : "munder";
-
-            // if the bracket precedes a script, put the bracket below or above
+            // TODO can probably do most of the work in a preprocessing step.
+            // If the bracket precedes a script, put the bracket below or above
             // the script's base and the script's sub or sup text below or above
             // the bracket
             var base = dropSingletonLists(value.of);
-            var expLow;
-            var expHigh;
-            if (base.hasOwnProperty("script") && (base.script.type == "subsup" || base.script.type == "abovebelow")) {
-                var expLow = base.script.low;
-                var expHigh = base.script.high;
+            var expLow, expHigh;
+            var attrs = {accent: "true"};
+            var mtag = "mover";
+
+            if (!["⏜", "⏞", "⏠", "⎴", "¯"].includes(value.bracket)) {
+                mtag = "munder";
+                attrs.accentunder = true;
+            }
+            if (value.intent) {
+                attrs.intent = value.intent;
+            }
+
+            if (base.hasOwnProperty("script") &&
+                (base.script.type == "subsup" || base.script.type == "abovebelow")) {
+                expLow = base.script.low;
+                expHigh = base.script.high;
                 var type = base.script.type;
                 base = dropOutermostParens(base.script.base);
 
@@ -2666,15 +2673,15 @@ function mtransform(dsty, puast) {
                     throw "hbrack bracket type doesn't match script type";
                 }
 
-                return {[mtag]: withAttrs({"accentunder": true, "accent": true}, [
-                    {[mtag]: withAttrs({"accentunder": true, "accent": true}, [
+                return {[mtag]: withAttrs(attrs, [
+                    {[mtag]: withAttrs(attrs, [
                         mtransform(dsty, base),
                         {mo: withAttrs({stretchy: true}, value.bracket)}
                     ])},
                     mtransform(dsty, dropOutermostParens(exp))
                 ])};
             } else {
-                return {[mtag]: withAttrs({"accentunder": true, "accent": true}, [
+                return {[mtag]: withAttrs(attrs, [
                     mtransform(dsty, dropOutermostParens(value.of)),
                     {mo: withAttrs({stretchy: true}, value.bracket)}
                 ])};
