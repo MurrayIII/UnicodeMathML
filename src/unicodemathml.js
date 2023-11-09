@@ -91,6 +91,7 @@ var controlWords = {
     'aoint':            '∳',	    // 2233
     'approx':           '≈',	// 2248
     'approxeq':         '≊',    	// 224A
+    'arg':              'ⓐ',   // 24D0
     'asmash':           '⬆',    	// 2B06
     'ast':              '∗',    	// 2217
     'asymp':            '≍',    	// 224D
@@ -1827,7 +1828,8 @@ function preprocess(dsty, uast) {
     var key = k(uast);
     var value = v(uast);
     var intent = dsty.intent;
-    dsty.intent = '';
+    var arg = dsty.arg;
+    dsty.intent = dsty.arg = '';
 
     switch (key) {
         case "unicodemath":
@@ -1871,7 +1873,7 @@ function preprocess(dsty, uast) {
 
         case "specialMatrix":               // n×m or identity matrix
             t = value[2];
-            if (t == '⒱' && (!value[1] || value[0] == value[1])) {
+            if (t == '⒱' && !intent && (!value[1] || value[0] == value[1])) {
                 intent = 'determinant';
             }
             value = matrixRows(value[0], value[1]);
@@ -1879,7 +1881,7 @@ function preprocess(dsty, uast) {
             if (t != "■") {
                 var o = brackets[t][0];
                 var c = brackets[t][1];
-                return {bracketed: {open: o, close: c, intent: intent, content: {matrix: preprocess(dsty, value)}}};
+                return {bracketed: {open: o, close: c, intent: intent, arg: arg, content: {matrix: preprocess(dsty, value)}}};
             }
             // Fall through to "matrix"
         case "matrix":
@@ -1957,26 +1959,26 @@ function preprocess(dsty, uast) {
                     intent = 'n-ary';
             }
             return {nary: {mask: value.mask, limits: preprocess(dsty, value.limits),
-                           intent: intent, naryand: preprocess(dsty, value.naryand)}};
+                           intent: intent, arg: arg, naryand: preprocess(dsty, value.naryand)}};
 
         case "negatedoperator":
             return (value in negs) ? {operator: negs[value]} : {negatedoperator: value};
 
         case "phantom":
-            return {phantom: {mask: value.mask, symbol: value.symbol, intent: intent, of: preprocess(dsty, value.of)}};
+            return {phantom: {mask: value.mask, symbol: value.symbol, intent: intent, arg: arg, of: preprocess(dsty, value.of)}};
         case "smash":
-            return {smash: {symbol: value.symbol, intent: intent, of: preprocess(dsty, value.of)}};
+            return {smash: {symbol: value.symbol, intent: intent, arg: arg, of: preprocess(dsty, value.of)}};
 
         case "fraction":
             if (value.symbol == '/') {
-                var [chDifferential0, order0, arg] = getDifferentialInfo(value.of, 0); // Numerator
+                var [chDifferential0, order0, arg0] = getDifferentialInfo(value.of, 0); // Numerator
 
                 if (chDifferential0) { // Might be a derivative
                     var [chDifferential1, order1, wrt] = getDifferentialInfo(value.of, 1); // Denominator
 
                     if (chDifferential0 == chDifferential1 && order0 == order1) {
                         // It's a derivative
-                        if (arg.startsWith('$') || order0.startsWith('$')) {
+                        if (arg0.startsWith('$') || order0.startsWith('$')) {
                             // Handle argument reference(s)
                             var of = value.of;
                             let s = of[0][0];
@@ -1988,7 +1990,7 @@ function preprocess(dsty, uast) {
                                 if (of[0].length == 3 &&
                                     of[0][1].hasOwnProperty('atoms') &&
                                     of[0][2].hasOwnProperty('bracketed')) {
-                                    value.of[0] = [s, [{arg: arg.substring(1)}, of[0][1],
+                                    value.of[0] = [s, [{arg: arg0.substring(1)}, of[0][1],
                                         {operator: '\u2061'}, of[0][2]]];
                                 } else if (of[0].length == 2) {
                                     // For, e.g., 𝑑^(n-1) y/𝑑𝑥^(n-1)
@@ -1999,19 +2001,19 @@ function preprocess(dsty, uast) {
                                 of[0][1].hasOwnProperty('bracketed')) {
                                 var ch = getCh(s.atoms[0].chars, 0);
 
-                                value.of[0] = [{atoms: [{chars: ch}]}, [{arg: arg.substring(1)},
+                                value.of[0] = [{atoms: [{chars: ch}]}, [{arg: arg0.substring(1)},
                                     {atoms: [{chars: getCh(s.atoms[0].chars, ch.length)}]},
                                      {operator: '\u2061'}, of[0][1]]];
                             }
                         }
                         var intent = '∂𝜕'.includes(chDifferential0)
                             ? 'partial-derivative' : 'derivative';
-                        intent += '(' + arg + ',' + order0 + ',' + wrt + ')';
+                        intent += '(' + arg0 + ',' + order0 + ',' + wrt + ')';
                         return {fraction: {symbol: value.symbol, intent: intent, of: preprocess(dsty, value.of)}};
                    }
                 }
             }
-            return {fraction: {symbol: value.symbol, of: preprocess(dsty, value.of)}};
+            return {fraction: {symbol: value.symbol, intent: intent, arg: arg, of: preprocess(dsty, value.of)}};
         case "unicodefraction":
             var frac = (numerator, denominator) => {
                 return {fraction: {symbol: "⊘", of: [{number: numerator}, {number: denominator}]}};
@@ -2059,14 +2061,19 @@ function preprocess(dsty, uast) {
             value = preprocess(dsty, value);
             if (intent)
                 value.intent = intent;
+            if(arg)
+                value.arg = arg;
+
             return {atop: value};
         case "binom":
-            return {binom: {intent: intent, top: preprocess(dsty, value.top), bottom: preprocess(dsty, value.bottom)}};
+            return {binom: {intent: intent, arg: arg, top: preprocess(dsty, value.top), bottom: preprocess(dsty, value.bottom)}};
 
         case "script":
             ret = {type: value.type, base: preprocess(dsty, value.base)};
             if (intent)
                 ret.intent = intent;
+            if (arg)
+                ret.arg = arg;
 
             switch (value.type) {
                 case "subsup":
@@ -2165,24 +2172,29 @@ function preprocess(dsty, uast) {
                 // set mask for \cancel, \bcancel, \xcancel
                 value.mask = (value.symbol == "╱") ? 79 : (value.symbol == "╲") ? 143 : 207;
             }
-            return {enclosed: {mask: value.mask, symbol: value.symbol, intent: intent, of: preprocess(dsty, value.of)}};
+            return {enclosed: {mask: value.mask, symbol: value.symbol, intent: intent, arg: arg, of: preprocess(dsty, value.of)}};
 
         case "abstractbox":
             return {abstractbox: {mask: value.mask, of: preprocess(dsty, value.of)}};
 
         case "hbrack":
-            return {hbrack: {intent: intent, bracket: value.bracket, of: preprocess(dsty, value.of)}};
+            return {hbrack: {intent: intent, arg: arg, bracket: value.bracket, of: preprocess(dsty, value.of)}};
 
         case "intend":
-            dsty.intent = value.intent.text;
+            if(value.op == 'ⓘ')
+                dsty.intent = value.intent.text;
+            else
+                dsty.arg = value.intent.text;
             return preprocess(dsty, v(value.content.expr));
 
         case "root":
-            return {root: {intent: intent, degree: value.degree, of: preprocess(dsty, value.of)}};
+            return {root: {intent: intent, arg: arg, degree: value.degree, of: preprocess(dsty, value.of)}};
         case "sqrt":
             value = preprocess(dsty, value);
             if (intent)
                 value.intent = intent;
+            if (arg)
+                value.arg = arg;
             return {sqrt: value};
 
         case "function":
@@ -2231,7 +2243,7 @@ function preprocess(dsty, uast) {
             if (!intent) {
                 intent = 'function';
             }
-            return {function: {f: preprocess(dsty, valuef), intent: intent, of: of}};
+            return {function: {f: preprocess(dsty, valuef), intent: intent, arg: arg, of: of}};
 
         case "negatedoperator":
             return (value in negs) ? {operator: negs[value]} : {negatedoperator: value};
@@ -2247,11 +2259,12 @@ function preprocess(dsty, uast) {
         case "primed":
             // cannot do anything here since the script transform rule relies on
             // this
-            return {primed: {base: preprocess(dsty, value.base), intent: intent, primes: value.primes}};
+            return {primed: {base: preprocess(dsty, value.base), intent: intent, arg: arg, primes: value.primes}};
 
         case "factorial":
             value = preprocess(dsty, value);
             value.intent = intent;
+            value.arg = arg;
             return {factorial: value};
 
         case "atoms":
@@ -2260,9 +2273,10 @@ function preprocess(dsty, uast) {
                     value[0].chars[0] != 'Ⅎ' && !isFunctionName(value[0].chars)) {
                     value[0].chars = italicizeCharacters(value[0].chars);
                 }
-                if (intent) {
+                if (intent)
                     value.unshift({intent: intent});
-                }
+                if (arg)
+                    value.unshift({arg: arg});
             }
             return {atoms: preprocess(dsty, value)};
 
@@ -2278,7 +2292,7 @@ function preprocess(dsty, uast) {
             if (t == '⒱' && !value.intent)
                 value.intent = 'determinant';
 
-            return {bracketed: {open: o, close: c, intent: value.intent, content: preprocess(dsty, value.content)}};
+            return {bracketed: {open: o, close: c, intent: value.intent, arg: arg, content: preprocess(dsty, value.content)}};
 
         case "bracketed":
             var content;
@@ -2287,6 +2301,8 @@ function preprocess(dsty, uast) {
             } else {
                 if (intent)
                     value.intent = intent;
+                if (arg)
+                    value.arg = arg;
                 if (value.intent && value.intent.endsWith("interval") &&
                     Array.isArray(value.content) && value.content.length == 3)
                 {
@@ -2300,7 +2316,7 @@ function preprocess(dsty, uast) {
                 }
                 content = preprocess(dsty, value.content);
             }
-            return {bracketed: {open: value.open, close: value.close, intent: value.intent, arg: value.arg, content: content}};
+            return {bracketed: {open: value.open, close: value.close, intent: value.intent, arg: value.arg, arg: value.arg, content: content}};
 
         case "chars":
         case "comment":
@@ -2324,6 +2340,18 @@ function preprocess(dsty, uast) {
 /////////////////////////////////// MATHML /////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+
+function getAttrs(value, deflt) {
+    var attrs = {};
+
+    if (value.arg)
+        attrs.arg = value.arg;
+    if (value.intent)
+        attrs.intent = value.intent;
+    else if (deflt)
+        attrs.intent = deflt;
+    return attrs;
+}
 
 ///////////////
 // TRANSFORM //
@@ -2395,7 +2423,7 @@ function mtransform(dsty, puast) {
 
         case "array":                       // Equation array
             value = mtransform(dsty, value);
-            var attrs = {intent: (value.intent ? value.intent : 'equations')};
+            var attrs = getAttrs(value, 'equations');
             return {mtable: withAttrs(attrs, value)};
         case "arows":
             return value.map(r => ({mtr: noAttr(mtransform(dsty, r))}));
@@ -2408,7 +2436,7 @@ function mtransform(dsty, puast) {
 
         case "matrix":
             value = mtransform(dsty, value);
-            var attrs = {intent: (value.intent ? value.intent : 'matrix')};
+            var attrs = getAttrs(value, 'matrix');
             return {mtable: withAttrs(attrs, value)};
         case "mrows":
             return value.map(r => ({mtr: noAttr(mtransform(dsty, r))}));
@@ -2419,7 +2447,7 @@ function mtransform(dsty, puast) {
             return mtransform(dsty, value);
 
         case "nary":
-            var attrs = {intent: (value.intent ? value.intent : 'n-ary')};
+            var attrs = getAttrs(value, 'n-ary');
             return {mrow: withAttrs(attrs, [mtransform(dsty, value.limits), mtransform(dsty, value.naryand)])};
         case "opnary":
             return {mo: noAttr(value)};
@@ -2432,7 +2460,7 @@ function mtransform(dsty, puast) {
                 // if empty, then just emit a phantom. also ignore fPhantomShow
                 // (supposedly this would turn the phantom into a smash, but MS
                 // Word keeps it a phantom, and who am i to question it?)
-                var attrs = value.intent ? { intent: value.intent } : {};
+                var attrs = getAttrs(value, '');
                 if (options.indexOf('fPhantomZeroWidth') !== -1) {
                     attrs.width = 0;
                 }
@@ -2461,7 +2489,7 @@ function mtransform(dsty, puast) {
                     throw "invalid phantom symbol";
             }
         case "smash":
-            var attrs = value.intent ? {intent: value.intent} : {};
+            var attrs = getAttrs(value, '');
 
             switch (value.symbol) {
                 case "⬍":
@@ -2483,13 +2511,11 @@ function mtransform(dsty, puast) {
 
         case "fraction":
             var of = value.of.map(e => (mtransform(dsty, dropOutermostParens(e))));
+            var attrs = getAttrs(value, '');
 
             switch (value.symbol) {
                 case "/":       // normal fraction ¹-₂
-                    if (value.hasOwnProperty("intent")) {
-                        return {mfrac: withAttrs({intent: value.intent}, of)};
-                    }
-                    return {mfrac: noAttr(of)};
+                    return {mfrac: withAttrs(attrs, of)};
                 case "\u2044":  // skewed fraction ¹/₂
                     return {mfrac: withAttrs({bevelled: true}, of)};
                 case "\u2215":  // linear fraction 1/2
@@ -2502,15 +2528,17 @@ function mtransform(dsty, puast) {
             var attrs = {linethickness: 0};
             if (value.intent)
                 attrs.intent = value.intent;
+            if(value.arg)
+                attrs.arg = value.arg;
             return {mfrac: withAttrs(attrs, value.map(e => (mtransform(dsty, dropOutermostParens(e)))))};
         case "binom":
             // desugar (not done in preprocessing step since LaTeX requires this sugar)
             if (!value.intent)
                 value.intent = "binomial-coefficient";
-            return mtransform(dsty, {bracketed: {intent: value.intent, open: "(", close: ")", content: {atop: [value.top, value.bottom]}}});
+            return mtransform(dsty, {bracketed: {intent: value.intent, arg: value.arg, open: "(", close: ")", content: {atop: [value.top, value.bottom]}}});
 
         case "script":
-            var attrs = value.intent ? {intent: value.intent} : {};
+            var attrs = getAttrs(value, '');
 
             switch (value.type) {
                 case "subsup":
@@ -2593,6 +2621,8 @@ function mtransform(dsty, puast) {
             var attrs = {notation: enclosureAttrs(mask, symbol)};
             if (value.intent)
                 attrs.intent = value.intent;
+            if (value.arg)
+                attrs.arg = value.arg;
 
             return {menclose: withAttrs(attrs, mtransform(dsty,
                                             dropOutermostParens(value.of)))};
@@ -2692,23 +2722,24 @@ function mtransform(dsty, puast) {
             }
 
         case "root":
-            var attrs = value.intent ? {intent: value.intent} : {};
+            var attrs = getAttrs(value, '');
             return {mroot: withAttrs(attrs, [mtransform(dsty, dropOutermostParens(value.of)),
                                    mtransform(dsty, value.degree)
                                   ])};
         case "sqrt":
-            var attrs = value.intent ? {intent: value.intent} : {};
+            var attrs = getAttrs(value, '');
             return {msqrt: withAttrs(attrs, mtransform(dsty, dropOutermostParens(value)))};
 
         case "function":
-            var attrs = {intent: (value.intent ? value.intent : 'function')};
+            var attrs = getAttrs(value, '');
             return {mrow: withAttrs(attrs, [mtransform(dsty, value.f), {mo: noAttr("&ApplyFunction;")}, mtransform(dsty, value.of)])};
 
         case "text":
 
             // replace spaces with non-breaking spaces (leading and trailing
             // spaces are otherwise hidden)
-            return {mtext: noAttr(value.split(" ").join("\xa0"))};
+            var attrs = getAttrs(value, '');
+            return {mtext: withAttrs(attrs, value.split(" ").join("\xa0"))};
 
         case "sizeoverride":
             /*
@@ -2754,7 +2785,7 @@ function mtransform(dsty, puast) {
                                      ])};
 
         case "factorial":
-            var attrs = value.intent ? {intent: value.intent} : {};
+            var attrs = getAttrs(value, '');
             return {mrow: withAttrs(attrs, [mtransform(dsty, value), {mo: noAttr("!")}])};
 
         case "atoms":
@@ -2937,11 +2968,9 @@ function mtransform(dsty, puast) {
                 ret.push({mo: noAttr(value.close)});
             }
             //var attrs = {intent: (value.intent ? value.intent : 'fenced')};
-            if (value.intent) {
-                ret = [{mrow: withAttrs({intent: value.intent}, ret)}];
-            } else {
-                ret = [{mrow: noAttr(ret)}];
-            }
+            var attrs = getAttrs(value, '');
+            ret = [{mrow: withAttrs(attrs, ret)}];
+
             // now handle potential manually resized brackets. note that
             // value.open.size and value.close.size should be at most 4
             // according to the tech note, but there is no strict need for this

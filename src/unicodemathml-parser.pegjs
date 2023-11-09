@@ -309,35 +309,16 @@ diacritic
 unicodeFraction = [↉½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅐⅛⅜⅝⅞⅑]
 opEnclosedMatrix = [⒨⒩ⓢⓈ⒱]
 opArray
-    = "█"  // array
+    = "█"  // equation array
     / "■"  // matrix
     / "@"  // row separator
     / "&"  // column separator
-    / "Ⓒ"
+    / "Ⓒ" // cases
 opOpen = [([{⟨〖⌈⌊❲⟦⟨⟪⟬⟮⦃⦅⦇⦉⦋⦍⦏⦑⦓⦕⦗⧘⧚⧼]
 opClose = [)}⟩〗⌉⌋❳⟧⟩⟫⟭⟯⦄⦆⦈⦊⦌⦎⦐⦒⦔⦖⦘⧙⧛⧽] / "]"
 opDecimal = "." / ","
 opHbracket = [⏜⏝⏞⏟⏠⏡⎴⎵¯]  // no underbar since U+2581 is used for enclosures
 opStretchyArrow = [←→↔⇐⇒⇔↩↪↼⇀↽⇁⊢⊣⟵⟶⟷⟸⟹⟺↦⊨]
-/*opNary  // not all of these are mentioned in the tech note, but they all fit
-          // in here (most of them are n-ary)
-    = "∑" / "⅀" / "⨊"
-    / "∏" / "∐"
-    / "⨋"
-    / "∫" / "∬" / "∭" / "⨌"
-    / "∮" / "∯" / "∰"
-    / "∱" / "⨑" / "∲" / "∳"
-    / "⨍" / "⨎"
-    / "⨏" / "⨕" / "⨖" / "⨗" / "⨘"
-    / "⨙" / "⨚"
-    / "⨛" / "⨜"
-    / "⨒" / "⨓" / "⨔"
-    / "⋀" / "⋁"
-    / "⋂" / "⋃"
-    / "⨃" / "⨄"
-    / "⨅" / "⨆"
-    / "⨀" / "⨁" / "⨂"
-    / "⨉" / "⫿"*/
 opNary = [∑⅀⨊∏∐⨋∫∬∭⨌∮∯∰∱⨑∲∳⨍⨎⨏⨕⨖⨗⨘⨙⨚⨛⨜⨒⨓⨔⋀⋁⋂⋃⨃⨄⨅⨆⨀⨁⨂⨉⫿]  // ⚡ performance optimization
 opNaryand = "▒"  // "\of"
 opAtop = "¦"
@@ -349,6 +330,7 @@ opFraction
     / "\u2298"  // small fraction
 opEnclosure = "▭" / "̄" / "▁" / "▢" / "○" / "⟌" / "⃧" / "⬭" / "╱" / "╲" / "╳"
 opEqNumber = "#"
+opIntent = "ⓐ" / "ⓘ"
 opPhantom = "⟡" / "⬄" / "⇳"
 opSmash = "⬍" / "⬆" / "⬇" / "⬌"
 opAbstractBox = "□"
@@ -864,8 +846,8 @@ hbrack = b:opHbracket o:operand {
     return {hbrack: {bracket: b, of: o}};
 }
 
-intent = "ⓘ(" i:text "&" c:exp ")" {
-    return {intend: {intent: i, content: c}};
+intent = o:opIntent "(" i:text "&" c:exp ")" {
+    return {intend: {op: o, intent: i, content: c}};
 }
 
 // roots of various degrees
