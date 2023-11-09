@@ -1032,7 +1032,7 @@ function getOrder(high) {
     if (Array.isArray(high) && high[0].hasOwnProperty('number'))
         return high[0].number;
 
-    return '$2';
+    return '$b';
 }
 
 function getUnicodeFraction(chNum, chDenom)
@@ -1082,7 +1082,7 @@ function getIntervalArg(content, n) {
         arg = arg.flat().join('');
     var ch = getCh(arg, 0);
     if (arg.length > ch.length && !isAsciiDigit(arg[0]) && !'-−+∞'.includes(arg[0]))
-        arg = '$' + (n ? '2' : '1');
+        arg = '$' + (n ? 'b' : 'a');
     return arg;
 }
 
@@ -1120,7 +1120,7 @@ function getIntervalArg(content, n) {
                 if (arg1.hasOwnProperty('atoms')) {
                     darg = getCh(arg1.atoms[0].chars, 0); // Derivative argument
                     if (of[0].length > 2) {
-                        darg = '$3';        // Signal need ref for arg 3
+                        darg = '$c';        // Signal need ref for arg 3
                     }
                 }
             }
@@ -1133,7 +1133,7 @@ function getIntervalArg(content, n) {
             }
             darg = getCh(arg.atoms[0].chars, cchCh); // Derivative argument
             if (of[0].length > 1) {
-                darg = '$3';                // Need ref for arg 3
+                darg = '$c';                // Need ref for arg 3
             }
         }
     }
