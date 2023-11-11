@@ -1069,9 +1069,11 @@ function getUnicodeFraction(chNum, chDenom)
 }
 
 function getIntervalEndPoint(arg, content) {
-    if (arg[0] == '$')
-        return {atoms: [{arg: arg}, {chars: content.flat().join('')}]};
-
+    if (arg[0] == '$') {
+        var ret = {atoms: [{chars: content.flat().join('')}]};
+        ret.atoms.arg = arg.substring(1);
+        return ret;
+    }
     return (isAsciiDigit(arg[0])) ? {number: arg} : {atoms: [{chars: arg}]};
 }
 
@@ -1751,25 +1753,25 @@ function fontSize(n) {
 function doublestruckChar(value) {
     var variants = {
         "us-tech": {
-            "ⅅ": {mi: noAttr("𝐷")},
-            "ⅆ": {mi: noAttr("𝑑")},
-            "ⅇ": {mi: noAttr("𝑒")},
-            "ⅈ": {mi: noAttr("𝑖")},
-            "ⅉ": {mi: noAttr("𝑗")}
+            "ⅅ": "𝐷",
+            "ⅆ": "𝑑",
+            "ⅇ": "𝑒",
+            "ⅈ": "𝑖",
+            "ⅉ": "𝑗"
         },
         "us-patent": {
-            "ⅅ": {mi: noAttr("ⅅ")},
-            "ⅆ": {mi: noAttr("ⅆ")},
-            "ⅇ": {mi: noAttr("ⅇ")},
-            "ⅈ": {mi: noAttr("ⅈ")},
-            "ⅉ": {mi: noAttr("ⅉ")}
+            "ⅅ": "ⅅ",
+            "ⅆ": "ⅆ",
+            "ⅇ": "ⅇ",
+            "ⅈ": "ⅈ",
+            "ⅉ": "ⅉ"
         },
         "euro-tech": {
-            "ⅅ": {mi: withAttrs({"mathvariant": "normal"}, "D")},
-            "ⅆ": {mi: withAttrs({"mathvariant": "normal"}, "d")},
-            "ⅇ": {mi: withAttrs({"mathvariant": "normal"}, "e")},
-            "ⅈ": {mi: withAttrs({"mathvariant": "normal"}, "i")},
-            "ⅉ": {mi: withAttrs({"mathvariant": "normal"}, "j")}
+            "ⅅ": "D",
+            "ⅆ": "d",
+            "ⅇ": "e",
+            "ⅈ": "i",
+            "ⅉ": "j"
         }
     }
 
@@ -1811,6 +1813,11 @@ function dropSingletonLists(uast) {
 }
 
 var brackets = {'⒨': '()', '⒩': '‖‖', 'ⓢ': '[]', 'Ⓢ': '{}', '⒱': '||'};
+
+function isCharsButNotFunction(value) {
+    return value.hasOwnProperty("chars") && value.chars[0] != 'Ⅎ' &&
+        !isFunctionName(value.chars);
+}
 
 ////////////////
 // PREPROCESS //
@@ -2268,17 +2275,22 @@ function preprocess(dsty, uast) {
             return {factorial: value};
 
         case "atoms":
-            if (Array.isArray(value)) {
-                if (!value.hasOwnProperty("funct") && value[0].hasOwnProperty("chars") &&
-                    value[0].chars[0] != 'Ⅎ' && !isFunctionName(value[0].chars)) {
+            if (!value.hasOwnProperty("funct")) {
+                if (Array.isArray(value) && isCharsButNotFunction(value[0])) {
                     value[0].chars = italicizeCharacters(value[0].chars);
                 }
-                if (intent)
-                    value.unshift({intent: intent});
-                if (arg)
-                    value.unshift({arg: arg});
+                else if (isCharsButNotFunction(value)) {
+                    value.chars = italicizeCharacters(value.chars);
+                }
             }
-            return {atoms: preprocess(dsty, value)};
+            if (!arg && value.arg)
+                arg = value.arg;            // Happens for intervals
+            value = preprocess(dsty, value);
+            if(intent)
+                value.intent = intent;
+            if(arg)
+                value.arg = arg;
+            return {atoms: value};
 
         case "diacriticized":
             return {diacriticized: {base: preprocess(dsty, value.base), diacritics: value.diacritics}};
@@ -2296,13 +2308,14 @@ function preprocess(dsty, uast) {
 
         case "bracketed":
             var content;
+            if (intent)
+                value.intent = intent;
+            if (arg)
+                value.arg = arg;
+
             if (value.content.hasOwnProperty("separated")) {
                 content = {separated: {separator: value.content.separated.separator, of: preprocess(dsty, value.content.separated.of)}};
             } else {
-                if (intent)
-                    value.intent = intent;
-                if (arg)
-                    value.arg = arg;
                 if (value.intent && value.intent.endsWith("interval") &&
                     Array.isArray(value.content) && value.content.length == 3)
                 {
@@ -2316,14 +2329,15 @@ function preprocess(dsty, uast) {
                 }
                 content = preprocess(dsty, value.content);
             }
-            return {bracketed: {open: value.open, close: value.close, intent: value.intent, arg: value.arg, arg: value.arg, content: content}};
+            return {bracketed: {open: value.open, close: value.close, intent: value.intent, arg: value.arg, content: content}};
+
+        case "operator":
+            return {[key]: {intent: intent, arg: arg, content: value}};
 
         case "chars":
         case "comment":
-        case "doublestruck":
         case "newline":
         case "number":
-        case "operator":
         case "opnary":
         case "space":
         case "text":
@@ -2351,6 +2365,17 @@ function getAttrs(value, deflt) {
     else if (deflt)
         attrs.intent = deflt;
     return attrs;
+}
+
+function getAttrsDoublestruck(ch, str) {
+    let attrsDoublestruck = {};
+
+    if (ch <= 'z')
+        attrsDoublestruck.mathvariant = "normal";
+
+    if (ch != str)
+        attrsDoublestruck.intent = str;
+    return attrsDoublestruck;
 }
 
 ///////////////
@@ -2407,13 +2432,16 @@ function mtransform(dsty, puast) {
             return mtransform(dsty, value);
 
         case "operator":
-            if ('←→↔⇐⇒⇔↩↪↼⇀↽⇁⊢⊣⟵⟶⟷⟸⟹⟺↦⊨'.split('').includes(value)) {
-                return {mo: withAttrs({stretchy: true}, value)};
-            } else {
-                if (value == '\u2061')
-                    value = '&#x2061;';
-                return {mo: noAttr(value)};
+            var attrs = (value.content) ? getAttrs(value, '') : {};
+            var val = value.content ? value.content : value;
+
+            if ('←→↔⇐⇒⇔↩↪↼⇀↽⇁⊢⊣⟵⟶⟷⟸⟹⟺↦⊨'.split('').includes(val)) {
+                attrs.stretchy = true;
+            } else if (val == '\u2061') {
+                val = '&#x2061;';
             }
+            return {mo: withAttrs(attrs, val)};
+
         case "negatedoperator":
             return {mo: noAttr(value + "̸")};  // U+0338 COMBINING LONG SOLIDUS
                                               // OVERLAY
@@ -2525,12 +2553,10 @@ function mtransform(dsty, puast) {
             }
 
         case "atop":
-            var attrs = {linethickness: 0};
-            if (value.intent)
-                attrs.intent = value.intent;
-            if(value.arg)
-                attrs.arg = value.arg;
+            var attrs = getAttrs(value, '');
+            attrs.linethickness = 0;
             return {mfrac: withAttrs(attrs, value.map(e => (mtransform(dsty, dropOutermostParens(e)))))};
+
         case "binom":
             // desugar (not done in preprocessing step since LaTeX requires this sugar)
             if (!value.intent)
@@ -2616,13 +2642,10 @@ function mtransform(dsty, puast) {
             }
 
         case "enclosed":
+            var attrs = getAttrs(value, '');
             var mask = value.mask;
             var symbol = value.symbol;
-            var attrs = {notation: enclosureAttrs(mask, symbol)};
-            if (value.intent)
-                attrs.intent = value.intent;
-            if (value.arg)
-                attrs.arg = value.arg;
+            attrs.notation = enclosureAttrs(mask, symbol);
 
             return {menclose: withAttrs(attrs, mtransform(dsty,
                                             dropOutermostParens(value.of)))};
@@ -2670,7 +2693,7 @@ function mtransform(dsty, puast) {
             // the bracket
             var base = dropSingletonLists(value.of);
             var expLow, expHigh;
-            var attrs = {};
+            var attrs = getAttrs(value, '');
             var mtag = '';
 
             if (["⏜", "⏞", "⏠", "⎴", "¯"].includes(value.bracket)) {
@@ -2735,7 +2758,6 @@ function mtransform(dsty, puast) {
             return {mrow: withAttrs(attrs, [mtransform(dsty, value.f), {mo: noAttr("&ApplyFunction;")}, mtransform(dsty, value.of)])};
 
         case "text":
-
             // replace spaces with non-breaking spaces (leading and trailing
             // spaces are otherwise hidden)
             var attrs = getAttrs(value, '');
@@ -2779,7 +2801,7 @@ function mtransform(dsty, puast) {
             return {mstyle: withAttrs({fontfamily: "monospace"}, {mtext: noAttr(value.split(" ").join("\xa0"))})};
 
         case "primed":
-            var attrs = value.intent ? {intent: value.intent} : {};
+            var attrs = getAttrs(value, '');
             return {msup: withAttrs(attrs, [mtransform(dsty, value.base),
                                       {mo: noAttr(processPrimes(value.primes))}
                                      ])};
@@ -2789,52 +2811,56 @@ function mtransform(dsty, puast) {
             return {mrow: withAttrs(attrs, [mtransform(dsty, value), {mo: noAttr("!")}])};
 
         case "atoms":
-            if (value.funct == undefined) {
-                var n = value.length;
-                var str = (n != undefined) ? value[n - 1].chars : value.chars;
-                var arg = (n > 1 && 'arg' in value[0]) ? value.shift() : '';
-                n = value.length;
-                if (n > 1 && 'intent' in value[0]) {
-                    arg = value.shift();
-                }
+            if (value.funct != undefined) {
+                return mtransform(dsty, value);
+            }
+            var n = value.length;
+            var str = (n != undefined) ? value[n - 1].chars : value.chars;
+            var attrs = getAttrs(value, '');
 
-                if (str == undefined) {
-                    if (Array.isArray(value) && value[0].hasOwnProperty('diacriticized'))
-                        return {mrow: withAttrs(arg, mtransform(dsty, value))};
-                } else if (str[0] != 'Ⅎ' && !isFunctionName(str)) {
-                    var cch = str.length;
+            if (str == undefined) {
+                if (Array.isArray(value) && value[0].hasOwnProperty('diacriticized'))
+                    return {mrow: withAttrs(attrs, mtransform(dsty, value))};
+            } else if (str[0] != 'Ⅎ' && !isFunctionName(str)) {
+                var cch = str.length;
 
-                    if (cch > 2 || cch == 2 && str.codePointAt(0) < 0xFFFF) {
-                        var mis = [];
-                        var cchCh = 1;
+                if (cch > 2 || cch == 2 && str.codePointAt(0) < 0xFFFF) {
+                    var mis = [];
+                    var cchCh = 1;
 
-                        for (let i = 0; i < cch; i += cchCh) {
-                            cchCh = (cch >= 2 && str.codePointAt(i) > 0xFFFF) ? 2 : 1;
+                    for (let i = 0; i < cch; i += cchCh) {
+                        cchCh = (cch >= 2 && str.codePointAt(i) > 0xFFFF) ? 2 : 1;
 
-                            if (str[i] >= 'ⅅ' && str[i] <= 'ⅉ') {
-                                if (i && str[i] <= 'ⅆ') {
-                                    mis.push({mi: noAttr('\u2009')});
-                                }
-                                mis.push(doublestruckChar(str[i]));
-                            } else if ("-−,+".includes(str[i])) {
-                                if (isAsciiDigit(str[i + 1])) {
-                                    mis.push({mn: noAttr(str.substring(i))});
-                                    break;
-                                }
-                                mis.push({mo: noAttr(str[i])});
-                            } else {
-                                if (inRange('\uFE00', str[i + cchCh], '\uFE0F'))
-                                    cchCh++; // Include variation selector
-                                mis.push({mi: noAttr(str.substring(i, i + cchCh))});
+                        if (str[i] >= 'ⅅ' && str[i] <= 'ⅉ') {
+                            if (i && str[i] <= 'ⅆ') {
+                                mis.push({mi: noAttr('\u2009')});
                             }
+                            let ch = doublestruckChar(str[i]);
+                            let attrsDoublestruck = getAttrsDoublestruck(ch, str[i]);
+                            mis.push({mi: withAttrs(attrsDoublestruck, ch)});
+                        } else if ("-−,+".includes(str[i])) {
+                            if (isAsciiDigit(str[i + 1])) {
+                                mis.push({mn: noAttr(str.substring(i))});
+                                break;
+                            }
+                            mis.push({mo: noAttr(str[i])});
+                        } else {
+                            if (inRange('\uFE00', str[i + cchCh], '\uFE0F'))
+                                cchCh++; // Include variation selector
+                            mis.push({mi: noAttr(str.substring(i, i + cchCh))});
                         }
-                        return {mrow: withAttrs(arg, mis)};
-                    } else if (str[0] >= 'ⅅ' && str[0] <= 'ⅉ') {
-                        return doublestruckChar(str[0]);
-                    } else if (arg) {
-                        return {mi: withAttrs(arg, str)};
                     }
+                    return {mrow: withAttrs(attrs, mis)};
                 }
+                if (str >= 'ⅅ' && str <= 'ⅉ') {
+                    let ch = doublestruckChar(str);
+                    let attrsDoublestruck = getAttrsDoublestruck(ch, str);
+                    if (attrs.intent)
+                        attrsDoublestruck.intent = attrs.intent;
+                    return {mi: withAttrs(attrsDoublestruck, ch)};
+                }
+                if (value.intent || value.arg)
+                    return {mi: withAttrs(attrs, str)};
             }
             return mtransform(dsty, value);
         case "chars":
@@ -2910,29 +2936,7 @@ function mtransform(dsty, puast) {
         case "number":
             return {mn: noAttr(value)};
 
-        case "doublestruck":
-
-            var char = doublestruckChar(value);
-
-            // tech note, section 3.11: "in regular US technical publications,
-            // these quantities can be rendered as math italic". also: "Notice
-            // that the ⅆ character automatically introduces a small space
-            // between the 𝑥 and the 𝑑𝑥"
-            // Note: this is only true if ⅆ is preceded by a character in the
-            // same <mrow>
-            switch (value) {
-                case "ⅅ":
-                    return {mrow: noAttr([{mspace: withAttrs({width: "thinmathspace"}, null)}, char])};
-                case "ⅆ":
-                    return {mrow: noAttr([{mspace: withAttrs({width: "thinmathspace"}, null)}, char])};
-                case "ⅇ":
-                case "ⅈ":
-                case "ⅉ":
-                    return char;
-            }
-
         case "bracketed":
-
             // handle potential separator
             var separator = "";
             if (value.content.hasOwnProperty("separated")) {
