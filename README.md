@@ -320,9 +320,8 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * The operator sequence /" isn't treated as a negated quote. Else "distance"/"time" won't convert into a fraction.
 * Upgrade to MathJax 3, which is noticably faster than MathJax 2.7.5 and doesn't flash an intermediate display.
 
-In addition, the following features are implemented:
+## New features
 * The identity matrix and n×m matrix short cuts are implemented.
-* \abs for unambiguous entry of absolute value with the absolute-value intent attribute. \choose along with its intent attribute (binomial). Intent attributes are included for UnicodeMath equation arrays, matrices, and determinants.
 * MathML tests are added to the console display of example.html.
 * The Playground calls resolveCW() defined in unicodemathml.js to resolve control words instead of having a duplicate control-word list. Similarly to convert characters to math styles, the Playground uses the mathFonts[] defined in unicodemathml.js. Greek upper-case letters that look like ASCII letters are removed from the Greek letter gallery and Greek lower-case letter variants are added. 
 * An autocomplete menu appears when a control word is entered partially. The user can use up/down arrows to select the desired control word and enter it by typing Enter, Tab, or a space. The most common choice is highlighted by default.
@@ -333,17 +332,19 @@ In addition, the following features are implemented:
 * In dictation input, ASCII letters and lower-case Greek letters are converted to math italic unless they comprise a function name, simple digit subscripts and superscripts are converted to the corresponding Unicode characters, ane three-character numeric fractions are converted to Unicode fractions.
 * Most symbols in the Playground galleries have LaTeX control-word tooltips.
 * Alt+x hex-to-Unicode (and vice versa) hot key is implemented in the Playground input.
-* AST tabs appear only in _debug_ mode and only on screens wider than 786 pixels.
-* The class "unicodemath" and xmlns attributes are omitted on the <​math> tag.
+* AST tabs appear only in _debug_ mode and only on screens wider than 786 pixels. The display changes to accomodate small screens, such as mobile phones.
+* The class "unicodemath" and xmlns attributes are omitted on the <​math> tag. MathML indenting doesn't break a line between adjacent closing tags, thereby conserving screen height.
 * The symbol sets are collected into tabbed arrays with one set displayed at a time.
+
+## MathML intent-attribute support:
 * The derivative and partial-derivative intent attributes are added for the dy/dx and higher-order derivative styles.
 * The templates […,…], […,…[, ]…,…], and ]…,…[, produce closed-interval, closed-open-interval, open-closed-interval, and open-interval structures, respectively, each including the intent attribute with the interval name and arguments. The … can be a signed number, variable name or ∞. Similarly, the templates (…,…], and […,…) also produce open-closed-interval and closed-open-interval structures with the corresponding intent attribute values. The template (…,…) isn't given an intent attribute since it can be used for a math-function argument list or a point in a 2D plane.
-* Define the \intent option (ⓘ) and apply it to enclosures, factorials, and atoms, thereby enabling the user to add intents explicitly to these constructs.
+* Define the \intent (ⓘ) and \arg (ⓐ) options for enclosures, factorials, fences, atoms, sub/superscripts, and other expressions, thereby enabling the user to add intents explicitly to these constructs.
+* \abs for unambiguous entry of absolute value with the absolute-value intent attribute. \choose along with its intent attribute (binomial). Intent attributes are included for UnicodeMath equation arrays, matrices, and determinants.
+* Define default intents for \abs, \choose, \cases, fences, n-ary objects, math-function objects, and double-struck italic symbols like differential d (ⅆ). This improves MathML readablity and supports round-tripping these concepts via MathML.
 
-To do:
-* Implement more MathML 4.0 intent attributes.
-* If possible, remove more redundant <​mrow>’s. E.g., the <​math> tag acts as an <​mrow>; and its content does not need to be enclosed in <​mrow>…<​/mrow>.
+## To do:
 * Add ummlConfig properties for more document default properties such as the current ummlConfig.doubleStruckMode.
 * Improve the LaTeX output mode.
-* Ultimately it's desirable to have UnicodeMath WYSIWYG editing in the output window with no need for an input window. That's the approach used in math-aware Microsoft apps. For that the editor needs to manipulate the backing store which for the current model would be encoded in MathML.
-* Enable undo for changes not handled by the textarea component.
+* Ultimately it's desirable to have UnicodeMath WYSIWYG editing in the output window with no need for an input window. That's the approach used in math-aware Microsoft apps. For that, the editor needs to manipulate the backing store which for the current model would be encoded in MathML.
+* Enable undo for changes not handled by the textarea component. Switch from textarea to https://ckeditor.com/?
