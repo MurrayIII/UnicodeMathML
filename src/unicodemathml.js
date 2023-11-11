@@ -2971,8 +2971,7 @@ function mtransform(dsty, puast) {
             if (typeof value.close === 'string') {
                 ret.push({mo: noAttr(value.close)});
             }
-            //var attrs = {intent: (value.intent ? value.intent : 'fenced')};
-            var attrs = getAttrs(value, '');
+            var attrs = getAttrs(value, 'fenced');
             ret = [{mrow: withAttrs(attrs, ret)}];
 
             // now handle potential manually resized brackets. note that
