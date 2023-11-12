@@ -1033,7 +1033,7 @@ function getOrder(high) {
     if (Array.isArray(high) && high[0].hasOwnProperty('number'))
         return high[0].number;
 
-    return '$b';
+    return '$n';                            // Order n
 }
 
 function getUnicodeFraction(chNum, chDenom)
@@ -1123,7 +1123,7 @@ function getIntervalArg(content, n) {
                 if (arg1.hasOwnProperty('atoms')) {
                     darg = getCh(arg1.atoms[0].chars, 0); // Derivative argument
                     if (of[0].length > 2) {
-                        darg = '$c';        // Signal need ref for arg 3
+                        darg = '$f';        // Ref for function being differentiated
                     }
                 }
             }
@@ -1136,7 +1136,7 @@ function getIntervalArg(content, n) {
             }
             darg = getCh(arg.atoms[0].chars, cchCh); // Derivative argument
             if (of[0].length > 1) {
-                darg = '$c';                // Need ref for arg 3
+                darg = '$f';                // Ref for function being differentiated
             }
         }
     }
@@ -1977,7 +1977,7 @@ function preprocess(dsty, uast) {
             return {smash: {symbol: value.symbol, intent: intent, arg: arg, of: preprocess(dsty, value.of)}};
 
         case "fraction":
-            if (value.symbol == '/') {
+            if (value.symbol == '/' && !intent && !arg) { // Check for Leibniz derivatives
                 var [chDifferential0, order0, arg0] = getDifferentialInfo(value.of, 0); // Numerator
 
                 if (chDifferential0) { // Might be a derivative
@@ -1991,8 +1991,12 @@ function preprocess(dsty, uast) {
                             let s = of[0][0];
                             if (s.hasOwnProperty('script')) {
                                 // For, e.g., 𝑑^(n-1) 𝑓(𝑥)/𝑑𝑥^(n-1) or 𝑑^(n-1) y/𝑑𝑥^(n-1)
-                                if (Array.isArray(s.script.high) && s.script.high[0].hasOwnProperty('bracketed'))
-                                    s.script.high[0].bracketed.arg = order0.substring(1);
+                                if (Array.isArray(s.script.high) && order0.startsWith('$')) {
+                                    if (s.script.high[0].hasOwnProperty('bracketed'))
+                                        s.script.high[0].bracketed.arg = order0.substring(1);
+                                    else if (s.script.high[0].hasOwnProperty('atoms'))
+                                        s.script.high[0].atoms.arg = order0.substring(1);
+                                }
                                 // For, e.g., 𝑑²𝑓(𝑥)/𝑑𝑥² or 𝑑^(n-1) 𝑓(𝑥)/𝑑𝑥^(n-1)
                                 if (of[0].length == 3 &&
                                     of[0][1].hasOwnProperty('atoms') &&
@@ -2307,29 +2311,31 @@ function preprocess(dsty, uast) {
             return {bracketed: {open: o, close: c, intent: value.intent, arg: arg, content: preprocess(dsty, value.content)}};
 
         case "bracketed":
-            var content;
-            if (intent)
-                value.intent = intent;
-            if (arg)
-                value.arg = arg;
-
             if (value.content.hasOwnProperty("separated")) {
-                content = {separated: {separator: value.content.separated.separator, of: preprocess(dsty, value.content.separated.of)}};
+                value.content = {separated: {separator: value.content.separated.separator, of: preprocess(dsty, value.content.separated.of)}};
             } else {
                 if (value.intent && value.intent.endsWith("interval") &&
-                    Array.isArray(value.content) && value.content.length == 3)
-                {
+                    Array.isArray(value.content) && value.content.length == 3) {
                     // Arrange interval endpoint arguments and content
                     var arg0 = getIntervalArg(value.content, 0);
                     var arg1 = getIntervalArg(value.content, 2);
                     value.intent += '(' + arg0 + ',' + arg1 + ')';
-                    value.content = {expr: [getIntervalEndPoint(arg0, value.content[0]),
-                                            {operator: ','},
-                                            getIntervalEndPoint(arg1, value.content[2])]};
+                    if (!intent && !arg)
+                        intent = value.intent;
+                    value.content = {
+                        expr: [getIntervalEndPoint(arg0, value.content[0]),
+                        { operator: ',' },
+                        getIntervalEndPoint(arg1, value.content[2])]
+                    };
+                } else {
+                    if (!arg && value.arg)
+                        arg = value.arg;        // Happens for derivative with bracketed order
+                    if (!intent && value.intent)
+                        intent = value.intent;  // Happens for cases
                 }
-                content = preprocess(dsty, value.content);
+                value.content = preprocess(dsty, value.content);
             }
-            return {bracketed: {open: value.open, close: value.close, intent: value.intent, arg: value.arg, content: content}};
+            return {bracketed: {open: value.open, close: value.close, intent: intent, arg: arg, content: value.content}};
 
         case "operator":
             return {[key]: {intent: intent, arg: arg, content: value}};
