@@ -1023,19 +1023,6 @@ function getCh(str, i) {
     return String.fromCodePoint(m);
 }
 
-function getOrder(high) {
-    if (high.hasOwnProperty('expr'))
-        return high.expr[0][0].number;
-
-    if (high.hasOwnProperty('atoms'))
-        return high.atoms[0].chars;
-
-    if (Array.isArray(high) && high[0].hasOwnProperty('number'))
-        return high[0].number;
-
-    return '$n';                            // Order n
-}
-
 function getUnicodeFraction(chNum, chDenom)
 {
     const chNum1 = '½⅓¼⅕⅙⅐⅛⅑⅒';
@@ -1089,13 +1076,26 @@ function getIntervalArg(content, n) {
     return arg;
 }
 
- function getDifferentialInfo(of, n) {
+ function getOrder(high) {
+    if (high.hasOwnProperty('expr'))
+        return high.expr[0][0].number;
+
+    if (high.hasOwnProperty('atoms'))
+        return high.atoms[0].chars;
+
+    if (Array.isArray(high) && high[0].hasOwnProperty('number'))
+        return high[0].number;
+
+    return '$n';                            // Order n
+}
+
+function getDifferentialInfo(of, n) {
     // Get [differential-d, order, of/wrt] for a derivative of the form dy/dx.
     // n = 0 is for numerator and 'of' (argument, e.g, y). n = 1 for denominator
     // and wrt (e.g., x).
-    var arg = of[n];
+    let arg = of[n];
 
-    if (!Array.isArray(arg))
+    if (!Array.isArray(arg) || n != 0 && n != 1)
         return [0, 0, 0];                   // Can't be differential
     arg = arg[0];
     if (arg == undefined)
@@ -1144,8 +1144,19 @@ function getIntervalArg(content, n) {
         ch = getCh(arg.atoms[0].chars, 0);
         cchCh = ch.length > 1 ? 2 : 1;
 
-        if (!darg && arg.atoms[0].chars.length > cchCh) {
+        let cch = arg.atoms[0].chars.length;
+
+        if (!darg && cch > cchCh) {
             darg = getCh(arg.atoms[0].chars, cchCh);
+            if (n == 1 && cch > cchCh + darg.length) {
+                // For, e.g., 𝜕𝑥𝜕𝑡 in 𝜕²𝜓(𝑥,𝑡)/𝜕𝑥𝜕𝑡
+                let ch1 = getCh(arg.atoms[0].chars, cchCh + darg.length);
+                if (ch == ch1) {
+                    let cch1 = 2 * cchCh + darg.length;
+                    darg = [darg, getCh(arg.atoms[0].chars, cch1)];
+                    order = '2';
+                }
+            }
         }
         if ('dⅆ∂𝑑𝜕'.includes(ch))
             return [ch, order, darg];
