@@ -1107,7 +1107,7 @@ function getDifferentialInfo(of, n) {
     var cchCh = 0;                          // Length of ch
 
     if (n == 1) {                           // Denominator
-        if (arg.hasOwnProperty('script')) { // For, e.g., dx²
+        if (arg.hasOwnProperty('script')) { // For, e.g., 𝑑𝑥²
             order = getOrder(arg.script.high);
             arg = arg.script.base;
             ch = getCh(arg.atoms[0].chars, 0);
@@ -1141,25 +1141,30 @@ function getDifferentialInfo(of, n) {
         }
     }
     if (arg.hasOwnProperty('atoms')) {
-        ch = getCh(arg.atoms[0].chars, 0);
-        cchCh = ch.length > 1 ? 2 : 1;
-
         let cch = arg.atoms[0].chars.length;
+        let chD = getCh(arg.atoms[0].chars, 0); // Get differential ⅆ/𝜕
+        let cchChD = chD.length > 1 ? 2 : 1;
+        let chD1 = chD;
 
-        if (!darg && cch > cchCh) {
-            darg = getCh(arg.atoms[0].chars, cchCh);
-            if (n == 1 && cch > cchCh + darg.length) {
-                // For, e.g., 𝜕𝑥𝜕𝑡 in 𝜕²𝜓(𝑥,𝑡)/𝜕𝑥𝜕𝑡
-                let ch1 = getCh(arg.atoms[0].chars, cchCh + darg.length);
-                if (ch == ch1) {
-                    let cch1 = 2 * cchCh + darg.length;
-                    darg = [darg, getCh(arg.atoms[0].chars, cch1)];
-                    order = '2';
-                }
+        if (!darg && n == 1) {
+            // Get differentiation variable(s) in denominator with no superscript
+            // e.g., 𝑥 and 𝑡 in 𝜕²𝜓(𝑥,𝑡)/𝜕𝑥𝜕𝑡 or 𝑥 in 𝑑𝑦/𝑑𝑥
+            let k = 1;                      // Numeric order
+            darg = [];                      // Gets differentiation variable(s)
+
+            for (let i = cchChD; cch > i && chD1 == chD; k++) {
+                let chWrt = getCh(arg.atoms[0].chars, i);
+                darg.push(chWrt);
+                i += chWrt.length;
+                if (cch <= i)
+                    break;
+                chD1 = getCh(arg.atoms[0].chars, i);
+                i += cchChD;
             }
+            order = k.toString();
         }
-        if ('dⅆ∂𝑑𝜕'.includes(ch))
-            return [ch, order, darg];
+        if ('dⅆ∂𝑑𝜕'.includes(chD))
+            return [chD, order, darg];
     }
     return [0, 0, 0];
 }
