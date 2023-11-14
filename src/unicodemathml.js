@@ -1101,23 +1101,48 @@ function getDifferentialInfo(of, n) {
     if (arg == undefined)
         return [0, 0, 0];                   // Can't be differential
 
-    var order = '1';
-    var darg = '';                          // Differential argument
-    var ch = '';
-    var cchCh = 0;                          // Length of ch
+    let order = '1';                        // Derivative order
+    let script = false;
+
+    if (arg.hasOwnProperty('script')) {     // For, e.g., 𝑑𝑥² or 𝑑²𝑓(𝑥)
+        order = getOrder(arg.script.high);
+        arg = arg.script.base;
+        script = true;
+    }
+    if (!arg.hasOwnProperty('atoms'))
+        return [0, 0, 0];                   // Can't be differential
+
+    let chD = getCh(arg.atoms[0].chars, 0);
+    if (!'dⅆ∂𝑑𝜕'.includes(chD))
+        return [0, 0, 0];                   // Not a differential
+
+    let cchChD = chD.length;
+    let darg = '';                          // Differential argument/variable
 
     if (n == 1) {                           // Denominator
-        if (arg.hasOwnProperty('script')) { // For, e.g., 𝑑𝑥²
-            order = getOrder(arg.script.high);
-            arg = arg.script.base;
-            ch = getCh(arg.atoms[0].chars, 0);
-            cchCh = ch.length > 1 ? 2 : 1;
-            darg = getCh(arg.atoms[0].chars, cchCh); // wrt
+        if (script)                         // Non-script handled further down
+            darg = getCh(arg.atoms[0].chars, cchChD); // wrt, e.g., 𝑥 in 𝑑𝑥²
+        else {
+            // Get differentiation variable(s) in denominator with no superscript
+            // e.g., 𝑥 and 𝑡 in 𝜕²𝜓(𝑥,𝑡)/𝜕𝑥𝜕𝑡 or 𝑥 in 𝑑𝑦/𝑑𝑥
+            let cch = arg.atoms[0].chars.length;
+            let chD1 = chD;
+            let k = 1;                      // Numeric differentiation order
+            darg = [];                      // Gets differentiation (wrt) variable(s)
+
+            for (let i = cchChD; cch > i && chD1 == chD; k++) {
+                let chWrt = getCh(arg.atoms[0].chars, i); // Get wrt char
+                darg.push(chWrt);
+                i += chWrt.length;          // Advance char offset
+                if (cch <= i)
+                    break;                  // Done
+                chD1 = getCh(arg.atoms[0].chars, i);
+                i += cchChD;
+            }
+            order = k.toString();
         }
-    } else {                                // Numerator
-        if (arg.hasOwnProperty('script')) { // For, e.g., 𝑑²𝑓(𝑥)
-            order = getOrder(arg.script.high);
-            arg = arg.script.base;
+    } else {                                // Numerator (n = 0)
+        if (script) {                       // For, e.g., 𝑑²𝑓(𝑥)
             if (of[0].length > 1) {
                 var arg1 = of[0][1];
                 if (arg1.hasOwnProperty('atoms')) {
@@ -1129,45 +1154,25 @@ function getDifferentialInfo(of, n) {
             }
         } else if (of[0].length > 0 && arg.hasOwnProperty('atoms')) {
             // For, e.g., 𝑑𝑓(𝑥)
-            ch = getCh(arg.atoms[0].chars, 0);
-            cchCh = ch.length > 1 ? 2 : 1;
-            if (arg.atoms[0].chars.length == cchCh) {
-                return [0, 0, 0];
-            }
-            darg = getCh(arg.atoms[0].chars, cchCh); // Derivative argument
-            if (of[0].length > 1) {
-                darg = '$f';                // Ref for function being differentiated
+            if (arg.atoms[0].chars.length == cchChD) {
+                // No char preceding '('. Handle cases like ⅆ(tan x)/ⅆx
+                if (of[0].length > 1 && of[0][1].hasOwnProperty('bracketed')) {
+                    of[0][1].bracketed.arg = 'f';
+                    darg = '$f';
+                } else {
+                    return [0, 0, 0];
+                }
+            } else {                            // Get function name char
+                darg = getCh(arg.atoms[0].chars, cchChD); // Differentiated function
+                if (of[0].length > 1) {
+                    darg = '$f';                // Ref for differentiated function 
+                }
             }
         }
     }
-    if (arg.hasOwnProperty('atoms')) {
-        let cch = arg.atoms[0].chars.length;
-        let chD = getCh(arg.atoms[0].chars, 0); // Get differential ⅆ/𝜕
-        let cchChD = chD.length > 1 ? 2 : 1;
-        let chD1 = chD;
-
-        if (!darg && n == 1) {
-            // Get differentiation variable(s) in denominator with no superscript
-            // e.g., 𝑥 and 𝑡 in 𝜕²𝜓(𝑥,𝑡)/𝜕𝑥𝜕𝑡 or 𝑥 in 𝑑𝑦/𝑑𝑥
-            let k = 1;                      // Numeric order
-            darg = [];                      // Gets differentiation variable(s)
-
-            for (let i = cchChD; cch > i && chD1 == chD; k++) {
-                let chWrt = getCh(arg.atoms[0].chars, i);
-                darg.push(chWrt);
-                i += chWrt.length;
-                if (cch <= i)
-                    break;
-                chD1 = getCh(arg.atoms[0].chars, i);
-                i += cchChD;
-            }
-            order = k.toString();
-        }
-        if ('dⅆ∂𝑑𝜕'.includes(chD))
-            return [chD, order, darg];
-    }
-    return [0, 0, 0];
+    return [chD, order, darg];
 }
+
 
 // mapping betwen codepoint ranges in astral planes and bmp's private use area
 var astralPrivateMap = [
@@ -2028,9 +2033,11 @@ function preprocess(dsty, uast) {
                                 of[0][1].hasOwnProperty('bracketed')) {
                                 var ch = getCh(s.atoms[0].chars, 0);
 
-                                value.of[0] = [{atoms: [{chars: ch}]}, [{arg: arg0.substring(1)},
-                                    {atoms: [{chars: getCh(s.atoms[0].chars, ch.length)}]},
-                                     {operator: '\u2061'}, of[0][1]]];
+                                if (s.atoms[0].chars.length > ch.length) {
+                                    value.of[0] = [{atoms: [{chars: ch}]}, [{arg: arg0.substring(1)},
+                                        {atoms: [{chars: getCh(s.atoms[0].chars, ch.length)}]},
+                                         {operator: '\u2061'}, of[0][1]]];
+                                }
                             }
                         }
                         var intent = '∂𝜕'.includes(chDifferential0)
