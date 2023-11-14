@@ -1173,7 +1173,6 @@ function getDifferentialInfo(of, n) {
     return [chD, order, darg];
 }
 
-
 // mapping betwen codepoint ranges in astral planes and bmp's private use area
 var astralPrivateMap = [
 
@@ -1846,11 +1845,11 @@ function isCharsButNotFunction(value) {
 
 // certain desugarings, transformations and normalizations that must be
 // performed no matter the output format
-function preprocess(dsty, uast) {
+function preprocess(dsty, uast, index, arr) {
 
     // map preprocessing over lists
     if (Array.isArray(uast)) {
-        return uast.map(e => preprocess(dsty, e));
+        return uast.map((e, i, a) => preprocess(dsty, e, i, a));
     }
 
     var key = k(uast);
@@ -2006,6 +2005,15 @@ function preprocess(dsty, uast) {
 
                     if (chDifferential0 == chDifferential1 && order0 == order1) {
                         // It's a derivative
+                        if (!arg0) {        // E.g., as in 𝜕²/𝜕𝑥² 𝜓(𝑥,𝑡)
+                            if (index + 1 < arr.length) {
+                                let ele = arr[index + 1];
+                                if (Array.isArray(ele)) {
+                                    ele.unshift({arg: 'f'});
+                                    arg0 = '$f';
+                                }
+                            }
+                        }
                         if (arg0.startsWith('$') || order0.startsWith('$')) {
                             // Handle argument reference(s)
                             var of = value.of;
