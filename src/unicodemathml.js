@@ -2009,7 +2009,10 @@ function preprocess(dsty, uast, index, arr) {
                             if (index + 1 < arr.length) {
                                 let ele = arr[index + 1];
                                 if (Array.isArray(ele)) {
-                                    ele.unshift({arg: 'f'});
+                                    if (ele.length == 1 && ele[0].hasOwnProperty("atoms"))
+                                        ele[0].atoms.arg = '$f'; // Target <mi>
+                                    else
+                                        ele.unshift({arg: 'f'}); // Target <mrow>
                                     arg0 = '$f';
                                 }
                             }
@@ -2437,31 +2440,24 @@ function mtransform(dsty, puast) {
     switch (key) {
         case "unicodemath":
             //var attrs = {class: "unicodemath", xmlns: "http://www.w3.org/1998/Math/MathML", display: dsty? "block" : "inline"}
-            var attrs = {display: dsty? "block" : "inline"}
-            if (value.eqnumber == null) {
+            var attrs = {display: dsty? "block" : "inline"};
+            if (value.eqnumber == null)
                 return {math: withAttrs(attrs, mtransform(dsty, value.content))};
-            } else {
 
-                // generate id, via https://stackoverflow.com/a/55008188 (this
-                // can be used, in conjunction with some javascript, for
-                // referencing a specific equation)
-                var id = value.eqnumber.replace(/(^-\d-|^\d|^-\d|^--)/,'$1').replace(/[\W]/g, '-');
+            // generate id, via https://stackoverflow.com/a/55008188. Together
+            // with some javascript, this can be used to reference a specific
+            // equation.
+            var id = value.eqnumber.replace(/(^-\d-|^\d|^-\d|^--)/,'$1').replace(/[\W]/g, '-');
 
-                // equation numbers can only be assigned by wrapping
-                // everything in an mtable with an mlabeledtr containing
-                // eqnumber and content in separate mtds
-                return {math:
-                    withAttrs(
-                        attrs,
-                        {mtable: noAttr(
-                            {mlabeledtr: withAttrs({id: id}, [
-                                {mtd: noAttr({mtext: noAttr(value.eqnumber)})},
-                                {mtd: noAttr(mtransform(dsty, value.content))}
-                            ])}
-                        )}
-                    )
-                };
-            }
+            // Assign equation numbers by wrapping everything in an mtable
+            // with an mlabeledtr containing the eqnumber and content in
+            // individual mtd's
+            return {math: withAttrs(attrs,
+                        {mtable: noAttr({mlabeledtr: withAttrs({id: id}, [
+                            {mtd: noAttr({mtext: noAttr(value.eqnumber)})},
+                            {mtd: noAttr(mtransform(dsty, value.content))} ])})}
+                        )
+                    };
         case "newline":
             return {mspace: withAttrs({linebreak: "newline"}, null)};
 
