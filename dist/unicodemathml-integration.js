@@ -738,6 +738,7 @@ async function renderMarkedUnicodemath(node) {
     "1ⓘ(\"cardinality\"|𝑥|)":  "<math display=\"block\"><mrow intent=\"cardinality\"><mo>|</mo><mi>𝑥</mi><mo>|</mo></mrow></math>",
     "1ⓘ(\"derivative\"𝑓′(𝑥))": "<math display=\"block\"><mrow><msup intent=\"derivative\"><mi>𝑓</mi><mo>′</mo></msup><mrow intent=\"fenced\"><mo>(</mo><mi>𝑥</mi><mo>)</mo></mrow></mrow></math>",
     "1ⓘ(\"index\"a^2)":  "<math display=\"block\"><msup intent=\"index\"><mi>𝑎</mi><mn>2</mn></msup></math>",
+    "1ⓘ(\"power($base,$exp)\"(ⓐbase 𝑥)^(ⓐexp𝑛))=0":  "<math display=\"block\"><mrow><msup intent=\"power($base,$exp)\"><mi arg=\"base\">𝑥</mi><mi arg=\"exp\">𝑛</mi></msup><mo>=</mo><mn>0</mn></mrow></math>",
     "1ⓘ(\"time derivative\"𝜌̇)":  "<math display=\"block\"><mrow intent=\"time derivative\"><mover accent=\"true\"><mi>𝜌</mi><mo>&#x307;</mo></mover></mrow></math>",
     "1⒨(a & b& c&d @ c& d )":  "<math display=\"block\"><mrow intent=\"fenced\"><mo>(</mo><mtable intent=\"matrix\"><mtr><mtd><mi>𝑎</mi></mtd><mtd><mi>𝑏</mi></mtd><mtd><mi>𝑐</mi></mtd><mtd><mi>𝑑</mi></mtd></mtr><mtr><mtd><mi>𝑐</mi></mtd><mtd><mi>𝑑</mi></mtd></mtr></mtable><mo>)</mo></mrow></math>",
     "1⒨(a&b&c&d@c&d)":  "<math display=\"block\"><mrow intent=\"fenced\"><mo>(</mo><mtable intent=\"matrix\"><mtr><mtd><mi>𝑎</mi></mtd><mtd><mi>𝑏</mi></mtd><mtd><mi>𝑐</mi></mtd><mtd><mi>𝑑</mi></mtd></mtr><mtr><mtd><mi>𝑐</mi></mtd><mtd><mi>𝑑</mi></mtd></mtr></mtable><mo>)</mo></mrow></math>",
