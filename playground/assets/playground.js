@@ -474,6 +474,9 @@ function autocomplete() {
         // Move back alphanumeric span
         while (i > 0 && /[a-zA-Z0-9]/.test(input.value[i])) { i--; }
 
+        if (input.value[i] == 'ⓐ')
+            return false;                   // \arg: leave as is
+
         if (i < 0 || input.value[i] != '\\' &&
             (!i || input.value.substring(i - 1, i + 1) != '✎(')) {
             // Not control word; check for italicization & operator autocorrect
@@ -487,7 +490,8 @@ function autocomplete() {
             }
             return opAutocorrect(i, ip, delim);
         }
-        if (ip <= 2) return false;          // Autocorrect needs > 1 letter
+        if (ip <= 2)
+            return false;                   // Autocorrect needs > 1 letter
 
         if (!/[a-zA-Z0-9]/.test(delim)) {
             // Delimiter entered: try to autocorrect control word

@@ -2226,7 +2226,7 @@ function preprocess(dsty, uast, index, arr) {
             return {hbrack: {intent: intent, arg: arg, bracket: value.bracket, of: preprocess(dsty, value.of)}};
 
         case "intend":
-            if(value.op == 'ⓘ')
+            if (value.op == 'ⓘ')
                 dsty.intent = value.intent.text;
             else
                 dsty.arg = value.intent.text;

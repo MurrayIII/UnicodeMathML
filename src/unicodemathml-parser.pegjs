@@ -846,16 +846,16 @@ hbrack = b:opHbracket o:operand {
     return {hbrack: {bracket: b, of: o}};
 }
 
-intent = o:opIntent "(" i:text "&" c:exp ")" {
-    return {intend: {op: o, intent: i, content: c}};
+intent = "ⓘ(" i:text __? c:exp ")" {
+    return {intend: {op: "ⓘ", intent: i, content: c}};
 }
 
 // roots of various degrees
 root
-    = "√(" d:operand "&" o:exp ")" {  // *can* use exp here due to the presence
-                                      // of a closing bracket (could use it for
-                                      // the other roots as well if PEG.js could
-                                      // be switched into a less greedy mode)
+    = "√(" d:exp "&" o:exp ")" {  // *can* use exp here due to the presence
+                                  // of a closing bracket (could use it for
+                                  // the other roots as well if PEG.js could
+                                  // be switched into a less greedy mode)
         return {root: {degree: d, of: o}};
     }
     / ("√" / "⒭") d:exp opNaryand o:operand {  // alternate notation, e.g. √a+b▒c
@@ -993,6 +993,10 @@ factorial
         return {factorial: e};
     }
 
+arg = "ⓐ" a:αASCII+ __? c:exp{
+    return {intend: {op: "ⓐ", intent: {text: a.join('')}, content: c}}
+}
+
 // ❹ highest-precendence constructs (and brackets/grouping, which is high-
 //    precedence with regard to what's outside the brackets, but low-precedence
 //    wrt their contents, which are full, standalone expressions)
@@ -1000,7 +1004,9 @@ entity
     = e:expBracket !("\u00A0" / diacritic) {return e}  // ⚡ performance optimization
     / absoluteValue
     / atoms
+    / arg
     / number
+    / arg
     /// expBracket  // ⚡ performance optimization
 
 // characters and words, protentially with diacritics
