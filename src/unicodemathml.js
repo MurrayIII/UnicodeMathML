@@ -1802,11 +1802,6 @@ function doublestruckChar(value) {
     }
 }
 
-function isIntend(uast) {
-    return uast.hasOwnProperty("expr") && Array.isArray(uast.expr) &&
-        Array.isArray(uast.expr[0]) && uast.expr[0][0].hasOwnProperty("intend");
-}
-
 // if the outermost node of an AST describes a parenthesized expression, remove
 // the parentheses. used for fractions, exponentiation, etc.
 function dropOutermostParens(uast) {
@@ -2367,8 +2362,6 @@ function preprocess(dsty, uast, index, arr) {
                         getIntervalEndPoint(arg1, value.content[2])]
                     };
                 } else {
-                    if (isIntend(value.content)) // Drop brackets around ⓘ/ⓐ
-                        return preprocess(dsty, value.content.expr);
                     if (!arg && value.arg)
                         arg = value.arg;        // Happens for derivative with bracketed order
                     if (!intent && value.intent)

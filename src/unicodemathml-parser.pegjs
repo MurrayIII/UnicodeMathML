@@ -330,7 +330,6 @@ opFraction
     / "\u2298"  // small fraction
 opEnclosure = "▭" / "̄" / "▁" / "▢" / "○" / "⟌" / "⃧" / "⬭" / "╱" / "╲" / "╳"
 opEqNumber = "#"
-opIntent = "ⓐ" / "ⓘ"
 opPhantom = "⟡" / "⬄" / "⇳"
 opSmash = "⬍" / "⬆" / "⬇" / "⬌"
 opAbstractBox = "□"
@@ -993,9 +992,13 @@ factorial
         return {factorial: e};
     }
 
-arg = "ⓐ" a:αASCII+ __? c:exp{
-    return {intend: {op: "ⓐ", intent: {text: a.join('')}, content: c}}
-}
+arg =
+    "ⓐ" a:αASCII+ __? c:exp{
+        return {intend: {op: "ⓐ", intent: {text: a.join('')}, content: c}}
+    }
+    / "ⓐ(" a:αASCII+ __? c:exp ")" {
+        return {intend: {op: "ⓐ", intent: {text: a.join('')}, content: c}};
+    }
 
 // ❹ highest-precendence constructs (and brackets/grouping, which is high-
 //    precedence with regard to what's outside the brackets, but low-precedence
