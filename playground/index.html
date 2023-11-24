@@ -314,6 +314,7 @@
             tracing: false,
             forceMathJax: false,
             outputLaTeX: false,
+            defaultIntents: false,
         };
         var configDescriptions = {
             splitInput: "Split input into lines and process each line separately (as opposed to processing the entire input as a single expression)",
@@ -324,6 +325,7 @@
             tracing: "Enable <em>tracing</em> and show parse trace (of lowermost expression) in a tab (⚠ slow if caching disabled)",
             forceMathJax: "Force-enable MathJax in browsers that support MathML natively",
             outputLaTeX: "Enable <strong>EXPERIMENTAL</strong> LaTeX output (& force MathJax)",
+            defaultIntents: "Emit default intent attributes",
         };
 
         var ummlConfig = JSON.parse(JSON.stringify(defaultConfig));  // clone it

@@ -19,6 +19,11 @@ function debugLog(x) {
     }
 }
 
+var emitDefaultIntents =
+    typeof ummlConfig === "undefined" ||
+    typeof ummlConfig.defaultIntents === "undefined" ||
+    ummlConfig.defaultIntents;
+
 ///////////
 // PARSE //
 ///////////
@@ -570,8 +575,8 @@ var controlWords = {
     'xi':               'ξ',	// 03BE
     'zero':             '0',    // 0030
     'zeta':             'ζ',	// 03B6
-    'zwnj':             '‌',	    // 200C
-    'zwsp':             '',     // 200B
+    'zwnj':             '‌',
+    'zwsp':             '​',
 };
 
 // replace control words with the specific characters. note that a control word
@@ -1900,7 +1905,7 @@ function preprocess(dsty, uast, index, arr) {
 
         case "specialMatrix":               // n×m or identity matrix
             t = value[2];
-            if (t == '⒱' && !intent && (!value[1] || value[0] == value[1])) {
+            if (t == '⒱' && !intent && (!value[1] || value[0] == value[1]) && emitDefaultIntents) {
                 intent = 'determinant';
             }
             value = matrixRows(value[0], value[1]);
@@ -1980,7 +1985,7 @@ function preprocess(dsty, uast, index, arr) {
                     value.limits.script.type = "abovebelow";
                 }
             }
-            if (!intent) {
+            if (!intent && emitDefaultIntents) {
                 intent = narys[value.limits.script.base.opnary];
                 if (intent == undefined)
                     intent = 'n-ary';
@@ -1997,7 +2002,8 @@ function preprocess(dsty, uast, index, arr) {
             return {smash: {symbol: value.symbol, intent: intent, arg: arg, of: preprocess(dsty, value.of)}};
 
         case "fraction":
-            if (value.symbol == '/' && !intent && !arg) { // Check for Leibniz derivatives
+            if (value.symbol == '/' && !intent && !arg && emitDefaultIntents) {
+                // Check for Leibniz derivatives
                 var [chDifferential0, order0, arg0] = getDifferentialInfo(value.of, 0); // Numerator
 
                 if (chDifferential0) { // Might be a derivative
@@ -2226,6 +2232,20 @@ function preprocess(dsty, uast, index, arr) {
             return {hbrack: {intent: intent, arg: arg, bracket: value.bracket, of: preprocess(dsty, value.of)}};
 
         case "intend":
+            if (value.content.hasOwnProperty("expr") && value.content.expr.length > 1) {
+                // Set up to put attribute(s) on an <mrow>
+                var c = preprocess(dsty, v(value.content));
+                if (value.op == 'ⓘ') {
+                    c.intent = value.intent.text;
+                    if (arg)
+                        c.arg = arg;
+                } else {
+                    c.arg = value.intent.text
+                    if (intent)
+                        c.intent = intent;
+                }
+                return c;
+            }
             if (value.op == 'ⓘ') {
                 dsty.intent = value.intent.text;
                 if (arg)
@@ -2235,7 +2255,7 @@ function preprocess(dsty, uast, index, arr) {
                 if (intent)
                     dsty.intent = intent;
             }
-            return preprocess(dsty, v(value.content.expr));
+            return preprocess(dsty, v(value.content));
 
         case "root":
             return {root: {intent: intent, arg: arg, degree: value.degree, of: preprocess(dsty, value.of)}};
@@ -2290,7 +2310,7 @@ function preprocess(dsty, uast, index, arr) {
                     }
                 }
             }
-            if (!intent) {
+            if (!intent && emitDefaultIntents) {
                 intent = 'function';
             }
             return {function: {f: preprocess(dsty, valuef), intent: intent, arg: arg, of: of}};
@@ -2344,7 +2364,7 @@ function preprocess(dsty, uast, index, arr) {
             var t = value.type;
             var o = brackets[t][0];
             var c = brackets[t][1];
-            if (t == '⒱' && !value.intent)
+            if (t == '⒱' && !value.intent && emitDefaultIntents)
                 value.intent = 'determinant';
 
             return {bracketed: {open: o, close: c, intent: value.intent, arg: arg, content: preprocess(dsty, value.content)}};
@@ -2353,7 +2373,7 @@ function preprocess(dsty, uast, index, arr) {
             if (value.content.hasOwnProperty("separated")) {
                 value.content = {separated: {separator: value.content.separated.separator, of: preprocess(dsty, value.content.separated.of)}};
             } else {
-                if (value.intent && value.intent.endsWith("interval") &&
+                if (value.intent && value.intent.endsWith("interval") && emitDefaultIntents &&
                     Array.isArray(value.content) && value.content.length == 3) {
                     // Arrange interval endpoint arguments and content
                     var arg0 = getIntervalArg(value.content, 0);
@@ -2366,7 +2386,7 @@ function preprocess(dsty, uast, index, arr) {
                         { operator: ',' },
                         getIntervalEndPoint(arg1, value.content[2])]
                     };
-                } else {
+                } else if (emitDefaultIntents) {
                     if (!arg && value.arg)
                         arg = value.arg;        // Happens for derivative with bracketed order
                     if (!intent && value.intent)
@@ -2407,7 +2427,7 @@ function getAttrs(value, deflt) {
         attrs.arg = value.arg;
     if (value.intent)
         attrs.intent = value.intent;
-    else if (deflt)
+    else if (deflt && emitDefaultIntents)
         attrs.intent = deflt;
     return attrs;
 }
@@ -2418,7 +2438,7 @@ function getAttrsDoublestruck(ch, str) {
     if (ch <= 'z')
         attrsDoublestruck.mathvariant = "normal";
 
-    if (ch != str)
+    if (ch != str && emitDefaultIntents)
         attrsDoublestruck.intent = str;
     return attrsDoublestruck;
 }
@@ -2467,6 +2487,12 @@ function mtransform(dsty, puast) {
             return {mspace: withAttrs({linebreak: "newline"}, null)};
 
         case "expr":
+            if (Array.isArray(value) && Array.isArray(value[0]) &&
+                (value[0][0].hasOwnProperty("intent") || value[0][0].hasOwnProperty("arg"))) {
+                var c = mtransform(dsty, value[0][0]);
+                c.mrow.attributes = getAttrs(value[0][0], '');
+                return c;
+            }
             return mtransform(dsty, value);
 
         case "operator":
@@ -2597,7 +2623,7 @@ function mtransform(dsty, puast) {
 
         case "binom":
             // desugar (not done in preprocessing step since LaTeX requires this sugar)
-            if (!value.intent)
+            if (!value.intent && emitDefaultIntents)
                 value.intent = "binomial-coefficient";
             return mtransform(dsty, {bracketed: {intent: value.intent, arg: value.arg, open: "(", close: ")", content: {atop: [value.top, value.bottom]}}});
 
