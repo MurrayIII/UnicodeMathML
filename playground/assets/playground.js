@@ -13,6 +13,7 @@ var measurements_pretty = document.getElementById("measurements_pretty");
 
 var activeTab = "source";
 var hist = [];
+var iExample = 0;
 
 var prevInputValue = "";
 
@@ -580,6 +581,15 @@ function autocomplete() {
             } else if (e.shiftKey && e.key == 'Enter') {
                 //e.preventDefault();
                 insertAtCursorPos('\u200B');
+            } else if (e.altKey && e.key == 'Enter') {
+                // Enter Examples[iExample]
+                x = document.getElementById('Examples').childNodes[0];
+                input.value = x.childNodes[iExample].innerText;
+                var cExamples = x.childNodes.length;
+
+                iExample++;                 // Increment for next time
+                if (iExample > cExamples - 1)
+                    iExample = 0;
             }
             return;
         }
@@ -900,9 +910,6 @@ async function draw() {
 
 // add a symbol (or string) to history
 function addToHistory(symbols) {
-    if (symbols.length > 4)
-        return;         // Probably an example
-
     // remove previous occurrences of symbols from history
     hist = hist.filter(s => s != symbols);
 
@@ -976,11 +983,25 @@ function insertAtCursorPos(symbols) {
 $(document).on('click', function (e) {
     if ($(e.target).hasClass('unicode')) {
         var str = e.target.innerText;
-        if (str.length > 4)                 // Add new line after an example
-            str += '\n';
 
+        if (str.length > 4) {
+            // Must be an example. Determine index of example for use with
+            // next Alt + Enter hot key
+            var x = document.getElementById('Examples').childNodes[0];
+            var cExamples = x.childNodes.length;
+
+            for (iExample = 0; iExample < cExamples; iExample++) {
+                if (str == x.childNodes[iExample].innerText)
+                    break;
+            }
+            iExample++;
+            if (iExample > cExamples)
+                iExample = 0;
+            str += '\n';                    // Add new line after an example
+       } else {
+            addToHistory(e.target.innerText);
+        }
         insertAtCursorPos(str);
-        addToHistory(e.target.innerText);
     }
 });
 
