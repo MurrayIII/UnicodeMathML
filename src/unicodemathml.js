@@ -1024,6 +1024,7 @@ function italicizeCharacters(chars) {
 }
 
 function getCh(str, i) {
+    // Get UTF-16 character at offset i
     var m = str.codePointAt(i);
     return String.fromCodePoint(m);
 }
@@ -1092,6 +1093,17 @@ function getIntervalArg(content, n) {
         return high[0].number;
 
     return '$n';                            // Order n
+}
+
+function getVariable(arg) {
+    // Return atomic variables as is; return '$' if an arg reference
+    // is needed.
+    if (!Array.isArray(arg) || !arg[0].hasOwnProperty('atoms') ||
+        arg[0].atoms.length > 1 || !arg[0].atoms[0].hasOwnProperty('chars')) {
+        return '$';
+    }
+    let ch = getCh(arg[0].atoms[0].chars, 0);
+    return ch.length == arg[0].atoms[0].chars.length ? ch : '$';
 }
 
 function getDifferentialInfo(of, n) {
@@ -2117,7 +2129,28 @@ function preprocess(dsty, uast, index, arr) {
 
             return {atop: value};
         case "binom":
-            return {binom: {intent: intent, arg: arg, top: preprocess(dsty, value.top), bottom: preprocess(dsty, value.bottom)}};
+            value.top = preprocess(dsty, value.top);
+            value.bottom = preprocess(dsty, value.bottom);
+
+            if (!intent && emitDefaultIntents) {
+                var top = getVariable(value.top);
+                var bottom = getVariable(value.bottom);
+                intent = "binomial-coefficient(";
+                if (top[0] == '$') {
+                    intent += '$t,';
+                    value.top.arg = 't';
+                } else {
+                    intent += top + ',';
+                }
+                if (bottom[0] == '$') {
+                    intent += '$b)';
+                    value.bottom.arg = 'b';
+                } else {
+                    intent += bottom + ')';
+                }
+            }
+            return {bracketed: {intent: intent, arg: arg, open: "(", close: ")",
+                                content: {atop: [value.top, value.bottom]}}};
 
         case "script":
             ret = {type: value.type, base: preprocess(dsty, value.base)};
@@ -2456,7 +2489,7 @@ function mtransform(dsty, puast) {
     // is a boolean; it doesn't include an intent property
 
     if (Array.isArray(puast)) {
-        var arg = puast[0].hasOwnProperty("arg") ? puast.shift() : {};
+        let arg = puast[0].hasOwnProperty("arg") ? puast.shift() : {};
         return {mrow: withAttrs(arg, puast.map(e => mtransform(dsty, e)))};
     }
 
@@ -2619,12 +2652,18 @@ function mtransform(dsty, puast) {
         case "atop":
             var attrs = getAttrs(value, '');
             attrs.linethickness = 0;
-            return {mfrac: withAttrs(attrs, value.map(e => (mtransform(dsty, dropOutermostParens(e)))))};
+            var arg0 = value[0].arg;
+            var arg1 = value[1].arg;
+            var top = mtransform(dsty, dropOutermostParens(value[0]));
+            var bottom = mtransform(dsty, dropOutermostParens(value[1]));
+            if(arg0)
+                top.mrow.attributes.arg = arg0;
+            if(arg1)
+                bottom.mrow.attributes.arg = arg1;
+            return {mfrac: withAttrs(attrs, [top, bottom])};
 
         case "binom":
             // desugar (not done in preprocessing step since LaTeX requires this sugar)
-            if (!value.intent && emitDefaultIntents)
-                value.intent = "binomial-coefficient";
             return mtransform(dsty, {bracketed: {intent: value.intent, arg: value.arg, open: "(", close: ")", content: {atop: [value.top, value.bottom]}}});
 
         case "script":
@@ -3023,37 +3062,27 @@ function mtransform(dsty, puast) {
                 content = {mrow: noAttr(content)};
             }
 
-            // handle brackets: first inner mrow (content and brackets if they
-            // are just strings, i.e. if they should grow with their contents).
-            // note that if all-invisible brackets 〖a〗 are used, this simply
-            // wraps content in an mrow as desired
+            // handle brackets: first inner mrow (content and brackets). if
+            // they are strings, they should grow with their contents. note
+            // that if the brackets are invisible, that is,〖content〗, this
+            // wraps content in an mrow as desired.
             var ret = [];
             if (typeof value.open === 'string') {
                 ret.push({mo: noAttr(value.open)});
+            } else {
+                var openSize = fontSize(value.open.size);
+                ret.push({mo: withAttrs({minsize: openSize, maxsize: openSize}, value.open.bracket)});
             }
             ret.push(content);
+
             if (typeof value.close === 'string') {
                 ret.push({mo: noAttr(value.close)});
+            } else {
+                var closeSize = fontSize(value.close.size);
+                ret.push({mo: withAttrs({minsize: closeSize, maxsize: closeSize}, value.close.bracket)});
             }
             var attrs = getAttrs(value, 'fenced');
             ret = [{mrow: withAttrs(attrs, ret)}];
-
-            // now handle potential manually resized brackets. note that
-            // value.open.size and value.close.size should be at most 4
-            // according to the tech note, but there is no strict need for this
-            // limitation – so i'm not imposing one
-            if (typeof value.open !== 'string') {
-                var openSize = fontSize(value.open.size);
-
-                var br = {mo: withAttrs({minsize: openSize, maxsize: openSize}, value.open.bracket)};
-                ret = [br].concat(ret);
-            }
-            if (typeof value.close !== 'string') {
-                var closeSize = fontSize(value.close.size);
-
-                var br = {mo: withAttrs({minsize: closeSize, maxsize: closeSize}, value.close.bracket)};
-                ret = ret.concat([br]);
-            }
             return ret;
 
         default:
@@ -3113,16 +3142,21 @@ function pretty(mast) {
         case "math":
             return tag(key, attributes, pretty(value));
         case "mrow":
-
             // mrow elimination: ignore superfluous mrows, i.e. ones that
             // contain only a single child and have no attributes
             if (Array.isArray(value) && value.length == 1) {
-                return pretty({mrow: {attributes: {}, content: value[0]}});  // insert a dummy mrow around the singleton array value to fix bug occurring if this singleton array value is again an array, which the pretty() function would then simply be mapped over, which would be problematic in certain contexts such as scripts where a set number of nodes on one level is required
-            } else if (!(Array.isArray(value)) && Object.keys(attributes).length == 0) {
-                return pretty(value);
-            } else {
-                return tag(key, attributes, pretty(value));
+                // insert a dummy mrow around the singleton array value to fix
+                // bug occurring if this singleton array value is again an array,
+                // which the pretty() function would then simply map over,
+                // which is problematic in certain contexts such as scripts
+                // where a set number of nodes on one level is required
+                return pretty({mrow: {attributes: attributes, content: value[0]}});
             }
+            if (!Array.isArray(value) && Object.keys(attributes).length == 0)
+                return pretty(value);
+
+            return tag(key, attributes, pretty(value));
+
         case "msubsup":
         case "msub":
         case "msup":
