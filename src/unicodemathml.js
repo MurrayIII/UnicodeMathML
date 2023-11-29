@@ -1061,13 +1061,15 @@ function getUnicodeFraction(chNum, chDenom)
     return '';
 }
 
-function getIntervalEndPoint(arg, content) {
-    if (arg[0] == '$') {
-        var ret = {atoms: [{chars: content.flat().join('')}]};
-        ret.atoms.arg = arg.substring(1);
-        return ret;
+function getAbsArg(content) {
+    if (Array.isArray(content) && content[0].hasOwnProperty("atoms") &&
+        content[0].atoms.length == 1 && content[0].atoms[0].hasOwnProperty("chars")) {
+        var arg = content[0].atoms[0].chars;
+        var ch = getCh(arg, 0);
+        if (ch.length == arg.length)
+            return ch;
     }
-    return (isAsciiDigit(arg[0])) ? {number: arg} : {atoms: [{chars: arg}]};
+    return '$a';
 }
 
 function getIntervalArg(content, n) {
@@ -1080,6 +1082,15 @@ function getIntervalArg(content, n) {
     if (arg.length > ch.length && !isAsciiDigit(arg[0]) && !'-−+∞'.includes(arg[0]))
         arg = '$' + (n ? 'b' : 'a');
     return arg;
+}
+
+function getIntervalEndPoint(arg, content) {
+    if (arg[0] == '$') {
+        var ret = {atoms: [{chars: content.flat().join('')}]};
+        ret.atoms.arg = arg.substring(1);
+        return ret;
+    }
+    return (isAsciiDigit(arg[0])) ? {number: arg} : {atoms: [{chars: arg}]};
 }
 
  function getOrder(high) {
@@ -2412,22 +2423,32 @@ function preprocess(dsty, uast, index, arr) {
                     var arg0 = getIntervalArg(value.content, 0);
                     var arg1 = getIntervalArg(value.content, 2);
                     value.intent += '(' + arg0 + ',' + arg1 + ')';
-                    if (!intent && !arg)
+                    if (!intent)
                         intent = value.intent;
-                    value.content = {
-                        expr: [getIntervalEndPoint(arg0, value.content[0]),
-                        { operator: ',' },
-                        getIntervalEndPoint(arg1, value.content[2])]
+                    value.content = {expr:
+                        [getIntervalEndPoint(arg0, value.content[0]),
+                         {operator: ','},
+                         getIntervalEndPoint(arg1, value.content[2])]
                     };
-                } else if (emitDefaultIntents) {
+                    value.content = preprocess(dsty, value.content);
+                } else {
+                    value.content = preprocess(dsty, value.content);
                     if (!arg && value.arg)
                         arg = value.arg;        // Happens for derivative with bracketed order
-                    if (!intent && value.intent)
-                        intent = value.intent;  // Happens for cases
+                    if (!intent && value.intent) {
+                        intent = value.intent;  // Happens for cases and absolute-value
+                        if (intent == "absolute-value") {
+                            var arg0 = getAbsArg(value.content);
+                            intent += '(' + arg0 + ')';
+                            if (arg0 == "$a") {
+                                value.content.expr.arg = 'a';
+                            }
+                        }
+                    }
                 }
-                value.content = preprocess(dsty, value.content);
             }
-            return {bracketed: {open: value.open, close: value.close, intent: intent, arg: arg, content: value.content}};
+            return {bracketed: {open: value.open, close: value.close, arg: arg,
+                                intent: intent, content: value.content}};
 
         case "operator":
             return {[key]: {intent: intent, arg: arg, content: value}};
@@ -2489,7 +2510,11 @@ function mtransform(dsty, puast) {
     // is a boolean; it doesn't include an intent property
 
     if (Array.isArray(puast)) {
-        let arg = puast[0].hasOwnProperty("arg") ? puast.shift() : {};
+        let arg = {};
+        if (puast.hasOwnProperty("arg"))
+            arg = {arg: puast.arg};
+        else if (puast[0].hasOwnProperty("arg"))
+            arg = puast.shift();
         return {mrow: withAttrs(arg, puast.map(e => mtransform(dsty, e)))};
     }
 
@@ -3185,7 +3210,7 @@ function pretty(mast) {
             return tag(key, attributes, value);
         case "malignmark":
         case "mspace":
-            return tag(key, attributes, null);
+            return tag(key, attributes, value);
         case "␢":
             return "";
         default:
