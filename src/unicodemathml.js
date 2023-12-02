@@ -870,7 +870,7 @@ var mathFonts = {
 
 const narys = {
     '∏': 'product',
-    '∑': 'summation',
+    '∑': 'sum',
     '∫': 'integral',
     '∬': 'double integral',
     '∭': 'triple integral',
@@ -1104,6 +1104,30 @@ function getIntervalEndPoint(arg, content) {
         return high[0].number;
 
     return '$n';                            // Order n
+}
+
+function getScript(limit, ref) {
+    if (limit == undefined)
+        return '';
+    if(!Array.isArray(limit)) {
+        if (!limit.hasOwnProperty('expr') || !Array.isArray(limit.expr))
+            return '';
+        limit = limit.expr[0];
+    }
+    if (limit.length > 1)
+        return ref;
+    limit = limit[0];
+
+    if (limit.hasOwnProperty('atoms')) {
+        if (limit.atoms.hasOwnProperty('chars'))
+            return limit.atoms.chars;
+        if (Array.isArray(limit.atoms) && limit.atoms[0].hasOwnProperty('chars'))
+            return limit.atoms[0].chars;
+    }
+    if (limit.hasOwnProperty('number')) {
+        return limit.number;
+    }
+    return ref;
 }
 
 function getVariable(arg) {
@@ -2002,19 +2026,30 @@ function preprocess(dsty, uast, index, arr) {
                     value.limits.script.base = {script: {type: "subsup", base: value.limits.script.base, high: high}};
                 }
             } else if (dsty.display) {
-                // in display mode if not an integral, display limits abovebelow
+                // In display mode if not an integral, display limits abovebelow
                 var op = v(value.limits.script.base);
-                if (op < '\u222B' || op > '\u2233') {   // exclude common integral signs
+                if (op < '\u222B' || op > '\u2233') {   // Exclude common integral signs
                     value.limits.script.type = "abovebelow";
                 }
             }
+            value.naryand = preprocess(dsty, value.naryand);
+            value.limits = preprocess(dsty, value.limits);
+
             if (!intent && emitDefaultIntents) {
                 intent = narys[value.limits.script.base.opnary];
                 if (intent == undefined)
                     intent = 'n-ary';
+                var arg0 = getScript(value.limits.script.low, '$l');
+                var arg1 = getScript(value.limits.script.high, '$h');
+                intent += '(' + arg0 + ',' + arg1 + ',$n)';
+                value.naryand.arg = 'n';
+                if (arg0 == '$l')
+                    value.limits.script.low.arg = arg0.substring(1);
+                if (arg1 == '$h')
+                    value.limits.script.high.arg = arg1.substring(1);
             }
-            return {nary: {mask: value.mask, limits: preprocess(dsty, value.limits),
-                           intent: intent, arg: arg, naryand: preprocess(dsty, value.naryand)}};
+            return {nary: {mask: value.mask, limits: value.limits, intent: intent,
+                           arg: arg, naryand: value.naryand}};
 
         case "negatedoperator":
             return (value in negs) ? {operator: negs[value]} : {negatedoperator: value};
@@ -2377,8 +2412,10 @@ function preprocess(dsty, uast, index, arr) {
 
         case "factorial":
             value = preprocess(dsty, value);
-            value.intent = intent;
-            value.arg = arg;
+            if(intent)
+                value.intent = intent;
+            if(arg)
+                value.arg = arg;
             return {factorial: value};
 
         case "atoms":
@@ -2520,6 +2557,9 @@ function mtransform(dsty, puast) {
 
     var key = k(puast);
     var value = v(puast);
+    if (value && !value.arg && puast.hasOwnProperty("arg")) {
+        value.arg = puast.arg;
+    }
     switch (key) {
         case "unicodemath":
             //var attrs = {class: "unicodemath", xmlns: "http://www.w3.org/1998/Math/MathML", display: dsty? "block" : "inline"}
@@ -2566,14 +2606,13 @@ function mtransform(dsty, puast) {
 
         case "negatedoperator":
             return {mo: noAttr(value + "̸")};  // U+0338 COMBINING LONG SOLIDUS
-                                              // OVERLAY
-
+                                               //  OVERLAY
         case "element":
             return mtransform(dsty, value);
 
         case "array":                       // Equation array
             value = mtransform(dsty, value);
-            var attrs = getAttrs(value, 'equations');
+            var attrs = getAttrs(value, ':equations');
             return {mtable: withAttrs(attrs, value)};
         case "arows":
             return value.map(r => ({mtr: noAttr(mtransform(dsty, r))}));
@@ -2598,7 +2637,11 @@ function mtransform(dsty, puast) {
 
         case "nary":
             var attrs = getAttrs(value, 'n-ary');
-            return {mrow: withAttrs(attrs, [mtransform(dsty, value.limits), mtransform(dsty, value.naryand)])};
+            var attrsn = getAttrs(value.naryand);
+            value.naryand = mtransform(dsty, value.naryand);
+            if (attrsn != {})
+                value.naryand.attributes = attrsn;
+            return {mrow: withAttrs(attrs, [mtransform(dsty, value.limits), value.naryand])};
         case "opnary":
             return {mo: noAttr(value)};
 
@@ -3106,7 +3149,7 @@ function mtransform(dsty, puast) {
                 var closeSize = fontSize(value.close.size);
                 ret.push({mo: withAttrs({minsize: closeSize, maxsize: closeSize}, value.close.bracket)});
             }
-            var attrs = getAttrs(value, 'fenced');
+            var attrs = getAttrs(value, ':fenced');
             ret = [{mrow: withAttrs(attrs, ret)}];
             return ret;
 
