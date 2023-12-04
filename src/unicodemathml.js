@@ -1106,6 +1106,24 @@ function getIntervalEndPoint(arg, content) {
     return '$n';                            // Order n
 }
 
+function getScriptArg(dsty, value) {
+    // Include arg property for script high/low given by value
+    var arg = value.arg;
+
+    if (!arg && Array.isArray(value) && value[0].hasOwnProperty("bracketed"))
+        arg = value[0].bracketed.arg;
+
+    if (!arg)
+        return mtransform(dsty, dropOutermostParens(value));
+
+    value = dropOutermostParens(value);
+    if (Array.isArray(value) && value[0].hasOwnProperty('expr'))
+        value[0].expr.arg = arg;
+    else
+        value.arg = arg;
+    return mtransform(dsty, value);
+}
+
 function getScript(limit, ref) {
     if (limit == undefined)
         return '';
@@ -2037,8 +2055,12 @@ function preprocess(dsty, uast, index, arr) {
 
             if (!intent && emitDefaultIntents) {
                 intent = narys[value.limits.script.base.opnary];
-                if (intent == undefined)
-                    intent = 'n-ary';
+                if (intent == undefined) {
+                    if (value.limits.script.base.hasOwnProperty('script'))
+                        intent = narys[value.limits.script.base.script.base.opnary];
+                    if(intent == undefined)
+                        intent = 'n-ary';
+                }
                 var arg0 = getScript(value.limits.script.low, '$l');
                 var arg1 = getScript(value.limits.script.high, '$h');
                 intent += '(' + arg0 + ',' + arg1 + ',$n)';
@@ -2739,27 +2761,22 @@ function mtransform(dsty, puast) {
 
             switch (value.type) {
                 case "subsup":
-                    if ("low" in value && "high" in value) {
-                        return {msubsup: withAttrs(attrs, [mtransform(dsty, value.base),
-                                               mtransform(dsty, dropOutermostParens(value.low)),
-                                               mtransform(dsty, dropOutermostParens(value.high)) ])};
-                    } else if ("low" in value) {
-                        return {msub: withAttrs(attrs, [mtransform(dsty, value.base),
-                                              mtransform(dsty, dropOutermostParens(value.low)) ])};
-                    } else if ("high" in value) {
-                        if (Array.isArray(value.high) && value.high[0].hasOwnProperty("bracketed")) {
-                            // Handle arg attribute for superscript
-                            var arg = value.high[0].bracketed.arg;
-                            if (arg) {
-                                value.high = dropOutermostParens(value.high);
-                                value.high[0].expr.unshift({arg: arg});
-                            }
-                        }
-                        return {msup: withAttrs(attrs, [mtransform(dsty, value.base),
-                                              mtransform(dsty, dropOutermostParens(value.high)) ])};
-                    } else {  // can only occur in a nary without sub or sup set
-                        return mtransform(dsty, value.base);
+                    value.base = mtransform(dsty, value.base);
+                    if ("low" in value) {
+                        value.low = getScriptArg(dsty, value.low);
                     }
+                    if ("high" in value) {
+                        value.high = getScriptArg(dsty, value.high);
+                        if ("low" in value) {
+                            return {msubsup: withAttrs(attrs,
+                                            [value.base, value.low, value.high])};
+                        }
+                        return {msup: withAttrs(attrs, [value.base, value.high])};
+                    }
+                    if ("low" in value) {
+                       return {msub: withAttrs(attrs, [value.base, value.low])};
+                    }
+                    return value.base;      // No subscript/superscript
                 case "pre":
                     var ret = [mtransform(dsty, value.base)];
                     if ("low" in value && "high" in value) {
@@ -2790,23 +2807,23 @@ function mtransform(dsty, puast) {
 
                     return {mmultiscripts: noAttr(ret)};
                 case "abovebelow":
-                    value.base = dropOutermostParens(value.base);
-                    if ("low" in value && "high" in value) {
-                        return {munderover: withAttrs(attrs, [mtransform(dsty, value.base),
-                                                    mtransform(dsty, dropOutermostParens(value.low)),
-                                                    mtransform(dsty, dropOutermostParens(value.high))
-                                                   ])};
-                    } else if ("high" in value) {
-                        return {mover: withAttrs(attrs, [mtransform(dsty, value.base),
-                                               mtransform(dsty, dropOutermostParens(value.high))
-                                              ])};
-                    } else if ("low" in value) {
-                        return {munder: withAttrs(attrs, [mtransform(dsty, value.base),
-                                                mtransform(dsty, dropOutermostParens(value.low))
-                                               ])};
-                    } else {  // can only occur in a nary without sub or sup set
-                        return mtransform(dsty, value.base);
+                    value.base = mtransform(dsty, dropOutermostParens(value.base));
+                    if ("low" in value) {
+                        value.low = getScriptArg(dsty, value.low);
                     }
+                    if ("high" in value) {
+                        value.high = getScriptArg(dsty, value.high);
+
+                        if ("low" in value) {
+                            return {munderover: withAttrs(attrs,
+                                            [value.base, value.low, value.high])};
+                        }
+                        return {mover: withAttrs(attrs, [value.base, value.high])};
+                    }
+                    if ("low" in value)
+                        return {munder: withAttrs(attrs, [value.base, value.low])};
+
+                    return value.base;      // No limits
 
                 default:
                     throw "invalid or missing script type";
