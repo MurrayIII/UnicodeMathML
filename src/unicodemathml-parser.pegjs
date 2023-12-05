@@ -922,6 +922,7 @@ functionName
     / "Pr"
     / "Re"
     / "sup"
+    / "tg"
 
     // additional functions
     / "lcm"  // "least common multiple"

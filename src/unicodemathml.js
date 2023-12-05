@@ -881,6 +881,7 @@ const narys = {
     '∱': 'clockwise integral',
     '∱': 'clockwise contour integral',
     '∳': 'anticlockwise contour integral',
+    '∐': 'coproduct',
 };
 
 function isFunctionName(fn) {
@@ -904,7 +905,7 @@ function isFunctionName(fn) {
     if (["cos", "cot", "csc", "sec", "sin", "tan", "ctg"].includes(fn.substring(i, i + 3)))
         return true;
 
-    return ["Pr", "arg", "def", "deg", "det", "dim", "erf", "exp", "gcd", "hom", "inf", "ker", "lim", "log", "ln", "max", "min", "mod", "sup", "tg"].includes(fn);
+    return ["Im", "Pr", "Re", "arg", "def", "deg", "det", "dim", "erf", "exp", "gcd", "hom", "inf", "ker", "lim", "log", "ln", "max", "min", "mod", "sup", "tg"].includes(fn);
 }
 
 function inRange(ch0, ch, ch1) {
@@ -2411,9 +2412,6 @@ function preprocess(dsty, uast, index, arr) {
                     }
                 }
             }
-            if (!intent && emitDefaultIntents) {
-                intent = 'function';
-            }
             return {function: {f: preprocess(dsty, valuef), intent: intent, arg: arg, of: of}};
 
         case "negatedoperator":
@@ -2942,7 +2940,7 @@ function mtransform(dsty, puast) {
             return {msqrt: withAttrs(attrs, mtransform(dsty, dropOutermostParens(value)))};
 
         case "function":
-            var attrs = getAttrs(value, '');
+            var attrs = getAttrs(value, ':function');
             return {mrow: withAttrs(attrs, [mtransform(dsty, value.f), {mo: noAttr("&ApplyFunction;")}, mtransform(dsty, value.of)])};
 
         case "text":
