@@ -2051,6 +2051,17 @@ function preprocess(dsty, uast, index, arr) {
                     value.limits.script.type = "abovebelow";
                 }
             }
+            if (value.naryand.hasOwnProperty("binom") && index < arr.length - 1 &&
+                Array.isArray(arr[index + 1])) {
+                // Include array following binomial coefficient in naryand.
+                // Binomial coefficients like 𝑛⒞𝑘 should be part of operands
+                // as are other bracketed expressions, but peg doesn't seem
+                // to offer a way to match it that way.
+                let naryand = arr[index + 1];
+                naryand.unshift(value.naryand);
+                value.naryand = naryand;
+                arr.splice(index + 1, 1);
+            }
             value.naryand = preprocess(dsty, value.naryand);
             value.limits = preprocess(dsty, value.limits);
 
