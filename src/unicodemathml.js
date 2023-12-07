@@ -1949,19 +1949,18 @@ function preprocess(dsty, uast, index, arr) {
             // divide "&" into alignment marks and stretchy gaps
             var ret = []
             var i = 0;
-            var currAcol = [];
+            var currAcol = [{aaligngroup: null}];
             if (value[0] == null) {  // align mark immediately at start of row
                 i = 1;
             }
             for (; i < value.length; i++) {
                 if (i % 2 == 0) {
-                    currAcol = [preprocess(dsty, value[i])];
-                } else if (i % 2 == 1) {
-                    currAcol.push({aalign: null});  // alignment mark
                     currAcol.push(preprocess(dsty, value[i]));
-                    ret.push({acol: currAcol});  // stretchy gap may add space
-                                                 // after this
-                    currAcol = [];
+                } else if (i % 2 == 1) {
+                    currAcol.push({aalignmark: null});  // alignment mark
+                    currAcol.push(preprocess(dsty, value[i]));
+                    ret.push({acol: currAcol});
+                    currAcol = [{aaligngroup: null}] // alignment mark
                 }
             }
             if (currAcol.length > 0) {
@@ -2644,6 +2643,7 @@ function mtransform(dsty, puast) {
         case "array":                       // Equation array
             value = mtransform(dsty, value);
             var attrs = getAttrs(value, ':equations');
+            attrs.columnalign = 'right';
             return {mtable: withAttrs(attrs, value)};
         case "arows":
             return value.map(r => ({mtr: noAttr(mtransform(dsty, r))}));
@@ -2651,8 +2651,10 @@ function mtransform(dsty, puast) {
             return value.map(c => ({mtd: noAttr(mtransform(dsty, c))}));
         case "acol":
             return value.map(c => (mtransform(dsty, c)));
-        case "aalign":
-            return {malignmark: withAttrs({edge: "left"}, null)};
+        case "aalignmark":
+            return {malignmark: noAttr(null)};
+        case "aaligngroup":
+            return {maligngroup: noAttr(null)};
 
         case "matrix":
             value = mtransform(dsty, value);
@@ -3278,6 +3280,7 @@ function pretty(mast) {
         case "mtext":
             return tag(key, attributes, value);
         case "malignmark":
+        case "maligngroup":
         case "mspace":
             return tag(key, attributes, value);
         case "␢":
