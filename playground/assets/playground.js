@@ -160,7 +160,43 @@ function highlightMathML(mathml) {
 // via https://stackoverflow.com/a/7220510
 function highlightJson(json) {
     if (typeof json != 'string') {
-         json = JSON.stringify(json, undefined, 2);
+        var json = JSON.stringify(json, undefined);
+        var indent = '';
+        var chPrev = '';
+        var json1 = '';
+
+        for (var i = 0; i < json.length; i++) {
+            var ch = json[i];
+            switch (ch) {
+                case '{':
+                case '[':
+                    if (chPrev == '[' || chPrev == '{' || chPrev == ',')
+                        json1 += '\n' + indent;
+                    indent += !(indent.length % 4) ? '.\u00A0' : '\u00A0\u00A0';
+                    break;
+                case '}':
+                case ']':
+                    indent = indent.substring(0, indent.length - 2);
+                    break;
+                case '"':
+                    if (!isAsciiAlphanumeric(chPrev) &&
+                        (chPrev != '\u00A0' || i > 2 && json[i - 2] != ':') &&
+                        json[i + 1] != '}' && json[i + 1] != ',') {
+                        json1 += '\n' + indent;
+                    }
+                    break;
+                case ':':
+                    json1 += ':';
+                    ch = '\u00A0';
+                    if (i < json.length - 2 && json[i + 1] == '"') {
+                        json1 += ch;
+                        ch = json[i++ + 1];
+                    }
+            }
+            json1 += ch;
+            chPrev = ch;
+        }
+        json = json1;
     }
     json = escapeMathMLSpecialChars(json);
     return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, match => {

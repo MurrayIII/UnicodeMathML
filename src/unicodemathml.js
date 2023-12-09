@@ -270,6 +270,7 @@ var controlWords = {
     'iplus':            '⁤',	    // 2064
     'isep':             '⁣',	    // 2063
     'itimes':           '⁢',	    // 2062
+    'intercal':         '⊺',    // 22BA
     'jj':               'ⅉ',    	// 2149
     'jmath':            'ȷ',	// 0237
     'kappa':            'κ',	// 03BA
@@ -1110,18 +1111,26 @@ function getIntervalEndPoint(arg, content) {
 function getScriptArg(dsty, value) {
     // Include arg property for script high/low given by value
     var arg = value.arg;
+    var intent = value.intent;
 
     if (!arg && Array.isArray(value) && value[0].hasOwnProperty("bracketed"))
         arg = value[0].bracketed.arg;
 
-    if (!arg)
+    if (!arg && !intent)
         return mtransform(dsty, dropOutermostParens(value));
 
     value = dropOutermostParens(value);
-    if (Array.isArray(value) && value[0].hasOwnProperty('expr'))
-        value[0].expr.arg = arg;
-    else
-        value.arg = arg;
+    if (Array.isArray(value) && value[0].hasOwnProperty('expr')) {
+        if(arg)
+            value[0].expr.arg = arg;
+        if (intent)
+            value[0].expr.intent = intent;
+    } else {
+        if(arg)
+            value.arg = arg;
+        if (intent)
+            value.intent = intent;
+    }
     return mtransform(dsty, value);
 }
 
@@ -1949,18 +1958,19 @@ function preprocess(dsty, uast, index, arr) {
             // divide "&" into alignment marks and stretchy gaps
             var ret = []
             var i = 0;
-            var currAcol = [{aaligngroup: null}];
+            var currAcol = [];
             if (value[0] == null) {  // align mark immediately at start of row
                 i = 1;
             }
             for (; i < value.length; i++) {
                 if (i % 2 == 0) {
+                    currAcol = [{aaligngroup: null}] // alignment group
                     currAcol.push(preprocess(dsty, value[i]));
                 } else if (i % 2 == 1) {
                     currAcol.push({aalignmark: null});  // alignment mark
                     currAcol.push(preprocess(dsty, value[i]));
                     ret.push({acol: currAcol});
-                    currAcol = [{aaligngroup: null}] // alignment mark
+                    currAcol = [];
                 }
             }
             if (currAcol.length > 0) {
@@ -2261,6 +2271,12 @@ function preprocess(dsty, uast, index, arr) {
                         }
                         if ("high" in value) {
                             ret.high = preprocess(dsty, value.high);
+                            if (Array.isArray(ret.high) && ret.high[0].hasOwnProperty('atoms') &&
+                                Array.isArray(ret.high[0].atoms) &&
+                                ret.high[0].atoms[0].hasOwnProperty("chars") &&
+                                ret.high[0].atoms[0].chars == '⊺') {
+                                ret.high[0].atoms.intent = 'transpose';
+                            }
                         }
                     }
                     if (k(base) == "atoms" && base.atoms.funct == undefined) {
