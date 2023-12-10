@@ -1665,20 +1665,20 @@ function enclosureAttrs(mask, symbol) {
         throw "enclosure mask is not between 0 and 255";
     }
 
-    var symbolClasses = {
+    const symbolClasses = {
         '▭': 'box',
         '̄': 'top',
         '▁': 'bottom',
         '▢': 'roundedbox',
         '○': 'circle',
         '⟌': 'longdiv',
-        "⃧"  : 'actuarial',
+        "⃧": 'actuarial',
         '⬭': 'circle',
         '╱': 'cancel',
         '╲': 'bcancel',
         '╳': 'xcancel'
     };
-    var maskClasses = {
+    const maskClasses = {
         1: 'top',
         2: 'bottom',
         4: 'left',
@@ -1702,7 +1702,7 @@ function enclosureAttrs(mask, symbol) {
         }
         ret = classes.join(' ');
     } else if (symbol != null) {
-        ret += ' ' + symbolClasses[symbol];
+        ret += symbolClasses[symbol];
     }
 
     return ret;
@@ -3072,7 +3072,11 @@ function mtransform(dsty, puast) {
                     let attrsDoublestruck = getAttrsDoublestruck(ch, str);
                     if (attrs.intent)
                         attrsDoublestruck.intent = attrs.intent;
-                    return {mi: withAttrs(attrsDoublestruck, ch)};
+                    return { mi: withAttrs(attrsDoublestruck, ch) };
+                }
+                if (str == '⊺' && value.intent == "transpose") {
+                    attrs.mathvariant = "normal";
+                    return {mi: withAttrs(attrs, 'T')};
                 }
                 if (value.intent || value.arg)
                     return {mi: withAttrs(attrs, str)};
@@ -3326,6 +3330,7 @@ function unicodemathml(unicodemath, displaystyle) {
     try {
         var t1s = performance.now();
         var uast = parse(unicodemath);
+        var jsonParse = JSON.stringify(uast, undefined);
         var t1e = performance.now();
         debugLog(uast);
 
@@ -3357,7 +3362,8 @@ function unicodemathml(unicodemath, displaystyle) {
                 intermediates: {
                     parse:      uast,
                     preprocess: puast,
-                    transform:  mast
+                    transform:  mast,
+                    json:       jsonParse
                 }
             }
         };

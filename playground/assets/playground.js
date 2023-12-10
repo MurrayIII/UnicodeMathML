@@ -157,48 +157,50 @@ function highlightMathML(mathml) {
     }
 }
 
-// via https://stackoverflow.com/a/7220510
+// via https://stackoverflow.com/a/7220510 plus compact indentation
 function highlightJson(json) {
     if (typeof json != 'string') {
-        var json = JSON.stringify(json, undefined);
-        var indent = '';
-        var chPrev = '';
-        var json1 = '';
-
-        for (var i = 0; i < json.length; i++) {
-            var ch = json[i];
-            switch (ch) {
-                case '{':
-                case '[':
-                    if (chPrev == '[' || chPrev == '{' || chPrev == ',')
-                        json1 += '\n' + indent;
-                    indent += !(indent.length % 4) ? '.\u00A0' : '\u00A0\u00A0';
-                    break;
-                case '}':
-                case ']':
-                    indent = indent.substring(0, indent.length - 2);
-                    break;
-                case '"':
-                    if (!isAsciiAlphanumeric(chPrev) &&
-                        (chPrev != '\u00A0' || i > 2 && json[i - 2] != ':') &&
-                        json[i + 1] != '}' && json[i + 1] != ',') {
-                        json1 += '\n' + indent;
-                    }
-                    break;
-                case ':':
-                    json1 += ':';
-                    ch = '\u00A0';
-                    if (i < json.length - 2 && json[i + 1] == '"') {
-                        json1 += ch;
-                        ch = json[i++ + 1];
-                    }
-            }
-            json1 += ch;
-            chPrev = ch;
-        }
-        json = json1;
+        json = JSON.stringify(json, undefined);
     }
-    json = escapeMathMLSpecialChars(json);
+    // Insert compact indents
+    var indent = '';
+    var chPrev = '';
+    var json1 = '';
+    var cJson = json.length;
+
+    for (var i = 0; i < cJson; i++) {
+        var ch = json[i];
+        switch (ch) {
+            case '{':
+            case '[':
+                if (chPrev == '[' || chPrev == '{' || chPrev == ',')
+                    json1 += '\n' + indent;
+                indent += !(indent.length % 4) ? '·\u00A0' : '\u00A0\u00A0';
+                break;
+            case '}':
+            case ']':
+                indent = indent.substring(0, indent.length - 2);
+                break;
+            case '"':
+                if (!isAsciiAlphanumeric(chPrev) &&
+                    (chPrev != '\u00A0' || i > 2 && json[i - 2] != ':') &&
+                    json[i + 1] != '}' && json[i + 1] != ',') {
+                    json1 += '\n' + indent;
+                }
+                break;
+            case ':':
+                json1 += ':';
+                ch = '\u00A0';
+                if (i < cJson - 2 && json[i + 1] == '"') {
+                    json1 += ch;
+                    ch = json[i++ + 1];
+                }
+        }
+        json1 += ch;
+        chPrev = ch;
+    }
+    json = escapeMathMLSpecialChars(json1);
+
     return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, match => {
         var cls = 'number';
         if (/^"/.test(match)) {
@@ -877,7 +879,7 @@ async function draw() {
                 var preprocess_ast = details["intermediates"]["preprocess"];
                 var mathml_ast = details["intermediates"]["transform"];
 
-                output_pegjs_ast_HTML += highlightJson(pegjs_ast) + "\n";
+                output_pegjs_ast_HTML += highlightJson(details["intermediates"]["json"]) + "\n";
                 output_preprocess_ast_HTML += highlightJson(preprocess_ast) + "\n";
                 output_mathml_ast_HTML += highlightJson(JSON.stringify(mathml_ast, null, 2)) + "\n";
             }
