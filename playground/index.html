@@ -314,6 +314,7 @@
             forceMathJax: false,
             outputLaTeX: false,
             defaultIntents: false,
+            doubleStruckMode: "us-tech"
         };
         var configDescriptions = {
             splitInput: "Split input into lines and process each line separately (as opposed to processing the entire input as a single expression)",
@@ -334,9 +335,11 @@
             var i = 0;
             e.innerHTML += Object.keys(ummlConfig).map(k => {
                 i++;
-                return `<div><input type="checkbox" id="c${i}" name="${k}" ${ummlConfig[k]? "checked" : ""}><label for="c${i}">${configDescriptions[k]}</label></div>`;
-            }).join("");
+                if (configDescriptions[k])
+                    return `<div><input type="checkbox" id="c${i}" name="${k}" ${ummlConfig[k] ? "checked" : ""}><label for="c${i}">${configDescriptions[k]}</label></div>`;
+                }).join("");
             e.innerHTML += `<div class="buttons"><button onclick="applyConfigAndReload()">Apply & Reload Page</button><a onclick="resetConfigAndReload()">Reset</a></div>`;
+            e.innerHTML += `<div class="buttons"><button onclick="chooseFormatMode(1)">Choose display format for ⅅ ⅆ ⅇ ⅈ ⅉ</div>`;
         }
         function loadConfigIntoPane() {
             var tempConfig = defaultConfig;
@@ -347,18 +350,57 @@
                 e.checked = tempConfig[e.name];
                 ummlConfig[e.name] = tempConfig[e.name];
             });
+            ummlConfig.doubleStruckMode = tempConfig.doubleStruckMode;
         }
         function applyConfigAndReload() {
             var tempConfig = {};
             Array.from(document.querySelectorAll("#config input[type='checkbox']")).map(e => {
                 tempConfig[e.name] = e.checked;
             });
-            localStorage.setItem('config', JSON.stringify(tempConfig));
+            tempConfig.doubleStruckMode = ummlConfig.doubleStruckMode;
+            var value = JSON.stringify(tempConfig);
+            localStorage.setItem('config', value);
             window.location.reload(false);
         }
         function resetConfigAndReload() {
             localStorage.setItem('config', JSON.stringify(defaultConfig));
             window.location.reload(false);
+        }
+        function chooseFormatMode(list) {
+            closeFormatModeList();
+
+            const doubleStruckModes = ["us-tech", "us-patent", "euro-tech"];
+            var formatModeList = document.createElement("div");
+
+            formatModeList.setAttribute("id", "formatmode-list");
+            formatModeList.setAttribute("class", "formatmode-items");
+
+            // Append div element as a child of the config container
+            var e = document.getElementById("config");
+            e.appendChild(formatModeList);
+
+            // Create a div element for each format option
+            for (var j = 0; j < doubleStruckModes.length; j++) {
+                var b = document.createElement("div");
+                let option = doubleStruckModes[j];
+
+                // Insert an input field to hold the current option
+                b.innerHTML = option;
+                b.innerHTML += `<input id='${option}' type='hidden' value='${option}'>`;
+
+                // Add click function for user click on a doublestruck option
+                b.addEventListener("click", function (e) {
+                    var val = this.getElementsByTagName("input")[0].value;
+                    setDoubleStruckMode(val);
+                });
+                formatModeList.appendChild(b);
+            }
+            var formatMode = doubleStruckModes[0];
+            if (ummlConfig != undefined && ummlConfig.doubleStruckMode != undefined)
+                formatMode = ummlConfig.doubleStruckMode;
+
+            var formatModeOption = document.getElementById(formatMode);
+            formatModeOption.parentNode.classList.add("formatmode-active");
         }
         renderConfigPane();
         loadConfigIntoPane();

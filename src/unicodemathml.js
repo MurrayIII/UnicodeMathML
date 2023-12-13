@@ -1875,11 +1875,11 @@ function doublestruckChar(value) {
         }
     }
 
-    if (typeof ummlConfig !== "undefined" && typeof ummlConfig.doubleStruckMode !== "undefined" && ummlConfig.doubleStruckMode in variants) {
+    if (typeof ummlConfig !== "undefined" && typeof ummlConfig.doubleStruckMode !== "undefined" &&
+        ummlConfig.doubleStruckMode in variants) {
         return variants[ummlConfig.doubleStruckMode][value];
-    } else {
-        return variants["us-tech"][value];
     }
+    return variants["us-tech"][value];
 }
 
 // if the outermost node of an AST describes a parenthesized expression, remove

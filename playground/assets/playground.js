@@ -391,6 +391,20 @@ function closeAutocompleteList() {
     }
 }
 
+function closeFormatModeList() {
+    var x = document.getElementById("formatmode-active");
+
+    if (x != undefined)
+        x.remove();
+}
+
+function setDoubleStruckMode(value) {
+    ummlConfig.doubleStruckMode = value;
+
+    Array.from(document.getElementsByClassName('formatmode-active')).map(t => t.classList.remove('formatmode-active'));
+    document.getElementById(value).parentNode.classList.add('formatmode-active');
+}
+
 function getSubSupDigit(str, i, delim) {
     // Return e.g., '²' for '^2 ' (str[i-1] = '^', str[i] = '2', delim = ' ')
     var ch = str[i];

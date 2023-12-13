@@ -230,6 +230,25 @@ input[type=submit] {
     color: #000;
 }
 
+.formatmode-items {
+    border-top: 1px solid #d4d4d4;
+}
+
+.formatmode-active {
+    background-color: DodgerBlue !important;
+    color: #000;
+}
+
+.formatmode-items div {
+    padding: 10px;
+    cursor: pointer;
+    background-color: #000;
+}
+
+.formatmode-items div:hover {
+    background-color: #222;
+}
+
 /***********************\
 *       OUTPUT          *
 \***********************/
@@ -463,6 +482,7 @@ pre .comment {
     background-color: var(--grayish-color);
     width: 15rem;
     box-shadow: 0 0 1rem var(--verydarkgrayish-color);
+    border: 1px solid #d4d4d4;
 }
 #config div {
     padding: 0.5em 1em;
