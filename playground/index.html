@@ -314,7 +314,8 @@
             forceMathJax: false,
             outputLaTeX: false,
             defaultIntents: false,
-            doubleStruckMode: "us-tech"
+            doubleStruckMode: "us-tech",
+            transposeChar: "T",
         };
         var configDescriptions = {
             splitInput: "Split input into lines and process each line separately (as opposed to processing the entire input as a single expression)",
@@ -340,6 +341,7 @@
                 }).join("");
             e.innerHTML += `<div class="buttons"><button onclick="applyConfigAndReload()">Apply & Reload Page</button><a onclick="resetConfigAndReload()">Reset</a></div>`;
             e.innerHTML += `<div class="buttons"><button onclick="chooseFormatMode(1)">Choose display format for ⅅ ⅆ ⅇ ⅈ ⅉ</div>`;
+            e.innerHTML += `<div class="buttons"><button onclick="chooseFormatMode(2)">Choose character for transpose ⊺</div>`;
         }
         function loadConfigIntoPane() {
             var tempConfig = defaultConfig;
@@ -351,6 +353,7 @@
                 ummlConfig[e.name] = tempConfig[e.name];
             });
             ummlConfig.doubleStruckMode = tempConfig.doubleStruckMode;
+            ummlConfig.transposeChar = tempConfig.transposeChar;
         }
         function applyConfigAndReload() {
             var tempConfig = {};
@@ -358,6 +361,8 @@
                 tempConfig[e.name] = e.checked;
             });
             tempConfig.doubleStruckMode = ummlConfig.doubleStruckMode;
+            tempConfig.transposeChar = ummlConfig.transposeChar;
+
             var value = JSON.stringify(tempConfig);
             localStorage.setItem('config', value);
             window.location.reload(false);
@@ -370,6 +375,9 @@
             closeFormatModeList();
 
             const doubleStruckModes = ["us-tech", "us-patent", "euro-tech"];
+            const transposeChars = ["T", "𝑇", "t", "⊺", "⊤"];
+
+            var formatModes = (list == 1) ? doubleStruckModes : transposeChars;
             var formatModeList = document.createElement("div");
 
             formatModeList.setAttribute("id", "formatmode-list");
@@ -380,9 +388,9 @@
             e.appendChild(formatModeList);
 
             // Create a div element for each format option
-            for (var j = 0; j < doubleStruckModes.length; j++) {
+            for (var j = 0; j < formatModes.length; j++) {
                 var b = document.createElement("div");
-                let option = doubleStruckModes[j];
+                let option = formatModes[j];
 
                 // Insert an input field to hold the current option
                 b.innerHTML = option;
@@ -391,14 +399,20 @@
                 // Add click function for user click on a doublestruck option
                 b.addEventListener("click", function (e) {
                     var val = this.getElementsByTagName("input")[0].value;
-                    setDoubleStruckMode(val);
+                    setFormatMode(val, list);
                 });
                 formatModeList.appendChild(b);
             }
-            var formatMode = doubleStruckModes[0];
-            if (ummlConfig != undefined && ummlConfig.doubleStruckMode != undefined)
-                formatMode = ummlConfig.doubleStruckMode;
+            var formatMode = formatModes[0];
 
+            if (ummlConfig != undefined) {
+                if (list == 1) {
+                    if (ummlConfig.doubleStruckMode)
+                        formatMode = ummlConfig.doubleStruckMode;
+                } else if (ummlConfig.transposeChar) {
+                    formatMode = ummlConfig.transposeChar;
+                }
+            }
             var formatModeOption = document.getElementById(formatMode);
             formatModeOption.parentNode.classList.add("formatmode-active");
         }

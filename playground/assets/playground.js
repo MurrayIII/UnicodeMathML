@@ -398,8 +398,11 @@ function closeFormatModeList() {
         x.remove();
 }
 
-function setDoubleStruckMode(value) {
-    ummlConfig.doubleStruckMode = value;
+function setFormatMode(value, list) {
+    if(list == 1)
+        ummlConfig.doubleStruckMode = value;
+    else
+        ummlConfig.transposeChar = value;
 
     Array.from(document.getElementsByClassName('formatmode-active')).map(t => t.classList.remove('formatmode-active'));
     document.getElementById(value).parentNode.classList.add('formatmode-active');

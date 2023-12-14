@@ -1882,6 +1882,13 @@ function doublestruckChar(value) {
     return variants["us-tech"][value];
 }
 
+    function transposeChar() {
+        if (typeof ummlConfig !== "undefined" && ummlConfig.transposeChar != undefined) {
+            return ummlConfig.transposeChar;
+        }
+        return "T";
+    }
+
 // if the outermost node of an AST describes a parenthesized expression, remove
 // the parentheses. used for fractions, exponentiation, etc.
 function dropOutermostParens(uast) {
@@ -2572,11 +2579,12 @@ function getAttrs(value, deflt) {
 function getAttrsDoublestruck(ch, str) {
     let attrsDoublestruck = {};
 
+    if (ch != str && emitDefaultIntents)
+        attrsDoublestruck.intent = str;
+
     if (ch <= 'z')
         attrsDoublestruck.mathvariant = "normal";
 
-    if (ch != str && emitDefaultIntents)
-        attrsDoublestruck.intent = str;
     return attrsDoublestruck;
 }
 
@@ -3075,8 +3083,10 @@ function mtransform(dsty, puast) {
                     return { mi: withAttrs(attrsDoublestruck, ch) };
                 }
                 if (str == '⊺' && value.intent == "transpose") {
-                    attrs.mathvariant = "normal";
-                    return {mi: withAttrs(attrs, 'T')};
+                    let ch = transposeChar();
+                    if(ch == 'T')
+                        attrs.mathvariant = "normal";
+                    return {mi: withAttrs(attrs, ch)};
                 }
                 if (value.intent || value.arg)
                     return {mi: withAttrs(attrs, str)};
