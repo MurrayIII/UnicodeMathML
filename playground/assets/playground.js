@@ -898,7 +898,7 @@ async function draw() {
 
                 output_pegjs_ast_HTML += highlightJson(details["intermediates"]["json"]) + "\n";
                 output_preprocess_ast_HTML += highlightJson(preprocess_ast) + "\n";
-                output_mathml_ast_HTML += highlightJson(JSON.stringify(mathml_ast, null, 2)) + "\n";
+                output_mathml_ast_HTML += highlightJson(mathml_ast) + "\n";
             }
         } else {
 

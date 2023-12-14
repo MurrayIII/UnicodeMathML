@@ -2654,7 +2654,7 @@ function mtransform(dsty, puast) {
             if ('←→↔⇐⇒⇔↩↪↼⇀↽⇁⊢⊣⟵⟶⟷⟸⟹⟺↦⊨'.split('').includes(val)) {
                 attrs.stretchy = true;
             } else if (val == '\u2061') {
-                val = '&#x2061;';
+                val = '&ApplyFunction;';
             }
             return {mo: withAttrs(attrs, val)};
 
