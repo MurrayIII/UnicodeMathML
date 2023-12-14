@@ -392,7 +392,7 @@ function closeAutocompleteList() {
 }
 
 function closeFormatModeList() {
-    var x = document.getElementById("formatmode-active");
+    var x = document.getElementById("formatmode-list");
 
     if (x != undefined)
         x.remove();

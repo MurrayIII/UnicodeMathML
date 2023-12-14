@@ -375,6 +375,7 @@
             closeFormatModeList();
 
             const doubleStruckModes = ["us-tech", "us-patent", "euro-tech"];
+            const doubleStruckDescriptions = ["math italic: 𝐷𝑑𝑒𝑖𝑗", "unchanged: ⅅⅆⅇⅈⅉ", "upright: Ddeij"];
             const transposeChars = ["T", "𝑇", "t", "⊺", "⊤"];
 
             var formatModes = (list == 1) ? doubleStruckModes : transposeChars;
@@ -393,7 +394,7 @@
                 let option = formatModes[j];
 
                 // Insert an input field to hold the current option
-                b.innerHTML = option;
+                b.innerHTML = list == 1 ? doubleStruckDescriptions[j] : option;
                 b.innerHTML += `<input id='${option}' type='hidden' value='${option}'>`;
 
                 // Add click function for user click on a doublestruck option
