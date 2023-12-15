@@ -2102,6 +2102,8 @@ function preprocess(dsty, uast, index, arr) {
                            arg: arg, naryand: value.naryand}};
 
         case "negatedoperator":
+            if (!value)
+                return {colored: {color: '#F00', of: {operator: '/'}}};
             return (value in negs) ? {operator: negs[value]} : {negatedoperator: value};
 
         case "phantom":
@@ -3080,11 +3082,13 @@ function mtransform(dsty, puast) {
                     let attrsDoublestruck = getAttrsDoublestruck(ch, str);
                     if (attrs.intent)
                         attrsDoublestruck.intent = attrs.intent;
-                    return { mi: withAttrs(attrsDoublestruck, ch) };
+                    return {mi: withAttrs(attrsDoublestruck, ch)};
                 }
                 if (str == '⊺' && value.intent == "transpose") {
                     let ch = transposeChar();
-                    if(ch == 'T')
+                    if (ch == '⊤' || ch == '⊺')
+                        return {mo: withAttrs(attrs, ch)};
+                    if (ch == 'T' || ch == 't')
                         attrs.mathvariant = "normal";
                     return {mi: withAttrs(attrs, ch)};
                 }
