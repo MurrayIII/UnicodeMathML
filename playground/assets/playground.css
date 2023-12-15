@@ -358,7 +358,7 @@ math:last-child,
     margin: 0 1px 0 0;
 }
 .tab.active {
-    background: var(--grayish-color);
+    background: dodgerblue;
 }
 .tab.active:hover {
     color: inherit;

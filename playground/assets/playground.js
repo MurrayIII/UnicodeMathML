@@ -1052,10 +1052,12 @@ $(document).on('click', function (e) {
             iExample++;
             if (iExample > cExamples)
                 iExample = 0;
-            str += '\n';                    // Add new line after an example
-       } else {
-            addToHistory(e.target.innerText);
+            input.value = str;
+            input.focus();
+            draw();
+            return;
         }
+        addToHistory(e.target.innerText);
         insertAtCursorPos(str);
     }
 });

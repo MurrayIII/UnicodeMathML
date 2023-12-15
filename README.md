@@ -331,12 +331,13 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Math dictation infrastructure is added. Math dictation needs the file dictationljs, which is currently private.
 * In dictation input, ASCII letters and lower-case Greek letters are converted to math italic unless they comprise a function name, simple digit subscripts and superscripts are converted to the corresponding Unicode characters, ane three-character numeric fractions are converted to Unicode fractions.
 * Most symbols in the Playground galleries have LaTeX control-word tooltips.
-* Alt+x hex-to-Unicode (and vice versa) hot key is implemented in the Playground input.
+* Alt+x hex-to-Unicode (and vice versa) hot key is implemented in the Playground input. The Ctrl+b hot key toggles the selected characters between math bold and not math bold. Similarly, the Ctrl+i hot key toggles the selected characters between math italic and not math italic.
 * AST tabs appear only in _debug_ mode and only on screens wider than 786 pixels. The display changes to accomodate small screens, such as on mobile phones.
 * The class "unicodemath" and xmlns attributes are omitted on the <​math> tag. MathML indenting doesn't break a line between adjacent closing tags, thereby conserving screen height.
 * The symbol sets are collected into tabbed arrays with one set displayed at a time.
 * UnicodeMath transpose syntax <​base>^⊺, where ⊺ is U+22BA (\intercal).
 * Settings options to define the display characters for ⅅⅆⅇⅈⅉ and ⊺.
+* Alt+Enter hot key cycles through the Examples.
 
 ## MathML intent-attribute support:
 * The derivative and partial-derivative intent attributes are added for the dy/dx and higher-order derivative styles.
