@@ -420,7 +420,7 @@ negatedOperator
     = o:rawOperator "\u0338" {  // negated operators
         return {negatedoperator: o};
     }
-    / "/" o:rawOperator? {  // negated operators
+    / "/" o:rawOperator {  // negated operators
         return {negatedoperator: o};
     }
 rawOperator

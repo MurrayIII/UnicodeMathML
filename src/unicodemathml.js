@@ -2102,8 +2102,6 @@ function preprocess(dsty, uast, index, arr) {
                            arg: arg, naryand: value.naryand}};
 
         case "negatedoperator":
-            if (!value)
-                return {colored: {color: '#F00', of: {operator: '/'}}};
             return (value in negs) ? {operator: negs[value]} : {negatedoperator: value};
 
         case "phantom":
@@ -3344,6 +3342,11 @@ function unicodemathml(unicodemath, displaystyle) {
     try {
         var t1s = performance.now();
         var uast = parse(unicodemath);
+    } catch (error) {
+        // Display unparsable string in red
+        uast = {unicodemath:{content:[{expr:[{colored:{color:'#F00',of:{text:unicodemath}}}]}],eqnumber:null}};
+    }
+    try {
         var jsonParse = JSON.stringify(uast, undefined);
         var t1e = performance.now();
         debugLog(uast);
