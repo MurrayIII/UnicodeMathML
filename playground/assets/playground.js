@@ -853,7 +853,7 @@ async function draw() {
 
     // get input(s) – depending on the ummlConfig.splitInput option, either...
     var inp;
-    if (ummlConfig.splitInput) {
+    if (ummlConfig.splitInput && !input.value.startsWith("<math")) {
         inp = input.value.split("\n");  // ...process each line of input separately...
     } else {
         inp = [input.value];  // ...or treat the entire input as a UnicodeMath expression

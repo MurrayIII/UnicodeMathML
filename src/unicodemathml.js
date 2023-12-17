@@ -909,6 +909,14 @@ function isFunctionName(fn) {
     return ["Im", "Pr", "Re", "arg", "def", "deg", "det", "dim", "erf", "exp", "gcd", "hom", "inf", "ker", "lim", "log", "ln", "max", "min", "mod", "sup", "tg"].includes(fn);
 }
 
+function isTranspose(value) {
+    return Array.isArray(value) &&
+        value[0].hasOwnProperty('atoms') &&
+        Array.isArray(value[0].atoms) &&
+        value[0].atoms[0].hasOwnProperty("chars") &&
+        value[0].atoms[0].chars == '⊺';
+}
+
 function inRange(ch0, ch, ch1) {
     return ch >= ch0 && ch <= ch1;
 }
@@ -2278,12 +2286,8 @@ function preprocess(dsty, uast, index, arr) {
                         }
                         if ("high" in value) {
                             ret.high = preprocess(dsty, value.high);
-                            if (Array.isArray(ret.high) && ret.high[0].hasOwnProperty('atoms') &&
-                                Array.isArray(ret.high[0].atoms) &&
-                                ret.high[0].atoms[0].hasOwnProperty("chars") &&
-                                ret.high[0].atoms[0].chars == '⊺') {
+                            if (isTranspose(ret.high))
                                 ret.high[0].atoms.intent = 'transpose';
-                            }
                         }
                     }
                     if (k(base) == "atoms" && base.atoms.funct == undefined) {
@@ -2322,6 +2326,8 @@ function preprocess(dsty, uast, index, arr) {
                     }
                     if ("prehigh" in value) {
                         ret.prehigh = preprocess(dsty, value.prehigh);
+                        if (isTranspose(ret.prehigh))
+                            ret.prehigh[0].atoms.intent = 'transpose';
                     }
 
                     // if a prescript contains a subsup, pull its base and
@@ -3339,6 +3345,9 @@ function escapeHTMLSpecialChars(str) {
 
 function unicodemathml(unicodemath, displaystyle) {
     debugGroup(unicodemath);
+    if (unicodemath.startsWith("<math")) {
+        return {mathml: unicodemath, details: {}};
+    }
     try {
         var t1s = performance.now();
         var uast = parse(unicodemath);
@@ -3407,15 +3416,9 @@ function unicodemathml(unicodemath, displaystyle) {
 }
 
 
-
-
-
-
-
-
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////// LATEX /////////////////////////////////////
+//////////////////////////////////// LaTeX /////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
