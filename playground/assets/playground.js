@@ -413,7 +413,7 @@ function getSubSupDigit(str, i, delim) {
     var ch = str[i];
     var op = str[i - 1];
 
-    if (!'_^'.includes(op) || !'+-= )]}'.includes(delim) || !/[0-9]/.test(ch))
+    if (!'_^'.includes(op) || !'+-=/ )]}'.includes(delim) || !/[0-9]/.test(ch))
         return '';
 
     // If the preceding op is the other subsup op, return '', e.g., for a_0^2
@@ -807,47 +807,48 @@ async function draw() {
     prevInputValue = input.value;
 
     // display code points corresponding to the characters
-    var codepoints_HTML = "";
-    Array.from(input.value).forEach(c => {
-        var cp = c.codePointAt(0).toString(16).padStart(4, '0').toUpperCase();
+    if (!input.value.startsWith('<math')) {
+        var codepoints_HTML = "";
+        Array.from(input.value).forEach(c => {
+            var cp = c.codePointAt(0).toString(16).padStart(4, '0').toUpperCase();
 
-        // highlight special invisible characters and spaces (via
-        // https://en.wikipedia.org/wiki/Whitespace_character#Unicode,
-        // https://www.ptiglobal.com/2018/04/26/the-beauty-of-unicode-zero-width-characters/,
-        // https://330k.github.io/misc_tools/unicode_steganography.html)
-        var invisibleChar = [
-            "0009", "000A", "000B", "000C", "000D", "0020", "0085", "00A0",
-            "1680", "2000", "2001", "2002", "2003", "2004", "2005", "2006",
-            "2007", "2008", "2009", "200A", "200B", "200C", "200D", "200E",
-            "2028", "2029", "202A", "202C", "202D", "202F", "205F", "2060",
-            "2061", "2062", "2063", "2064", "2800", "3000", "180E", "FEFF",
+            // highlight special invisible characters and spaces (via
+            // https://en.wikipedia.org/wiki/Whitespace_character#Unicode,
+            // https://www.ptiglobal.com/2018/04/26/the-beauty-of-unicode-zero-width-characters/,
+            // https://330k.github.io/misc_tools/unicode_steganography.html)
+            var invisibleChar = [
+                "0009", "000A", "000B", "000C", "000D", "0020", "0085", "00A0",
+                "1680", "2000", "2001", "2002", "2003", "2004", "2005", "2006",
+                "2007", "2008", "2009", "200A", "200B", "200C", "200D", "200E",
+                "2028", "2029", "202A", "202C", "202D", "202F", "205F", "2060",
+                "2061", "2062", "2063", "2064", "2800", "3000", "180E", "FEFF",
             ].includes(cp);
 
-        // lookup unicode data for tooltip
-        var tooltip = "";
-        if (typeof getCodepointData === "function") {
-            try {
-                var cpd = getCodepointData(cp);
-                tooltip = `Name: ${cpd["name"].replace("<", "&amp;lt;").replace(">", "&amp;gt;")}<br>Block: ${cpd["block"]}<br>Category: ${cpd["category"]}`;
-            } catch (e) {
-                tooltip = "no info found";
+            // lookup unicode data for tooltip
+            var tooltip = "";
+            if (typeof getCodepointData === "function") {
+                try {
+                    var cpd = getCodepointData(cp);
+                    tooltip = `Name: ${cpd["name"].replace("<", "&amp;lt;").replace(">", "&amp;gt;")}<br>Block: ${cpd["block"]}<br>Category: ${cpd["category"]}`;
+                } catch (e) {
+                    tooltip = "no info found";
+                }
             }
-        }
 
-        // lookup tooltip data as previously defined for the on-screen buttons
-        // and prepend it
-        if (symbolTooltips[c] != undefined && symbolTooltips[c] != "") {
-            tooltip = symbolTooltips[c] + "<hr>" + tooltip;
-        }
+            // lookup tooltip data as previously defined for the on-screen buttons
+            // and prepend it
+            if (symbolTooltips[c] != undefined && symbolTooltips[c] != "") {
+                tooltip = symbolTooltips[c] + "<hr>" + tooltip;
+            }
 
-        codepoints_HTML += '<div class="cp' + (invisibleChar ? ' invisible-char' : '') + '" data-tooltip="' + tooltip + '"><div class="p">' + cp + '</div><div class="c">' + c + '</div></div>'
+            codepoints_HTML += '<div class="cp' + (invisibleChar ? ' invisible-char' : '') + '" data-tooltip="' + tooltip + '"><div class="p">' + cp + '</div><div class="c">' + c + '</div></div>'
 
-        if (c == "\n") {
-            codepoints_HTML += "<br>";
-        }
-    });
-    codepoints.innerHTML = codepoints_HTML;
-
+            if (c == "\n") {
+                codepoints_HTML += "<br>";
+            }
+        });
+        codepoints.innerHTML = codepoints_HTML;
+    }
     // update local storage
     window.localStorage.setItem('unicodemath', input.value.replace(/\n\r?/g, 'LINEBREAK'));
 

@@ -909,20 +909,32 @@ function isFunctionName(fn) {
     return ["Im", "Pr", "Re", "arg", "def", "deg", "det", "dim", "erf", "exp", "gcd", "hom", "inf", "ker", "lim", "log", "ln", "max", "min", "mod", "sup", "tg"].includes(fn);
 }
 
+function inRange(ch0, ch, ch1) {
+    return ch >= ch0 && ch <= ch1;
+}
+
+function isAlphanumeric(ch) {
+    return /[\w]/.test(ch) || ch >= '\u3018' || isGreek(ch) || isDoubleStruck(ch);
+}
+
+function isAsciiDigit(ch) {
+    return inRange('0', ch, '9');
+}
+
+function isDoubleStruck(ch) {
+    return inRange('\u2145', ch, '\u2149');
+}
+
+function isGreek(ch) {
+    return inRange('\u0391', ch, '\u03F5');
+}
+
 function isTranspose(value) {
     return Array.isArray(value) &&
         value[0].hasOwnProperty('atoms') &&
         Array.isArray(value[0].atoms) &&
         value[0].atoms[0].hasOwnProperty("chars") &&
         value[0].atoms[0].chars == '⊺';
-}
-
-function inRange(ch0, ch, ch1) {
-    return ch >= ch0 && ch <= ch1;
-}
-
-function isAsciiDigit(ch) {
-    return inRange('0', ch, '9');
 }
 
 function foldMathItalic(code) {
@@ -1668,34 +1680,35 @@ function phantomOptions(mask) {
 
 // compute a list of enclosure notation attributes options based on a bit mask
 // or symbol
+const symbolClasses = {
+    '▭': 'box',
+    '̄': 'top',
+    '▁': 'bottom',
+    '▢': 'roundedbox',
+    '○': 'circle',
+    '⟌': 'longdiv',
+    "⃧": 'actuarial',
+    '⬭': 'circle',
+    '╱': 'cancel',
+    '╲': 'bcancel',
+    '╳': 'xcancel'
+};
+
+const maskClasses = {
+    1: 'top',
+    2: 'bottom',
+    4: 'left',
+    8: 'right',
+    16: 'horizontalstrike',
+    32: 'verticalstrike',
+    64: 'downdiagonalstrike',
+    128: 'updiagonalstrike'
+};
+
 function enclosureAttrs(mask, symbol) {
     if (mask < 0 || mask > 255) {
         throw "enclosure mask is not between 0 and 255";
     }
-
-    const symbolClasses = {
-        '▭': 'box',
-        '̄': 'top',
-        '▁': 'bottom',
-        '▢': 'roundedbox',
-        '○': 'circle',
-        '⟌': 'longdiv',
-        "⃧": 'actuarial',
-        '⬭': 'circle',
-        '╱': 'cancel',
-        '╲': 'bcancel',
-        '╳': 'xcancel'
-    };
-    const maskClasses = {
-        1: 'top',
-        2: 'bottom',
-        4: 'left',
-        8: 'right',
-        16: 'horizontalstrike',
-        32: 'verticalstrike',
-        64: 'downdiagonalstrike',
-        128: 'updiagonalstrike'
-    };
 
     // get classes corresponding to mask
     var ret = "";
@@ -1712,7 +1725,6 @@ function enclosureAttrs(mask, symbol) {
     } else if (symbol != null) {
         ret += symbolClasses[symbol];
     }
-
     return ret;
 }
 
@@ -3343,9 +3355,131 @@ function escapeHTMLSpecialChars(str) {
     });
 };
 
+function unary(node, op) {
+    return op + dump(node.firstElementChild);
+}
+
+function binary(node, op) {
+    return dump(node.firstElementChild) + op + dump(node.lastElementChild) + ' ';
+}
+
+function ternary(node, op1, op2) {
+    return dump(node.firstElementChild) + op1 + dump(node.children[1]) +
+        op2 + dump(node.lastElementChild) + ' ';
+}
+
+function dump(value) {
+    // Convert MathML to UnicodeMath
+    let cNode = value.children.length;
+    let ret = '';
+
+    switch (value.nodeName) {
+        case 'menclose':
+            var symbol = '▭';
+            if (value.attributes.hasOwnProperty('notation')) {
+                for (const [key, val] of Object.entries(symbolClasses)) {
+                    if (val == value.attributes.notation.nodeValue) {
+                        symbol = key;
+                        break;
+                    }
+                }
+            }
+            return unary(value, symbol);
+
+        case 'msqrt':
+            return unary(value, '√');
+
+        case 'mfrac':
+            var op = '/';
+            if (value.attributes.hasOwnProperty('linethickness') &&
+                value.attributes.linethickness.nodeValue == '0') {
+                op = '¦';
+                if (value.parentElement.attributes.hasOwnProperty('intent') &&
+                    value.parentElement.attributes.intent.nodeValue.startsWith('binomial-coefficient'))
+                    op = '⒞';
+                }
+            return binary(value, op);
+
+        case 'msup':
+            // Check for intent='transpose'
+            ret = binary(value, '^');
+            if (value.lastElementChild.attributes.hasOwnProperty('intent') &&
+                value.lastElementChild.attributes.intent.nodeValue == 'transpose') {
+                let cRet = ret.length;
+                let code = codeAt(ret, cRet - 1);
+                if (code != 0x22BA) {
+                    if (code > 0xFFFF)
+                        cRet--;
+                    ret = ret.substring(0, cRet - 1) + '⊺';
+                }
+            }
+            return ret;
+
+        case 'msub':
+            return binary(value, '_');
+
+        case 'msubsup':
+            return ternary(value, '_', '^');
+
+        case 'munderover':
+            return ternary(value, '┬', '┴');
+
+        case 'mo':
+            if (value.innerHTML == '&ApplyFunction;')
+                return '\u2061';
+        case 'mi':
+            if (value.attributes.hasOwnProperty('intent')) {
+                let ch = value.attributes.intent.nodeValue;
+                if (isDoubleStruck(ch))
+                    return ch;
+            }
+        case 'mn':
+            return value.innerHTML;
+        case 'mtext':
+            return '"' + value.innerHTML + '"';
+    }
+
+    for (var i = 0; i < cNode; i++) {
+        let node = value.children[i];
+        ret += dump(node);
+    }
+    let mrowIntent = value.nodeName == 'mrow' && value.attributes.hasOwnProperty('intent')
+        ? value.attributes.intent.nodeValue : '';
+
+    if (mrowIntent && mrowIntent.startsWith('binomial-coefficient')) {
+        ret = ret.substring(1, ret.length - 1); // Remove enclosing parens for 𝑛⒞𝑘
+    } else if (cNode > 1 && value.nodeName != 'math' &&
+        (!mrowIntent || mrowIntent != ':fenced') &&
+        ['mfrac', 'msqrt', 'menclose', 'msup', 'msub', 'munderover', 'msubsup'].includes(value.parentElement.nodeName)) {
+        // Parenthesize ret if it's not all alphanumeric
+        let allAlphanumeric = true;
+        for (let i = 0; i < ret.length; i++) {
+            if (!isAlphanumeric(ret[i])) {
+                allAlphanumeric = false;
+                break;
+            }
+        }
+        if (!allAlphanumeric)
+            ret = '(' + ret + ')';
+    }
+    return ret;
+}
+
 function unicodemathml(unicodemath, displaystyle) {
     debugGroup(unicodemath);
     if (unicodemath.startsWith("<math")) {
+        // Convert MathML to UnicodeMath
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(unicodemath, "application/xml");
+        var unicodemath1 = dump(doc);
+        for (let i = 0; ; i++) {             // Remove some unnecessary ' '
+            i = unicodemath1.indexOf(' ', i);
+            if (i < 0)
+                break;
+            if ('=+−)'.includes(unicodemath1[i + 1]))
+                unicodemath1 = unicodemath1.substring(0, i) + unicodemath1.substring(i + 1);
+        }
+        console.log("UnicodeMath = " + unicodemath1);
         return {mathml: unicodemath, details: {}};
     }
     try {

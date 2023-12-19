@@ -322,7 +322,7 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 
 ## New features
 * The identity matrix and n×m matrix short cuts are implemented.
-* MathML tests are added to the console display of example.html.
+* MathML tests are added to example.html with results displayed in the console.
 * The Playground calls resolveCW() defined in unicodemathml.js to resolve control words instead of having a duplicate control-word list. Similarly to convert characters to math styles, the Playground uses the mathFonts[] defined in unicodemathml.js. Greek upper-case letters that look like ASCII letters are removed from the Greek letter gallery and Greek lower-case letter variants are added. 
 * An autocomplete menu appears when a control word is entered partially. The user can use up/down arrows to select the desired control word and enter it by typing Enter, Tab, or a space. The most common choice is highlighted by default.
 * Control words and operator combinations typed into the Playground input text area are autocorrected there as well as in the output window.
@@ -332,17 +332,18 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * In dictation input, ASCII letters and lower-case Greek letters are converted to math italic unless they comprise a function name, simple digit subscripts and superscripts are converted to the corresponding Unicode characters, ane three-character numeric fractions are converted to Unicode fractions.
 * Most symbols in the Playground galleries have LaTeX control-word tooltips.
 * Alt+x hex-to-Unicode (and vice versa) hot key is implemented in the Playground input. The Ctrl+b hot key toggles the selected characters between math bold and not math bold. Similarly, the Ctrl+i hot key toggles the selected characters between math italic and not math italic.
-* AST tabs appear only in _debug_ mode and only on screens wider than 786 pixels. The display changes to accomodate small screens, such as on mobile phones.
-* The class "unicodemath" and xmlns attributes are omitted on the <​math> tag. MathML indenting doesn't break a line between adjacent closing tags, thereby conserving screen height.
+* AST (abstract syntax tree) tabs appear only in _debug_ mode and only on screens wider than 786 pixels. The display changes to accomodate small screens, such as on mobile phones.
+* The class "unicodemath" and xmlns attributes are omitted on the <​math> tag. MathML and AST-tab indenting doesn't break a line between adjacent closing tags, thereby conserving screen height.
 * The symbol sets are collected into tabbed arrays with one set displayed at a time.
-* UnicodeMath transpose syntax <​base>^⊺, where ⊺ is U+22BA (\intercal).
+* The new UnicodeMath transpose syntax <​base>^⊺ and ^⊺ <​base>, where ⊺ is U+22BA (\intercal), is implemented.
 * Settings options to define the display characters for ⅅⅆⅇⅈⅉ and ⊺.
 * Alt+Enter hot key cycles through the Examples.
+* Pasting MathML into the input text area passes that MathML to the renderer and displays the corresponding preliminary UnicodeMath in the console.
 
 ## MathML intent-attribute support:
 * The derivative and partial-derivative intent attributes are added for the dy/dx and higher-order derivative styles.
 * The templates […,…], […,…[, ]…,…], and ]…,…[, produce closed-interval, closed-open-interval, open-closed-interval, and open-interval structures, respectively, each including the intent attribute with the interval name and arguments. The … can be a signed number, variable name or ∞. Similarly, the templates (…,…], and […,…) also produce open-closed-interval and closed-open-interval structures with the corresponding intent attribute values. The template (…,…) isn't given an intent attribute since it can be used for a math-function argument list or a point in a 2D plane.
-* Define the \intent (ⓘ) and \arg (ⓐ) options for enclosures, factorials, fences, atoms, sub/superscripts, and other expressions, thereby enabling the user to add intents explicitly to these constructs.
+* The \intent (ⓘ) and \arg (ⓐ) options are defined for enclosures, factorials, fences, atoms, sub/superscripts, and other expressions, thereby enabling the user to add intents explicitly to these constructs.
 * \abs for unambiguous entry of absolute value with the absolute-value intent attribute. \choose along with its intent attribute (binomial-coefficient). Intent attributes are included for UnicodeMath equation arrays, matrices, and determinants.
 * Define default intents for \abs, \choose, \cases, fences, n-ary objects, math-function objects, transpose objects, and double-struck italic symbols like differential d (ⅆ). This improves MathML readablity and supports round-tripping these concepts via MathML.
 
