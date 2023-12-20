@@ -2780,14 +2780,14 @@ function mtransform(dsty, puast) {
             var attrs = getAttrs(value, '');
 
             switch (value.symbol) {
+                case "\u2298":  // small fraction
+                    attrs.displaystyle = 'false'; // Fall through
                 case "/":       // normal fraction ¹-₂
                     return {mfrac: withAttrs(attrs, of)};
                 case "\u2044":  // skewed fraction ¹/₂
                     return {mfrac: withAttrs({bevelled: true}, of)};
                 case "\u2215":  // linear fraction 1/2
                     return {mrow: noAttr([of[0], {mo: noAttr('/')}, of[1]])};
-                case "\u2298":  // small fraction
-                    return {mstyle: withAttrs({displaystyle: false}, {mfrac: noAttr(of)})};
             }
 
         case "atop":
@@ -2797,9 +2797,9 @@ function mtransform(dsty, puast) {
             var arg1 = value[1].arg;
             var top = mtransform(dsty, dropOutermostParens(value[0]));
             var bottom = mtransform(dsty, dropOutermostParens(value[1]));
-            if(arg0)
+            if (arg0)
                 top.mrow.attributes.arg = arg0;
-            if(arg1)
+            if (arg1)
                 bottom.mrow.attributes.arg = arg1;
             return {mfrac: withAttrs(attrs, [top, bottom])};
 
@@ -3389,14 +3389,24 @@ function dump(value) {
 
         case 'mfrac':
             var op = '/';
+            if (value.attributes.hasOwnProperty('displaystyle') &&
+                value.attributes.displaystyle.nodeValue == 'false') {
+                op = '⊘';
+            }
             if (value.attributes.hasOwnProperty('linethickness') &&
                 value.attributes.linethickness.nodeValue == '0') {
                 op = '¦';
                 if (value.parentElement.attributes.hasOwnProperty('intent') &&
                     value.parentElement.attributes.intent.nodeValue.startsWith('binomial-coefficient'))
                     op = '⒞';
-                }
-            return binary(value, op);
+            }
+            ret = binary(value, op);
+            if (op == '⊘' && ret.length == 4) {
+                var ch = getUnicodeFraction(ret[0], ret[2]);
+                if (ch)
+                    return ch;
+            }
+            return ret;
 
         case 'msup':
             if (isAsciiDigit(value.lastElementChild.textContent)) {
