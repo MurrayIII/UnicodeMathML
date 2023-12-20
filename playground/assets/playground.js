@@ -806,8 +806,14 @@ async function draw() {
 
     prevInputValue = input.value;
 
-    // display code points corresponding to the characters
-    if (!input.value.startsWith('<math')) {
+    if (input.value.startsWith('<math')) {
+        // Resize to display input MathML
+        input.style.height = "400px";
+        input.style.fontSize = "0.9rem";
+    } else {
+        // display code points corresponding to the characters
+        input.style.height = "200px";
+        input.style.fontSize = "1.5rem";
         var codepoints_HTML = "";
         Array.from(input.value).forEach(c => {
             var cp = c.codePointAt(0).toString(16).padStart(4, '0').toUpperCase();

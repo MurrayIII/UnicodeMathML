@@ -2671,8 +2671,6 @@ function mtransform(dsty, puast) {
 
             if ('←→↔⇐⇒⇔↩↪↼⇀↽⇁⊢⊣⟵⟶⟷⟸⟹⟺↦⊨'.split('').includes(val)) {
                 attrs.stretchy = true;
-            } else if (val == '\u2061') {
-                val = '&ApplyFunction;';
             }
             return {mo: withAttrs(attrs, val)};
 
@@ -2996,7 +2994,7 @@ function mtransform(dsty, puast) {
 
         case "function":
             var attrs = getAttrs(value, ':function');
-            return {mrow: withAttrs(attrs, [mtransform(dsty, value.f), {mo: noAttr("&ApplyFunction;")}, mtransform(dsty, value.of)])};
+            return {mrow: withAttrs(attrs, [mtransform(dsty, value.f), {mo: noAttr('\u2061')}, mtransform(dsty, value.of)])};
 
         case "text":
             // replace spaces with non-breaking spaces (leading and trailing
@@ -3401,6 +3399,10 @@ function dump(value) {
             return binary(value, op);
 
         case 'msup':
+            if (isAsciiDigit(value.lastElementChild.textContent)) {
+                return dump(value.firstElementChild) +
+                    digitSuperscripts[value.lastElementChild.textContent];
+            }
             // Check for intent='transpose'
             ret = binary(value, '^');
             if (value.lastElementChild.attributes.hasOwnProperty('intent') &&
@@ -3410,12 +3412,16 @@ function dump(value) {
                 if (code != 0x22BA) {
                     if (code > 0xFFFF)
                         cRet--;
-                    ret = ret.substring(0, cRet - 1) + '⊺';
+                    return ret.substring(0, cRet - 1) + '⊺';
                 }
             }
             return ret;
 
         case 'msub':
+            if (isAsciiDigit(value.lastElementChild.textContent)) {
+                return dump(value.firstElementChild) +
+                    digitSubscripts[value.lastElementChild.textContent];
+            }
             return binary(value, '_');
 
         case 'msubsup':
@@ -3427,11 +3433,17 @@ function dump(value) {
         case 'mo':
             if (value.innerHTML == '&ApplyFunction;')
                 return '\u2061';
+            return value.innerHTML;
+
         case 'mi':
             if (value.attributes.hasOwnProperty('intent')) {
                 let ch = value.attributes.intent.nodeValue;
                 if (isDoubleStruck(ch))
                     return ch;
+            }
+            if (!value.attributes.hasOwnProperty('mathvariant') &&
+                value.innerHTML.length == 1) {
+                return italicizeCharacter(value.innerHTML);
             }
         case 'mn':
             return value.innerHTML;
