@@ -636,6 +636,15 @@ function autocomplete() {
             } else if (e.shiftKey && e.key == 'Enter') {
                 //e.preventDefault();
                 insertAtCursorPos('\u200B');
+            } else if (e.altKey && e.key == 'u') {
+                e.preventDefault();
+                if (input.value.startsWith("<math")) {
+                    // Convert MathML to UnicodeMath
+                    let parser = new DOMParser();
+                    let doc = parser.parseFromString(input.value, "application/xml");
+                    input.value = dump(doc);
+                    draw();
+                }
             } else if (e.altKey && e.key == 'Enter') {
                 // Enter Examples[iExample]
                 x = document.getElementById('Examples').childNodes[0];

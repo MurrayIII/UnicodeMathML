@@ -885,6 +885,14 @@ const narys = {
     '∐': 'coproduct',
 };
 
+const matrixIntents = {
+    '⒨': 'parenthesized-matrix',
+    '⒱': 'determinant',
+    '⒩': 'normed-matrix',
+    'ⓢ': 'bracketed-matrix',
+    'Ⓢ': 'curly-braced-matrix',
+}
+
 function isFunctionName(fn) {
     var cch = fn.length;
     var i = 0;
@@ -2516,9 +2524,12 @@ function preprocess(dsty, uast, index, arr) {
             var t = value.type;
             var o = brackets[t][0];
             var c = brackets[t][1];
-            if (t == '⒱' && !value.intent && emitDefaultIntents)
-                value.intent = 'determinant';
 
+            if (!value.intent && emitDefaultIntents) {
+                var val = matrixIntents[t];
+                if (val)
+                    value.intent = ':' + val;
+            }
             return {bracketed: {open: o, close: c, intent: value.intent, arg: arg, content: preprocess(dsty, value.content)}};
 
         case "bracketed":
@@ -2698,7 +2709,7 @@ function mtransform(dsty, puast) {
 
         case "matrix":
             value = mtransform(dsty, value);
-            var attrs = getAttrs(value, 'matrix');
+            var attrs = getAttrs(value, ':matrix');
             return {mtable: withAttrs(attrs, value)};
         case "mrows":
             return value.map(r => ({mtr: noAttr(mtransform(dsty, r))}));
@@ -3061,6 +3072,11 @@ function mtransform(dsty, puast) {
                 if (Array.isArray(value) && value[0].hasOwnProperty('diacriticized'))
                     return {mrow: withAttrs(attrs, mtransform(dsty, value))};
             } else if (str[0] != 'Ⅎ' && !isFunctionName(str)) {
+                if (n == 3 && value[1].hasOwnProperty('spaces') && str[0] == 'ⅆ' &&
+                    value[0].hasOwnProperty('chars')) {
+                    // Need a more general fix for cases like 𝑥 ⅆ𝑥
+                    str = value[0].chars + '\u2009' + str;
+                }
                 var cch = str.length;
 
                 if (cch > 2 || cch == 2 && str.codePointAt(0) < 0xFFFF) {
@@ -3071,7 +3087,7 @@ function mtransform(dsty, puast) {
                         cchCh = (cch >= 2 && str.codePointAt(i) > 0xFFFF) ? 2 : 1;
 
                         if (str[i] >= 'ⅅ' && str[i] <= 'ⅉ') {
-                            if (i && str[i] <= 'ⅆ') {
+                            if (i && str[i] == 'ⅆ' && str[i - 1] != '\u2009') {
                                 mis.push({mi: noAttr('\u2009')});
                             }
                             let ch = doublestruckChar(str[i]);
@@ -3366,12 +3382,44 @@ function ternary(node, op1, op2) {
         op2 + dump(node.lastElementChild) + ' ';
 }
 
+    function nary(node, op, cNode) {
+        let ret = '';
+
+        for (let i = 0; i < cNode; i++) {
+            // Get the rows
+            ret += dump(node.children[i]);
+            if (i < cNode - 1)
+                ret += op;
+        }
+        return ret;
+    }
+
 function dump(value) {
     // Convert MathML to UnicodeMath
     let cNode = value.children.length;
     let ret = '';
 
     switch (value.nodeName) {
+        case 'mtable':
+            var symbol = '■';
+            if (value.parentElement.attributes.hasOwnProperty('intent')) {
+                let intent = value.parentElement.attributes.intent.nodeValue.substring(1);
+                for (const [key, val] of Object.entries(matrixIntents)) {
+                    if (val == intent) {
+                        symbol = key;
+                        break;
+                    }
+                }
+
+            }
+            return symbol + '(' + nary(value, '@', cNode) + ')';
+
+        case 'mtr':
+            return nary(value, '&', cNode);
+
+        case 'mtd':
+            return dump(value.firstElementChild);
+
         case 'menclose':
             var symbol = '▭';
             if (value.attributes.hasOwnProperty('notation')) {
@@ -3386,6 +3434,9 @@ function dump(value) {
 
         case 'msqrt':
             return unary(value, '√');
+
+        case 'mroot':
+            return '⒭' + dump(value.lastElementChild) + '▒' + dump(value.firstElementChild);
 
         case 'mfrac':
             var op = '/';
@@ -3468,11 +3519,16 @@ function dump(value) {
     let mrowIntent = value.nodeName == 'mrow' && value.attributes.hasOwnProperty('intent')
         ? value.attributes.intent.nodeValue : '';
 
-    if (mrowIntent && mrowIntent.startsWith('binomial-coefficient')) {
-        ret = ret.substring(1, ret.length - 1); // Remove enclosing parens for 𝑛⒞𝑘
+    if (mrowIntent == ':function' && value.previousElementSibling.nodeName == 'mi') {
+        ret = ' ' + ret;                    // Separate variable & function name 
+    }
+    if (mrowIntent && (mrowIntent.startsWith('binomial-coefficient') ||
+        mrowIntent.endsWith('matrix') || mrowIntent == ':determinant')) {
+        // Remove enclosing parens for 𝑛⒞𝑘 and bracketed matrices
+        ret = ret.substring(1, ret.length - 1);
     } else if (cNode > 1 && value.nodeName != 'math' &&
         (!mrowIntent || mrowIntent != ':fenced') &&
-        ['mfrac', 'msqrt', 'menclose', 'msup', 'msub', 'munderover', 'msubsup'].includes(value.parentElement.nodeName)) {
+        ['mfrac', 'msqrt', 'mroot', 'menclose', 'msup', 'msub', 'munderover', 'msubsup'].includes(value.parentElement.nodeName)) {
         // Parenthesize ret if it's not all alphanumeric
         let allAlphanumeric = true;
         for (let i = 0; i < ret.length; i++) {
@@ -3968,5 +4024,6 @@ root.isFunctionName = isFunctionName;
 root.foldMathItalic = foldMathItalic;
 root.foldMathAlphanumeric = foldMathAlphanumeric;
 root.getUnicodeFraction = getUnicodeFraction;
+root.dump = dump;
 
 })(this);
