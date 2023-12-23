@@ -1,3 +1,6 @@
+const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
+const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
+
 (function(root) {
 'use strict';
 
@@ -3457,6 +3460,9 @@ function dump(value) {
                 if (ch)
                     return ch;
             }
+            if (value.previousElementSibling && value.previousElementSibling.nodeName != 'mo') {
+                ret = ' ' + ret;                    // Separate variable and numerator
+            }
             return ret;
 
         case 'msup':
@@ -3519,7 +3525,8 @@ function dump(value) {
     let mrowIntent = value.nodeName == 'mrow' && value.attributes.hasOwnProperty('intent')
         ? value.attributes.intent.nodeValue : '';
 
-    if (mrowIntent == ':function' && value.previousElementSibling.nodeName == 'mi') {
+    if (mrowIntent == ':function' && value.previousElementSibling &&
+        value.previousElementSibling.nodeName == 'mi') {
         ret = ' ' + ret;                    // Separate variable & function name 
     }
     if (mrowIntent && (mrowIntent.startsWith('binomial-coefficient') ||
@@ -3543,20 +3550,31 @@ function dump(value) {
     return ret;
 }
 
+function MathMLtoUnicodeMath(mathML) {
+    // Convert MathML to UnicodeMath
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(mathML, "application/xml");
+    let unicodeMath = dump(doc);
+
+    for (let i = 0; ; i++) {             // Remove some unnecessary ' '
+        i = unicodeMath.indexOf(' ', i);
+        if (i < 0)
+            break;
+        if (i == unicodeMath.length - 1) {
+            unicodeMath = unicodeMath.substring(0, i);
+            break;
+        }
+        if ('=+− )'.includes(unicodeMath[i + 1]))
+            unicodeMath = unicodeMath.substring(0, i) + unicodeMath.substring(i + 1);
+    }
+    return unicodeMath;
+}
+
 function unicodemathml(unicodemath, displaystyle) {
     debugGroup(unicodemath);
     if (unicodemath.startsWith("<math")) {
         // Convert MathML to UnicodeMath
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(unicodemath, "application/xml");
-        var unicodemath1 = dump(doc);
-        for (let i = 0; ; i++) {             // Remove some unnecessary ' '
-            i = unicodemath1.indexOf(' ', i);
-            if (i < 0)
-                break;
-            if ('=+−)'.includes(unicodemath1[i + 1]))
-                unicodemath1 = unicodemath1.substring(0, i) + unicodemath1.substring(i + 1);
-        }
+        var unicodemath1 = MathMLtoUnicodeMath(unicodemath);
         console.log("UnicodeMath = " + unicodemath1);
         return {mathml: unicodemath, details: {}};
     }
@@ -4024,6 +4042,6 @@ root.isFunctionName = isFunctionName;
 root.foldMathItalic = foldMathItalic;
 root.foldMathAlphanumeric = foldMathAlphanumeric;
 root.getUnicodeFraction = getUnicodeFraction;
-root.dump = dump;
+root.MathMLtoUnicodeMath = MathMLtoUnicodeMath;
 
 })(this);

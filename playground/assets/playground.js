@@ -38,9 +38,6 @@ var mappedSingle = {
     "\'": "\u2032"
 };
 
-const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
-const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
-
 // escape mathml tags and entities, via https://stackoverflow.com/a/13538245
 function escapeMathMLSpecialChars(str) {
     var replacements = {
@@ -640,9 +637,7 @@ function autocomplete() {
                 e.preventDefault();
                 if (input.value.startsWith("<math")) {
                     // Convert MathML to UnicodeMath
-                    let parser = new DOMParser();
-                    let doc = parser.parseFromString(input.value, "application/xml");
-                    input.value = dump(doc);
+                    input.value = MathMLtoUnicodeMath(input.value);
                     draw();
                 }
             } else if (e.altKey && e.key == 'Enter') {
