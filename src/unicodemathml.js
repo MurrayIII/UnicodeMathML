@@ -3045,7 +3045,12 @@ function mtransform(dsty, puast) {
             }
 
         case "colored":
-            return {mstyle: withAttrs({mathcolor: value.color}, mtransform(dsty, value.of))};
+            var attrs = {mathcolor: value.color};
+            value.of = mtransform(dsty, value.of);
+            if (value.of.hasOwnProperty('mo')) {
+                return {mo: withAttrs(attrs, value.of.mo.content)};
+            }
+            return {mstyle: withAttrs(attrs, value.of)};
         case "bgcolored":
             return {mstyle: withAttrs({mathbackground: value.color}, mtransform(dsty, value.of))};
         case "comment":
