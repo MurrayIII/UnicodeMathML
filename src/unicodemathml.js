@@ -2745,7 +2745,7 @@ function mtransform(dsty, puast) {
                     attrs.width = 0;
                 }
                 if (options.indexOf('fPhantomZeroAscent') !== -1) {
-                    attrs.height = "1em";
+                    attrs.height = 0;
                 }
                 if (options.indexOf('fPhantomZeroDescent') !== -1) {
                     attrs.depth = 0;
@@ -2776,7 +2776,7 @@ function mtransform(dsty, puast) {
                     attrs.depth = attrs.height = 0;
                     break;
                 case "⬆":
-                    attrs.height= "1em";
+                    attrs.height= 0;
                     break;
                 case "⬇":
                     attrs.depth = 0;
@@ -3390,17 +3390,17 @@ function ternary(node, op1, op2) {
         op2 + dump(node.lastElementChild) + ' ';
 }
 
-    function nary(node, op, cNode) {
-        let ret = '';
+function nary(node, op, cNode) {
+    let ret = '';
 
-        for (let i = 0; i < cNode; i++) {
-            // Get the rows
-            ret += dump(node.children[i]);
-            if (i < cNode - 1)
-                ret += op;
-        }
-        return ret;
+    for (let i = 0; i < cNode; i++) {
+        // Get the rows
+        ret += dump(node.children[i]);
+        if (i < cNode - 1)
+            ret += op;
     }
+    return ret;
+}
 
 function dump(value) {
     // Convert MathML to UnicodeMath
@@ -3439,6 +3439,23 @@ function dump(value) {
                 }
             }
             return unary(value, symbol);
+
+        case 'mpadded':
+            if (value.attributes.width && value.attributes.width.nodeValue == '0') {
+                // Handle \hsmash
+                return unary(value, '⬌');
+            }
+            if (value.attributes.height && value.attributes.height.nodeValue == '0') {
+                // Handle \asmash
+                let op = '⬆';
+                if (value.attributes.depth && value.attributes.depth.nodeValue == '0')
+                    op = '⬍';
+                return unary(value, op);
+            }
+            if (value.attributes.depth && value.attributes.depth.nodeValue == '0')
+                return unary(value, '⬇');
+
+            return dump(value.firstElementChild);
 
         case 'msqrt':
             return unary(value, '√');
@@ -3496,11 +3513,19 @@ function dump(value) {
             }
             return binary(value, '_');
 
+        case 'munderover':
+            if (!value.parentElement.attributes.hasOwnProperty('intent') ||
+                !value.parentElement.attributes.intent.nodeValue.startsWith('sum')) {
+                return ternary(value, '┬', '┴');
+            }
         case 'msubsup':
             return ternary(value, '_', '^');
 
-        case 'munderover':
-            return ternary(value, '┬', '┴');
+        case 'mover':
+            return binary(value, '┴');
+
+        case 'munder':
+            return binary(value, '┬');
 
         case 'mo':
             if (value.innerHTML == '&ApplyFunction;')
@@ -3540,16 +3565,30 @@ function dump(value) {
         ret = ret.substring(1, ret.length - 1);
     } else if (cNode > 1 && value.nodeName != 'math' &&
         (!mrowIntent || mrowIntent != ':fenced') &&
-        ['mfrac', 'msqrt', 'mroot', 'menclose', 'msup', 'msub', 'munderover', 'msubsup'].includes(value.parentElement.nodeName)) {
-        // Parenthesize ret if it's not all alphanumeric
-        let allAlphanumeric = true;
-        for (let i = 0; i < ret.length; i++) {
-            if (!isAlphanumeric(ret[i])) {
-                allAlphanumeric = false;
+        ['mfrac', 'msqrt', 'mroot', 'menclose', 'msup', 'msub', 'munderover',
+            'msubsup', 'mover', 'munder', 'mpadded'].includes(value.parentElement.nodeName)) {
+        // Parenthesize compound expressions
+        let needParens = false;
+        let cch = ret.length;
+        for (let i = 0; i < cch; i++) {
+            if (ret[i] == '(' && i < cch - 1) {
+                // Handle nested brackets?
+                let j = ret.indexOf(')', i + 1);
+                if (j > 0) {
+                    i = j;                  // Include parenthesized expression
+                    continue;
+                }
+                needParens = true;
+                break;
+            }
+            if (!isAlphanumeric(ret[i]) && !digitSuperscripts.includes(ret[i]) &&
+                ret[i] != '\u2061' && ret[i] != '∞' && ret[i] != '⬌' &&
+                (i || ret[i] != '−')) {
+                needParens = true;
                 break;
             }
         }
-        if (!allAlphanumeric)
+        if (needParens)
             ret = '(' + ret + ')';
     }
     return ret;
