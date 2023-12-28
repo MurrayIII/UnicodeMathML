@@ -1867,10 +1867,9 @@ function diacriticPosition(d) {
 }
 
 // determine space width attribute values: x/18em
-function spaceWidth(x) {
-    var spaceWidths = ['0', 'veryverythinmathspace','verythinmathspace','thinmathspace','mediummathspace','thickmathspace','verythickmathspace','veryverythickmathspace', null, '0.5em', null, null, null, null, null, null, null, null, '1em'];
-    return spaceWidths[x];
-}
+//                    0         1                       2                   3               4                   5               6                       7               8      9      10    11    12    13    14    15    16    17     18
+const uniSpaces = ['\u200B', '\u200A',             '\u200A\u200A',     '\u2009',       '\u205F',          '\u2005',         '\u2004',            '\u2004\u200A',       '', '\u2002',  '',   '',   '',   '',   '',   '',   '',   '', '\u2003'];
+var spaceWidths = ['0', 'veryverythinmathspace','verythinmathspace','thinmathspace','mediummathspace','thickmathspace','verythickmathspace','veryverythickmathspace', null, '0.5em', null, null, null, null, null, null, null, null, '1em'];
 
 // determine sizes: negative numbers => smaller sizes, positive numbers =>
 // larger sizes, 0 => 1. constant 1.25 determined empirically based on what
@@ -3189,7 +3188,7 @@ function mtransform(dsty, puast) {
             return mtransform(dsty, value);
         case "space":
             if (typeof value == 'number') {
-                return {mspace: withAttrs({width: spaceWidth(value)}, null)};
+                return {mspace: withAttrs({width: spaceWidths[value]}, null)};
             } else if (value == 'digit') {
                 // mathml provides no way of getting the width of a digit and
                 // using that as a space, so let's use a phantomized 0 here
@@ -3442,18 +3441,16 @@ function dump(value) {
 
         case 'mpadded':
             if (value.attributes.width && value.attributes.width.nodeValue == '0') {
-                // Handle \hsmash
-                return unary(value, '⬌');
+                return unary(value, '⬌');  // Handle \hsmash
             }
             if (value.attributes.height && value.attributes.height.nodeValue == '0') {
-                // Handle \asmash
-                let op = '⬆';
+                let op = '⬆';               // Handle \asmash
                 if (value.attributes.depth && value.attributes.depth.nodeValue == '0')
-                    op = '⬍';
+                    op = '⬍';               // Handle \smash
                 return unary(value, op);
             }
             if (value.attributes.depth && value.attributes.depth.nodeValue == '0')
-                return unary(value, '⬇');
+                return unary(value, '⬇');   // Handle \dsmash
 
             return dump(value.firstElementChild);
 
@@ -3506,6 +3503,11 @@ function dump(value) {
             }
             return ret;
 
+        case 'munder':
+            if (value.firstElementChild.nodeName != 'mi' ||
+                value.firstElementChild.innerHTML != 'lim') {
+                return binary(value, '┬');
+            }                               // Fall through
         case 'msub':
             if (isAsciiDigit(value.lastElementChild.textContent)) {
                 return dump(value.firstElementChild) +
@@ -3517,15 +3519,13 @@ function dump(value) {
             if (!value.parentElement.attributes.hasOwnProperty('intent') ||
                 !value.parentElement.attributes.intent.nodeValue.startsWith('sum')) {
                 return ternary(value, '┬', '┴');
-            }
+            }                               // Fall through
         case 'msubsup':
             return ternary(value, '_', '^');
 
         case 'mover':
             return binary(value, '┴');
 
-        case 'munder':
-            return binary(value, '┬');
 
         case 'mo':
             if (value.innerHTML == '&ApplyFunction;')
@@ -3546,6 +3546,15 @@ function dump(value) {
             return value.innerHTML;
         case 'mtext':
             return '"' + value.innerHTML + '"';
+
+        case 'mspace':
+            if (value.attributes.hasOwnProperty('width')) {
+                for (let i = 0; i < spaceWidths.length; i++) {
+                    if (value.attributes.width.nodeValue == spaceWidths[i])
+                        return uniSpaces[i];
+                }
+            }
+            break;
     }
 
     for (var i = 0; i < cNode; i++) {
