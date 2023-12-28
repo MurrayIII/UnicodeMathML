@@ -899,7 +899,11 @@ async function draw() {
             var mathml, details;
             ({mathml, details} = unicodemathml(val, ummlConfig.displaystyle));
             output_HTML += mathml;
-            output_source_HTML += highlightMathML(escapeMathMLSpecialChars(indentMathML(mathml))) + "\n";
+            if (input.value.startsWith('<math')) {
+                output_source_HTML = MathMLtoUnicodeMath(input.value);
+            } else {
+                output_source_HTML += highlightMathML(escapeMathMLSpecialChars(indentMathML(mathml))) + "\n";
+            }
 
             // show parse tree and mathml ast
             if (details["intermediates"]) {

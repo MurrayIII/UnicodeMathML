@@ -564,7 +564,7 @@ trigName = 'a'? ('sin' / 'cos' / 'tan' / 'sec' / 'csc' / 'cot') 'h'?
 limName = "lim" / "log" / "lg"
 
 factor
-    = f:(trigName / limName) &opScript s:script __? o:operand {
+    = f:(trigName / limName) &opScript s:script __? '\u2061'? o:operand {
         if (Array.isArray(f)) {
             f = f.join("");
         }

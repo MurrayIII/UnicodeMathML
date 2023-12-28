@@ -3524,8 +3524,11 @@ function dump(value) {
             return ternary(value, '_', '^');
 
         case 'mover':
-            return binary(value, '┴');
-
+            var op = '┴';
+            if (value.attributes.hasOwnProperty('accent')) {
+                op = '';
+            }
+            return binary(value, op);
 
         case 'mo':
             if (value.innerHTML == '&ApplyFunction;')
@@ -3626,9 +3629,9 @@ function MathMLtoUnicodeMath(mathML) {
 function unicodemathml(unicodemath, displaystyle) {
     debugGroup(unicodemath);
     if (unicodemath.startsWith("<math")) {
-        // Convert MathML to UnicodeMath
-        var unicodemath1 = MathMLtoUnicodeMath(unicodemath);
-        console.log("UnicodeMath = " + unicodemath1);
+        // Convert MathML to UnicodeMath (done in Playground)
+        //var unicodemath1 = MathMLtoUnicodeMath(unicodemath);
+        //console.log("UnicodeMath = " + unicodemath1);
         return {mathml: unicodemath, details: {}};
     }
     try {
