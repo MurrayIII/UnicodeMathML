@@ -2572,6 +2572,8 @@ function preprocess(dsty, uast, index, arr) {
                                 intent: intent, content: value.content}};
 
         case "operator":
+            if (value == '<')
+                value = '&lt;';
             return {[key]: {intent: intent, arg: arg, content: value}};
 
         case "chars":
@@ -3417,7 +3419,9 @@ function dump(value) {
                         break;
                     }
                 }
-
+            } else if (value.attributes.hasOwnProperty('intent') &&
+                value.attributes.intent.value == ':equations') {
+                symbol = '█';
             }
             return symbol + '(' + nary(value, '@', cNode) + ')';
 
@@ -3425,7 +3429,13 @@ function dump(value) {
             return nary(value, '&', cNode);
 
         case 'mtd':
-            return dump(value.firstElementChild);
+            return nary(value, '', cNode);
+
+        case 'maligngroup':
+            if (value.parentElement.nodeName == 'mtd')
+                return '';                  // else fall through
+        case 'malignmark':
+            return '&';
 
         case 'menclose':
             var symbol = '▭';
@@ -3524,15 +3534,13 @@ function dump(value) {
             return ternary(value, '_', '^');
 
         case 'mover':
-            var op = '┴';
-            if (value.attributes.hasOwnProperty('accent')) {
-                op = '';
-            }
-            return binary(value, op);
+            return binary(value, value.attributes.hasOwnProperty('accent') ? '' : '┴');
 
         case 'mo':
             if (value.innerHTML == '&ApplyFunction;')
                 return '\u2061';
+            if (value.innerHTML == '&lt;')
+                return '<';
             return value.innerHTML;
 
         case 'mi':
@@ -3544,11 +3552,12 @@ function dump(value) {
             if (!value.attributes.hasOwnProperty('mathvariant') &&
                 value.innerHTML.length == 1) {
                 return italicizeCharacter(value.innerHTML);
-            }
+            }                               // else fall through
         case 'mn':
             return value.innerHTML;
+
         case 'mtext':
-            return '"' + value.innerHTML + '"';
+            return '"' + value.textContent + '"';
 
         case 'mspace':
             if (value.attributes.hasOwnProperty('width')) {
@@ -3567,11 +3576,12 @@ function dump(value) {
     let mrowIntent = value.nodeName == 'mrow' && value.attributes.hasOwnProperty('intent')
         ? value.attributes.intent.nodeValue : '';
 
-    if (mrowIntent == ':function' && value.previousElementSibling &&
-        value.previousElementSibling.nodeName == 'mi') {
-        ret = ' ' + ret;                    // Separate variable & function name 
-    }
-    if (mrowIntent && (mrowIntent.startsWith('binomial-coefficient') ||
+    if (mrowIntent == ':function') {
+        if (value.previousElementSibling && value.previousElementSibling.nodeName == 'mi')
+            ret = ' ' + ret;                // Separate variable & function name
+    } else if (mrowIntent == 'cases') {
+        ret = 'Ⓒ' + ret.substring(2);
+    } else if (mrowIntent && (mrowIntent.startsWith('binomial-coefficient') ||
         mrowIntent.endsWith('matrix') || mrowIntent == ':determinant')) {
         // Remove enclosing parens for 𝑛⒞𝑘 and bracketed matrices
         ret = ret.substring(1, ret.length - 1);
@@ -3594,7 +3604,7 @@ function dump(value) {
                 break;
             }
             if (!isAlphanumeric(ret[i]) && !digitSuperscripts.includes(ret[i]) &&
-                ret[i] != '\u2061' && ret[i] != '∞' && ret[i] != '⬌' &&
+                ret[i] != '\u2061' && ret[i] != '∞' && ret[i] != '⬌' && ret[i] != '!' &&
                 (i || ret[i] != '−')) {
                 needParens = true;
                 break;
@@ -3620,7 +3630,7 @@ function MathMLtoUnicodeMath(mathML) {
             unicodeMath = unicodeMath.substring(0, i);
             break;
         }
-        if ('=+− )'.includes(unicodeMath[i + 1]))
+        if ('=+− \u2061)'.includes(unicodeMath[i + 1]))
             unicodeMath = unicodeMath.substring(0, i) + unicodeMath.substring(i + 1);
     }
     return unicodeMath;
