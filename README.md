@@ -338,7 +338,7 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * The new UnicodeMath transpose syntax <​base>^⊺ and ^⊺ <​base>, where ⊺ is U+22BA (\intercal), is implemented.
 * Settings options to define the display characters for ⅅⅆⅇⅈⅉ and ⊺.
 * Alt+Enter hot key cycles through the Examples.
-* Pasting MathML into the input text area passes that MathML to the renderer and displays the corresponding preliminary UnicodeMath in the console.
+* Pasting MathML into the input text area passes the MathML to the renderer, and converts the MathML to UnicodeMath, which it displays in the MathML output window.
 
 ## MathML intent-attribute support:
 * The derivative and partial-derivative intent attributes are added for the dy/dx and higher-order derivative styles.

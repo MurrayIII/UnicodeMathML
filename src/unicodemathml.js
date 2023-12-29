@@ -3403,6 +3403,29 @@ function nary(node, op, cNode) {
     return ret;
 }
 
+function needParens(ret) {
+    // Return true if ret is a compound expression that needs to be parenthesized
+    let cch = ret.length;
+
+    for (let i = 0; i < cch; i++) {
+        if (ret[i] == '(' && i < cch - 1) {
+            // Handle nested brackets?
+            let j = ret.indexOf(')', i + 1);
+            if (j > 0) {
+                i = j;                      // Include parenthesized expression
+                continue;
+            }
+            return true;
+        }
+        if (!isAlphanumeric(ret[i]) && !digitSuperscripts.includes(ret[i]) &&
+            ret[i] != '\u2061' && ret[i] != '∞' && ret[i] != '⬌' && ret[i] != '!' &&
+            (i || ret[i] != '−')) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function dump(value) {
     // Convert MathML to UnicodeMath
     let cNode = value.children.length;
@@ -3576,42 +3599,27 @@ function dump(value) {
     let mrowIntent = value.nodeName == 'mrow' && value.attributes.hasOwnProperty('intent')
         ? value.attributes.intent.nodeValue : '';
 
-    if (mrowIntent == ':function') {
-        if (value.previousElementSibling && value.previousElementSibling.nodeName == 'mi')
-            ret = ' ' + ret;                // Separate variable & function name
-    } else if (mrowIntent == 'cases') {
-        ret = 'Ⓒ' + ret.substring(2);
-    } else if (mrowIntent && (mrowIntent.startsWith('binomial-coefficient') ||
+    if (mrowIntent == 'cases')
+        return 'Ⓒ' + ret.substring(2);
+
+    if (mrowIntent && mrowIntent.startsWith('absolute-value')) {
+        ret = ret.substring(1, ret.length - 1); // Remove '|'s
+        return needParens(ret) ? '⒜(' + ret + ')' : '⒜' + ret;
+    }
+    if (mrowIntent && (mrowIntent.startsWith('binomial-coefficient') ||
         mrowIntent.endsWith('matrix') || mrowIntent == ':determinant')) {
         // Remove enclosing parens for 𝑛⒞𝑘 and bracketed matrices
-        ret = ret.substring(1, ret.length - 1);
+        return ret.substring(1, ret.length - 1);
+    }
+    if (mrowIntent == ':function' && value.previousElementSibling &&
+        value.previousElementSibling.nodeName == 'mi') {
+            ret = ' ' + ret;                // Separate variable & function name
     } else if (cNode > 1 && value.nodeName != 'math' &&
         (!mrowIntent || mrowIntent != ':fenced') &&
         ['mfrac', 'msqrt', 'mroot', 'menclose', 'msup', 'msub', 'munderover',
-            'msubsup', 'mover', 'munder', 'mpadded'].includes(value.parentElement.nodeName)) {
-        // Parenthesize compound expressions
-        let needParens = false;
-        let cch = ret.length;
-        for (let i = 0; i < cch; i++) {
-            if (ret[i] == '(' && i < cch - 1) {
-                // Handle nested brackets?
-                let j = ret.indexOf(')', i + 1);
-                if (j > 0) {
-                    i = j;                  // Include parenthesized expression
-                    continue;
-                }
-                needParens = true;
-                break;
-            }
-            if (!isAlphanumeric(ret[i]) && !digitSuperscripts.includes(ret[i]) &&
-                ret[i] != '\u2061' && ret[i] != '∞' && ret[i] != '⬌' && ret[i] != '!' &&
-                (i || ret[i] != '−')) {
-                needParens = true;
-                break;
-            }
-        }
-        if (needParens)
-            ret = '(' + ret + ')';
+            'msubsup', 'mover', 'munder', 'mpadded'].includes(value.parentElement.nodeName) &&
+        needParens(ret)) {
+        ret = '(' + ret + ')';
     }
     return ret;
 }
