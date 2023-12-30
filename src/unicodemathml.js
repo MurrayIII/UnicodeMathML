@@ -3487,6 +3487,15 @@ function dump(value) {
 
             return dump(value.firstElementChild);
 
+        case 'mstyle':
+            ret = dump(value.firstElementChild);
+            if (value.attributes.hasOwnProperty('mathcolor')) {
+                ret = '✎(' + value.attributes.mathcolor.value + '&' + ret + ')';
+            } else if (value.attributes.hasOwnProperty('mathbackground')) {
+                ret = '☁(' + value.attributes.mathbackground.value + '&' + ret + ')';
+            }
+            return ret;
+
         case 'msqrt':
             return unary(value, '√');
 
@@ -3558,6 +3567,23 @@ function dump(value) {
 
         case 'mover':
             return binary(value, value.attributes.hasOwnProperty('accent') ? '' : '┴');
+
+        case 'mmultiscripts':
+            ret = '';
+            if (value.children[3].nodeName == 'mprescripts') {
+                if (value.children[4].nodeName != 'none')
+                    ret = '_' + dump(value.children[4]);
+                if (value.children[5].nodeName != 'none')
+                    ret += '^' + dump(value.children[5]);
+                if (ret)
+                    ret += ' ';
+            }
+            ret += dump(value.children[0]);
+            if (value.children[1].nodeName != 'none')
+                ret += '_' + dump(value.children[1]);
+            if (value.children[2].nodeName != 'none')
+                ret += '^' + dump(value.children[2]);
+            return ret;
 
         case 'mo':
             if (value.innerHTML == '&ApplyFunction;')
