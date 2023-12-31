@@ -2984,7 +2984,7 @@ function mtransform(dsty, puast) {
                     throw "hbrack bracket type doesn't match script type";
                 }
 
-                return {[mtag]: withAttrs(attrs, [
+                return {[mtag]: withAttrs({}, [
                     {[mtag]: withAttrs(attrs, [
                         mtransform(dsty, base),
                         {mo: withAttrs({stretchy: true}, value.bracket)}
@@ -3426,6 +3426,12 @@ function needParens(ret) {
     return false;
 }
 
+function handleAccent(value) {
+    if (value.lastElementChild.attributes.hasOwnProperty('stretchy'))
+        return dump(value.lastElementChild) + '(' + dump(value.firstElementChild, true) + ')';
+    return binary(value, '');
+}
+
 function dump(value, noAddParens) {
     // Convert MathML to UnicodeMath
     let cNode = value.children.length;
@@ -3549,19 +3555,26 @@ function dump(value, noAddParens) {
                 value.lastElementChild.attributes.intent.nodeValue == 'transpose') {
                 let cRet = ret.length;
                 let code = codeAt(ret, cRet - 1);
-                if (code != 0x22BA) {
+                if (code != 0x22BA) {       // '⊺'
                     if (code > 0xFFFF)
-                        cRet--;
+                        cRet--;             // To remove whole surrogate pair
                     return ret.substring(0, cRet - 1) + '⊺';
                 }
             }
             return ret;
 
+        case 'mover':
+            return value.attributes.hasOwnProperty('accent')
+                ? handleAccent(value) : binary(value, '┴');
+
         case 'munder':
+            if (value.attributes.hasOwnProperty('accentunder'))
+                return handleAccent(value);
+
             if (value.firstElementChild.nodeName != 'mi' ||
                 value.firstElementChild.innerHTML != 'lim') {
                 return binary(value, '┬');
-            }                               // Fall through
+            }                               // Fall through to msub
         case 'msub':
             if (isAsciiDigit(value.lastElementChild.textContent)) {
                 return dump(value.firstElementChild) +
@@ -3573,12 +3586,9 @@ function dump(value, noAddParens) {
             if (!value.parentElement.attributes.hasOwnProperty('intent') ||
                 !value.parentElement.attributes.intent.nodeValue.startsWith('sum')) {
                 return ternary(value, '┬', '┴');
-            }                               // Fall through
+            }                               // Fall through to msubsup
         case 'msubsup':
             return ternary(value, '_', '^');
-
-        case 'mover':
-            return binary(value, value.attributes.hasOwnProperty('accent') ? '' : '┴');
 
         case 'mmultiscripts':
             ret = '';

@@ -25,6 +25,8 @@ var mathML = [
     "<math display=\"block\"><mfenced><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow><mrow><mi>𝑐</mi><mo>+</mo><mi>𝑑</mi></mrow></mfenced></math>",
     "<math display=\"block\"><menclose><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow></menclose></math>",
     "<math display=\"block\"><menclose notation=\"right left bottom\"><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow></menclose></math>",
+    "<math display=\"block\"><mover><mover accent=\"true\"><mrow><msub><mi>𝑥</mi><mn>1</mn></msub><mo>+</mo><mo>⋯</mo><mo>+</mo><msub><mi>𝑥</mi><mi>𝑘</mi></msub></mrow><mo stretchy=\"true\">⏞</mo></mover><mrow><mi>𝑘</mi><mtext> times</mtext></mrow></mover></math>",
+    "<math display=\"block\"><munder><munder accentunder=\"true\"><mrow><msub><mi>𝑥</mi><mn>1</mn></msub><mo>+</mo><mo>⋯</mo><mo>+</mo><msub><mi>𝑥</mi><mi>𝑘</mi></msub></mrow><mo stretchy=\"true\">⏟</mo></munder><mrow><mi>𝑘</mi><mtext> times</mtext></mrow></munder></math>",
 ];
 
 var unicodeMath = [
@@ -51,6 +53,8 @@ var unicodeMath = [
     "(𝑎+𝑏,𝑐+𝑑)",
     "▭(𝑎+𝑏)",
     "▭(1&𝑎+𝑏)",
+    "⏞(𝑥₁+⋯+𝑥_𝑘)┴(𝑘\" times\")",
+    "⏟(𝑥₁+⋯+𝑥_𝑘)┬(𝑘\" times\")",
 ];
 
 function testMathMLtoUnicodeMath() {
