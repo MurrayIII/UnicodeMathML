@@ -3426,7 +3426,7 @@ function needParens(ret) {
     return false;
 }
 
-function dump(value) {
+function dump(value, noAddParens) {
     // Convert MathML to UnicodeMath
     let cNode = value.children.length;
     let ret = '';
@@ -3461,16 +3461,28 @@ function dump(value) {
             return '&';
 
         case 'menclose':
-            var symbol = '▭';
             if (value.attributes.hasOwnProperty('notation')) {
                 for (const [key, val] of Object.entries(symbolClasses)) {
-                    if (val == value.attributes.notation.nodeValue) {
-                        symbol = key;
-                        break;
+                    if (val == value.attributes.notation.nodeValue)
+                        return unary(value, key);
+                }
+                let mask = 0;
+                let notation = value.attributes.notation.nodeValue;
+
+                while (notation) {
+                    let attr = notation.match(/[a-z]+/)[0];
+                    notation = notation.substring(attr.length + 1);
+                    for (const [key, val] of Object.entries(maskClasses)) {
+                        if (val == attr)
+                            mask += Number(key);
                     }
                 }
+                if (mask) {
+                    ret = dump(value.firstElementChild, true);
+                    return '▭(' + (mask ^ 15) + '&' + ret + ')'; 
+                }
             }
-            return unary(value, symbol);
+            return unary(value, '▭');
 
         case 'mpadded':
             if (value.attributes.width && value.attributes.width.nodeValue == '0') {
@@ -3500,7 +3512,7 @@ function dump(value) {
             return unary(value, '√');
 
         case 'mroot':
-            return '⒭' + dump(value.lastElementChild) + '▒' + dump(value.firstElementChild);
+            return '√(' + dump(value.lastElementChild, true) + '&' + dump(value.firstElementChild, true) + ')';
 
         case 'mfrac':
             var op = '/';
@@ -3585,6 +3597,20 @@ function dump(value) {
                 ret += '^' + dump(value.children[2]);
             return ret;
 
+        case 'mfenced':
+            var opOpen = value.attributes.hasOwnProperty('open') ? value.attributes.open : '(';
+            var opClose = value.attributes.hasOwnProperty('close') ? value.attributes.close : ')';
+            var opSeparators = value.attributes.hasOwnProperty('separators') ? value.attributes.separators : ',';
+            var cSep = opSeparators.length;
+
+            ret = opOpen;
+            for (let i = 0; i < cNode; i++) {
+                ret += dump(value.children[i]);
+                if (i < cNode - 1)
+                    ret += i < cSep - 1 ? opSeparators[i] : opSeparators[cSep - 1];
+            }
+            return ret + opClose;
+
         case 'mo':
             if (value.innerHTML == '&ApplyFunction;')
                 return '\u2061';
@@ -3639,8 +3665,8 @@ function dump(value) {
     }
     if (mrowIntent == ':function' && value.previousElementSibling &&
         value.previousElementSibling.nodeName == 'mi') {
-            ret = ' ' + ret;                // Separate variable & function name
-    } else if (cNode > 1 && value.nodeName != 'math' &&
+        ret = ' ' + ret;                // Separate variable & function name
+    } else if (cNode > 1 && value.nodeName != 'math' && !noAddParens &&
         (!mrowIntent || mrowIntent != ':fenced') &&
         ['mfrac', 'msqrt', 'mroot', 'menclose', 'msup', 'msub', 'munderover',
             'msubsup', 'mover', 'munder', 'mpadded'].includes(value.parentElement.nodeName) &&
