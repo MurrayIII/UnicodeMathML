@@ -517,6 +517,9 @@ phantom
     / s:opPhantom "(" e:exp ")" {
         return {phantom: {mask: null, symbol: s, of: e}};
     }
+    / s:opPhantom e:operand {
+        return {phantom: {mask: null, symbol: s, of: e}};
+    }
     / s:opPhantom {                         // Suppress error message
         return {text: s};
     }

@@ -2984,36 +2984,32 @@ function mtransform(dsty, puast) {
                     throw "hbrack bracket type doesn't match script type";
                 }
 
-                return {[mtag]: withAttrs({}, [
-                    {[mtag]: withAttrs(attrs, [
-                        mtransform(dsty, base),
-                        {mo: withAttrs({stretchy: true}, value.bracket)}
-                    ])},
-                    mtransform(dsty, dropOutermostParens(exp))
-                ])};
+                return {[mtag]: withAttrs({},
+                        [{[mtag]: withAttrs(attrs,
+                            [mtransform(dsty, base),
+                             {mo: withAttrs({stretchy: true}, value.bracket)}])},
+                         mtransform(dsty, dropOutermostParens(exp))])};
             } else {
-                return {[mtag]: withAttrs(attrs, [
-                    mtransform(dsty, dropOutermostParens(value.of)),
-                    {mo: withAttrs({stretchy: true}, value.bracket)}
-                ])};
+                return {[mtag]: withAttrs(attrs,
+                        [mtransform(dsty, dropOutermostParens(value.of)),
+                         {mo: withAttrs({stretchy: true}, value.bracket)}])};
             }
 
         case "root":
-            var attrs = getAttrs(value, '');
-            return {mroot: withAttrs(attrs, [mtransform(dsty, dropOutermostParens(value.of)),
-                                   mtransform(dsty, value.degree)
-                                  ])};
+            return {mroot: withAttrs(getAttrs(value, ''),
+                        [mtransform(dsty, dropOutermostParens(value.of)),
+                         mtransform(dsty, value.degree)])};
         case "sqrt":
-            var attrs = getAttrs(value, '');
-            return {msqrt: withAttrs(attrs, mtransform(dsty, dropOutermostParens(value)))};
+            return {msqrt: withAttrs(getAttrs(value, ''),
+                        mtransform(dsty, dropOutermostParens(value)))};
 
         case "function":
-            var attrs = getAttrs(value, ':function');
-            return {mrow: withAttrs(attrs, [mtransform(dsty, value.f), {mo: noAttr('\u2061')}, mtransform(dsty, value.of)])};
-
+            return {mrow: withAttrs(getAttrs(value, ':function'),
+                        [mtransform(dsty, value.f), {mo: noAttr('\u2061')},
+                         mtransform(dsty, value.of)])};
         case "text":
-            // replace spaces with non-breaking spaces (leading and trailing
-            // spaces are otherwise hidden)
+            // replace spaces with non-breaking spaces (else leading and
+            // trailing spaces are hidden)
             var attrs = getAttrs(value, '');
             return {mtext: withAttrs(attrs, value.split(" ").join("\xa0"))};
 
@@ -3379,7 +3375,10 @@ function escapeHTMLSpecialChars(str) {
 };
 
 function unary(node, op) {
-    return op + dump(node.firstElementChild);
+    let ret = dump(node.firstElementChild);
+    if (node.firstElementChild.nodeName == 'mfrac')
+        ret = '(' + ret + ')';
+    return op + ret;
 }
 
 function binary(node, op) {
@@ -3489,6 +3488,9 @@ function dump(value, noAddParens) {
                 }
             }
             return unary(value, '▭');
+
+        case 'mphantom':
+            return unary(value, '⟡');
 
         case 'mpadded':
             if (value.attributes.width && value.attributes.width.nodeValue == '0') {
@@ -3678,9 +3680,9 @@ function dump(value, noAddParens) {
         ret = ' ' + ret;                // Separate variable & function name
     } else if (cNode > 1 && value.nodeName != 'math' && !noAddParens &&
         (!mrowIntent || mrowIntent != ':fenced') &&
-        ['mfrac', 'msqrt', 'mroot', 'menclose', 'msup', 'msub', 'munderover',
-            'msubsup', 'mover', 'munder', 'mpadded'].includes(value.parentElement.nodeName) &&
-        needParens(ret)) {
+        ['mfrac', 'msqrt', 'mroot', 'menclose', 'msup', 'msub', 'munderover', 'msubsup',
+         'mover', 'munder', 'mpadded', 'mphantom'].includes(value.parentElement.nodeName) &&
+         needParens(ret)) {
         ret = '(' + ret + ')';
     }
     return ret;
@@ -3700,7 +3702,7 @@ function MathMLtoUnicodeMath(mathML) {
             unicodeMath = unicodeMath.substring(0, i);
             break;
         }
-        if ('=+− \u2061)'.includes(unicodeMath[i + 1]))
+        if ('=+−/ \u2061)'.includes(unicodeMath[i + 1]))
             unicodeMath = unicodeMath.substring(0, i) + unicodeMath.substring(i + 1);
     }
     return unicodeMath;
