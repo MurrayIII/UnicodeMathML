@@ -2734,14 +2734,12 @@ function mtransform(dsty, puast) {
             return {mo: noAttr(value)};
 
         case "phantom":
+            var attrs = getAttrs(value, '');
             var mask = value.mask;
+
             if (mask != null) {
                 var options = phantomOptions(mask);
 
-                // if empty, then just emit a phantom. also ignore fPhantomShow
-                // (supposedly this would turn the phantom into a smash, but MS
-                // Word keeps it a phantom, and who am i to question it?)
-                var attrs = getAttrs(value, '');
                 if (options.indexOf('fPhantomZeroWidth') !== -1) {
                     attrs.width = 0;
                 }
@@ -2751,24 +2749,20 @@ function mtransform(dsty, puast) {
                 if (options.indexOf('fPhantomZeroDescent') !== -1) {
                     attrs.depth = 0;
                 }
-
-                if (Object.keys(attrs).length === 0) {
-                    return {mphantom: noAttr(mtransform(dsty, value.of))};
-                } else {
-                    return {mpadded: withAttrs(attrs, {mphantom: noAttr(mtransform(dsty, value.of))})};
+                if (options.indexOf('fPhantomShow') !== -1) {
+                    return {mpadded: withAttrs(attrs, mtransform(dsty, value.of))};
                 }
+                return {mpadded: withAttrs(attrs, {mphantom: noAttr(mtransform(dsty, value.of))})};
             }
+            if (value.symbol == '⬄' || value.symbol == '⇳') {
+                if (value.symbol == '⬄')
+                    attrs.height = attrs.depth = 0;
+                else
+                    attrs.width = 0;
+                return {mpadded: withAttrs(attrs, {mphantom: noAttr(mtransform(dsty, value.of))})};
+            }
+            return {mphantom: withAttrs(attrs, mtransform(dsty, value.of))};
 
-            switch (value.symbol) {
-                case "⟡":
-                    return {mphantom: noAttr(mtransform(dsty, value.of))};
-                case "⬄":
-                    return {mpadded: withAttrs({height: 0, depth: 0}, {mphantom: noAttr(mtransform(dsty, value.of))})};
-                case "⇳":
-                    return {mpadded: withAttrs({width: 0}, {mphantom: noAttr(mtransform(dsty, value.of))})};
-                default:
-                    throw "invalid phantom symbol";
-            }
         case "smash":
             var attrs = getAttrs(value, '');
 
@@ -3493,19 +3487,30 @@ function dump(value, noAddParens) {
             return unary(value, '⟡');
 
         case 'mpadded':
-            if (value.attributes.width && value.attributes.width.nodeValue == '0') {
-                return unary(value, '⬌');  // Handle \hsmash
-            }
-            if (value.attributes.height && value.attributes.height.nodeValue == '0') {
-                let op = '⬆';               // Handle \asmash
-                if (value.attributes.depth && value.attributes.depth.nodeValue == '0')
-                    op = '⬍';               // Handle \smash
-                return unary(value, op);
-            }
-            if (value.attributes.depth && value.attributes.depth.nodeValue == '0')
-                return unary(value, '⬇');   // Handle \dsmash
+            var op = '';
+            var mask = 0;                   // Compute phantom mask
 
-            return dump(value.firstElementChild);
+            if (value.attributes.width && value.attributes.width.nodeValue == '0')
+                mask = 2;                   // fPhantomZeroWidth
+            if (value.attributes.height && value.attributes.height.nodeValue == '0')
+                mask |= 4;                  // fPhantomZeroAscent
+            if (value.attributes.depth && value.attributes.depth.nodeValue == '0')
+                mask |= 8;                  // fPhantomZeroDescent
+
+            if (value.firstElementChild.nodeName == 'mphantom') {
+                if (mask == 2)
+                    op = '⇳';               // fPhantomZeroWidth
+                else if (mask == 12)
+                    op = '⬄';              // fPhantomZeroAscent | fPhantomZeroDescent
+                return op ? op + dump(value.firstElementChild).substring(1)
+                    : '⟡(' + mask + '&' + dump(value.firstElementChild.firstElementChild, true) + ')';
+            }
+            const opsShow = {2: '⬌', 4: '⬆', 8: '⬇', 12: '⬍'};
+            op = opsShow[mask];
+            mask |= 1;                  // fPhantomShow
+
+            return op ? unary(value, op)
+                : '⟡(' + mask + '&' + dump(value.firstElementChild, true) + ')';
 
         case 'mstyle':
             ret = dump(value.firstElementChild);
