@@ -1663,32 +1663,6 @@ function naryOptions(mask) {
     return options;
 }
 
-// compute a list of phantom options based on a bit mask
-function phantomOptions(mask) {
-    if (mask < 0 || mask > 31) {
-        throw "phantom mask is not between 0 and 31";
-    }
-
-    var maskOptions = {
-        1: 'fPhantomShow',
-        2: 'fPhantomZeroWidth',
-        4: 'fPhantomZeroAscent',
-        8: 'fPhantomZeroDescent',
-        16: 'fPhantomTransparent',
-    };
-
-    // accumulate options corresponding to mask
-    var binMask = mask.toString(2).split('').reverse().join('');
-    var options = [];
-    for (var i = binMask.length - 1; i >= 0; i--) {
-        if (binMask[i] == '1') {
-            options.push(maskOptions[Math.pow(2, i)]);
-        }
-    }
-
-    return options;
-}
-
 // compute a list of enclosure notation attributes options based on a bit mask
 // or symbol
 const symbolClasses = {
@@ -2737,21 +2711,15 @@ function mtransform(dsty, puast) {
             var attrs = getAttrs(value, '');
             var mask = value.mask;
 
-            if (mask != null) {
-                var options = phantomOptions(mask);
-
-                if (options.indexOf('fPhantomZeroWidth') !== -1) {
+            if (mask) {
+                if (mask & 2)               // fPhantomZeroWidth
                     attrs.width = 0;
-                }
-                if (options.indexOf('fPhantomZeroAscent') !== -1) {
+                if (mask & 4)               // fPhantomZeroAscent
                     attrs.height = 0;
-                }
-                if (options.indexOf('fPhantomZeroDescent') !== -1) {
+                if (mask & 8)               // fPhantomZeroDescent
                     attrs.depth = 0;
-                }
-                if (options.indexOf('fPhantomShow') !== -1) {
+                if (mask & 1)               // fPhantomShow
                     return {mpadded: withAttrs(attrs, mtransform(dsty, value.of))};
-                }
                 return {mpadded: withAttrs(attrs, {mphantom: noAttr(mtransform(dsty, value.of))})};
             }
             if (value.symbol == '⬄' || value.symbol == '⇳') {
@@ -2761,6 +2729,7 @@ function mtransform(dsty, puast) {
                     attrs.width = 0;
                 return {mpadded: withAttrs(attrs, {mphantom: noAttr(mtransform(dsty, value.of))})};
             }
+            // No dimensions were zeroed so no need for mpadded
             return {mphantom: withAttrs(attrs, mtransform(dsty, value.of))};
 
         case "smash":
@@ -3484,7 +3453,7 @@ function dump(value, noAddParens) {
             return unary(value, '▭');
 
         case 'mphantom':
-            return unary(value, '⟡');
+            return unary(value, '⟡');       // Full size, no display
 
         case 'mpadded':
             var op = '';
@@ -3497,7 +3466,7 @@ function dump(value, noAddParens) {
             if (value.attributes.depth && value.attributes.depth.nodeValue == '0')
                 mask |= 8;                  // fPhantomZeroDescent
 
-            if (value.firstElementChild.nodeName == 'mphantom') {
+            if (value.firstElementChild.nodeName == 'mphantom') { // No display
                 if (mask == 2)
                     op = '⇳';               // fPhantomZeroWidth
                 else if (mask == 12)
@@ -3507,25 +3476,25 @@ function dump(value, noAddParens) {
             }
             const opsShow = {2: '⬌', 4: '⬆', 8: '⬇', 12: '⬍'};
             op = opsShow[mask];
-            mask |= 1;                  // fPhantomShow
+            mask |= 1;                      // fPhantomShow
 
             return op ? unary(value, op)
                 : '⟡(' + mask + '&' + dump(value.firstElementChild, true) + ')';
 
         case 'mstyle':
             ret = dump(value.firstElementChild);
-            if (value.attributes.hasOwnProperty('mathcolor')) {
+            if (value.attributes.hasOwnProperty('mathcolor'))
                 ret = '✎(' + value.attributes.mathcolor.value + '&' + ret + ')';
-            } else if (value.attributes.hasOwnProperty('mathbackground')) {
+            if (value.attributes.hasOwnProperty('mathbackground'))
                 ret = '☁(' + value.attributes.mathbackground.value + '&' + ret + ')';
-            }
             return ret;
 
         case 'msqrt':
             return unary(value, '√');
 
         case 'mroot':
-            return '√(' + dump(value.lastElementChild, true) + '&' + dump(value.firstElementChild, true) + ')';
+            return '√(' + dump(value.lastElementChild, true) + '&' +
+                          dump(value.firstElementChild, true) + ')';
 
         case 'mfrac':
             var op = '/';
