@@ -3413,6 +3413,12 @@ function dump(value, noAddParens) {
             } else if (value.attributes.hasOwnProperty('intent') &&
                 value.attributes.intent.value == ':equations') {
                 symbol = '█';
+            } else if (value.firstElementChild.nodeName == 'mlabeledtr' &&
+                value.firstElementChild.children.length == 2 &&
+                value.firstElementChild.firstElementChild.firstElementChild.nodeName == 'mtext') {
+                // Numbered equation: convert to UnicodeMath like 𝐸=𝑚𝑐²#(20)
+                return dump(value.firstElementChild.lastElementChild.firstElementChild) +
+                    '#' + value.firstElementChild.firstElementChild.firstElementChild.textContent;
             }
             return symbol + '(' + nary(value, '@', cNode) + ')';
 
