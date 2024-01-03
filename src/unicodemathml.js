@@ -1059,6 +1059,7 @@ function foldMathAlphanumeric(code, ch) {   // Generalization of foldMathItalic(
 }
 
 function italicizeCharacter(c) {
+    // The 'Α' here is an upper-case Greek alpha
     if (c in mathFonts && 'mit' in mathFonts[c] && (c < 'Α' || c > 'Ω' && c != '∇'))
         return mathFonts[c]['mit'];
     return c;
@@ -3622,11 +3623,18 @@ function dump(value, noAddParens) {
             return ret + opClose;
 
         case 'mo':
-            if (value.innerHTML == '&ApplyFunction;')
+            var val = value.innerHTML;
+            if (val == '&ApplyFunction;')
                 return '\u2061';
-            if (value.innerHTML == '&lt;')
+            if (val == '&lt;')
                 return '<';
-            return value.innerHTML;
+            if (val.startsWith('&#') && val.endsWith(';')) {
+                ret = value.innerHTML.substring(2, val.length - 1);
+                if (ret[0] == 'x') 
+                    ret = '0' + ret;
+                return String.fromCodePoint(ret);
+            }
+            return val;
 
         case 'mi':
             if (value.attributes.hasOwnProperty('intent')) {
@@ -3642,6 +3650,8 @@ function dump(value, noAddParens) {
                 var mathstyle = mathvariants[value.attributes.mathvariant.nodeValue];
                 if (c in mathFonts && mathstyle in mathFonts[c] && (c < 'Α' || c > 'Ω' && c != '∇'))
                     return mathFonts[c][mathstyle];
+                if (mathstyle == 'mup')
+                    return '"' + c + '"';
             }                               // else fall through
         case 'mn':
             return value.innerHTML;
