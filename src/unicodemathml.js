@@ -872,6 +872,24 @@ var mathFonts = {
     '9': {'mbf': '𝟗', 'Bbb': '𝟡', 'msans': '𝟫', 'mbfsans': '𝟵', 'mtt': '𝟿'},
 };
 
+const mathvariants = {
+    // MathML mathvariant values to TeX unicode-math names in unimath-symbols.pdf
+    'normal': 'mup',
+    'bold': 'mbf',
+    'italic': 'mit',
+    'bold-italic': 'mbfit',
+    'double-struck': 'Bbb',
+    'bold-fraktur': 'mbffrak',
+    'script': 'mscr',
+    'bold-script': 'mbfscr',
+    'fraktur': 'mfrak',
+    'sans-serif': 'msans',
+    'bold-sans-serif': 'mbfsans',
+    'sans-serif-italic': 'mitsans',
+    'sans-serif-bold-italic': 'mbfitsans',
+    'monospace': 'mtt',
+};
+
 const narys = {
     '∏': 'product',
     '∑': 'sum',
@@ -971,7 +989,7 @@ function foldMathItalics(chars) {
 
 const anCodesEng = [
     // 0      1       2       3        4        5       6        7
-    'mbf', 'mit', 'mbfit', 'mscr', 'mbfscr', 'mfrac', 'Bbb', 'mbffrac',
+    'mbf', 'mit', 'mbfit', 'mscr', 'mbfscr', 'mfrak', 'Bbb', 'mbffrak',
     // 8         9          10          11        12
     'msans', 'mbfsans', 'mitsans', 'mbfitsans', 'mtt'];
 const anCodesGr = [
@@ -3616,9 +3634,14 @@ function dump(value, noAddParens) {
                 if (isDoubleStruck(ch))
                     return ch;
             }
-            if (!value.attributes.hasOwnProperty('mathvariant') &&
-                value.innerHTML.length == 1) {
-                return italicizeCharacter(value.innerHTML);
+            if (value.innerHTML.length == 1) {
+                let c = value.innerHTML;
+                if (!value.attributes.hasOwnProperty('mathvariant'))
+                    return italicizeCharacter(c);
+
+                var mathstyle = mathvariants[value.attributes.mathvariant.nodeValue];
+                if (c in mathFonts && mathstyle in mathFonts[c] && (c < 'Α' || c > 'Ω' && c != '∇'))
+                    return mathFonts[c][mathstyle];
             }                               // else fall through
         case 'mn':
             return value.innerHTML;

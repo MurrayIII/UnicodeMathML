@@ -33,6 +33,7 @@ var mathML = [
     "<math display=\"block\"><mrow><mi>𝑎</mi><mpadded height=\"0\"><mphantom><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow></mphantom></mpadded><mi>𝑐</mi></mrow></math>",
     "<math display=\"block\"><mrow><mi>𝑎</mi><mpadded width=\"0\" height=\"0\"><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow></mpadded><mi>𝑐</mi></mrow></math>",
     "<math display=\"block\"><mtable><mlabeledtr id=\"-20-\"><mtd><mtext>(20)</mtext></mtd><mtd> <mrow><mi>𝐸</mi><mo>=</mo><mrow><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mrow></mrow></mtd></mlabeledtr></mtable></math>",
+    "<math display=\"block\"><mi mathvariant=\"fraktur\">H</mi></math>",
 ];
 
 var unicodeMath = [
@@ -67,6 +68,7 @@ var unicodeMath = [
     "𝑎⟡(4&𝑎+𝑏)𝑐",
     "𝑎⟡(7&𝑎+𝑏)𝑐",
     "𝐸=𝑚𝑐²#(20)",
+    "ℌ",
 ];
 
 function testMathMLtoUnicodeMath() {
