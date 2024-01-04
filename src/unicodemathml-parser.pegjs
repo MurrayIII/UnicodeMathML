@@ -933,6 +933,8 @@ functionName
     / "glb"  // "greatest lower bound" => inf
     / "lim inf"  // ⚠ space is a non-breaking space and must be entered as such
     / "lim sup"  // ⚠ space is a non-breaking space and must be entered as such
+    / αn+ '\u2061'
+
 
 // unprocessed (plain) text
 text = '"' c:("\\\"" / (! '"') char)+ '"' {  // see sec. 3.15

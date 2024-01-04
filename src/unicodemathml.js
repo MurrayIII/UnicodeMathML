@@ -2466,7 +2466,25 @@ function preprocess(dsty, uast, index, arr) {
                     }
                 }
             }
-            return {function: {f: preprocess(dsty, valuef), intent: intent, arg: arg, of: of}};
+            var extra = [];
+            if (valuef.hasOwnProperty('atoms') && valuef.atoms.hasOwnProperty('chars')) {
+                var chars = valuef.atoms.chars;
+                if (chars.endsWith('\u2061')) {
+                    // Pattern match included '\u2061': remove it
+                    chars = chars.substring(0, chars.length - 1);
+                }
+                chars = chars.split(",");
+                valuef.atoms.chars = chars.pop();
+                if (chars.length) {
+                    extra.push({atoms: {chars: chars.join('')}});
+                }
+            }
+            var ret = {function: {f: preprocess(dsty, valuef), intent: intent, arg: arg, of: of}}
+            if (extra.length) {
+                extra.push(ret)
+                return extra;
+            }
+            return ret;
 
         case "negatedoperator":
             return (value in negs) ? {operator: negs[value]} : {negatedoperator: value};
@@ -3689,6 +3707,8 @@ function dump(value, noAddParens) {
         return ret.substring(1, ret.length - 1);
     }
     if (mrowIntent == ':function' && value.previousElementSibling &&
+        value.firstElementChild.nodeName == 'mi' &&
+        value.firstElementChild.textContent < '\u2100' &&
         value.previousElementSibling.nodeName == 'mi') {
         ret = ' ' + ret;                // Separate variable & function name
     } else if (cNode > 1 && value.nodeName != 'math' && !noAddParens &&
