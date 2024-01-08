@@ -42,13 +42,27 @@ var demoPause = false;
 var iExample = 0;       // Index of next Examples[] equation
 
 function startDemo() {
-    demoID = setInterval(nextDemo, 2000);   // Display next equation every 2 seconds
-    demoPause = false;                      // Not paused (by ' ')
+    if (demoID) {
+        // Already running demo: turn it off
+        endDemo()
+        return;
+    }
+    nextEq();
+    demoID = setInterval(nextEq, 2000);     // Display next equation every 2 seconds
+    demoPause = false;                      // Not paused (pause by entering ' ')
     var demoEq = document.getElementById('demos');
     demoEq.style.backgroundColor = 'DodgerBlue'; // Show user demo mode is active
 }
 
-function nextDemo() {
+function endDemo() {
+    var demoEq = document.getElementById('demos');
+    clearInterval(demoID);
+    demoID = 0;
+    demoEq.style.backgroundColor = 'inherit';
+    demoEq.style.color = 'inherit';
+}
+
+function nextEq() {
     // Send Alt+Enter to display Examples[iExample] equation
     input.focus();
     const event = new Event('keydown');
@@ -692,13 +706,12 @@ function autocomplete() {
                 var demoEq = document.getElementById('demos');
                 if (e.key == 'Escape') {
                     // Turn off demo mode
-                    clearInterval(demoID);
-                    demoID = 0;
-                    demoEq.style.backgroundColor = '#222';
+                    endDemo();
                 } else if (e.key == ' ') {
                     // Toggle pause
                     e.preventDefault();
                     if (demoPause) {
+                        demoID = 0;         // Needed to start (instead of end)
                         startDemo();
                     } else {
                         demoPause = true;

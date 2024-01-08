@@ -120,6 +120,10 @@ button:hover {
     color: var(--grayish-color);
     background-color: var(--faintwhitish-color);
 }
+button.demos:hover {
+    color: black;
+    background-color: var(--faintwhitish-color);
+}
 input {
     font-size: inherit;
     font-family: var(--code-font);
