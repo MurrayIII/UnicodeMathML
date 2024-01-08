@@ -7,6 +7,13 @@ const unicodeFractions = {
     "⅛": [1, 8], "⅜": [3, 8], "⅝": [5, 8], "⅞": [7, 8], "⅑": [1, 9], "↉": [0, 3]
 };
 
+function getUnicodeFraction(chNum, chDenom) {
+    for (const [key, val] of Object.entries(unicodeFractions)) {
+        if (chNum == val[0] && chDenom == val[1])
+            return key;
+    }
+}
+
 (function(root) {
 'use strict';
 
@@ -1085,14 +1092,6 @@ function getCh(str, i) {
     // Get UTF-16 character at offset i
     var m = str.codePointAt(i);
     return String.fromCodePoint(m);
-}
-
-function getUnicodeFraction(chNum, chDenom)
-{
-    for (const [key, val] of Object.entries(unicodeFractions)) {
-        if (chNum == val[0] && chDenom == val[1])
-            return key;
-    }
 }
 
 function getAbsArg(content) {
@@ -4161,7 +4160,6 @@ root.unicodemathtex = unicodemathtex;
 root.isFunctionName = isFunctionName;
 root.foldMathItalic = foldMathItalic;
 root.foldMathAlphanumeric = foldMathAlphanumeric;
-root.getUnicodeFraction = getUnicodeFraction;
 root.MathMLtoUnicodeMath = MathMLtoUnicodeMath;
 
 })(this);

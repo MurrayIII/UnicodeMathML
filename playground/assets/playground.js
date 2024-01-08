@@ -13,7 +13,6 @@ var measurements_pretty = document.getElementById("measurements_pretty");
 
 var activeTab = "source";
 var hist = [];
-var iExample = 0;
 
 var prevInputValue = "";
 
@@ -37,6 +36,27 @@ var mappedSingle = {
     "-": "\u2212",
     "\'": "\u2032"
 };
+
+var demoID = 0;
+var demoPause = false;
+var iExample = 0;       // Index of next Examples[] equation
+
+function startDemo() {
+    demoID = setInterval(nextDemo, 2000);   // Display next equation every 2 seconds
+    demoPause = false;                      // Not paused (by ' ')
+    var demoEq = document.getElementById('demos');
+    demoEq.style.backgroundColor = 'DodgerBlue'; // Show user demo mode is active
+}
+
+function nextDemo() {
+    // Send Alt+Enter to display Examples[iExample] equation
+    input.focus();
+    const event = new Event('keydown');
+    event.key = 'Enter';
+    event.altKey = true;
+    input.dispatchEvent(event);
+    draw();
+}
 
 // escape mathml tags and entities, via https://stackoverflow.com/a/13538245
 function escapeMathMLSpecialChars(str) {
@@ -667,6 +687,25 @@ function autocomplete() {
                 iExample++;                 // Increment for next time
                 if (iExample > cExamples - 1)
                     iExample = 0;
+            }
+            if (demoID) {
+                var demoEq = document.getElementById('demos');
+                if (e.key == 'Escape') {
+                    // Turn off demo mode
+                    clearInterval(demoID);
+                    demoID = 0;
+                    demoEq.style.backgroundColor = '#222';
+                } else if (e.key == ' ') {
+                    // Toggle pause
+                    e.preventDefault();
+                    if (demoPause) {
+                        startDemo();
+                    } else {
+                        demoPause = true;
+                        clearInterval(demoID);
+                        demoEq.style.backgroundColor = 'green';
+                    }
+                }
             }
             return;
         }
