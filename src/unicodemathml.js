@@ -1,6 +1,12 @@
 const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
 const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
 
+const unicodeFractions = {
+    "½": [1, 2], "⅓": [1, 3], "⅔": [2, 3], "¼": [1, 4], "¾": [3, 4], "⅕": [1, 5],
+    "⅖": [2, 5], "⅗": [3, 5], "⅘": [4, 5], "⅙": [1, 6], "⅚": [5, 6], "⅐": [1, 7],
+    "⅛": [1, 8], "⅜": [3, 8], "⅝": [5, 8], "⅞": [7, 8], "⅑": [1, 9], "↉": [0, 3]
+};
+
 (function(root) {
 'use strict';
 
@@ -1083,34 +1089,10 @@ function getCh(str, i) {
 
 function getUnicodeFraction(chNum, chDenom)
 {
-    const chNum1 = '½⅓¼⅕⅙⅐⅛⅑⅒';
-
-    switch (chNum)
-    {
-        case '0':
-            return chDenom == '3' ? '↉' : 0;	// Used in baseball scoring
-
-        case '1':			                // ':' (0x003A) is used for '10'
-            return (chDenom >= '2' && chDenom <= ':') ? chNum1[chDenom - '2'] : '';
-
-        case '2':
-            return chDenom == '3' ? '⅔' : chDenom == '5' ? '⅖' : '';
-
-        case '3':
-            return chDenom == '4' ? '¾' : chDenom == '5' ? '⅗'
-                 : chDenom == '8' ? '⅜' : '';
-
-        case '4':
-            return chDenom == '5' ? '⅘' : '';
-
-        case '5':
-            return chDenom == '6' ? '⅚' : chDenom == '8' ? '⅝' : '';
-
-        case '7':
-            return chDenom == '8' ? '⅞' : '';
-
+    for (const [key, val] of Object.entries(unicodeFractions)) {
+        if (chNum == val[0] && chDenom == val[1])
+            return key;
     }
-    return '';
 }
 
 function getAbsArg(content) {
@@ -2196,48 +2178,11 @@ function preprocess(dsty, uast, index, arr) {
                 }
             }
             return {fraction: {symbol: value.symbol, intent: intent, arg: arg, of: preprocess(dsty, value.of)}};
+
         case "unicodefraction":
-            var frac = (numerator, denominator) => {
-                return {fraction: {symbol: "⊘", of: [{number: numerator}, {number: denominator}]}};
-            }
-            switch(value) {
-                case "↉":
-                    return frac(0, 3);
-                case "½":
-                    return frac(1, 2);
-                case "⅓":
-                    return frac(1, 3);
-                case "⅔":
-                    return frac(2, 3);
-                case "¼":
-                    return frac(1, 4);
-                case "¾":
-                    return frac(3, 4);
-                case "⅕":
-                    return frac(1, 5);
-                case "⅖":
-                    return frac(2, 5);
-                case "⅗":
-                    return frac(3, 5);
-                case "⅘":
-                    return frac(4, 5);
-                case "⅙":
-                    return frac(1, 6);
-                case "⅚":
-                    return frac(5, 6);
-                case "⅐":
-                    return frac(1, 7);
-                case "⅛":
-                    return frac(1, 8);
-                case "⅜":
-                    return frac(3, 8);
-                case "⅝":
-                    return frac(5, 8);
-                case "⅞":
-                    return frac(7, 8);
-                case "⅑":
-                    return frac(1, 9);
-            }
+            var uFrac = unicodeFractions[value];
+            return (uFrac == undefined) ? value
+                : {fraction: {symbol: "⊘", of: [{number: uFrac[0]}, {number: uFrac[1]}]}};
 
         case "atop":
             value = preprocess(dsty, value);
@@ -2468,14 +2413,11 @@ function preprocess(dsty, uast, index, arr) {
             }
             var extra = [];
             if (valuef.hasOwnProperty('atoms') && valuef.atoms.hasOwnProperty('chars')) {
-                var chars = valuef.atoms.chars;
-                if (chars.endsWith('\u2061')) {
-                    // Pattern match included '\u2061': remove it
-                    chars = chars.substring(0, chars.length - 1);
-                }
-                chars = chars.split(",");
+                var chars = valuef.atoms.chars.split(",");
                 valuef.atoms.chars = chars.pop();
                 if (chars.length) {
+                    // Separate out character(s) preceding function name,
+                    // e.g., the 𝑑 in 𝑑𝜓⁡(𝑥,𝑡)/𝑑𝑡
                     extra.push({atoms: {chars: chars.join('')}});
                 }
             }
@@ -3727,16 +3669,23 @@ function MathMLtoUnicodeMath(mathML) {
     const doc = parser.parseFromString(mathML, "application/xml");
     let unicodeMath = dump(doc);
 
-    for (let i = 0; ; i++) {             // Remove some unnecessary ' '
+    // Remove some unnecessary spaces
+    for (let i = 0; ; i++) {
         i = unicodeMath.indexOf(' ', i);
         if (i < 0)
-            break;
+            break;                          // No more spaces
         if (i == unicodeMath.length - 1) {
             unicodeMath = unicodeMath.substring(0, i);
             break;
         }
-        if ('=+−/ \u2061)'.includes(unicodeMath[i + 1]))
-            unicodeMath = unicodeMath.substring(0, i) + unicodeMath.substring(i + 1);
+        if ('=+−/ \u2061)]}'.includes(unicodeMath[i + 1])) {
+            let j = 1;                      // Delete 1 space
+            if (unicodeMath[i + 1] == ' ' && i < unicodeMath.length - 2 &&
+                '=+−/\u2061)]}'.includes(unicodeMath[i + 2])) {
+                j = 2;                      // Delete 2 spaces
+            }
+            unicodeMath = unicodeMath.substring(0, i) + unicodeMath.substring(i + j);
+        }
     }
     return unicodeMath;
 }

@@ -428,19 +428,23 @@ function getSubSupDigit(str, i, delim) {
     return (op == '^') ? digitSuperscripts[ch] : digitSubscripts[ch];
 }
 
-function opAutocorrect(i, ip, delim) {
+function opAutocorrect(ip, delim) {
     // Perform operator autocorrections like '+-' → '±' and '/=' → ≠
+    let i = ip - 2;
+
     if (input.value[i] == '"')
         return false;
 
     if (input.value[i] == '/' && delim in negs) {
+        // Convert /<op> to negated op, e.g., /= to ≠
         input.value = input.value.substring(0, i) + negs[delim] + input.value.substring(ip);
         input.selectionStart = input.selectionEnd = ip - 1;
         return false;
     }
 
-    if (i == ip - 2 && ip > 4) {
-        // Convert span of math-italic characters to ASCII
+    if (ip > 4) {
+        // Convert span of math-italic characters to ASCII and check for
+        // function name
         var fn = "";
         while (i > 0) {
             var code = codeAt(input.value, i);
@@ -478,6 +482,20 @@ function opAutocorrect(i, ip, delim) {
             + input.value.substring(ip);
         input.selectionStart = input.selectionEnd = ip;
         return false;
+    }
+    if (ip >= 4 && ' +-='.includes(delim) && input.value[ip - 3] == '/') {
+        // Convert linear numeric fraction to Unicode fraction, e.g., 1/3 to ⅓
+        let chNum = input.value[ip - 4];
+        let chDenom = input.value[ip - 2];
+
+        if (isAsciiDigit(chNum) && isAsciiDigit(chDenom)) {
+            let ch = getUnicodeFraction(chNum, chDenom);
+            if (ch != undefined) {
+                let iRem = (delim == ' ') ? ip : ip - 1;
+                input.value = input.value.substring(0, ip - 4) + ch + input.value.substring(iRem);
+                input.selectionStart = input.selectionEnd = ip - 3;
+            }
+        }
     }
     return false;
 }
@@ -541,7 +559,7 @@ function autocomplete() {
                 input.selectionStart = input.selectionEnd = ip;
                 return false;
             }
-            return opAutocorrect(i, ip, delim);
+            return opAutocorrect(ip, delim);
         }
         if (ip <= 2)
             return false;                   // Autocorrect needs > 1 letter
@@ -609,7 +627,7 @@ function autocomplete() {
                 ip = i + (code > 0xFFFF ? 2 : 1);
                 input.selectionStart = input.selectionEnd = ip;
                 if (code >= 0x2061 && code <= 0x2C00)
-                    opAutocorrect(ip - 2, ip, ch);
+                    opAutocorrect(ip, ch);
                 closeAutocompleteList();
             });
             autocl.appendChild(b);

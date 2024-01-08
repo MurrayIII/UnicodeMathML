@@ -885,6 +885,10 @@ function
     = f:functionName __? ("\u2061" / opNaryand)? s:script? __? o:operand {
         if (Array.isArray(f)) {
             f = f.join("");
+            if (f.endsWith('\u2061')) {
+                // Pattern match included '\u2061': remove it
+                f = f.substring(0, f.length - 1);
+            }
         }
         var c = {chars: f};
         c.funct = true;
