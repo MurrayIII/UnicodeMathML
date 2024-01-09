@@ -687,7 +687,7 @@ function autocomplete() {
                 insertAtCursorPos('\u200B');
             } else if (e.altKey && e.key == 'u') {
                 e.preventDefault();
-                if (input.value.startsWith("<math")) {
+                if (isMathML(input.value)) {
                     // Convert MathML to UnicodeMath
                     input.value = MathMLtoUnicodeMath(input.value);
                     draw();
@@ -880,7 +880,7 @@ async function draw() {
 
     prevInputValue = input.value;
 
-    if (input.value.startsWith('<math')) {
+    if (isMathML(input.value)) {
         // Resize to display input MathML
         input.style.height = "400px";
         input.style.fontSize = "0.9rem";
@@ -969,7 +969,7 @@ async function draw() {
             var mathml, details;
             ({mathml, details} = unicodemathml(val, ummlConfig.displaystyle));
             output_HTML += mathml;
-            if (input.value.startsWith('<math')) {
+            if (isMathML(input.value)) {
                 output_source_HTML = MathMLtoUnicodeMath(input.value);
             } else {
                 output_source_HTML += highlightMathML(escapeMathMLSpecialChars(indentMathML(mathml))) + "\n";

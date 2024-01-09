@@ -14,6 +14,28 @@ function getUnicodeFraction(chNum, chDenom) {
     }
 }
 
+function isMathML(unicodemath) {
+    return unicodemath.startsWith("<math") || unicodemath.startsWith("<mml:math");
+}
+
+function removeMmlPrefixes(mathML) {
+    if (!mathML.startsWith('<mml:'))
+        return mathML;                      // No mml: prefix
+
+    // Remove 'mml:' prefixes (renderers don't understand them and the
+    // conversion code is simplified)
+    let j = 0;
+    let mathML1 = '<math';
+
+    for (let i = 9; i < mathML.length; i = j + 4) {
+        j = mathML.indexOf('mml:', i);
+        if (j < 0)
+            j = mathML.length;
+        mathML1 += mathML.substring(i, j);
+    }
+    return mathML1;
+}
+
 (function(root) {
 'use strict';
 
@@ -3664,6 +3686,9 @@ function dump(value, noAddParens) {
 
 function MathMLtoUnicodeMath(mathML) {
     // Convert MathML to UnicodeMath
+    if (mathML.startsWith('<mml:math'))
+        mathML = removeMmlPrefixes(mathML);
+
     const parser = new DOMParser();
     const doc = parser.parseFromString(mathML, "application/xml");
     let unicodeMath = dump(doc);
@@ -3691,10 +3716,9 @@ function MathMLtoUnicodeMath(mathML) {
 
 function unicodemathml(unicodemath, displaystyle) {
     debugGroup(unicodemath);
-    if (unicodemath.startsWith("<math")) {
-        // Convert MathML to UnicodeMath (done in Playground)
-        //var unicodemath1 = MathMLtoUnicodeMath(unicodemath);
-        //console.log("UnicodeMath = " + unicodemath1);
+    if (isMathML(unicodemath)) {
+        if (unicodemath.startsWith('<mml:math'))
+            unicodemath = removeMmlPrefixes(unicodemath);
         return {mathml: unicodemath, details: {}};
     }
     try {

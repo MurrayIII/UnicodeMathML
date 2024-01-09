@@ -36,6 +36,7 @@ var mathML = [
     "<math display=\"block\"><mi mathvariant=\"fraktur\">H</mi></math>",
     "<math display=\"block\"><mrow><mi>𝑎</mi><mo>&#x2264;</mo><mi>𝑏</mi><mo>&#8804;</mo><mi>𝑐</mi></mrow></math>",
     "<math display=\"block\"><mrow><mfrac><mrow><mi>𝑑</mi><mrow intent=\":function\"><mi>𝜓</mi><mo>⁡</mo><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑥</mi><mo>,</mo><mi>𝑡</mi></mrow><mo>)</mo></mrow></mrow></mrow><mrow><mi>𝑑</mi><mi>𝑡</mi></mrow></mfrac><mo>=</mo><mn>0</mn></mrow></math>",
+    "<mml:math display=\"block\"><mml:mrow><mml:msup><mml:mi>𝑎</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo>+</mml:mo><mml:msup><mml:mi>𝑏</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo>=</mml:mo><mml:msup><mml:mi>𝑐</mml:mi><mml:mn>2</mml:mn></mml:msup></mml:mrow></mml:math>",
 ];
 
 var unicodeMath = [
@@ -73,6 +74,7 @@ var unicodeMath = [
     "ℌ",
     "𝑎≤𝑏≤𝑐",
     "𝑑𝜓⁡(𝑥,𝑡)/𝑑𝑡=0",
+    "𝑎²+𝑏²=𝑐²",
 ];
 
 function testMathMLtoUnicodeMath() {
