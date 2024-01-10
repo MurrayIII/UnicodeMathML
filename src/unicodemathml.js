@@ -3531,8 +3531,12 @@ function dump(value, noAddParens) {
                 return dump(value.firstElementChild) +
                     digitSuperscripts[value.lastElementChild.textContent];
             }
+            var op = '^';
+            if (value.lastElementChild.textContent == '′')
+                op = '';
+            ret = binary(value, op);
+
             // Check for intent='transpose'
-            ret = binary(value, '^');
             if (value.lastElementChild.attributes.hasOwnProperty('intent') &&
                 value.lastElementChild.attributes.intent.nodeValue == 'transpose') {
                 let cRet = ret.length;
@@ -3609,6 +3613,8 @@ function dump(value, noAddParens) {
                 return '\u2061';
             if (val == '&lt;')
                 return '<';
+            if (val == '/')                 // Quote other ops...
+                return '\\/';
             if (val.startsWith('&#') && val.endsWith(';')) {
                 ret = value.innerHTML.substring(2, val.length - 1);
                 if (ret[0] == 'x') 
