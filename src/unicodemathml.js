@@ -36,6 +36,10 @@ function removeMmlPrefixes(mathML) {
     return mathML1;
 }
 
+function isPrime(ch) {
+    return '′″‴'.includes(ch);
+}
+
 (function(root) {
 'use strict';
 
@@ -2238,6 +2242,7 @@ function preprocess(dsty, uast, index, arr) {
                                 content: {atop: [value.top, value.bottom]}}};
 
         case "script":
+            value.base.inscript = true;     // Need for case "primed":
             ret = {type: value.type, base: preprocess(dsty, value.base)};
             if (intent)
                 ret.intent = intent;
@@ -2461,9 +2466,23 @@ function preprocess(dsty, uast, index, arr) {
             return {bgcolored: {color: value.color, of: preprocess(dsty, value.of)}};
 
         case "primed":
-            // cannot do anything here since the script transform rule relies on
-            // this
-            return {primed: {base: preprocess(dsty, value.base), intent: intent, arg: arg, primes: value.primes}};
+            // Cannot do anything here if in script, since the script transform
+            // rule relies on this
+            var base = preprocess(dsty, value.base);
+            if (!uast.hasOwnProperty('inscript') && base.hasOwnProperty('atoms') &&
+                Array.isArray(base.atoms) && base.atoms[0].hasOwnProperty('chars')) {
+                let chars = base.atoms[0].chars;
+                let cch = chars.length;
+                var cchCh = (chars[cch - 1] >= '\DC00') ? 2 : 1;
+
+                if (cch > cchCh) {
+                    // Return leading chars followed by primed end char
+                    base.atoms[0].chars = chars.substring(cch - cchCh);
+                    return [{atoms: {chars: chars.substring(0, cch - cchCh)}},
+                            {primed: {base: base, intent: intent, arg: arg, primes: value.primes}}];
+                }
+            }
+            return {primed: {base: base, intent: intent, arg: arg, primes: value.primes}};
 
         case "factorial":
             value = preprocess(dsty, value);
@@ -3532,7 +3551,7 @@ function dump(value, noAddParens) {
                     digitSuperscripts[value.lastElementChild.textContent];
             }
             var op = '^';
-            if (value.lastElementChild.textContent == '′')
+            if (isPrime(value.lastElementChild.textContent))
                 op = '';
             ret = binary(value, op);
 

@@ -37,7 +37,7 @@ var mathML = [
     "<math display=\"block\"><mrow><mi>𝑎</mi><mo>&#x2264;</mo><mi>𝑏</mi><mo>&#8804;</mo><mi>𝑐</mi></mrow></math>",
     "<math display=\"block\"><mrow><mfrac><mrow><mi>𝑑</mi><mrow intent=\":function\"><mi>𝜓</mi><mo>⁡</mo><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑥</mi><mo>,</mo><mi>𝑡</mi></mrow><mo>)</mo></mrow></mrow></mrow><mrow><mi>𝑑</mi><mi>𝑡</mi></mrow></mfrac><mo>=</mo><mn>0</mn></mrow></math>",
     "<mml:math display=\"block\"><mml:mrow><mml:msup><mml:mi>𝑎</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo>+</mml:mo><mml:msup><mml:mi>𝑏</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo>=</mml:mo><mml:msup><mml:mi>𝑐</mml:mi><mml:mn>2</mml:mn></mml:msup></mml:mrow></mml:math>",
-    "<math display=\"block\"><mrow><mrow><mi>𝑍</mi><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝛾</mi><mo>+</mo><mrow><mi>𝑖</mi><mi>𝜔</mi></mrow><mo>−</mo><mrow><mi>𝑖</mi><mi>𝜈</mi></mrow></mrow><mo>)</mo></mrow></mrow><mo>=</mo><mfrac><mi>𝑖</mi><msqrt><mi>𝜋</mi></msqrt></mfrac><mrow intent=\"integral($l,∞,$n)\"><msubsup><mo>∫</mo><mrow arg=\"l\"><mo>−</mo><mi>∞</mi></mrow><mi>∞</mi></msubsup><mfrac arg=\"n\"><msup><mi>𝑒</mi><mrow><mo>−</mo><mrow><msup><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝜔</mi><mo>−</mo><msup><mi>𝜔</mi><mo>′</mo></msup></mrow><mo>)</mo></mrow><mn>2</mn></msup><mo>/</mo><msup><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>Δ</mi><mi>𝜔</mi></mrow><mo>)</mo></mrow><mn>2</mn></msup></mrow></mrow></msup><mrow><mi>𝛾</mi><mo>+</mo><mrow><mi>𝑖</mi><mrow intent=\":fenced\"><mo>(</mo><mrow><msup><mi>𝜔</mi><mo>′</mo></msup><mo>−</mo><mi>𝜈</mi></mrow><mo>)</mo></mrow></mrow></mrow></mfrac></mrow></mrow></math>",
+    "<math display=\"block\"><mrow><mrow><mi>𝑍</mi><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝛾</mi><mo>+</mo><mrow><mi>𝑖</mi><mi>𝜔</mi></mrow><mo>−</mo><mrow><mi>𝑖</mi><mi>𝜈</mi></mrow></mrow><mo>)</mo></mrow></mrow><mo>=</mo><mfrac><mi>𝑖</mi><msqrt><mi>𝜋</mi></msqrt></mfrac><mrow intent=\"integral($l,∞,$n)\"><msubsup><mo>∫</mo><mrow arg=\"l\"><mo>−</mo><mi>∞</mi></mrow><mi>∞</mi></msubsup><mfrac arg=\"n\"><msup><mi>𝑒</mi><mrow><mo>−</mo><mrow><msup><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝜔</mi><mo>−</mo><msup><mi>𝜔</mi><mo>′</mo></msup></mrow><mo>)</mo></mrow><mn>2</mn></msup><mo>/</mo><msup><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>Δ</mi><mi>𝜔</mi></mrow><mo>)</mo></mrow><mn>2</mn></msup></mrow></mrow></msup><mrow><mi>𝛾</mi><mo>+</mo><mrow><mi>𝑖</mi><mrow intent=\":fenced\"><mo>(</mo><mrow><msup><mi>𝜔</mi><mo>′</mo></msup><mo>−</mo><mi>𝜈</mi></mrow><mo>)</mo></mrow></mrow></mrow></mfrac></mrow><mrow><mi intent=\"ⅆ\">𝑑</mi><msup><mi>𝜔</mi><mo>′</mo></msup></mrow></mrow></math>",
 ];
 
 var unicodeMath = [
@@ -76,7 +76,7 @@ var unicodeMath = [
     "𝑎≤𝑏≤𝑐",
     "𝑑𝜓⁡(𝑥,𝑡)/𝑑𝑡=0",
     "𝑎²+𝑏²=𝑐²",
-    "𝑍(𝛾+𝑖𝜔−𝑖𝜈)=𝑖/√𝜋 ∫_−∞^∞ 𝑒^(−(𝜔−𝜔′)²\\/(Δ𝜔)²)/(𝛾+𝑖(𝜔′−𝜈))",
+    "𝑍(𝛾+𝑖𝜔−𝑖𝜈)=𝑖/√𝜋 ∫_−∞^∞ 𝑒^(−(𝜔−𝜔′)²\\/(Δ𝜔)²)/(𝛾+𝑖(𝜔′−𝜈)) ⅆ𝜔′",
 ];
 
 function testMathMLtoUnicodeMath() {
