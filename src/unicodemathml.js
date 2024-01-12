@@ -14,6 +14,38 @@ function getUnicodeFraction(chNum, chDenom) {
     }
 }
 
+function inRange(ch0, ch, ch1) {
+    return ch >= ch0 && ch <= ch1;
+}
+
+function isAlphanumeric(ch) {
+    return /[\w]/.test(ch) || ch >= '\u3018' || isGreek(ch) || isDoubleStruck(ch);
+}
+
+function isAsciiDigit(ch) {
+    return inRange('0', ch, '9');
+}
+
+function isDoubleStruck(ch) {
+    return inRange('\u2145', ch, '\u2149');
+}
+
+function isGreek(ch) {
+    return inRange('\u0391', ch, '\u03F5');
+}
+
+function isTranspose(value) {
+    return Array.isArray(value) &&
+        value[0].hasOwnProperty('atoms') &&
+        Array.isArray(value[0].atoms) &&
+        value[0].atoms[0].hasOwnProperty("chars") &&
+        value[0].atoms[0].chars == '⊺';
+}
+
+function isIntegral(op) {
+    return inRange('\u222B', op, '\u2233') || op == '⨌';
+}
+
 function isMathML(unicodemath) {
     return unicodemath.startsWith("<math") || unicodemath.startsWith("<mml:math");
 }
@@ -975,34 +1007,6 @@ function isFunctionName(fn) {
         return true;
 
     return ["Im", "Pr", "Re", "arg", "def", "deg", "det", "dim", "erf", "exp", "gcd", "hom", "inf", "ker", "lim", "log", "ln", "max", "min", "mod", "sup", "tg"].includes(fn);
-}
-
-function inRange(ch0, ch, ch1) {
-    return ch >= ch0 && ch <= ch1;
-}
-
-function isAlphanumeric(ch) {
-    return /[\w]/.test(ch) || ch >= '\u3018' || isGreek(ch) || isDoubleStruck(ch);
-}
-
-function isAsciiDigit(ch) {
-    return inRange('0', ch, '9');
-}
-
-function isDoubleStruck(ch) {
-    return inRange('\u2145', ch, '\u2149');
-}
-
-function isGreek(ch) {
-    return inRange('\u0391', ch, '\u03F5');
-}
-
-function isTranspose(value) {
-    return Array.isArray(value) &&
-        value[0].hasOwnProperty('atoms') &&
-        Array.isArray(value[0].atoms) &&
-        value[0].atoms[0].hasOwnProperty("chars") &&
-        value[0].atoms[0].chars == '⊺';
 }
 
 function foldMathItalic(code) {
@@ -2077,6 +2081,9 @@ function preprocess(dsty, uast, index, arr) {
                 // default
             }
 
+            let op = v(value.limits.script.base);
+            let isInt = isIntegral(op);
+
             if (options.includes("nLimitsUnderOver")) {
                 value.limits.script.type = "abovebelow";
             } else if (options.includes("nLimitsSubSup")) {
@@ -2090,15 +2097,12 @@ function preprocess(dsty, uast, index, arr) {
                     delete value.limits.script.high;
                     value.limits.script.base = {script: {type: "subsup", base: value.limits.script.base, high: high}};
                 }
-            } else if (dsty.display) {
+            } else if (dsty.display && !isInt) {
                 // In display mode if not an integral, display limits abovebelow
-                var op = v(value.limits.script.base);
-                if (op < '\u222B' || op > '\u2233') {   // Exclude common integral signs
-                    value.limits.script.type = "abovebelow";
-                }
+                value.limits.script.type = "abovebelow";
             }
-            if (value.naryand.hasOwnProperty("binom") && index < arr.length - 1 &&
-                Array.isArray(arr[index + 1])) {
+            if (value.naryand.hasOwnProperty("binom") && arr != undefined &&
+                index < arr.length - 1 && Array.isArray(arr[index + 1])) {
                 // Include array following binomial coefficient in naryand.
                 // Binomial coefficients like 𝑛⒞𝑘 should be part of operands
                 // as are other bracketed expressions, but peg doesn't seem
@@ -2107,6 +2111,23 @@ function preprocess(dsty, uast, index, arr) {
                 naryand.unshift(value.naryand);
                 value.naryand = naryand;
                 arr.splice(index + 1, 1);
+            } else if (isInt && arr != undefined && index < arr.length &&
+                Array.isArray(arr[index + 1])) {
+                // For integrals, if arr[index + 1] has atoms that start with ⅆ,
+                // move that element into value.naryand. E.g., in ∫_1^2 1/𝑥 ⅆ𝑥=ln 2,
+                // ⅆ𝑥 is moved into the integrand.
+                let next = arr[index + 1][0];
+                if (next.hasOwnProperty('primed'))
+                    next = next.primed.base;
+                if (next.hasOwnProperty('atoms') && Array.isArray(next.atoms) &&
+                    next.atoms[0].hasOwnProperty('chars') &&
+                    next.atoms[0].chars[0] == 'ⅆ') {    // Differential d
+                    if (Array.isArray(value.naryand))
+                        value.naryand.push(arr[index + 1][0]);
+                    else
+                        value.naryand = [value.naryand, arr[index + 1][0]];
+                    arr.splice(index + 1, 1);
+                }
             }
             value.naryand = preprocess(dsty, value.naryand);
             value.limits = preprocess(dsty, value.limits);
@@ -2277,9 +2298,9 @@ function preprocess(dsty, uast, index, arr) {
                         }
                     }
                     if (k(base) == "atoms" && base.atoms.funct == undefined) {
-                        // If str contains more than a single variable and isn't
-                        // a function name, make the subsup base be the end
-                        // variable.e.g., for 𝐸 = 𝑚𝑐², make 𝑐 be the base
+                        // If base contains more than one char and isn't a
+                        // function name, make the subsup base be the end char.
+                        // E.g., for 𝐸 = 𝑚𝑐², make 𝑐 be the base, not 𝑚𝑐.
                         var n = base.atoms.length;
                         if (n != undefined) {
                             var str = base.atoms[n - 1].chars;
@@ -2287,18 +2308,16 @@ function preprocess(dsty, uast, index, arr) {
                                 var cch = str.length;
                                 var fn = foldMathItalics(str);
                                 if (isFunctionName(fn)) {
-                                    if (fn.length < cch) {
+                                    if (fn.length < cch)
                                         ret.base.atoms[0].chars = fn;
-                                    }
                                 } else {
-                                    var cchCh = 1;
-
-                                    if (cch >= 2 && str.codePointAt(cch - 2) > 0xFFFF)
-                                        cchCh = 2;      // surrogate pair
+                                    var cchCh = (str[cch - 1] >= '\DC00') ? 2 : 1;
 
                                     if (cch > cchCh) {
-                                        ret.base.atoms[0].chars = str.substring(cch - cchCh, cch);
-                                        return [{atoms: [{chars: str.substring(0, cch - cchCh)}]}, {script: ret}];
+                                        // Return leading chars followed by scripted end char
+                                        ret.base.atoms[0].chars = str.substring(cch - cchCh);
+                                        return [{atoms: {chars: str.substring(0, cch - cchCh)}},
+                                                {script: ret}];
                                     }
                                 }
                             }
