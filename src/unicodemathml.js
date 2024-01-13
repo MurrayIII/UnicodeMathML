@@ -3443,7 +3443,10 @@ function dump(value, noAddParens) {
     switch (value.nodeName) {
         case 'mtable':
             var symbol = '■';
-            if (value.parentElement.attributes.hasOwnProperty('intent')) {
+            if (value.attributes.hasOwnProperty('intent') &&
+                value.attributes.intent.value == ':equations') {
+                symbol = '█';
+            } else if (value.parentElement.attributes.hasOwnProperty('intent')) {
                 let intent = value.parentElement.attributes.intent.nodeValue.substring(1);
                 for (const [key, val] of Object.entries(matrixIntents)) {
                     if (val == intent) {
@@ -3451,9 +3454,6 @@ function dump(value, noAddParens) {
                         break;
                     }
                 }
-            } else if (value.attributes.hasOwnProperty('intent') &&
-                value.attributes.intent.value == ':equations') {
-                symbol = '█';
             } else if (value.firstElementChild.nodeName == 'mlabeledtr' &&
                 value.firstElementChild.children.length == 2 &&
                 value.firstElementChild.firstElementChild.firstElementChild.nodeName == 'mtext') {
@@ -3707,15 +3707,8 @@ function dump(value, noAddParens) {
     if (mrowIntent == 'cases')
         return 'Ⓒ' + ret.substring(2);
 
-    if (mrowIntent == ':fenced' &&
-        !value.firstElementChild.textContent &&
-        !value.lastElementChild.textContent) {
-        let ret = '〖';
-
-        for (i = 1; i < value.children.length - 1; i++)
-            ret += dump(value.children[i]);
-        return ret + '〗';
-    }
+    if (mrowIntent == ':fenced' && !value.lastElementChild.textContent)
+        return !value.firstElementChild.textContent ? '〖' + ret + '〗' : ret + '┤';
 
     if (mrowIntent && mrowIntent.startsWith('absolute-value')) {
         ret = ret.substring(1, ret.length - 1); // Remove '|'s
