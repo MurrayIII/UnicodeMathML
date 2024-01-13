@@ -567,7 +567,7 @@ trigName = 'a'? ('sin' / 'cos' / 'tan' / 'sec' / 'csc' / 'cot') 'h'?
 limName = "lim" / "log" / "lg"
 
 factor
-    = f:(trigName / limName) &opScript s:script __? '\u2061'? o:operand {
+    = f:(trigName / limName) &opScript s:script __? '\u2061'? o:operand _? {
         if (Array.isArray(f)) {
             f = f.join("");
         }
@@ -882,7 +882,7 @@ root
 // Function Apply operator is immediately followed by a subscript or superscript
 // expression, that expression should be applied to the function name"
 function
-    = f:functionName __? ("\u2061" / opNaryand)? s:script? __? o:operand {
+    = f:functionName __? ("\u2061" / opNaryand)? s:script? __? o:operand _? {
         if (Array.isArray(f)) {
             f = f.join("");
             if (f.endsWith('\u2061')) {
@@ -899,7 +899,7 @@ function
         }
         return {function: {f: {atoms: c}, of: o}};
     }
-    / f:functionName __? o:operand {
+    / f:functionName __? o:operand _? {
         if (Array.isArray(f)) {
             f = f.join("");
         }

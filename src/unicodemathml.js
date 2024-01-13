@@ -3232,6 +3232,9 @@ function mtransform(dsty, puast) {
             // they are strings, they should grow with their contents. note
             // that if the brackets are invisible, that is,〖content〗, this
             // wraps content in an mrow as desired.
+            //if (!value.open && !value.close)
+            //    return {mrow: withAttrs(getAttrs(value, ''), content)};
+
             var ret = [];
             if (typeof value.open === 'string') {
                 ret.push({mo: noAttr(value.open)});
@@ -3704,6 +3707,16 @@ function dump(value, noAddParens) {
     if (mrowIntent == 'cases')
         return 'Ⓒ' + ret.substring(2);
 
+    if (mrowIntent == ':fenced' &&
+        !value.firstElementChild.textContent &&
+        !value.lastElementChild.textContent) {
+        let ret = '〖';
+
+        for (i = 1; i < value.children.length - 1; i++)
+            ret += dump(value.children[i]);
+        return ret + '〗';
+    }
+
     if (mrowIntent && mrowIntent.startsWith('absolute-value')) {
         ret = ret.substring(1, ret.length - 1); // Remove '|'s
         return needParens(ret) ? '⒜(' + ret + ')' : '⒜' + ret;
@@ -3746,7 +3759,7 @@ function MathMLtoUnicodeMath(mathML) {
             unicodeMath = unicodeMath.substring(0, i);
             break;
         }
-        if ('=+−/ \u2061)]}'.includes(unicodeMath[i + 1])) {
+        if ('=+−/ \u2061)]}〗'.includes(unicodeMath[i + 1])) {
             let j = 1;                      // Delete 1 space
             if (unicodeMath[i + 1] == ' ' && i < unicodeMath.length - 2 &&
                 '=+−/\u2061)]}'.includes(unicodeMath[i + 2])) {
