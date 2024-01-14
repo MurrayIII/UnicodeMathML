@@ -680,6 +680,7 @@ function autocomplete() {
                 e.preventDefault();
                 hexToUnicode();
             } else if (e.ctrlKey && (e.key == 'b' || e.key == 'i')) {
+                // Toggle math bold/italic
                 e.preventDefault();
                 boldItalicToggle(e.key);
             } else if (e.shiftKey && e.key == 'Enter') {
@@ -692,6 +693,12 @@ function autocomplete() {
                     input.value = MathMLtoUnicodeMath(input.value);
                     draw();
                 }
+            } else if (e.altKey && e.key == 'c') {
+                // Copy MathML into input
+                e.preventDefault();
+                let mathML = document.getElementById('output_source');
+                input.value = mathML.innerText;
+                draw();
             } else if (e.altKey && e.key == 'Enter') {
                 // Enter Examples[iExample]
                 x = document.getElementById('Examples').childNodes[0];
@@ -718,6 +725,8 @@ function autocomplete() {
                         clearInterval(demoID);
                         demoEq.style.backgroundColor = 'green';
                     }
+                } else if (e.key == 'ArrowRight') {
+                    nextEq();
                 }
             }
             return;
@@ -1147,6 +1156,8 @@ $(document).on('click', function (e) {
             input.value = str;
             input.focus();
             draw();
+            if (demoID)
+                endDemo();
             return;
         }
         addToHistory(e.target.innerText);
