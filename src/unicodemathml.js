@@ -15,7 +15,7 @@ function getUnicodeFraction(chNum, chDenom) {
 }
 
 function inRange(ch0, ch, ch1) {
-    return ch >= ch0 && ch <= ch1;
+    return ch >= ch0 && ch <= ch1 && ch.length == ch0.length;
 }
 
 function isAlphanumeric(ch) {
@@ -3568,7 +3568,8 @@ function dump(value, noAddParens) {
             return ret;
 
         case 'msup':
-            if (isAsciiDigit(value.lastElementChild.textContent)) {
+            if (value.lastElementChild.nodeName == 'mn' &&
+                isAsciiDigit(value.lastElementChild.textContent)) {
                 return dump(value.firstElementChild) +
                     digitSuperscripts[value.lastElementChild.textContent];
             }

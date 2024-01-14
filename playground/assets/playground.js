@@ -772,8 +772,8 @@ function autocomplete() {
 }
 
 function checkResize() {
-    var h = document.getElementsByTagName('h1');
-    var heading = document.getElementById("heading");
+    let h = document.getElementsByTagName('h1');
+    let heading = document.getElementById("heading");
 
     if (window.innerWidth < 768) {
         heading.innerHTML = 'UnicodeMathML<br><em>𝐏𝓁𝔞𝚢𝗴𝑟𝖔𝓊𝙣𝕕</em><br>';
@@ -782,6 +782,12 @@ function checkResize() {
     } else {
         heading.innerHTML = 'UnicodeMathML <em>𝐏𝓁𝔞𝚢𝗴𝑟𝖔𝓊𝙣𝕕 </em>';
         h[0].style.textAlign = 'left';
+    }
+    if (window.innerHeight > 1000) {
+        let outputs = document.getElementsByClassName('tabcontent');
+        for (let i = 0; i < outputs.length; i++) {
+            outputs[i].style.height = '500px';
+        }
     }
 }
 
@@ -882,11 +888,12 @@ async function draw() {
 
     if (isMathML(input.value)) {
         // Resize to display input MathML
-        input.style.height = "400px";
+        input.style.height = window.innerHeight > 1000 ? "500px" : "400px";
         input.style.fontSize = "0.9rem";
     } else {
         // display code points corresponding to the characters
-        input.style.height = "200px";
+        if (window.innerHeight < 1000)
+            input.style.height = "200px";
         input.style.fontSize = "1.5rem";
         var codepoints_HTML = "";
         Array.from(input.value).forEach(c => {
