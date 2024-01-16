@@ -47,20 +47,26 @@ function isIntegral(op) {
 }
 
 function isMathML(unicodemath) {
-    return unicodemath.startsWith("<math") || unicodemath.startsWith("<mml:math");
+    return unicodemath.startsWith("<math") || unicodemath.startsWith("<mml:math") ||
+        unicodemath.startsWith("<m:math");
 }
 
 function removeMmlPrefixes(mathML) {
-    if (!mathML.startsWith('<mml:'))
-        return mathML;                      // No mml: prefix
+    var prefix;
+    if (mathML.startsWith('<m:'))
+        prefix = 'm:';
+    else if (mathML.startsWith('<mml:'))
+        prefix = 'mml:';
+    else
+        return;                             // No mml: or m: prefix
 
-    // Remove 'mml:' prefixes (renderers don't understand them and the
-    // conversion code is simplified)
+    // Remove 'mml:' or 'm:' prefixes (renderers don't understand them and
+    // the conversion code is simplified)
     let j = 0;
     let mathML1 = '<math';
 
-    for (let i = 9; i < mathML.length; i = j + 4) {
-        j = mathML.indexOf('mml:', i);
+    for (let i = 5 + prefix.length; i < mathML.length; i = j + prefix.length) {
+        j = mathML.indexOf(prefix, i);
         if (j < 0)
             j = mathML.length;
         mathML1 += mathML.substring(i, j);
@@ -1242,6 +1248,7 @@ function getDifferentialInfo(of, n) {
     if (arg == undefined)
         return [0, 0, 0];                   // Can't be differential
 
+    let darg = '';                          // Differential argument/variable
     let order = '1';                        // Derivative order
     let script = false;
 
@@ -1249,6 +1256,18 @@ function getDifferentialInfo(of, n) {
         order = getOrder(arg.script.high);
         arg = arg.script.base;
         script = true;
+    } else if (arg.hasOwnProperty('function') &&
+        arg.function.f.hasOwnProperty('atoms') &&
+        arg.function.f.atoms.hasOwnProperty('chars')) {
+        let chars = arg.function.f.atoms.chars;
+        let chD = getCh(chars, 0);
+        let iOff = chD.length;
+
+        if (!'dⅆ∂𝑑𝜕'.includes(chD))
+            return [0, 0, 0];               // Not a differential
+        if (chars[iOff] == ',')
+            iOff++;
+        return [chD, order, chars.substring(iOff)];
     }
     if (!arg.hasOwnProperty('atoms'))
         return [0, 0, 0];                   // Can't be differential
@@ -1258,7 +1277,6 @@ function getDifferentialInfo(of, n) {
         return [0, 0, 0];                   // Not a differential
 
     let cchChD = chD.length;
-    let darg = '';                          // Differential argument/variable
 
     if (n == 1) {                           // Denominator
         if (script)                         // Non-script handled further down
@@ -1300,8 +1318,6 @@ function getDifferentialInfo(of, n) {
                 if (of[0].length > 1 && of[0][1].hasOwnProperty('bracketed')) {
                     of[0][1].bracketed.arg = 'f';
                     darg = '$f';
-                } else {
-                    return [0, 0, 0];
                 }
             } else {                            // Get function name char
                 darg = getCh(arg.atoms[0].chars, cchChD); // Differentiated function
@@ -1970,7 +1986,9 @@ function preprocess(dsty, uast, index, arr) {
 
     // map preprocessing over lists
     if (Array.isArray(uast)) {
-        return uast.map((e, i, a) => preprocess(dsty, e, i, a));
+        for (let i = 0; i < uast.length; i++) {
+            uast[i] = preprocess(dsty, uast[i], i, uast);
+        }
     }
 
     var key = k(uast);
@@ -2170,9 +2188,23 @@ function preprocess(dsty, uast, index, arr) {
 
                     if (chDifferential0 == chDifferential1 && order0 == order1) {
                         // It's a derivative
-                        if (!arg0) {        // E.g., as in 𝜕²/𝜕𝑥² 𝜓(𝑥,𝑡)
+                        if (!arg0) {        // Assign intent arg as for 𝜕²/𝜕𝑥² 𝜓(𝑥,𝑡)
+                            if (Array.isArray(value.of[1])) { // Denominator
+                                // Reorder tree for, e.g., ⅆ/ⅆ𝑧⁡arcsin⁡𝑧
+                                var val = value.of[1][0];
+                                if (val.hasOwnProperty('function') &&
+                                    val.function.f.hasOwnProperty('atoms') &&
+                                    val.function.f.atoms.hasOwnProperty('chars')) {
+                                    var arg = val.function.of;
+                                    value.of[1][0] = {atoms: {chars:
+                                        value.of[1][0].function.f.atoms.chars.split(',').join('')}};
+                                    arr.splice(index + 1, 0, arg);
+                                }
+                            }
                             if (index + 1 < arr.length) {
                                 let ele = arr[index + 1];
+                                if (ele.hasOwnProperty('operator') && ele.operator == '\u2061')
+                                    ele = arr[index + 2];
                                 if (Array.isArray(ele)) {
                                     if (ele.length == 1 && ele[0].hasOwnProperty("atoms"))
                                         ele[0].atoms.arg = '$f'; // Target <mi>
@@ -3604,7 +3636,8 @@ function dump(value, noAddParens) {
                 return binary(value, '┬');
             }                               // Fall through to msub
         case 'msub':
-            if (isAsciiDigit(value.lastElementChild.textContent)) {
+            if (value.lastElementChild.nodeName == 'mn' &&
+                isAsciiDigit(value.lastElementChild.textContent)) {
                 return dump(value.firstElementChild) +
                     digitSubscripts[value.lastElementChild.textContent];
             }
@@ -3663,6 +3696,13 @@ function dump(value, noAddParens) {
                     ret = '0' + ret;
                 return String.fromCodePoint(ret);
             }
+            if (value.attributes.hasOwnProperty('title')) {
+                switch (value.attributes.title.textContent) {
+                    case 'differential':
+                    case 'derivative':
+                        return 'ⅆ';
+                }
+            }
             return val;
 
         case 'mi':
@@ -3679,8 +3719,18 @@ function dump(value, noAddParens) {
                 var mathstyle = mathvariants[value.attributes.mathvariant.nodeValue];
                 if (c in mathFonts && mathstyle in mathFonts[c] && (c < 'Α' || c > 'Ω' && c != '∇'))
                     return mathFonts[c][mathstyle];
-                if (mathstyle == 'mup')
-                    return '"' + c + '"';
+                if (mathstyle == 'mup') {
+                    if (value.attributes.hasOwnProperty('title')) {
+                        switch (value.attributes.title.textContent) {
+                            case 'base of natural logarithm':
+                                return 'ⅇ';
+                            case 'imaginary unit':
+                                return 'ⅈ';
+                        }
+                    }
+                    if (c != '∞' && !inRange('\u0391', c, '\u03A9'))
+                        return '"' + c + '"';
+                }
             }                               // else fall through
         case 'mn':
             return value.innerHTML;
@@ -3700,7 +3750,7 @@ function dump(value, noAddParens) {
 
     for (var i = 0; i < cNode; i++) {
         let node = value.children[i];
-        ret += dump(node);
+        ret += dump(node, i);
     }
     let mrowIntent = value.nodeName == 'mrow' && value.attributes.hasOwnProperty('intent')
         ? value.attributes.intent.nodeValue : '';
@@ -3737,7 +3787,7 @@ function dump(value, noAddParens) {
 
 function MathMLtoUnicodeMath(mathML) {
     // Convert MathML to UnicodeMath
-    if (mathML.startsWith('<mml:math'))
+    if (mathML.startsWith('<mml:math') || mathML.startsWith('<m:math'))
         mathML = removeMmlPrefixes(mathML);
 
     const parser = new DOMParser();
@@ -3768,7 +3818,7 @@ function MathMLtoUnicodeMath(mathML) {
 function unicodemathml(unicodemath, displaystyle) {
     debugGroup(unicodemath);
     if (isMathML(unicodemath)) {
-        if (unicodemath.startsWith('<mml:math'))
+        if (unicodemath.startsWith('<mml:math') || unicodemath.startsWith('<m:math'))
             unicodemath = removeMmlPrefixes(unicodemath);
         return {mathml: unicodemath, details: {}};
     }

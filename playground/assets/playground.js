@@ -450,7 +450,7 @@ function getSubSupDigit(str, i, delim) {
     // If the preceding op is the other subsup op, return '', e.g., for a_0^2
     var opSupSub = op == '^' ? '_' : '^';
 
-    for (var j = i - 2; j > 0; j--) {
+    for (var j = i - 2; j >= 0; j--) {
         if (str[j] == opSupSub)
             return '';
         if (str[j] < '\u3017' && !isAsciiAlphanumeric(str[j]))
@@ -686,18 +686,12 @@ function autocomplete() {
             } else if (e.shiftKey && e.key == 'Enter') {
                 //e.preventDefault();
                 insertAtCursorPos('\u200B');
-            } else if (e.altKey && e.key == 'u') {
+            } else if (e.altKey && e.key == 'm') {
+                // Toggle Unicode and MathML in input
                 e.preventDefault();
-                if (isMathML(input.value)) {
-                    // Convert MathML to UnicodeMath
-                    input.value = MathMLtoUnicodeMath(input.value);
-                    draw();
-                }
-            } else if (e.altKey && e.key == 'c') {
-                // Copy MathML into input
-                e.preventDefault();
-                let mathML = document.getElementById('output_source');
-                input.value = mathML.innerText;
+                input.value = isMathML(input.value)
+                    ? MathMLtoUnicodeMath(input.value)
+                    : document.getElementById('output_source').innerText;
                 draw();
             } else if (e.altKey && e.key == 'Enter') {
                 // Enter Examples[iExample]
