@@ -1161,6 +1161,9 @@ expBracket
     / op:opSquareBrackets e:interval cl:opSquareBrackets {
         return getBracketedInterval(op, e, cl);
     }
+    / "(" e:exp "|" f:exp ")" {
+        return {bracketed: {open: "(", close: ")", content: {separated: {separator: "│", of: [e, f]}}}};
+    }
     / op:expBracketOpen __? cl:expBracketClose {  // empty bracket pairs
         return {bracketed: {open: op, close: cl, content: {atoms: {spaces: {space: 0}}}}};
     }

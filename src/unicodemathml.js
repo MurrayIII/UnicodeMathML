@@ -1253,7 +1253,8 @@ function getDifferentialInfo(of, n) {
     let script = false;
 
     if (arg.hasOwnProperty('script')) {     // For, e.g., 𝑑𝑥² or 𝑑²𝑓(𝑥)
-        order = getOrder(arg.script.high);
+        if (arg.script.hasOwnProperty('high'))
+            order = getOrder(arg.script.high);
         arg = arg.script.base;
         script = true;
     } else if (arg.hasOwnProperty('function') &&
@@ -2201,6 +2202,10 @@ function preprocess(dsty, uast, index, arr) {
                                     arr.splice(index + 1, 0, arg);
                                 }
                             }
+                            if (Array.isArray(value.of[0]) && order0 == 1 &&
+                                value.of[0][0].hasOwnProperty('script')) { // Handle ⅆ𝑓₁/ⅆ𝑧
+                                arg0 = '$f';
+                            }
                             if (index + 1 < arr.length) {
                                 let ele = arr[index + 1];
                                 if (ele.hasOwnProperty('operator') && ele.operator == '\u2061')
@@ -2225,6 +2230,8 @@ function preprocess(dsty, uast, index, arr) {
                                         s.script.high[0].bracketed.arg = order0.substring(1);
                                     else if (s.script.high[0].hasOwnProperty('atoms'))
                                         s.script.high[0].atoms.arg = order0.substring(1);
+                                } else if (s.script.low) {
+                                    s.script.arg = arg0.substring(1);
                                 }
                                 // For, e.g., 𝑑²𝑓(𝑥)/𝑑𝑥² or 𝑑^(n-1) 𝑓(𝑥)/𝑑𝑥^(n-1)
                                 if (of[0].length == 3 &&
@@ -2301,6 +2308,8 @@ function preprocess(dsty, uast, index, arr) {
                 ret.intent = intent;
             if (arg)
                 ret.arg = arg;
+            if (value.arg)
+                ret.arg = value.arg;
 
             switch (value.type) {
                 case "subsup":
@@ -3453,7 +3462,7 @@ function needParens(ret) {
             return true;
         }
         if (!isAlphanumeric(ret[i]) && !digitSuperscripts.includes(ret[i]) &&
-            ret[i] != '\u2061' && ret[i] != '∞' && ret[i] != '⬌' && ret[i] != '!' &&
+            !digitSubscripts.includes(ret[i]) && !'\u2061∞⬌!'.includes(ret[i]) &&
             (i || ret[i] != '−')) {
             return true;
         }
@@ -3467,7 +3476,7 @@ function handleAccent(value) {
     return binary(value, '');
 }
 
-function dump(value, noAddParens) {
+function dump(value, noAddParens, index) {
     // Convert MathML to UnicodeMath
     let cNode = value.children.length;
     let ret = '';
@@ -3750,7 +3759,7 @@ function dump(value, noAddParens) {
 
     for (var i = 0; i < cNode; i++) {
         let node = value.children[i];
-        ret += dump(node, i);
+        ret += dump(node, false, i);
     }
     let mrowIntent = value.nodeName == 'mrow' && value.attributes.hasOwnProperty('intent')
         ? value.attributes.intent.nodeValue : '';
@@ -3803,10 +3812,10 @@ function MathMLtoUnicodeMath(mathML) {
             unicodeMath = unicodeMath.substring(0, i);
             break;
         }
-        if ('=+−/ \u2061)]}〗'.includes(unicodeMath[i + 1])) {
+        if ('=+−/ )]}〗'.includes(unicodeMath[i + 1])) {
             let j = 1;                      // Delete 1 space
             if (unicodeMath[i + 1] == ' ' && i < unicodeMath.length - 2 &&
-                '=+−/\u2061)]}'.includes(unicodeMath[i + 2])) {
+                '=+−/)]}'.includes(unicodeMath[i + 2])) {
                 j = 2;                      // Delete 2 spaces
             }
             unicodeMath = unicodeMath.substring(0, i) + unicodeMath.substring(i + j);
