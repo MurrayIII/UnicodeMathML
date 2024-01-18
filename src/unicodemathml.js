@@ -2782,7 +2782,8 @@ function mtransform(dsty, puast) {
 
         case "matrix":
             value = mtransform(dsty, value);
-            var attrs = getAttrs(value, ':matrix');
+            var str = 'matrix(' + value.length + ',' + value[0].mtr.content.length + ')';
+            var attrs = getAttrs(value, str);
             return {mtable: withAttrs(attrs, value)};
         case "mrows":
             return value.map(r => ({mtr: noAttr(mtransform(dsty, r))}));
