@@ -2273,7 +2273,7 @@ function preprocess(dsty, uast, index, arr) {
                         }
                         var intent = '∂𝜕'.includes(chDifferential0)
                             ? 'partial-derivative' : 'derivative';
-                        intent += '(' + arg0 + ',' + order0 + ',' + wrt + ')';
+                        intent += '(' + order0 + ',' + arg0 + ',' + wrt + ')';
                         return {fraction: {symbol: value.symbol, intent: intent, of: preprocess(dsty, value.of)}};
                    }
                 }
