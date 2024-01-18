@@ -2851,7 +2851,6 @@ function mtransform(dsty, puast) {
         case "fraction":
             var of = value.of.map(e => (mtransform(dsty, dropOutermostParens(e))));
             var attrs = getAttrs(value, '');
-            if (value.x.y) { }
 
             switch (value.symbol) {
                 case "\u2298":  // small fraction
