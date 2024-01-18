@@ -47,8 +47,9 @@ function isIntegral(op) {
 }
 
 function isMathML(unicodemath) {
-    return unicodemath.startsWith("<math") || unicodemath.startsWith("<mml:math") ||
-        unicodemath.startsWith("<m:math");
+    return unicodemath.startsWith("<math") ||
+           unicodemath.startsWith("<mml:math") ||
+           unicodemath.startsWith("<m:math");
 }
 
 function removeMmlPrefixes(mathML) {
@@ -76,6 +77,21 @@ function removeMmlPrefixes(mathML) {
 
 function isPrime(ch) {
     return '′″‴'.includes(ch);
+}
+
+function isMathMLObject(value) {
+    const objs = ['mfrac', 'msqrt', 'mroot', 'menclose', 'msup', 'msub',
+        'munderover', 'msubsup', 'mover', 'munder', 'mpadded', 'mphantom'];
+
+    if (value.nodeName == 'mrow' && value.children.length == 1)
+        value = value.parentElement;
+
+    return objs.includes(value.nodeName);
+}
+
+function hasSingleMrow(value) {
+    return Array.isArray(value) && value.length == 1 &&
+        value[0].hasOwnProperty('mrow');
 }
 
 (function(root) {
@@ -2835,6 +2851,7 @@ function mtransform(dsty, puast) {
         case "fraction":
             var of = value.of.map(e => (mtransform(dsty, dropOutermostParens(e))));
             var attrs = getAttrs(value, '');
+            if (value.x.y) { }
 
             switch (value.symbol) {
                 case "\u2298":  // small fraction
@@ -2854,10 +2871,16 @@ function mtransform(dsty, puast) {
             var arg1 = value[1].arg;
             var top = mtransform(dsty, dropOutermostParens(value[0]));
             var bottom = mtransform(dsty, dropOutermostParens(value[1]));
-            if (arg0)
+            if (arg0) {
                 top.mrow.attributes.arg = arg0;
-            if (arg1)
+                if (hasSingleMrow(top.mrow.content))
+                    top.mrow.content = top.mrow.content[0].mrow.content;
+            }
+            if (arg1) {
                 bottom.mrow.attributes.arg = arg1;
+                if (hasSingleMrow(bottom.mrow.content))
+                    bottom.mrow.content = bottom.mrow.content[0].mrow.content;
+            }
             return {mfrac: withAttrs(attrs, [top, bottom])};
 
         case "binom":
@@ -3590,12 +3613,16 @@ function dump(value, noAddParens, index) {
                 value.attributes.displaystyle.nodeValue == 'false') {
                 op = '⊘';
             }
-            if (value.attributes.hasOwnProperty('linethickness') &&
-                value.attributes.linethickness.nodeValue == '0') {
-                op = '¦';
-                if (value.parentElement.attributes.hasOwnProperty('intent') &&
-                    value.parentElement.attributes.intent.nodeValue.startsWith('binomial-coefficient'))
-                    op = '⒞';
+            if (value.attributes.hasOwnProperty('linethickness')) {
+                var val = value.attributes.linethickness.nodeValue;
+                if (val == '0' || val == '0.0pt') {
+                    op = '¦';
+                    if (value.parentElement.attributes.hasOwnProperty('intent') &&
+                        value.parentElement.attributes.intent.nodeValue.startsWith('binomial-coefficient') ||
+                        value.parentElement.firstElementChild.attributes.hasOwnProperty('title') &&
+                        value.parentElement.firstElementChild.attributes.title.nodeValue == 'binomial coefficient')
+                        op = '⒞';
+                }
             }
             ret = binary(value, op);
             if (op == '⊘' && ret.length == 4) {
@@ -3737,7 +3764,7 @@ function dump(value, noAddParens, index) {
                                 return 'ⅈ';
                         }
                     }
-                    if (c != '∞' && !inRange('\u0391', c, '\u03A9'))
+                    if (c != '∞' && c != '⋯' && !inRange('\u0391', c, '\u03A9'))
                         return '"' + c + '"';
                 }
             }                               // else fall through
@@ -3757,6 +3784,10 @@ function dump(value, noAddParens, index) {
             break;
     }
 
+    // For DLMF titles, which are sort of like intents
+    let title = value.children[0].attributes.title
+              ? value.children[0].attributes.title.nodeValue : '';
+
     for (var i = 0; i < cNode; i++) {
         let node = value.children[i];
         ret += dump(node, false, i);
@@ -3775,7 +3806,8 @@ function dump(value, noAddParens, index) {
         return needParens(ret) ? '⒜(' + ret + ')' : '⒜' + ret;
     }
     if (mrowIntent && (mrowIntent.startsWith('binomial-coefficient') ||
-        mrowIntent.endsWith('matrix') || mrowIntent == ':determinant')) {
+        mrowIntent.endsWith('matrix') || mrowIntent == ':determinant') ||
+        title == 'binomial coefficient') {
         // Remove enclosing parens for 𝑛⒞𝑘 and bracketed matrices
         return ret.substring(1, ret.length - 1);
     }
@@ -3786,9 +3818,7 @@ function dump(value, noAddParens, index) {
         ret = ' ' + ret;                // Separate variable & function name
     } else if (cNode > 1 && value.nodeName != 'math' && !noAddParens &&
         (!mrowIntent || mrowIntent != ':fenced') &&
-        ['mfrac', 'msqrt', 'mroot', 'menclose', 'msup', 'msub', 'munderover', 'msubsup',
-         'mover', 'munder', 'mpadded', 'mphantom'].includes(value.parentElement.nodeName) &&
-         needParens(ret)) {
+        isMathMLObject(value.parentElement) && needParens(ret)) {
         ret = '(' + ret + ')';
     }
     return ret;
@@ -3831,26 +3861,30 @@ function unicodemathml(unicodemath, displaystyle) {
             unicodemath = removeMmlPrefixes(unicodemath);
         return {mathml: unicodemath, details: {}};
     }
+    var uast;
     try {
         var t1s = performance.now();
-        var uast = parse(unicodemath);
+        uast = parse(unicodemath);
     } catch (error) {
         // Display unparsable string in red
         uast = {unicodemath:{content:[{expr:[{colored:{color:'#F00',of:{text:unicodemath}}}]}],eqnumber:null}};
     }
+    var jsonParse;                          // Initially undefined
+    var puast;
+    var mast;
     try {
-        var jsonParse = JSON.stringify(uast, undefined);
+        jsonParse = JSON.stringify(uast, undefined);
         var t1e = performance.now();
         debugLog(uast);
 
         var dsty = {display: displaystyle, intent: ''};
         var t2s = performance.now();
-        var puast = preprocess(dsty, uast);
+        puast = preprocess(dsty, uast);
         var t2e = performance.now();
         debugLog(puast);
 
         var t3s = performance.now();
-        var mast = mtransform(displaystyle, puast);
+        mast = mtransform(displaystyle, puast);
         var t3e = performance.now();
         debugLog(mast);
 
@@ -3892,7 +3926,12 @@ function unicodemathml(unicodemath, displaystyle) {
             //mathml: `<math class="unicodemath" xmlns="http://www.w3.org/1998/Math/MathML"><merror><mrow><mtext>⚠ [${escapeHTMLSpecialChars(unicodemath)}] ${escapeHTMLSpecialChars(strError)}</mtext></mrow></merror></math>`,
             mathml: `<span class="unicodemathml-error"><span class="unicodemathml-error-unicodemath">${escapeHTMLSpecialChars(unicodemath)}</span> <span class="unicodemathml-error-message">${escapeHTMLSpecialChars(strError)}</span></span>`,
             details: {
-                error: error
+                intermediates: {            // Show what got defined
+                    parse: uast,            // At least uast is defined
+                    preprocess: puast,
+                    transform: mast,
+                    json: jsonParse
+                }
             }
         };
     }

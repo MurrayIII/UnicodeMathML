@@ -190,6 +190,8 @@ function highlightMathML(mathml) {
 
 // via https://stackoverflow.com/a/7220510 plus compact indentation
 function highlightJson(json) {
+    if (json == undefined)
+        return '';
     if (typeof json != 'string') {
         json = JSON.stringify(json, undefined);
     }
