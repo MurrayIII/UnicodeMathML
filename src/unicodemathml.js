@@ -94,6 +94,25 @@ function hasSingleMrow(value) {
         value[0].hasOwnProperty('mrow');
 }
 
+function getCh(str, i) {
+    // Get UTF-16 character at offset i
+    var m = str.codePointAt(i);
+    return String.fromCodePoint(m);
+}
+
+function getChD(value) {
+    if (value.hasOwnProperty('script'))
+        value = value.script.base;
+    else if (value.hasOwnProperty('primed'))
+        value = value.primed.base;
+
+    if (!value.hasOwnProperty('atoms'))
+        return '';                          // Can't be differential
+
+    let chD = getCh(value.atoms[0].chars, 0);
+    return 'dⅆ∂𝑑𝜕'.includes(chD) ? chD : '';
+}
+
 (function(root) {
 'use strict';
 
@@ -1140,12 +1159,6 @@ function italicizeCharacters(chars) {
     }).join("");
 }
 
-function getCh(str, i) {
-    // Get UTF-16 character at offset i
-    var m = str.codePointAt(i);
-    return String.fromCodePoint(m);
-}
-
 function getAbsArg(content) {
     if (Array.isArray(content) && content[0].hasOwnProperty("atoms") &&
         content[0].atoms.length == 1 && content[0].atoms[0].hasOwnProperty("chars")) {
@@ -1185,9 +1198,12 @@ function getIntervalEndPoint(arg, content) {
     if (high.hasOwnProperty('atoms'))
         return high.atoms[0].chars;
 
-    if (Array.isArray(high) && high[0].hasOwnProperty('number'))
-        return high[0].number;
-
+    if (Array.isArray(high)) {
+        if (high[0].hasOwnProperty('number'))
+            return high[0].number;
+        if (high[0].hasOwnProperty('operator'))
+            return '';
+    }
     return '$n';                            // Order n
 }
 
@@ -1257,6 +1273,10 @@ function getDifferentialInfo(of, n) {
     // n = 0 is for numerator and 'of' (argument, e.g, y). n = 1 for denominator
     // and wrt (e.g., x).
     let arg = of[n];
+    let darg = '';                          // Differential argument/variable
+    let order = '1';                        // Derivative order
+    let script = false;
+    let arg1;
 
     if (!Array.isArray(arg) || n != 0 && n != 1)
         return [0, 0, 0];                   // Can't be differential
@@ -1264,16 +1284,18 @@ function getDifferentialInfo(of, n) {
     if (arg == undefined)
         return [0, 0, 0];                   // Can't be differential
 
-    let darg = '';                          // Differential argument/variable
-    let order = '1';                        // Derivative order
-    let script = false;
+    if (arg.hasOwnProperty('expr')) {       // Happens if argument was bracketed
+        arg = arg.expr;
+        if (Array.isArray(arg))
+            arg = arg[0];
+        if (Array.isArray(arg)) {
+            if (arg.length > 1)
+                arg1 = arg[1];
+            arg = arg[0];
+        }
+    }
 
-    if (arg.hasOwnProperty('script')) {     // For, e.g., 𝑑𝑥² or 𝑑²𝑓(𝑥)
-        if (arg.script.hasOwnProperty('high'))
-            order = getOrder(arg.script.high);
-        arg = arg.script.base;
-        script = true;
-    } else if (arg.hasOwnProperty('function') &&
+    if (arg.hasOwnProperty('function') &&   // For, e.g., ⅆ/ⅆ𝑥⁡𝑓(𝑥)
         arg.function.f.hasOwnProperty('atoms') &&
         arg.function.f.atoms.hasOwnProperty('chars')) {
         let chars = arg.function.f.atoms.chars;
@@ -1286,14 +1308,22 @@ function getDifferentialInfo(of, n) {
             iOff++;
         return [chD, order, chars.substring(iOff)];
     }
-    if (!arg.hasOwnProperty('atoms'))
-        return [0, 0, 0];                   // Can't be differential
-
-    let chD = getCh(arg.atoms[0].chars, 0);
-    if (!'dⅆ∂𝑑𝜕'.includes(chD))
+    let chD = getChD(arg);
+    if (!chD)
         return [0, 0, 0];                   // Not a differential
-
     let cchChD = chD.length;
+
+    if (arg.hasOwnProperty('script')) {     // For, e.g., 𝑑𝑥², 𝑑²𝑓(𝑥), ⅆ²𝛾^∗, ⅆ𝛾^∗
+        if (arg.script.hasOwnProperty('high')) {
+            order = getOrder(arg.script.high);
+            if (!arg1 && !order) {          // For, e.g., ⅆ𝛾^∗
+                order = '1';
+                darg = '$f';
+            }
+        }
+        arg = arg.script.base;
+        script = true;
+    }
 
     if (n == 1) {                           // Denominator
         if (script)                         // Non-script handled further down
@@ -1319,9 +1349,12 @@ function getDifferentialInfo(of, n) {
         }
     } else {                                // Numerator (n = 0)
         if (script) {                       // For, e.g., 𝑑²𝑓(𝑥)
-            if (of[0].length > 1) {
-                var arg1 = of[0][1];
-                if (arg1.hasOwnProperty('atoms')) {
+            if (!arg1 && of[0].length > 1)
+                arg1 = of[0][1];
+            if (arg1) {
+                if (arg1.hasOwnProperty('script') || arg1.hasOwnProperty('primed')) {
+                    darg = '$f';
+                } else if (arg1.hasOwnProperty('atoms')) {
                     darg = getCh(arg1.atoms[0].chars, 0); // Derivative argument
                     if (of[0].length > 2) {
                         darg = '$f';        // Ref for function being differentiated
@@ -1342,6 +1375,8 @@ function getDifferentialInfo(of, n) {
                     darg = '$f';                // Ref for differentiated function 
                 }
             }
+        } else if (arg.hasOwnProperty('primed')) {
+            darg = '$f';
         }
     }
     return [chD, order, darg];
@@ -2236,16 +2271,30 @@ function preprocess(dsty, uast, index, arr) {
                             }
                         }
                         if (arg0.startsWith('$') || order0.startsWith('$')) {
-                            // Handle argument reference(s)
+                            // Handle intent argument reference(s)
                             var of = value.of;
                             let s = of[0][0];
                             if (s.hasOwnProperty('script')) {
-                                // For, e.g., 𝑑^(n-1) 𝑓(𝑥)/𝑑𝑥^(n-1) or 𝑑^(n-1) y/𝑑𝑥^(n-1)
-                                if (Array.isArray(s.script.high) && order0.startsWith('$')) {
-                                    if (s.script.high[0].hasOwnProperty('bracketed'))
-                                        s.script.high[0].bracketed.arg = order0.substring(1);
-                                    else if (s.script.high[0].hasOwnProperty('atoms'))
-                                        s.script.high[0].atoms.arg = order0.substring(1);
+                                // For, e.g., 𝑑^(n-1) 𝑓(𝑥)/𝑑𝑥^(𝑛-1), 𝑑^(𝑛-1) y/𝑑𝑥^(𝑛-1), ⅆ²𝛾′/ⅆ𝑧²
+                                if (Array.isArray(s.script.high)) {
+                                    if (order0.startsWith('$')) {
+                                        if (s.script.high[0].hasOwnProperty('bracketed'))
+                                            s.script.high[0].bracketed.arg = order0.substring(1);
+                                        else if (s.script.high[0].hasOwnProperty('atoms'))
+                                            s.script.high[0].atoms.arg = order0.substring(1);
+                                    } else if (arg0.startsWith('$')) {
+                                        if (of[0].length == 1) {
+                                            s.script.arg = arg0.substring(1);
+                                        } else if (of[0][1].hasOwnProperty('primed')) {
+                                            of[0][1].primed.arg = arg0.substring(1); // ⅆ^2 𝛾′/ⅆ𝑧²
+                                        }
+                                    }
+                                } else if (of[0].length == 2) {
+                                    if (of[0][1].hasOwnProperty('script')) { // For, e.g., ⅆ²𝛾^∗/ⅆ𝑧²
+                                        of[0][1].script.arg = arg0.substring(1);
+                                    } else if (of[0][1].hasOwnProperty('primed')) {
+                                        of[0][1].primed.arg = arg0.substring(1); // ⅆ²𝛾′/ⅆ𝑧²
+                                    }
                                 } else if (s.script.low) {
                                     s.script.arg = arg0.substring(1);
                                 }
@@ -2253,12 +2302,14 @@ function preprocess(dsty, uast, index, arr) {
                                 if (of[0].length == 3 &&
                                     of[0][1].hasOwnProperty('atoms') &&
                                     of[0][2].hasOwnProperty('bracketed')) {
-                                    value.of[0] = [s, [{arg: arg0.substring(1)}, of[0][1],
-                                        {operator: '\u2061'}, of[0][2]]];
+                                    value.of[0] = [s, [{ arg: arg0.substring(1) }, of[0][1],
+                                    { operator: '\u2061' }, of[0][2]]];
                                 } else if (of[0].length == 2) {
                                     // For, e.g., 𝑑^(n-1) y/𝑑𝑥^(n-1)
                                     value.of[0] = [s, of[0][1]];
                                 }
+                            } else if (s.hasOwnProperty('primed')) {
+                                s.primed.arg = arg0.substring(1);
                             } else if (of[0].length == 2 && //; For, e.g., 𝑑𝑓(𝑥)/𝑑𝑥
                                 s.hasOwnProperty('atoms') &&
                                 of[0][1].hasOwnProperty('bracketed')) {
@@ -2266,8 +2317,8 @@ function preprocess(dsty, uast, index, arr) {
 
                                 if (s.atoms[0].chars.length > ch.length) {
                                     value.of[0] = [{atoms: [{chars: ch}]}, [{arg: arg0.substring(1)},
-                                        {atoms: [{chars: getCh(s.atoms[0].chars, ch.length)}]},
-                                         {operator: '\u2061'}, of[0][1]]];
+                                    {atoms: [{chars: getCh(s.atoms[0].chars, ch.length)}]},
+                                    {operator: '\u2061'}, of[0][1]]];
                                 }
                             }
                         }
@@ -2544,6 +2595,8 @@ function preprocess(dsty, uast, index, arr) {
         case "primed":
             // Cannot do anything here if in script, since the script transform
             // rule relies on this
+            if (value.arg)
+                arg = value.arg;
             var base = preprocess(dsty, value.base);
             if (!uast.hasOwnProperty('inscript') && base.hasOwnProperty('atoms') &&
                 Array.isArray(base.atoms) && base.atoms[0].hasOwnProperty('chars')) {
@@ -3450,7 +3503,15 @@ function unary(node, op) {
 }
 
 function binary(node, op) {
-    return dump(node.firstElementChild) + op + dump(node.lastElementChild) + ' ';
+    let ret = dump(node.firstElementChild);
+    if (op == '/' && (ret.endsWith('^∗ )') || ret.endsWith('^† )'))) {
+        // Remove superfluous build-up space & parens
+        ret = ret.substring(1, ret.length - 2);
+    }
+    ret += op + dump(node.lastElementChild);
+    if (op)
+        ret += ' ';
+    return ret;
 }
 
 function ternary(node, op1, op2) {
@@ -3485,8 +3546,8 @@ function needParens(ret) {
             return true;
         }
         if (!isAlphanumeric(ret[i]) && !digitSuperscripts.includes(ret[i]) &&
-            !digitSubscripts.includes(ret[i]) && !'\u2061∞⬌!'.includes(ret[i]) &&
-            (i || ret[i] != '−')) {
+            !isPrime(ret[i]) && !digitSubscripts.includes(ret[i]) &&
+            !'\u2061∞⬌!'.includes(ret[i]) && (i || ret[i] != '−')) {
             return true;
         }
     }
@@ -3619,7 +3680,7 @@ function dump(value, noAddParens, index) {
                     op = '¦';
                     if (value.parentElement.attributes.hasOwnProperty('intent') &&
                         value.parentElement.attributes.intent.nodeValue.startsWith('binomial-coefficient') ||
-                        value.parentElement.firstElementChild.attributes.hasOwnProperty('title') &&
+                        value.parentElement.firstElementChild.attributes.title &&
                         value.parentElement.firstElementChild.attributes.title.nodeValue == 'binomial coefficient')
                         op = '⒞';
                 }
@@ -3732,7 +3793,7 @@ function dump(value, noAddParens, index) {
                     ret = '0' + ret;
                 return String.fromCodePoint(ret);
             }
-            if (value.attributes.hasOwnProperty('title')) {
+            if (value.attributes.title) {
                 switch (value.attributes.title.textContent) {
                     case 'differential':
                     case 'derivative':
@@ -3756,7 +3817,7 @@ function dump(value, noAddParens, index) {
                 if (c in mathFonts && mathstyle in mathFonts[c] && (c < 'Α' || c > 'Ω' && c != '∇'))
                     return mathFonts[c][mathstyle];
                 if (mathstyle == 'mup') {
-                    if (value.attributes.hasOwnProperty('title')) {
+                    if (value.attributes.title) {
                         switch (value.attributes.title.textContent) {
                             case 'base of natural logarithm':
                                 return 'ⅇ';
