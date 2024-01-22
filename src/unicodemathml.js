@@ -101,6 +101,7 @@ function getCh(str, i) {
 }
 
 function getChD(value) {
+    // Get differential d. Return '' if not found
     if (value.hasOwnProperty('script'))
         value = value.script.base;
     else if (value.hasOwnProperty('primed'))
@@ -109,7 +110,12 @@ function getChD(value) {
     if (!value.hasOwnProperty('atoms'))
         return '';                          // Can't be differential
 
-    let chD = getCh(value.atoms[0].chars, 0);
+    value = value.atoms;
+    if (Array.isArray(value))
+        value = value[0];
+
+    let chD = getCh(value.chars, 0);        // Get leading char
+
     return 'dⅆ∂𝑑𝜕'.includes(chD) ? chD : '';
 }
 
@@ -1278,8 +1284,9 @@ function getDifferentialInfo(of, n) {
     let script = false;
     let arg1;
 
-    if (!Array.isArray(arg) || n != 0 && n != 1)
+    if (n != 0 && n != 1 || !Array.isArray(arg))
         return [0, 0, 0];                   // Can't be differential
+
     arg = arg[0];
     if (arg == undefined)
         return [0, 0, 0];                   // Can't be differential
@@ -1295,18 +1302,22 @@ function getDifferentialInfo(of, n) {
         }
     }
 
-    if (arg.hasOwnProperty('function') &&   // For, e.g., ⅆ/ⅆ𝑥⁡𝑓(𝑥)
-        arg.function.f.hasOwnProperty('atoms') &&
-        arg.function.f.atoms.hasOwnProperty('chars')) {
-        let chars = arg.function.f.atoms.chars;
-        let chD = getCh(chars, 0);
-        let iOff = chD.length;
+    if (arg.hasOwnProperty('function')) {
+        arg = arg.function.f;
+        if (n == 1 && arg.hasOwnProperty('atoms') &&
+            arg.atoms.hasOwnProperty('chars')) {
+            // Function in denominator, For, e.g., ⅆ/ⅆ𝑧⁡arcsin⁡𝑧.
+            // Get diffentiation variable, here 𝑧
+            let chars = arg.atoms.chars;
+            let chD = getCh(chars, 0);
+            let iOff = chD.length;
 
-        if (!'dⅆ∂𝑑𝜕'.includes(chD))
-            return [0, 0, 0];               // Not a differential
-        if (chars[iOff] == ',')
-            iOff++;
-        return [chD, order, chars.substring(iOff)];
+            if (!'dⅆ∂𝑑𝜕'.includes(chD))
+                return [0, 0, 0];           // Not a differential
+            if (chars[iOff] == ',')
+                iOff++;
+            return [chD, order, chars.substring(iOff)];
+        }
     }
     let chD = getChD(arg);
     if (!chD)
@@ -1330,7 +1341,12 @@ function getDifferentialInfo(of, n) {
             darg = getCh(arg.atoms[0].chars, cchChD); // wrt, e.g., 𝑥 in 𝑑𝑥²
         else {
             // Get differentiation variable(s) in denominator with no superscript
-            // e.g., 𝑥 and 𝑡 in 𝜕²𝜓(𝑥,𝑡)/𝜕𝑥𝜕𝑡 or 𝑥 in 𝑑𝑦/𝑑𝑥
+            // e.g., 𝑥, 𝑡 in 𝜕²𝜓(𝑥,𝑡)/𝜕𝑥𝜕𝑡, 𝑥 in 𝑑𝑦/𝑑𝑥, 𝑥, 𝑥′ in 𝜕²𝑓(𝑥,𝑥′)/𝜕𝑥𝜕𝑥′
+            let primes = 0;
+            if (arg.hasOwnProperty('primed')) {
+                primes = arg.primed.primes; // For, e.g., 𝜕²𝑓(𝑥,𝑥′)/𝜕𝑥𝜕𝑥′
+                arg = arg.primed.base;
+            }
             let cch = arg.atoms[0].chars.length;
             let chD1 = chD;
             let k = 1;                      // Numeric differentiation order
@@ -1338,6 +1354,8 @@ function getDifferentialInfo(of, n) {
 
             for (let i = cchChD; cch > i && chD1 == chD; k++) {
                 let chWrt = getCh(arg.atoms[0].chars, i); // Get wrt char
+                if (primes && i + chWrt.length >= cch)
+                    chWrt += processPrimes(primes);
                 darg.push(chWrt);
                 i += chWrt.length;          // Advance char offset
                 if (cch <= i)
@@ -1352,27 +1370,32 @@ function getDifferentialInfo(of, n) {
             if (!arg1 && of[0].length > 1)
                 arg1 = of[0][1];
             if (arg1) {
-                if (arg1.hasOwnProperty('script') || arg1.hasOwnProperty('primed')) {
+                if (arg1.hasOwnProperty('script') || arg1.hasOwnProperty('primed') ||
+                    arg1.hasOwnProperty('function') || of[0].length > 2) {
                     darg = '$f';
                 } else if (arg1.hasOwnProperty('atoms')) {
                     darg = getCh(arg1.atoms[0].chars, 0); // Derivative argument
-                    if (of[0].length > 2) {
-                        darg = '$f';        // Ref for function being differentiated
-                    }
                 }
             }
         } else if (of[0].length > 0 && arg.hasOwnProperty('atoms')) {
             // For, e.g., 𝑑𝑓(𝑥)
-            if (arg.atoms[0].chars.length == cchChD) {
+            arg = arg.atoms;
+            if (Array.isArray(arg))
+                arg = arg[0];
+            if (arg.chars.length == cchChD) {
                 // No char preceding '('. Handle cases like ⅆ(tan x)/ⅆx
                 if (of[0].length > 1 && of[0][1].hasOwnProperty('bracketed')) {
                     of[0][1].bracketed.arg = 'f';
                     darg = '$f';
                 }
-            } else {                            // Get function name char
-                darg = getCh(arg.atoms[0].chars, cchChD); // Differentiated function
+            } else if (arg.hasOwnProperty('funct')) {
+                darg = '$f';                     // 𝑑𝑓⁡(𝑥)/𝑑𝑥 (\u2061 follows 𝑓)
+            } else {                             // Get function name char
+                if (arg.chars[cchChD] == ',')
+                    cchChD++;
+                darg = getCh(arg.chars, cchChD); // Derivative function
                 if (of[0].length > 1) {
-                    darg = '$f';                // Ref for differentiated function 
+                    darg = '$f';                 // Ref for derivative function
                 }
             }
         } else if (arg.hasOwnProperty('primed')) {
@@ -2047,6 +2070,8 @@ function preprocess(dsty, uast, index, arr) {
     var value = v(uast);
     var intent = dsty.intent;
     var arg = dsty.arg;
+    if (!arg)
+        arg = uast.arg;
     dsty.intent = dsty.arg = '';
 
     switch (key) {
@@ -2294,6 +2319,8 @@ function preprocess(dsty, uast, index, arr) {
                                         of[0][1].script.arg = arg0.substring(1);
                                     } else if (of[0][1].hasOwnProperty('primed')) {
                                         of[0][1].primed.arg = arg0.substring(1); // ⅆ²𝛾′/ⅆ𝑧²
+                                    } else if (of[0][1].hasOwnProperty('function')) { // 𝜕²𝑓⁡(𝑥)/𝜕𝑥² (incl \u2061)
+                                        of[0][1].arg = arg0.substring(1);
                                     }
                                 } else if (s.script.low) {
                                     s.script.arg = arg0.substring(1);
@@ -2310,7 +2337,9 @@ function preprocess(dsty, uast, index, arr) {
                                 }
                             } else if (s.hasOwnProperty('primed')) {
                                 s.primed.arg = arg0.substring(1);
-                            } else if (of[0].length == 2 && //; For, e.g., 𝑑𝑓(𝑥)/𝑑𝑥
+                            } else if (s.hasOwnProperty('function')) {
+                                s.arg = arg0.substring(1);  // 𝜕𝑓⁡(𝑥,𝑥′)/𝜕𝑥′
+                            } else if (of[0].length == 2 && // 𝑑𝑓(𝑥)/𝑑𝑥
                                 s.hasOwnProperty('atoms') &&
                                 of[0][1].hasOwnProperty('bracketed')) {
                                 var ch = getCh(s.atoms[0].chars, 0);

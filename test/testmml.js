@@ -45,6 +45,8 @@ var mathML = [
     "<math display=\"block\"><mrow><mrow intent=\"binomial-coefficient(𝑧,𝑘)\"><mo>(</mo><mfrac linethickness=\"0\"><mi>𝑧</mi><mi>𝑘</mi></mfrac><mo>)</mo></mrow><mo>=</mo><mfrac><mrow><mi>𝑧</mi><mo>⁢</mo><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑧</mi><mo>−</mo><mn>1</mn></mrow><mo>)</mo></mrow><mo>⁢</mo><mo>⋯</mo><mo>⁢</mo><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑧</mi><mo>−</mo><mi>𝑘</mi><mo>+</mo><mn>1</mn></mrow><mo>)</mo></mrow></mrow><mrow><mi>𝑘</mi><mo>!</mo></mrow></mfrac><mo>=</mo><mfrac><mrow><msup><mrow intent=\":fenced\"><mo>(</mo><mrow><mo>−</mo><mn>1</mn></mrow><mo>)</mo></mrow><mi>𝑘</mi></msup><mo>⁢</mo><msub><mrow intent=\":fenced\"><mo>(</mo><mrow><mo>−</mo><mi>𝑧</mi></mrow><mo>)</mo></mrow><mi>𝑘</mi></msub></mrow><mrow><mi>𝑘</mi><mo>!</mo></mrow></mfrac><mo>=</mo><msup><mrow intent=\":fenced\"><mo>(</mo><mrow><mo>−</mo><mn>1</mn></mrow><mo>)</mo></mrow><mi>𝑘</mi></msup><mo>⁢</mo><mrow intent=\"binomial-coefficient($t,𝑘)\"><mo>(</mo><mfrac linethickness=\"0\"><mrow arg=\"t\"><mrow><mi>𝑘</mi><mo>−</mo><mi>𝑧</mi><mo>−</mo><mn>1</mn></mrow></mrow><mi>𝑘</mi></mfrac><mo>)</mo></mrow><mo>.</mo></mrow></math>",
     "<math display=\"block\"><mfrac intent=\"derivative(1,$f,𝑧)\"><mrow><mi intent=\"ⅆ\">𝑑</mi><msup arg=\"f\"><mi>𝛾</mi><mo>′</mo></msup></mrow><mrow><mi intent=\"ⅆ\">𝑑</mi><mi>𝑧</mi></mrow></mfrac></math>",
     "<math display=\"block\"><mrow><mfrac intent=\"derivative(2,$f,𝑧)\"><mrow><msup><mi intent=\"ⅆ\">𝑑</mi><mn>2</mn></msup><msup arg=\"f\"><mi>𝛾</mi><mo>∗</mo></msup></mrow><mrow><mi intent=\"ⅆ\">𝑑</mi><msup><mi>𝑧</mi><mn>2</mn></msup></mrow></mfrac><mo>≠</mo><mfrac intent=\"derivative(1,$f,𝑧)\"><mrow><mi intent=\"ⅆ\">𝑑</mi><msup arg=\"f\"><mi>𝛾</mi><mo>∗</mo></msup></mrow><mrow><mi intent=\"ⅆ\">𝑑</mi><mi>𝑧</mi></mrow></mfrac></mrow></math>",
+    "<math display=\"block\"><mrow><mfrac intent=\"partial-derivative(1,$f,𝑥′)\"><mrow><mi>𝜕</mi><mrow arg=\"f\" intent=\":function\"><mi>𝑓</mi><mo>⁡</mo><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑥</mi><mo>,</mo><msup><mi>𝑥</mi><mo>′</mo></msup></mrow><mo>)</mo></mrow></mrow></mrow><mrow><mi>𝜕</mi><msup><mi>𝑥</mi><mo>′</mo></msup></mrow></mfrac><mo>=</mo><mn>0</mn></mrow></math>",
+    "<math display=\"block\"><mfrac intent=\"partial-derivative(2,$f,𝑥)\"><mrow><msup><mi>𝜕</mi><mn>2</mn></msup><mrow arg=\"f\" intent=\":function\"><mi>𝑓</mi><mo>⁡</mo><mrow intent=\":fenced\"><mo>(</mo><mi>𝑥</mi><mo>)</mo></mrow></mrow></mrow><mrow><mi>𝜕</mi><msup><mi>𝑥</mi><mn>2</mn></msup></mrow></mfrac></math>",
 ];
 
 var unicodeMath = [
@@ -91,6 +93,8 @@ var unicodeMath = [
     "𝑧⒞𝑘=(𝑧⁢(𝑧−1)⁢⋯⁢(𝑧−𝑘+1))/𝑘!=((−1)^𝑘 ⁢(−𝑧)_𝑘)/𝑘!=(−1)^𝑘 ⁢(𝑘−𝑧−1)⒞𝑘 .",
     "ⅆ𝛾′/ⅆ𝑧",
     "ⅆ²𝛾^∗/ⅆ𝑧² ≠ⅆ𝛾^∗/ⅆ𝑧",
+    "𝜕𝑓⁡(𝑥,𝑥′)/𝜕𝑥′=0",
+    "𝜕²𝑓⁡(𝑥)/𝜕𝑥²",
 ];
 
 function testMathMLtoUnicodeMath() {
