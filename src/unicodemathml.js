@@ -3814,6 +3814,8 @@ function dump(value, noAddParens, index) {
                 return '\u2061';
             if (val == '&lt;')
                 return '<';
+            if (val == '&gt;')
+                return '>';
             if (val == '/')                 // Quote other ops...
                 return '\\/';
             if (val.startsWith('&#') && val.endsWith(';')) {
@@ -3823,10 +3825,14 @@ function dump(value, noAddParens, index) {
                 return String.fromCodePoint(ret);
             }
             if (value.attributes.title) {
+                // The DLMF title attribute implies the following intents
+                // (see also for 'mi')
                 switch (value.attributes.title.textContent) {
                     case 'differential':
                     case 'derivative':
                         return 'ⅆ';
+                    case 'binomial coefficient':
+                        return '';
                 }
             }
             return val;
@@ -3847,6 +3853,7 @@ function dump(value, noAddParens, index) {
                     return mathFonts[c][mathstyle];
                 if (mathstyle == 'mup') {
                     if (value.attributes.title) {
+                        // Differential d (ⅆ) appears in 'mo'
                         switch (value.attributes.title.textContent) {
                             case 'base of natural logarithm':
                                 return 'ⅇ';
@@ -3875,38 +3882,47 @@ function dump(value, noAddParens, index) {
     }
 
     // For DLMF titles, which are sort of like intents
-    let title = value.children[0].attributes.title
+    let title = value.children[0].attributes && value.children[0].attributes.title
               ? value.children[0].attributes.title.nodeValue : '';
 
     for (var i = 0; i < cNode; i++) {
         let node = value.children[i];
         ret += dump(node, false, i);
     }
+
     let mrowIntent = value.nodeName == 'mrow' && value.attributes.hasOwnProperty('intent')
         ? value.attributes.intent.nodeValue : '';
 
-    if (mrowIntent == 'cases')
-        return 'Ⓒ' + ret.substring(2);
+    if (mrowIntent) {
+        if (mrowIntent == 'cases')
+            return 'Ⓒ' + ret.substring(2);
 
-    if (mrowIntent == ':fenced' && !value.lastElementChild.textContent)
-        return !value.firstElementChild.textContent ? '〖' + ret + '〗' : ret + '┤';
+        if (mrowIntent == ':fenced' && !value.lastElementChild.textContent)
+            return !value.firstElementChild.textContent ? '〖' + ret + '〗' : ret + '┤';
 
-    if (mrowIntent && mrowIntent.startsWith('absolute-value')) {
-        ret = ret.substring(1, ret.length - 1); // Remove '|'s
-        return needParens(ret) ? '⒜(' + ret + ')' : '⒜' + ret;
+        if (mrowIntent.startsWith('absolute-value')) {
+            ret = ret.substring(1, ret.length - 1); // Remove '|'s
+            return needParens(ret) ? '⒜(' + ret + ')' : '⒜' + ret;
+        }
+        if (mrowIntent.startsWith('binomial-coefficient') ||
+            mrowIntent.endsWith('matrix') || mrowIntent == ':determinant') {
+            // Remove enclosing parens for 𝑛⒞𝑘 and bracketed matrices
+            return ret.substring(1, ret.length - 1);
+        }
+        if (mrowIntent == ':function' && value.previousElementSibling &&
+            value.firstElementChild.nodeName == 'mi' &&
+            value.firstElementChild.textContent < '\u2100' &&
+            value.previousElementSibling.nodeName == 'mi') {
+            return ' ' + ret;               // Separate variable & function name
+        }
     }
-    if (mrowIntent && (mrowIntent.startsWith('binomial-coefficient') ||
-        mrowIntent.endsWith('matrix') || mrowIntent == ':determinant') ||
-        title == 'binomial coefficient') {
-        // Remove enclosing parens for 𝑛⒞𝑘 and bracketed matrices
-        return ret.substring(1, ret.length - 1);
+    if (value.firstElementChild.nodeName == 'mo' &&
+        '([{'.includes(value.firstElementChild.textContent)) {
+        if (value.lastElementChild.nodeName != 'mo' || !value.lastElementChild.textContent)
+            ret += '┤';                         // Happens for DLMF pmml
     }
-    if (mrowIntent == ':function' && value.previousElementSibling &&
-        value.firstElementChild.nodeName == 'mi' &&
-        value.firstElementChild.textContent < '\u2100' &&
-        value.previousElementSibling.nodeName == 'mi') {
-        ret = ' ' + ret;                // Separate variable & function name
-    } else if (cNode > 1 && value.nodeName != 'math' && !noAddParens &&
+
+    if (cNode > 1 && value.nodeName != 'math' && !noAddParens &&
         (!mrowIntent || mrowIntent != ':fenced') &&
         isMathMLObject(value.parentElement) && needParens(ret)) {
         ret = '(' + ret + ')';
