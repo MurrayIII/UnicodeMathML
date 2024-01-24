@@ -3216,68 +3216,90 @@ function mtransform(dsty, puast) {
             if (value.funct != undefined) {
                 return mtransform(dsty, value);
             }
-            var n = value.length;
-            var str = (n != undefined) ? value[n - 1].chars : value.chars;
+            // n > 1 for atoms with embedded spaces and/or diacritics, e.g., 𝑐𝑎̂𝑏𝑛
             var attrs = getAttrs(value, '');
+            let n = value.length;
+            var mis = [];                   // MathML elements to return
 
-            if (str == undefined) {
-                if (Array.isArray(value) && value[0].hasOwnProperty('diacriticized'))
-                    return {mrow: withAttrs(attrs, mtransform(dsty, value))};
-            } else if (str[0] != 'Ⅎ' && !isFunctionName(str)) {
-                if (n == 3 && value[1].hasOwnProperty('spaces') && str[0] == 'ⅆ' &&
-                    value[0].hasOwnProperty('chars')) {
-                    // Need a more general fix for cases like 𝑥 ⅆ𝑥
-                    str = value[0].chars + '\u2009' + str;
-                }
-                var cch = str.length;
+            if (n == undefined) {           // value isn't an array
+                str = value.chars;          // Maybe value is a chars
+                n = 1;
+            } else {
+                str = value[0].chars;
+            }
 
-                if (cch > 2 || cch == 2 && str.codePointAt(0) < 0xFFFF) {
-                    var mis = [];
-                    var cchCh = 1;
+            for (let i = 0; i < n; ) {
+                if (str == undefined || str[0] == 'Ⅎ' || isFunctionName(str)) {
+                    let val = mtransform(dsty, Array.isArray(value) ? value[i] : value);
+                    if (attrs.intent || attrs.arg)
+                        mis.push({mrow: withAttrs(attrs, val)});
+                    else
+                        mis.push(val);
+                } else {
+                    if (n == 3 && value[1].hasOwnProperty('spaces') && str[0] == 'ⅆ' &&
+                        value[0].hasOwnProperty('chars')) {
+                        // Need a more general fix for cases like 𝑥 ⅆ𝑥
+                        str = value[0].chars + '\u2009' + str;
+                    }
+                    var cch = str.length;
 
-                    for (let i = 0; i < cch; i += cchCh) {
-                        cchCh = (cch >= 2 && str.codePointAt(i) > 0xFFFF) ? 2 : 1;
+                    if (cch > 2 || cch == 2 && str.codePointAt(0) < 0xFFFF) {
+                        var cchCh = 1;
 
-                        if (str[i] >= 'ⅅ' && str[i] <= 'ⅉ') {
-                            if (i && str[i] == 'ⅆ' && str[i - 1] != '\u2009') {
-                                mis.push({mi: noAttr('\u2009')});
+                        for (let j = 0; j < cch; j += cchCh) {
+                            cchCh = (cch >= 2 && str.codePointAt(j) > 0xFFFF) ? 2 : 1;
+
+                            if (str[j] >= 'ⅅ' && str[j] <= 'ⅉ') {
+                                if (j && str[j] == 'ⅆ' && str[j - 1] != '\u2009') {
+                                    mis.push({mi: noAttr('\u2009')});
+                                }
+                                let ch = doublestruckChar(str[j]);
+                                let attrsDoublestruck = getAttrsDoublestruck(ch, str[j]);
+                                mis.push({mi: withAttrs(attrsDoublestruck, ch)});
+                            } else if ("-−,+".includes(str[j])) {
+                                if (isAsciiDigit(str[j + 1])) {
+                                    mis.push({mn: noAttr(str.substring(j))});
+                                    break;
+                                }
+                                mis.push({mo: noAttr(str[j])});
+                            } else {
+                                if (inRange('\uFE00', str[j + cchCh], '\uFE0F'))
+                                    cchCh++; // Include variation selector
+                                mis.push({mi: noAttr(str.substring(j, j + cchCh))});
                             }
-                            let ch = doublestruckChar(str[i]);
-                            let attrsDoublestruck = getAttrsDoublestruck(ch, str[i]);
+                        }
+                    } else {                // str contains 1 char
+                        if (str >= 'ⅅ' && str <= 'ⅉ') {
+                            let ch = doublestruckChar(str);
+                            let attrsDoublestruck = getAttrsDoublestruck(ch, str);
+                            if (attrs.intent)
+                                attrsDoublestruck.intent = attrs.intent;
                             mis.push({mi: withAttrs(attrsDoublestruck, ch)});
-                        } else if ("-−,+".includes(str[i])) {
-                            if (isAsciiDigit(str[i + 1])) {
-                                mis.push({mn: noAttr(str.substring(i))});
-                                break;
+                        } else if (str == '⊺' && value.intent == "transpose") {
+                            let ch = transposeChar();
+                            if (ch == '⊤' || ch == '⊺')
+                                mis.push({mo: withAttrs(attrs, ch)});
+                            else if (ch == 'T' || ch == 't') {
+                                attrs.mathvariant = "normal";
+                                mis.push({mi: withAttrs(attrs, ch)});
                             }
-                            mis.push({mo: noAttr(str[i])});
                         } else {
-                            if (inRange('\uFE00', str[i + cchCh], '\uFE0F'))
-                                cchCh++; // Include variation selector
-                            mis.push({mi: noAttr(str.substring(i, i + cchCh))});
+                            if (value.intent || value.arg)
+                                mis.push({mi: withAttrs(attrs, str)});
+                            else
+                                mis.push(mtransform(dsty, Array.isArray(value) ? value[i] : value));
                         }
                     }
-                    return {mrow: withAttrs(attrs, mis)};
                 }
-                if (str >= 'ⅅ' && str <= 'ⅉ') {
-                    let ch = doublestruckChar(str);
-                    let attrsDoublestruck = getAttrsDoublestruck(ch, str);
-                    if (attrs.intent)
-                        attrsDoublestruck.intent = attrs.intent;
-                    return {mi: withAttrs(attrsDoublestruck, ch)};
-                }
-                if (str == '⊺' && value.intent == "transpose") {
-                    let ch = transposeChar();
-                    if (ch == '⊤' || ch == '⊺')
-                        return {mo: withAttrs(attrs, ch)};
-                    if (ch == 'T' || ch == 't')
-                        attrs.mathvariant = "normal";
-                    return {mi: withAttrs(attrs, ch)};
-                }
-                if (value.intent || value.arg)
-                    return {mi: withAttrs(attrs, str)};
+                i++;
+                if (i >= n)
+                    break;
+                str = value[i].chars;
             }
-            return mtransform(dsty, value);
+            if (mis.length > 1)
+                return {mrow: withAttrs(attrs, mis)};
+            return mis[0];
+
         case "chars":
 
             // tech note, section 4.1: "Similarly it is easier to type ASCII

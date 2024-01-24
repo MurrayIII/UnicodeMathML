@@ -1020,6 +1020,9 @@ entity
     / arg
     / number
     / arg
+    / "\\" c:char {  // "literal"/escape operator
+        return {operator: c};
+    }
     /// expBracket  // ⚡ performance optimization
 
 // characters and words, protentially with diacritics
@@ -1036,6 +1039,7 @@ atoms = as:atom+ {
     // interspersed with these "groupable" nodes
     var atoms = [];
     var curChars = "";
+
     for (var a of as) {
         if (k(a) == "char") {
             curChars += v(a);
@@ -1055,9 +1059,6 @@ atoms = as:atom+ {
 }
 atom
     = diacriticized
-    / "\\" c:char {  // "literal"/escape operator
-        return {operator: c};
-    }
     / c:αn {
         return {char: c};
     }
