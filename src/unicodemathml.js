@@ -100,21 +100,28 @@ function getCh(str, i) {
     return String.fromCodePoint(m);
 }
 
-function getChD(value) {
-    // Get differential d. Return '' if not found
+function getChars(value) {
     if (value.hasOwnProperty('script'))
         value = value.script.base;
     else if (value.hasOwnProperty('primed'))
         value = value.primed.base;
-
     if (!value.hasOwnProperty('atoms'))
-        return '';                          // Can't be differential
+        return '';
 
     value = value.atoms;
     if (Array.isArray(value))
         value = value[0];
 
-    let chD = getCh(value.chars, 0);        // Get leading char
+    return value.chars;
+}
+
+function getChD(value) {
+    // Get differential d. Return '' if not found
+    let chars = getChars(value);
+    if(!chars)
+        return ''
+
+    let chD = getCh(chars, 0);    // Get leading char
 
     return 'dⅆ∂𝑑𝜕'.includes(chD) ? chD : '';
 }
@@ -2434,32 +2441,85 @@ function preprocess(dsty, uast, index, arr) {
                                 ret.high[0].atoms.intent = 'transpose';
                         }
                     }
-                    if (k(base) == "atoms" && base.atoms.funct == undefined) {
-                        // If base contains more than one char and isn't a
-                        // function name, make the subsup base be the end char.
-                        // E.g., for 𝐸 = 𝑚𝑐², make 𝑐 be the base, not 𝑚𝑐.
-                        var n = base.atoms.length;
-                        if (n != undefined) {
-                            var str = base.atoms[n - 1].chars;
-                            if (str != undefined) {
-                                var cch = str.length;
-                                var fn = foldMathItalics(str);
-                                if (isFunctionName(fn)) {
-                                    if (fn.length < cch)
-                                        ret.base.atoms[0].chars = fn;
-                                } else {
-                                    var cchCh = (str[cch - 1] >= '\DC00') ? 2 : 1;
+                    if (k(base) != "atoms" || base.atoms.funct != undefined)
+                        break;
+                    // If base contains more than one char and isn't a function
+                    // name, make the subsup base be the end char. E.g., for
+                    // 𝐸 = 𝑚𝑐², make 𝑐 be the base, not 𝑚𝑐.
+                    var n = base.atoms.length;
+                    if (n == undefined)
+                        break;
+                    var str = base.atoms[n - 1].chars;
+                    if (str == undefined)
+                        break;
+                    var cch = str.length;
+                    var fn = foldMathItalics(str);
+                    if (isFunctionName(fn)) {
+                        if (fn.length < cch)
+                            ret.base.atoms[0].chars = fn;
+                        break;
+                    }
+                    var cchCh = (str[cch - 1] >= '\DC00') ? 2 : 1;
 
-                                    if (cch > cchCh) {
-                                        // Return leading chars followed by scripted end char
-                                        ret.base.atoms[0].chars = str.substring(cch - cchCh);
-                                        return [{atoms: {chars: str.substring(0, cch - cchCh)}},
-                                                {script: ret}];
-                                    }
-                                }
-                            }
+                    if (cch > cchCh) {
+                        // Return leading chars followed by scripted end char
+                        ret.base.atoms[0].chars = str.substring(cch - cchCh);
+                        return [{atoms: {chars: str.substring(0, cch - cchCh)}},
+                                {script: ret}];
+                    }
+                    if (ret.intent || str[0] != 'ⅅ' && !str.startsWith('𝜕') ||
+                        !emitDefaultIntents) {
+                            break;
+                    }
+
+                    // Check for Euler derivative like ⅅ_𝑥 𝑓(𝑥) or 𝜕_𝑥𝑦 𝑓(𝑥,𝑦).
+                    // First get potential derivative order and variables.
+                    let order = '';
+                    if (ret.high) {
+                        if (str[0] != 'ⅅ') { // str == '𝜕' (a surrogate pair)
+                            // Euler partial derivative can't have superscript
+                            break;
+                        }
+                        if (Array.isArray(ret.high))
+                            order = getOrder(ret.high);
+                    }
+                    n = 0;                  // Count of subscript letters
+                    let chars1 = ''
+                    if (ret.low) {
+                        let chars = getChars(ret.low[0]);
+                        let cch = chars.length;
+
+                        // Split chars treating surrogate chars as single chars
+                        for (let i = 0; i < cch; ) {
+                            let ch = getCh(chars, i);
+                            chars1 += ch;
+                            n++;
+                            i += ch.length;
+                            if (i < chars.length)
+                                chars1 += ',';
                         }
                     }
+                    if (str[0] != 'ⅅ' && !n)
+                        break;              // Euler partial derivative needs subscript
+
+                    if (!order)
+                        order = n;
+                    ret.intent = str[0] == 'ⅅ'
+                        ? 'derivative' : 'partial-derivative';
+                    let darg = '';
+                    if (arr.length - 1 > index) {
+                        if (arr.length - 2 == index ||
+                            !arr[index + 2].hasOwnProperty('bracketed')) {
+                            arr[index + 1].arg = 'f';
+                            darg = '$f';
+                        } else {
+                            // Move function name and argument list into mrow
+                            arr[index + 1] = [{arg: 'f'}, arr[index + 1], arr[index + 2]];
+                            darg = '$f';
+                            arr.splice(index + 2, 1);
+                        }
+                    }
+                    ret.intent += '(' + order + ',' + darg + ',' + chars1 + ')';
                     break;
 
                 case "pre":
@@ -2654,7 +2714,7 @@ function preprocess(dsty, uast, index, arr) {
             if (!value.hasOwnProperty("funct")) {
                 if (Array.isArray(value) && isCharsButNotFunction(value[0])) {
                     value[0].chars = italicizeCharacters(value[0].chars);
-                }
+                } 
                 else if (isCharsButNotFunction(value)) {
                     value.chars = italicizeCharacters(value.chars);
                 }
@@ -3284,10 +3344,12 @@ function mtransform(dsty, puast) {
                                 mis.push({mi: withAttrs(attrs, ch)});
                             }
                         } else {
-                            if (value.intent || value.arg)
-                                mis.push({mi: withAttrs(attrs, str)});
-                            else
-                                mis.push(mtransform(dsty, Array.isArray(value) ? value[i] : value));
+                            let val = mtransform(dsty, Array.isArray(value) ? value[i] : value);
+                            if (attrs.arg)
+                                val.mi.attributes.arg = attrs.arg;
+                            if (attrs.intent)
+                                val.mi.attributes.intent = attrs.intent;
+                            mis.push(val);
                         }
                     }
                 }
@@ -3306,16 +3368,16 @@ function mtransform(dsty, puast) {
             // letters than italic letters, but when used as mathematical
             // variables, such letters are traditionally italicized in print
             // [...] translate letters deemed to be standalone to the
-            // appropriate math alphabetic characters"
-            if (value.length == 1) {
-                if (value[0] >= "Α" && value[0] <= "Ω") {
-                    return {mi: withAttrs({mathvariant: "normal"}, value)};
-                } else {
-                    return {mi: noAttr(italicizeCharacters(value))};
-                }
-            } else {
+            // appropriate math alphabetic characters". But upper-case Greek
+            // letters are not italicized by default.
+            if (value.length > 1)           // Usually math function name
                 return {mi: noAttr(value)};
-            }
+
+            if (value[0] >= "Α" && value[0] <= "Ω") // Upper-case Greek
+                return {mi: withAttrs({mathvariant: "normal"}, value)};
+
+            return {mi: noAttr(italicizeCharacters(value))};
+
         case "diacriticized":
 
             // TODO some of the work could be done in preprocessing step? but
