@@ -72,6 +72,13 @@ function nextEq() {
     draw();
 }
 
+function prevEq() {
+    iExample -= 2;
+    if (iExample < 0)
+        iExample = cExamples - 1;
+    nextEq();
+}
+
 // escape mathml tags and entities, via https://stackoverflow.com/a/13538245
 function escapeMathMLSpecialChars(str) {
     var replacements = {
@@ -707,22 +714,29 @@ function autocomplete() {
             }
             if (demoID) {
                 var demoEq = document.getElementById('demos');
-                if (e.key == 'Escape') {
-                    // Turn off demo mode
-                    endDemo();
-                } else if (e.key == ' ') {
-                    // Toggle pause
-                    e.preventDefault();
-                    if (demoPause) {
-                        demoID = 0;         // Needed to start (instead of end)
-                        startDemo();
-                    } else {
-                        demoPause = true;
-                        clearInterval(demoID);
-                        demoEq.style.backgroundColor = 'green';
-                    }
-                } else if (e.key == 'ArrowRight') {
-                    nextEq();
+                switch (e.key) {
+                    case 'Escape':
+                        // Turn off demo mode
+                        endDemo();
+                        return;
+                    case ' ':
+                        // Toggle pause
+                        e.preventDefault();
+                        if (demoPause) {
+                            demoID = 0;         // Needed to start (instead of end)
+                            startDemo();
+                        } else {
+                            demoPause = true;
+                            clearInterval(demoID);
+                            demoEq.style.backgroundColor = 'green';
+                        }
+                        return;
+                    case 'ArrowRight':
+                        nextEq();
+                        return;
+                    case 'ArrowLeft':
+                        prevEq();
+                        return;
                 }
             }
             return;

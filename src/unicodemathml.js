@@ -79,6 +79,20 @@ function isPrime(ch) {
     return '′″‴'.includes(ch);
 }
 
+// generate prime symbol(s) based on a number of desired primes
+function processPrimes(primes) {
+    switch (primes) {
+        case 4:
+            return "⁗";
+        case 3:
+            return "‴";
+        case 2:
+            return "″";
+        default:
+            return "′".repeat(primes);
+    }
+}
+
 function isMathMLObject(value) {
     const objs = ['mfrac', 'msqrt', 'mroot', 'menclose', 'msup', 'msub',
         'munderover', 'msubsup', 'mover', 'munder', 'mpadded', 'mphantom'];
@@ -101,18 +115,34 @@ function getCh(str, i) {
 }
 
 function getChars(value) {
-    if (value.hasOwnProperty('script'))
-        value = value.script.base;
-    else if (value.hasOwnProperty('primed'))
-        value = value.primed.base;
-    if (!value.hasOwnProperty('atoms'))
-        return '';
+    let val = value;
+    let n = 1;
+    let primes;
+    let chars1 = '';
 
-    value = value.atoms;
-    if (Array.isArray(value))
-        value = value[0];
-
-    return value.chars;
+    if (Array.isArray(value)) {
+        n = value.length;
+        val = val[0];
+    }
+    for (i = 0; i < n; ) {
+        if (val.hasOwnProperty('script')) {
+            val = val.script.base;
+        } else if (val.hasOwnProperty('primed')) {
+            primes = val.primed.primes;
+            val = val.primed.base;
+        }
+        if (val.hasOwnProperty('atoms')) {
+            val = val.atoms;
+            if (Array.isArray(val))
+                val = val[0];
+        }
+        chars1 += primes ? val.chars + processPrimes(primes) : val.chars;
+        if (n == 1)
+            break;
+        i++;
+        val = value[i];
+    }
+    return chars1;
 }
 
 function getChD(value) {
@@ -1935,20 +1965,6 @@ function abstractBoxOptions(mask) {
     return options;
 }
 
-// generate prime symbol(s) based on a number of desired primes
-function processPrimes(primes) {
-    switch (primes) {
-        case 4:
-            return "⁗";
-        case 3:
-            return "‴";
-        case 2:
-            return "″";
-        default:
-            return "′".repeat(primes);
-    }
-}
-
 // should a diacritic be placed above (1), on top of (0), or under (-1) a
 // character? (over/under-ness determined by navigating to
 // https://www.fileformat.info/info/unicode/block/combining_diacritical_marks/images.htm
@@ -2483,7 +2499,7 @@ function preprocess(dsty, uast, index, arr) {
                         if (Array.isArray(ret.high))
                             order = getOrder(ret.high);
                     }
-                    n = 0;                  // Count of subscript letters
+                    n = 1;                  // Count of subscript letters
                     let chars1 = ''
                     if (ret.low) {
                         let chars = getChars(ret.low[0]);
@@ -2493,10 +2509,11 @@ function preprocess(dsty, uast, index, arr) {
                         for (let i = 0; i < cch; ) {
                             let ch = getCh(chars, i);
                             chars1 += ch;
-                            n++;
                             i += ch.length;
-                            if (i < chars.length)
+                            if (i < chars.length && !isPrime(chars[i])) {
                                 chars1 += ',';
+                                n++;
+                            }
                         }
                     }
                     if (str[0] != 'ⅅ' && !n)
