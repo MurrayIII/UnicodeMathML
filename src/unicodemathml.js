@@ -2521,8 +2521,6 @@ function preprocess(dsty, uast, index, arr) {
 
                     if (!order)
                         order = n;
-                    ret.intent = str[0] == 'ⅅ'
-                        ? 'derivative' : 'partial-derivative';
                     let darg = '';
                     if (arr.length - 1 > index) {
                         if (arr.length - 2 == index ||
@@ -2536,7 +2534,11 @@ function preprocess(dsty, uast, index, arr) {
                             arr.splice(index + 2, 1);
                         }
                     }
-                    ret.intent += '(' + order + ',' + darg + ',' + chars1 + ')';
+                    if (darg) {
+                        ret.intent = str[0] == 'ⅅ'
+                            ? 'derivative' : 'partial-derivative';
+                        ret.intent += '(' + order + ',' + darg + ',' + chars1 + ')';
+                    }
                     break;
 
                 case "pre":
@@ -2729,11 +2731,32 @@ function preprocess(dsty, uast, index, arr) {
 
         case "atoms":
             if (!value.hasOwnProperty("funct")) {
+                let chars;
+                let darg = '';
+
                 if (Array.isArray(value) && isCharsButNotFunction(value[0])) {
-                    value[0].chars = italicizeCharacters(value[0].chars);
-                } 
+                    chars = value[0].chars = italicizeCharacters(value[0].chars);
+                }
                 else if (isCharsButNotFunction(value)) {
-                    value.chars = italicizeCharacters(value.chars);
+                    chars = value.chars = italicizeCharacters(value.chars);
+                }
+                if (chars && chars[0] == 'ⅅ' && chars.length > 1 && !intent &&
+                    emitDefaultIntents) {
+                    // Get default intent for, e.g., ⅅ𝑓(𝑥)
+                    if (arr.length - 1 > index && arr[index + 1].hasOwnProperty('bracketed')) {
+                        // Get derivative variable
+                        let val = arr[index + 1].bracketed.content.expr;
+                        if (val && Array.isArray(val))
+                            val = val[0];
+                        darg = getChars(val);
+                        if (darg == 'undefined') {
+                            darg = '$x';
+                            if (Array.isArray(val))
+                                val = val[0];
+                           val.arg = 'x';
+                        }
+                    }
+                    intent = 'derivative(1,' + chars.substring(1) + ',' + darg + ')';
                 }
             }
             if (!arg && value.arg)
@@ -2941,7 +2964,7 @@ function mtransform(dsty, puast) {
 
         case "matrix":
             value = mtransform(dsty, value);
-            var str = 'matrix(' + value.length + ',' + value[0].mtr.content.length + ')';
+            var str = ':matrix(' + value.length + ',' + value[0].mtr.content.length + ')';
             var attrs = getAttrs(value, str);
             return {mtable: withAttrs(attrs, value)};
         case "mrows":
