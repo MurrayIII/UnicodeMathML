@@ -52,6 +52,20 @@ function isMathML(unicodemath) {
            unicodemath.startsWith("<m:math");
 }
 
+function foldSupDigit(char) {   // Fold Unicode superscript digit to ASCII
+    switch (char) {
+        case '¹':
+            return '1';
+        case '²':
+            return '2';
+        case '³':
+            return '3';
+    }
+    if (inRange('⁰', char, '⁹') && !inRange('\u2071', char, '\u2073'))
+        return String.fromCodePoint(char.codePointAt(0) - 0x2040);
+    return '';
+}
+
 function removeMmlPrefixes(mathML) {
     var prefix;
     if (mathML.startsWith('<m:'))
@@ -1508,25 +1522,69 @@ var astralPrivateMap = [
 // carries out all codepoint range sustitutions listed in astralPrivateMap on
 // the passed string
 function mapToPrivate(s) {
-    return Array.from(s).map(c => {
-        var cp = c.codePointAt(0);
+    let u = '';                             // Collects mapped string
 
-        // do nothing if character is in BMP
+    for (let i = 0; i < s.length; i++) {
+        let cp = s.codePointAt(i);
         if (cp <= 0xFFFF) {
-            return c;
+            // Convert numeric fractions like ¹²/₃₄₅ to UnicodeMath small
+            // numeric fractions, e.g., 12⊘345. This is tricky to do with
+            // the peg grammar since it handles Unicode subsup digits as
+            // operators (see opScript). Require numerator and denominator
+            // each to have at least one digit.
+            if (cp >= 0x2080 && cp <= 0x2089 && i >= 2 &&
+                (s[i - 1] == '/' || s[i - 1] == '\u2044')) {
+                let j = i - 2;
+                let numerator = '';
+
+                while (j >= 0) {
+                    let digit = foldSupDigit(s[j]);
+                    if (!digit)
+                        break;
+                    numerator = digit + numerator;
+                    j--;
+                }
+                j++;
+                let k = i;
+                let denominator = '';
+
+                if (i - j >= 2) {
+                    while (k < s.length) {
+                        if (!inRange('₀', s[k], '₉'))
+                            break;
+                        denominator += String.fromCharCode(s[k].codePointAt(0) - 0x2050);
+                        k++;
+                    }
+                    if (k - i >= 1) {
+                        // Convert valid Unicode numeric fraction to
+                        // UnicodeMath small numeric fraction
+                        u = u.substring(0, u.length - (i - j)) + ' ' +
+                            numerator + '⊘' + denominator + ' ';
+                        i = k - 1;
+                        continue;
+                    }
+                }
+            }
+            u += s[i];
+            continue;
         }
 
-        // go over all entries of the substitution map and and subsitute if a
-        // match is found. this could be more efficient, but it's not even close
-        // to being a bottleneck
+        // go over all entries of the substitution map substituting if a match
+        // is found. this could be more efficient, but it's not even close to
+        // being a bottleneck
+        let found = false;
         for (let m of astralPrivateMap) {
             if (m.astral.begin <= cp && cp <= m.astral.end) {
-                c = String.fromCodePoint(m.private.begin + (cp - m.astral.begin));
+                u += String.fromCodePoint(m.private.begin + (cp - m.astral.begin));
+                found = true;
                 break;
             }
         }
-        return c;
-    }).join('');
+        if (!found)                         // E.g., 🕷 (1F577)
+            u += s[i] + s[i + 1];           // Copy surrogate pair
+        i++;                                // Bypass lead surrogate
+    }
+    return u;
 }
 
 // inverts all codepoint range sustitutions listed in astralPrivateMap on the
