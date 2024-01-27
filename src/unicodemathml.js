@@ -109,25 +109,28 @@ function hasSingleMrow(value) {
 }
 
 function getCh(str, i) {
-    // Get UTF-16 character at offset i
-    var m = str.codePointAt(i);
+    // Get BMP character or surrogate pair at offset i
+    let m = str.codePointAt(i);
     return String.fromCodePoint(m);
 }
 
 function getChars(value) {
-    let val = value;
-    let n = 1;
-    let primes;
-    let chars1 = '';
+    let chars = '';                         // Collects chars & primes
+    let n = 1;                              // 1 in case value isn't an array
+    let primes;                             // No primes yet
+    let val = value;                        // Moves down AST to chars
 
     if (Array.isArray(value)) {
         n = value.length;
         val = val[0];
+        if (Array.isArray(val))
+            val = val[0];
     }
-    for (i = 0; i < n; ) {
+    for (let i = 0; i < n; val = value[++i]) {
         if (val.hasOwnProperty('script')) {
             val = val.script.base;
-        } else if (val.hasOwnProperty('primed')) {
+        }
+        if (val.hasOwnProperty('primed')) {
             primes = val.primed.primes;
             val = val.primed.base;
         }
@@ -135,14 +138,13 @@ function getChars(value) {
             val = val.atoms;
             if (Array.isArray(val))
                 val = val[0];
-        }
-        chars1 += primes ? val.chars + processPrimes(primes) : val.chars;
+            chars += primes ? val.chars + processPrimes(primes) : val.chars;
+        } else if (val.hasOwnProperty('number'))
+            chars = val.number;
         if (n == 1)
-            break;
-        i++;
-        val = value[i];
+            break;                          // No array or value.length = 1
     }
-    return chars1;
+    return chars ? chars : '';
 }
 
 function getChD(value) {
@@ -1374,9 +1376,10 @@ function getDifferentialInfo(of, n) {
     }
 
     if (n == 1) {                           // Denominator
-        if (script)                         // Non-script handled further down
-            darg = getCh(arg.atoms[0].chars, cchChD); // wrt, e.g., 𝑥 in 𝑑𝑥²
-        else {
+        if (script) {                       // Non-script handled further down
+            let chars = getChars(arg);
+            darg = chars.substring(cchChD); // wrt, e.g., 𝑥 in 𝑑𝑥² or 𝑥′ in 𝑑𝑥′²
+        }  else {
             // Get differentiation variable(s) in denominator with no superscript
             // e.g., 𝑥, 𝑡 in 𝜕²𝜓(𝑥,𝑡)/𝜕𝑥𝜕𝑡, 𝑥 in 𝑑𝑦/𝑑𝑥, 𝑥, 𝑥′ in 𝜕²𝑓(𝑥,𝑥′)/𝜕𝑥𝜕𝑥′
             let primes = 0;
@@ -2352,8 +2355,8 @@ function preprocess(dsty, uast, index, arr) {
                                 if (of[0].length == 3 &&
                                     of[0][1].hasOwnProperty('atoms') &&
                                     of[0][2].hasOwnProperty('bracketed')) {
-                                    value.of[0] = [s, [{ arg: arg0.substring(1) }, of[0][1],
-                                    { operator: '\u2061' }, of[0][2]]];
+                                    value.of[0] = [s,[{arg: arg0.substring(1)}, of[0][1],
+                                                      {operator: '\u2061'}, of[0][2]]];
                                 } else if (of[0].length == 2) {
                                     // For, e.g., 𝑑^(n-1) y/𝑑𝑥^(n-1)
                                     value.of[0] = [s, of[0][1]];
@@ -2496,7 +2499,7 @@ function preprocess(dsty, uast, index, arr) {
                             // Euler partial derivative can't have superscript
                             break;
                         }
-                        if (Array.isArray(ret.high))
+                        if (Array.isArray(ret.high) || ret.high.hasOwnProperty('expr'))
                             order = getOrder(ret.high);
                     }
                     n = 1;                  // Count of subscript letters
@@ -2532,6 +2535,12 @@ function preprocess(dsty, uast, index, arr) {
                             arr[index + 1] = [{arg: 'f'}, arr[index + 1], arr[index + 2]];
                             darg = '$f';
                             arr.splice(index + 2, 1);
+                            if (!chars1) {
+                                let val = arr[index + 1][2].bracketed.content;
+                                if (val.hasOwnProperty('expr'))
+                                    val = val.expr[0];
+                                chars1 = getChars(val);
+                            }
                         }
                     }
                     if (darg) {
@@ -2554,7 +2563,7 @@ function preprocess(dsty, uast, index, arr) {
                     // if a prescript contains a subsup, pull its base and
                     // scripts up into the prescript, which will then have all
                     // four kinds of scripts set
-                    var base = dropSingletonLists(ret.base);
+                    base = dropSingletonLists(ret.base);
                     if (base.hasOwnProperty("script") && base.script.type == "subsup") {
                         if ("low" in base.script) {
                             ret.low = preprocess(dsty, base.script.low);

@@ -462,7 +462,7 @@ function getSubSupDigit(str, i, delim) {
     for (var j = i - 2; j >= 0; j--) {
         if (str[j] == opSupSub)
             return '';
-        if (str[j] < '\u3017' && !isAsciiAlphanumeric(str[j]) && str[j] != 'ⅆ')
+        if (str[j] < '\u3017' && !isAsciiAlphanumeric(str[j]) && !isDoubleStruck(str[j]))
             break;                          // Could allow other letters...
     }
     if (j == i - 2)
