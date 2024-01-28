@@ -8,10 +8,32 @@ const unicodeFractions = {
 };
 
 function getUnicodeFraction(chNum, chDenom) {
-    for (const [key, val] of Object.entries(unicodeFractions)) {
-        if (chNum == val[0] && chDenom == val[1])
-            return key;
+    if (chNum.length == 1) {
+        if (chDenom == '10' && chNum == '1')
+            return "⅒";
+
+        if (chDenom.length == 1) {
+            for (const [key, val] of Object.entries(unicodeFractions)) {
+                if (chNum == val[0] && chDenom == val[1])
+                    return key;             // Unicode fraction char like ½
+            }
+        }
     }
+    let n;
+    let result = '';
+
+    for (let i = 0; i < chNum.length; i++, result += digitSuperscripts[n]) {
+        n = chNum.codePointAt(i) - 0x30;
+        if (n < 0 || n > 9)
+            return '';
+    }
+    result += '\u2044';                     // Fraction slash
+    for (let i = 0; i < chDenom.length; i++, result += digitSubscripts[n]) {
+        n = chDenom.codePointAt(i) - 0x30;
+        if (n < 0 || n > 9)
+            return '';
+    }
+    return result;                          // Unicode fraction string like ¹²/₃₄₅
 }
 
 function inRange(ch0, ch, ch1) {
@@ -3724,11 +3746,18 @@ function unary(node, op) {
 
 function binary(node, op) {
     let ret = dump(node.firstElementChild);
+    let retd = dump(node.lastElementChild); 
+
+    if (op == '⊘') {
+        let ch = getUnicodeFraction(ret, retd);
+        if (ch)
+            return ch;
+    }
     if (op == '/' && (ret.endsWith('^∗ )') || ret.endsWith('^† )'))) {
         // Remove superfluous build-up space & parens
         ret = ret.substring(1, ret.length - 2);
     }
-    ret += op + dump(node.lastElementChild);
+    ret += op + retd;
     if (op)
         ret += ' ';
     return ret;
@@ -3906,11 +3935,6 @@ function dump(value, noAddParens, index) {
                 }
             }
             ret = binary(value, op);
-            if (op == '⊘' && ret.length == 4) {
-                var ch = getUnicodeFraction(ret[0], ret[2]);
-                if (ch)
-                    return ch;
-            }
             if (value.previousElementSibling && value.previousElementSibling.nodeName != 'mo') {
                 ret = ' ' + ret;                    // Separate variable and numerator
             }
