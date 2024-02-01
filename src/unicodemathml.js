@@ -120,6 +120,8 @@ function isAlphanumeric(ch) {
 
 function isAsciiAlphanumeric(ch) { return /[\w]/.test(ch); }
 
+function isAsciiAlphabetic(ch) { return /[A-Za-z]/.test(ch); }
+
 function isAsciiDigit(ch) {
     return inRange('0', ch, '9');
 }

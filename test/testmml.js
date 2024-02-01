@@ -21,7 +21,6 @@ const mathML = [
     "<math display=\"block\"><mstyle mathcolor=\"#e01f32\"><mi>𝛼</mi></mstyle></math>",
     "<math display=\"block\"><mstyle mathbackground=\"brown\"><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow></mstyle></math>",
     "<math display=\"block\"><mrow><mmultiscripts><mi>𝐶</mi><mi>𝑘</mi><none /><mprescripts /><mi>𝑛</mi><none /></mmultiscripts><mo>=</mo><mrow intent=\"binomial-coefficient(𝑛,𝑘)\"><mo>(</mo><mfrac linethickness=\"0\"><mi>𝑛</mi><mi>𝑘</mi></mfrac><mo>)</mo></mrow><mo>=</mo><mfrac><mrow><mi>𝑛</mi><mo>!</mo></mrow><mrow><mrow><mi>𝑘</mi><mo>!</mo></mrow><mrow><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑛</mi><mo>−</mo><mi>𝑘</mi></mrow><mo>)</mo></mrow><mo>!</mo></mrow></mrow></mfrac></mrow></math>",
-    "<math display=\"block\"><mrow><mrow><mi>𝑖</mi><mi>ℏ</mi></mrow><mfrac intent=\"partial-derivative(1,$f,𝑡)\"><mrow><mi>𝜕</mi><mrow arg=\"f\"><mi>𝜓</mi><mo>⁡</mo><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑥</mi><mo>,</mo><mi>𝑡</mi></mrow><mo>)</mo></mrow></mrow></mrow><mrow><mi>𝜕</mi><mi>𝑡</mi></mrow></mfrac><mo>=</mo><mrow><mrow intent=\":fenced\"><mo>[</mo><mrow><mo>−</mo><mfrac><msup><mi>ℏ</mi><mn>2</mn></msup><mrow><mn>2</mn><mi>𝑚</mi></mrow></mfrac><mfrac intent=\"partial-derivative(2,,𝑥)\"><msup><mi>𝜕</mi><mn>2</mn></msup><mrow><mi>𝜕</mi><msup><mi>𝑥</mi><mn>2</mn></msup></mrow></mfrac><mo>+</mo><mrow><mi>𝑉</mi><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑥</mi><mo>,</mo><mi>𝑡</mi></mrow><mo>)</mo></mrow></mrow></mrow><mo>]</mo></mrow><mi>𝜓</mi><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑥</mi><mo>,</mo><mi>𝑡</mi></mrow><mo>)</mo></mrow></mrow></mrow></math>",
     "<math display=\"block\"><mfenced><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow><mrow><mi>𝑐</mi><mo>+</mo><mi>𝑑</mi></mrow></mfenced></math>",
     "<math display=\"block\"><menclose><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow></menclose></math>",
     "<math display=\"block\"><menclose notation=\"right left bottom\"><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow></menclose></math>",
@@ -72,7 +71,6 @@ const unicodeMath = [
     "✎(#e01f32&𝛼)",
     "☁(brown&𝑎+𝑏)",
     "_𝑛 𝐶_𝑘=𝑛⒞𝑘=𝑛!/𝑘!(𝑛−𝑘)!",
-    "𝑖ℏ 𝜕𝜓⁡(𝑥,𝑡)/𝜕𝑡=[−ℏ²/2𝑚 𝜕²/𝜕𝑥²+𝑉(𝑥,𝑡)]𝜓(𝑥,𝑡)",
     "(𝑎+𝑏,𝑐+𝑑)",
     "▭(𝑎+𝑏)",
     "▭(1&𝑎+𝑏)",
@@ -106,11 +104,11 @@ const unicodeMath = [
 const mathSpeech = [
     "1 over 2 pi  integral from 0 to 2 h smash pi  of , fraction differential d theta  over eigh + b sine theta  , end fraction = fraction 1 over square root of squared minus b squared , end square root , end fraction ",
     "bold del  cross bold cap E = minus partial  bold cap B over partial  t ",
-    "i h bar , partial  psi  open paren x comma t close paren over partial  t = open bracket minus fraction h bar squared over 2 m , end fraction , fraction partial  squared over partial  x squared , end fraction + cap V open paren x comma t close paren close bracket psi  open paren x comma t close paren ",
+    "i h bar , partial  psi  open paren x comma t close paren over partial  t = open bracket minus fraction h bar squared over 2 m , end fraction , partial  squared over partial  x squared + cap V open paren x comma t close paren close bracket psi  open paren x comma t close paren ",
     "open paren eigh + b close paren to the n = sum from k = 0 to n of n choose k eigh to the k b to the open paren n minus k close paren ",
     "x = fraction minus b plus or minus square root of squared minus 4 eigh c , end square root over 2 eigh , end fraction ",
     "sine squared theta  + cosine squared theta  = 1",
-    "integral from minus infinity to infinity of e to the open paren minus x squared close paren differential d x = square root of pi  ",
+    "integral from minus infinity to infinity of e to the minus x squared differential d x = square root of pi  ",
     "eigh   b ",
     "limit as n goes to infinity of open paren 1 + 1 over n close paren to the n = e ",
     "f hat open paren xi  close paren = integral from minus infinity to infinity of f open paren x close paren e to the minus 2 pi  i x xi  differential d x ",
@@ -120,10 +118,9 @@ const mathSpeech = [
     "",
     "",
     "absolute value eigh + b end absolute value",
-    "",
-    "",
-    "",
-    "i h bar , partial  psi  open paren x comma t close paren over partial  t = open bracket minus fraction h bar squared over 2 m , end fraction , fraction partial  squared over partial  x squared , end fraction + cap V open paren x comma t close paren close bracket psi  open paren x comma t close paren ",
+    "color hex e01 f32 , alpha  , end color ",
+    "back color brown eigh + b , end back color ",
+    "sub n cap C sub k = n choose k = n factorial over k factorial open paren n minus k close paren factorial ",
     "open paren eigh + b comma c + d close paren ",
     "box eigh + b , end box",
     "",
@@ -139,17 +136,17 @@ const mathSpeech = [
     "eigh less than or equal to b less than or equal to c ",
     "d psi  open paren x comma t close paren over d t = 0",
     "eigh squared + b squared = c squared ",
+    "cap Z open paren gamma  + i omega  minus i nu  close paren = fraction i over square root of pi  , end fraction integral from minus infinity to infinity of fraction e to the open paren minus open paren omega  minus omega  prime close paren squared over open paren Delta omega  close paren squared close paren over gamma  + i open paren omega  prime minus nu  close paren , end fraction differential d omega  prime ",
+    "sine ,  fraction x + eigh over 2 , end fraction ,  ",
     "",
     "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
+    "theta  sub 1 open paren z vertical bar tau  close paren = theta  sub 1 open paren z comma q close paren = 2 ⁢ sum from n = 0 to infinity of open paren minus 1 close paren to the n ⁢ q to the open paren n + one half close paren squared ⁢ sine open paren open paren 2 ⁢ n + 1 close paren ⁢ z close paren comma ",
+    "z choose k = fraction z ⁢ open paren z minus 1 close paren ⁢ dot dot dot ⁢ open paren z minus k + 1 close paren over k factorial , end fraction = fraction open paren minus 1 close paren to the k ⁢ open paren minus z close paren sub k over k factorial , end fraction = open paren minus 1 close paren to the k ⁢ open paren k minus z minus 1 close paren choose k . ",
+    "differential d gamma  prime over differential d z ",
+    "fraction differential d squared gamma  conjugate over differential d z squared , end fraction not equal fraction differential d gamma  conjugate over differential d z , end fraction ",
+    "partial  f open paren x comma x prime close paren over partial  x prime = 0",
+    "partial  squared f open paren x close paren over partial  x squared ",
+    "z choose k = fraction z⁢ open paren z minus 1 close paren ⁢ dot dot dot ⁢ open paren z minus k+ 1 close paren over k factorial , end fraction = fraction open paren minus 1 close paren to the k ⁢ open paren minus z close paren sub k over k factorial , end fraction = open paren minus 1 close paren to the k ⁢ open paren k minus z minus 1 close paren choose k . ",
     "",
     "eigh + 1 over 20 + 56 over 625 = 0",
 ]
@@ -173,6 +170,7 @@ function testMathMLtoSpeech() {
     var iSuccess = 0;
     for (var i = 0; i < mathML.length; i++) {
         var result = MathMLtoSpeech(mathML[i]);
+        console.log(unicodeMath[i] + '\n');
         if (result != mathSpeech[i]) {
             console.log("Expect: " + mathSpeech[i] + '\n');
             console.log("Result: " + result + '\n\n');

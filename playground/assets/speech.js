@@ -300,7 +300,7 @@ const symbolSpeechStrings = {
 	'⊶': 'original of',
 	'⊷': 'image of',
 	'⊸': 'multimap',
-	'⊹': 'hermeetian conjugate matrix',
+	'⊹': 'hermitian conjugate matrix',
 	'⊺': 'intercalate',
 	'⊻': 'xor',
 	'⊼': 'nand',
@@ -377,8 +377,10 @@ const symbolSpeechStrings = {
 	'⌊': 'open floor',						// 230A
 	'⌋': 'close floor',						// 230B
 	'⍁': 'fraction',						// 2341
+	'⍨': 'as',								// 2368
 	'⎴': 'over bracket',					// 23B4
 	'⎵': 'under bracket',					// 23B5
+	'⏉': 'transpose',						// 23C9
 	'⏜': 'over paren',						// 23DC
 	'⏝': 'under paren',						// 23DD
 	'⏞': 'over brace',						// 23DE
@@ -403,6 +405,12 @@ const symbolSpeechStrings = {
 	'▒': 'of',								// 2592
 	'■': 'matrix, ',						// 25A0
 	'▭': 'boxed formula',					// 25AD
+	'☁': 'back color',						// 2601
+	'★': 'complex conjugate',				// 2605 (for c.c.)
+	'☆': 'conjugate',						// 2606 (for variable conjugate like 𝑧^∗)
+	'☟': 'from',							// 261A (as in ∫ from 0 to 1)
+	'☝': 'to',								// 261B
+	'✎': 'color',							// 270E
 	'⟦': 'open white square bracket',		// 27E6
 	'⟧': 'close white square bracket',		// 27E7
 	'⟨': 'open angle bracket',				// 27E8
@@ -411,16 +419,10 @@ const symbolSpeechStrings = {
 	'⬆': 'eigh smash',						// 2B06 - ascent smash
 	'⬇': 'd smash',							// 2B07 - descent smash
 	'⬌': 'h smash',							// 2B0C - horizontal smash
+	'⬢': 'hex',								// 2B22 (for hex in color/back color)
+	'⮵': 'to the',							// 2BB5
 	'〖': ', ',								// 3016
 	'〗': ', ',								// 3017
-											// Special words (1 list to localize)
-	'\uE000': 'from',						// As in ∫ from 0 to 1
-	'\uE001': 'to',
-	'\uE002': 'complex conjugate',			// For c.c.
-	'\uE003': 'to the',
-	'\uE007': 'transpose',
-	'\uE009': 'as',
-	'\uFFFC': 'image',
 }
 
 const ordinals = {
@@ -463,9 +465,9 @@ function getPower(value) {
 		return '³';							// 'cubed'
 
 	if (inRange('4', value, '10'))
-		return '\uE003' + ordinals[value] + ' '; // 'to the'
+		return '⮵' + ordinals[value] + ' '; // 'to the'
 
-	return '\uE003' + speech(value);		// 'to the'
+	return '⮵' + speech(value);		// 'to the'
 }
 
 function styleSpeech(mathStyle) {
@@ -513,9 +515,9 @@ function nary(node, op, cNode) {
 
 function Nary(node) {
 	// symbol 'from' lower-limit 'to' upper-limit 'of'
-	return speech(node.firstElementChild) + '\uE000' +
-		speech(node.children[1], true) + '\uE001' +
-		speech(node.lastElementChild, true) + '▒';
+	return speech(node.firstElementChild) + '☟' +	// 'from'
+		speech(node.children[1], true) + '☝' +		// 'to'
+		speech(node.lastElementChild, true) + '▒';	// 'of'
 }
 
 function handleAccent(value) {
@@ -621,10 +623,18 @@ function speech(value, noAddParens, index) {
 
 		case 'mstyle':
 			ret = speech(value.firstElementChild);
-			if (value.attributes.hasOwnProperty('mathcolor'))
-				ret = '✎(' + value.attributes.mathcolor.value + '&' + ret + ')';
-			if (value.attributes.hasOwnProperty('mathbackground'))
-				ret = '☁(' + value.attributes.mathbackground.value + '&' + ret + ')';
+			if (value.attributes.hasOwnProperty('mathcolor')) {
+				let color = value.attributes.mathcolor.value;
+				if (color[0] == '#')
+					color = '⬢ ' + color.substring(1) + '⏳';
+				ret = '✎' + color + ' ' + ret + '¶ ✎';
+			}
+			if (value.attributes.hasOwnProperty('mathbackground')) {
+				let color = value.attributes.mathbackground.value;
+				if (color[0] == '#')
+					color = '⬢ ' + color.substring(1) + '⏳';
+				ret = '☁' + color + ' ' + ret + '¶ ☁';
+			}
 			return ret;
 
 		case 'msqrt':
@@ -649,8 +659,8 @@ function speech(value, noAddParens, index) {
 						value.parentElement.attributes.intent.nodeValue.startsWith('binomial-coefficient') ||
 						value.parentElement.firstElementChild.attributes.title &&
 						value.parentElement.firstElementChild.attributes.title.nodeValue == 'binomial coefficient') {
-						ret = needParens(num) ? '(' + num + ')' : num + '⒞';
-						ret += needParens(den) ? '(' + den + ')' : den + ' ';
+						ret = (needParens(num) ? '(' + num + ')' : num) + ' ⒞';
+						ret += (needParens(den) ? '(' + den + ')' : den) + ' ';
 						op = '⒞';
 					}
 				}
@@ -676,15 +686,17 @@ function speech(value, noAddParens, index) {
 			if (value.lastElementChild.nodeName == 'mn' &&
 				isAsciiDigit(value.lastElementChild.textContent[0])) {
 				let power = getPower(value.lastElementChild.textContent);
-				return speech(value.firstElementChild) + power + ' ';
+				return speech(value.firstElementChild) + power;
 			}
 			if (value.lastElementChild.attributes.hasOwnProperty('intent') &&
 				value.lastElementChild.attributes.intent.nodeValue == 'transpose') {
-				return speech(value.firstElementChild) + '\uE007';	// 'transpose'
+				return speech(value.firstElementChild) + '⏉';	// 'transpose'
 			}
-			var op = '\uE003 ';				// 'to the'
+			var op = '⮵ ';				// 'to the'
 			if (isPrime(value.lastElementChild.textContent))
 				op = '';
+			else if (value.lastElementChild.textContent == '∗')
+				return speech(value.firstElementChild) + '☆';
 			return binary(value, op);
 
 		case 'mover':
@@ -696,7 +708,7 @@ function speech(value, noAddParens, index) {
 				return handleAccent(value);
 
 			if (value.firstElementChild.innerHTML == 'lim') {
-				return speech(value.firstElementChild) + '\uE009' +
+				return speech(value.firstElementChild) + '⍨' +
 					speech(value.lastElementChild, true) + '▒';
 			}
 			if (value.firstElementChild.nodeName != 'mi')
@@ -713,7 +725,7 @@ function speech(value, noAddParens, index) {
 
 		case 'msubsup':
 			return isNary(value.firstElementChild.innerHTML)
-				? Nary(value) : ternary(value, '_', '\uE003');	// 'to the'
+				? Nary(value) : ternary(value, '_', '⮵');	// 'to the'
 
 		case 'mmultiscripts':
 			ret = '';
@@ -767,6 +779,17 @@ function speech(value, noAddParens, index) {
 						break;
 				}
 			}
+			if (value.attributes.title) {
+				// The DLMF title attribute implies the following intents
+				// (see also for 'mi')
+				switch (value.attributes.title.textContent) {
+					case 'differential':
+					case 'derivative':
+						return 'ⅆ';
+					case 'binomial coefficient':
+						return '';
+				}
+			}
 			return val;
 
 		case 'mi':
@@ -792,7 +815,7 @@ function speech(value, noAddParens, index) {
 
 		case 'mtext':
 			if (value.textContent == 'c.c.')
-				return '\uE002';
+				return '★';					// 'complex conjugate'
 			return value.textContent + ' ';
 
 		case 'mspace':
@@ -832,7 +855,7 @@ function speech(value, noAddParens, index) {
 			// Remove enclosing parens for bracketed matrices
 			ret = ret[1] + ret.substring(3, ret.length - 2) + '¶ ' + ret[1];
 		}
-		if (mrowIntent == ':function' && value.previousElementSibling &&
+		else if (mrowIntent == ':function' && value.previousElementSibling &&
 			value.firstElementChild.nodeName == 'mi' &&
 			value.firstElementChild.textContent < '\u2100' &&
 			value.previousElementSibling.nodeName == 'mi') {
@@ -884,13 +907,15 @@ function MathMLtoSpeech(mathML) {
 			ret += ' ';
 		ch = text.substring(i, i + cchCh);
 
-		if (isAsciiAlphanumeric(ch)) {
+		if (isAsciiAlphanumeric(ch) && ch != '_') {
 			ret += ch;
 			continue;
 		}
 		let c = symbolSpeech(ch);
 		if (c != ch) {
 			ch = c;
+			if (i && isAsciiAlphabetic(text[i - 1]))
+				ret += ' ';
 			ret += ch;
 			ch = ' ';
 			continue;
