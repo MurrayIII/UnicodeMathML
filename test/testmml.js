@@ -1,7 +1,7 @@
 ﻿(function (root) {
     'use strict';
 
-var mathML = [
+const mathML = [
     "<math display=\"block\"><mrow><mfrac><mn>1</mn><mrow><mn>2</mn><mi>𝜋</mi></mrow></mfrac><mrow intent=\"integral(0,$h,$n)\"><msubsup><mo>∫</mo><mn>0</mn><mrow arg=\"h\"><mn>2</mn><mpadded width=\"0\"><mi>𝜋</mi></mpadded></mrow></msubsup><mfrac arg=\"n\"><mrow><mi intent=\"ⅆ\">𝑑</mi><mi>𝜃</mi></mrow><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi><mrow intent=\":function\"><mi>sin</mi><mo>⁡</mo><mi>𝜃</mi></mrow></mrow></mfrac></mrow><mo>=</mo><mfrac><mn>1</mn><msqrt><mrow><msup><mi>𝑎</mi><mn>2</mn></msup><mo>−</mo><msup><mi>𝑏</mi><mn>2</mn></msup></mrow></msqrt></mfrac></mrow></math>",
     "<math display=\"block\"><mrow><mi>𝛁</mi><mo>⨯</mo><mi>𝐄</mi><mo>=</mo><mo>−</mo><mfrac intent=\"partial-derivative(1,𝐁,𝑡)\"><mrow><mi>𝜕</mi><mi>𝐁</mi></mrow><mrow><mi>𝜕</mi><mi>𝑡</mi></mrow></mfrac></mrow></math>",
     "<math display=\"block\"><mrow><mrow><mi>𝑖</mi><mi>ℏ</mi></mrow><mfrac intent=\"partial-derivative(1,$f,𝑡)\"><mrow><mi>𝜕</mi><mrow arg=\"f\"><mi>𝜓</mi><mo>⁡</mo><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑥</mi><mo>,</mo><mi>𝑡</mi></mrow><mo>)</mo></mrow></mrow></mrow><mrow><mi>𝜕</mi><mi>𝑡</mi></mrow></mfrac><mo>=</mo><mrow><mrow intent=\":fenced\"><mo>[</mo><mrow><mo>−</mo><mfrac><msup><mi>ℏ</mi><mn>2</mn></msup><mrow><mn>2</mn><mi>𝑚</mi></mrow></mfrac><mfrac intent=\"partial-derivative(2,,𝑥)\"><msup><mi>𝜕</mi><mn>2</mn></msup><mrow><mi>𝜕</mi><msup><mi>𝑥</mi><mn>2</mn></msup></mrow></mfrac><mo>+</mo><mrow><mi>𝑉</mi><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑥</mi><mo>,</mo><mi>𝑡</mi></mrow><mo>)</mo></mrow></mrow></mrow><mo>]</mo></mrow><mi>𝜓</mi><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑥</mi><mo>,</mo><mi>𝑡</mi></mrow><mo>)</mo></mrow></mrow></mrow></math>",
@@ -52,7 +52,7 @@ var mathML = [
     "<math display=\"block\"><mrow><mi>𝑎</mi><mo>+</mo><mfrac displaystyle=\"false\"><mn>1</mn><mn>20</mn></mfrac><mo>+</mo><mfrac displaystyle=\"false\"><mn>56</mn><mn>625</mn></mfrac><mo>=</mo><mn>0</mn></mrow></math>",
 ];
 
-var unicodeMath = [
+const unicodeMath = [
     "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)",
     "𝛁⨯𝐄=−𝜕𝐁/𝜕𝑡",
     "𝑖ℏ 𝜕𝜓⁡(𝑥,𝑡)/𝜕𝑡=[−ℏ²/2𝑚 𝜕²/𝜕𝑥²+𝑉(𝑥,𝑡)]𝜓(𝑥,𝑡)",
@@ -103,6 +103,57 @@ var unicodeMath = [
     "𝑎+¹⁄₂₀+⁵⁶⁄₆₂₅=0",
 ];
 
+const mathSpeech = [
+    "1 over 2 pi  integral from 0 to 2 h smash pi  of , fraction differential d theta  over eigh + b sine theta  , end fraction = fraction 1 over square root of squared minus b squared , end square root , end fraction ",
+    "bold del  cross bold cap E = minus partial  bold cap B over partial  t ",
+    "i h bar , partial  psi  open paren x comma t close paren over partial  t = open bracket minus fraction h bar squared over 2 m , end fraction , fraction partial  squared over partial  x squared , end fraction + cap V open paren x comma t close paren close bracket psi  open paren x comma t close paren ",
+    "open paren eigh + b close paren to the n = sum from k = 0 to n of n choose k eigh to the k b to the open paren n minus k close paren ",
+    "x = fraction minus b plus or minus square root of squared minus 4 eigh c , end square root over 2 eigh , end fraction ",
+    "sine squared theta  + cosine squared theta  = 1",
+    "integral from minus infinity to infinity of e to the open paren minus x squared close paren differential d x = square root of pi  ",
+    "eigh   b ",
+    "limit as n goes to infinity of open paren 1 + 1 over n close paren to the n = e ",
+    "f hat open paren xi  close paren = integral from minus infinity to infinity of f open paren x close paren e to the minus 2 pi  i x xi  differential d x ",
+    "root n of eigh + b , end root ",
+    "cosine theta  = one half e to the i theta  + complex conjugate ",
+    "open paren matrix,  eigh and b , next row, c and d , end matrix,  close paren ",
+    "",
+    "",
+    "absolute value eigh + b end absolute value",
+    "",
+    "",
+    "",
+    "i h bar , partial  psi  open paren x comma t close paren over partial  t = open bracket minus fraction h bar squared over 2 m , end fraction , fraction partial  squared over partial  x squared , end fraction + cap V open paren x comma t close paren close bracket psi  open paren x comma t close paren ",
+    "open paren eigh + b comma c + d close paren ",
+    "box eigh + b , end box",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "fraktur cap H ",
+    "eigh less than or equal to b less than or equal to c ",
+    "d psi  open paren x comma t close paren over d t = 0",
+    "eigh squared + b squared = c squared ",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "eigh + 1 over 20 + 56 over 625 = 0",
+]
+
 function testMathMLtoUnicodeMath() {
     var iSuccess = 0;
     for (var i = 0; i < mathML.length; i++) {
@@ -117,6 +168,22 @@ function testMathMLtoUnicodeMath() {
     var iFail = mathML.length - iSuccess;
     console.log(iSuccess + " passes; " + iFail + " failures\n");
 }
+
+function testMathMLtoSpeech() {
+    var iSuccess = 0;
+    for (var i = 0; i < mathML.length; i++) {
+        var result = MathMLtoSpeech(mathML[i]);
+        if (result != mathSpeech[i]) {
+            console.log("Expect: " + mathSpeech[i] + '\n');
+            console.log("Result: " + result + '\n\n');
+        } else {
+            iSuccess++;
+        }
+    }
+    var iFail = mathML.length - iSuccess;
+    console.log(iSuccess + " passes; " + iFail + " failures\n");
+}
+
 input.addEventListener("keydown", function (e) {
     if (e.key == 'Enter') {
         e.preventDefault();
@@ -127,4 +194,5 @@ input.addEventListener("keydown", function (e) {
 });
 
     root.testMathMLtoUnicodeMath = testMathMLtoUnicodeMath;
+    root.testMathMLtoSpeech = testMathMLtoSpeech;
 })(this);

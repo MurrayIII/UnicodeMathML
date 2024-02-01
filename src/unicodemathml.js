@@ -4,7 +4,8 @@ const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
 const unicodeFractions = {
     "½": [1, 2], "⅓": [1, 3], "⅔": [2, 3], "¼": [1, 4], "¾": [3, 4], "⅕": [1, 5],
     "⅖": [2, 5], "⅗": [3, 5], "⅘": [4, 5], "⅙": [1, 6], "⅚": [5, 6], "⅐": [1, 7],
-    "⅛": [1, 8], "⅜": [3, 8], "⅝": [5, 8], "⅞": [7, 8], "⅑": [1, 9], "↉": [0, 3]
+    "⅛": [1, 8], "⅜": [3, 8], "⅝": [5, 8], "⅞": [7, 8], "⅑": [1, 9], "↉": [0, 3],
+    "⅒": [1, 10]
 };
 
 function getUnicodeFraction(chNum, chDenom) {
@@ -12,7 +13,7 @@ function getUnicodeFraction(chNum, chDenom) {
         if (chDenom == '10' && chNum == '1')
             return "⅒";
 
-        if (chDenom.length == 1) {
+        if (chDenom.length <= 2) {
             for (const [key, val] of Object.entries(unicodeFractions)) {
                 if (chNum == val[0] && chDenom == val[1])
                     return key;             // Unicode fraction char like ½
@@ -36,6 +37,79 @@ function getUnicodeFraction(chNum, chDenom) {
     return result;                          // Unicode fraction string like ¹²/₃₄₅
 }
 
+// determine space width attribute values: x/18em
+//                    0         1                       2                   3               4                   5               6                       7               8      9      10    11    12    13    14    15    16    17     18
+const uniSpaces = ['\u200B', '\u200A', '\u200A\u200A', '\u2009', '\u205F', '\u2005', '\u2004', '\u2004\u200A', '', '\u2002', '', '', '', '', '', '', '', '', '\u2003'];
+var spaceWidths = ['0', 'veryverythinmathspace', 'verythinmathspace', 'thinmathspace', 'mediummathspace', 'thickmathspace', 'verythickmathspace', 'veryverythickmathspace', null, '0.5em', null, null, null, null, null, null, null, null, '1em'];
+
+const anCodesEng = [
+    // 0      1       2       3        4        5       6        7
+    'mbf', 'mit', 'mbfit', 'mscr', 'mbfscr', 'mfrak', 'Bbb', 'mbffrak',
+    // 8         9          10          11        12
+    'msans', 'mbfsans', 'mitsans', 'mbfitsans', 'mtt'];
+const anCodesGr = [
+    'mbf', 'mit', 'mbfit', 'mbfsans', 'mbfitsans'];
+const anCodesDg = [
+    'mbf', 'Bbb', 'msans', 'mbfsans', 'mtt'];
+const letterLikeSymbols = {
+    'ℂ': [6, 'C'], 'ℊ': [3, 'g'], 'ℋ': [3, 'H'], 'ℌ': [5, 'H'], 'ℍ': [6, 'H'], 'ℎ': [1, 'h'],
+    'ℐ': [3, 'I'], 'ℑ': [5, 'I'], 'ℒ': [3, 'L'], 'ℕ': [6, 'N'], 'ℙ': [6, 'P'], 'ℚ': [6, 'Q'],
+    'ℛ': [3, 'R'], 'ℜ': [5, 'R'], 'ℝ': [6, 'R'], 'ℤ': [6, 'Z'], 'ℨ': [5, 'Z'], 'ℬ': [3, 'B'],
+    'ℭ': [5, 'C'], 'ℯ': [3, 'e'], 'ℰ': [3, 'E'], 'ℱ': [3, 'F'], 'ℳ': [3, 'M'], 'ℴ': [3, 'o']
+};
+
+const mathvariants = {
+    // MathML mathvariant values to TeX unicode-math names in unimath-symbols.pdf
+    'normal': 'mup',
+    'bold': 'mbf',
+    'italic': 'mit',
+    'bold-italic': 'mbfit',
+    'double-struck': 'Bbb',
+    'bold-fraktur': 'mbffrak',
+    'script': 'mscr',
+    'bold-script': 'mbfscr',
+    'fraktur': 'mfrak',
+    'sans-serif': 'msans',
+    'bold-sans-serif': 'mbfsans',
+    'sans-serif-italic': 'mitsans',
+    'sans-serif-bold-italic': 'mbfitsans',
+    'monospace': 'mtt',
+};
+
+const matrixIntents = {
+    '⒨': 'parenthesized-matrix',
+    '⒱': 'determinant',
+    '⒩': 'normed-matrix',
+    'ⓢ': 'bracketed-matrix',
+    'Ⓢ': 'curly-braced-matrix',
+}
+
+// Enclosure notation attributes options based on a bit mask or symbol
+const symbolClasses = {
+    '▭': 'box',
+    '̄': 'top',
+    '▁': 'bottom',
+    '▢': 'roundedbox',
+    '○': 'circle',
+    '⟌': 'longdiv',
+    "⃧": 'actuarial',
+    '⬭': 'circle',
+    '╱': 'cancel',
+    '╲': 'bcancel',
+    '╳': 'xcancel'
+};
+
+const maskClasses = {
+    1: 'top',
+    2: 'bottom',
+    4: 'left',
+    8: 'right',
+    16: 'horizontalstrike',
+    32: 'verticalstrike',
+    64: 'downdiagonalstrike',
+    128: 'updiagonalstrike'
+};
+
 function inRange(ch0, ch, ch1) {
     return ch >= ch0 && ch <= ch1 && ch.length == ch0.length;
 }
@@ -43,6 +117,8 @@ function inRange(ch0, ch, ch1) {
 function isAlphanumeric(ch) {
     return /[\w]/.test(ch) || ch >= '\u3018' || isGreek(ch) || isDoubleStruck(ch);
 }
+
+function isAsciiAlphanumeric(ch) { return /[\w]/.test(ch); }
 
 function isAsciiDigit(ch) {
     return inRange('0', ch, '9');
@@ -65,9 +141,12 @@ function isTranspose(value) {
 }
 
 function isIntegral(op) {
-    return inRange('\u222B', op, '\u2233') || op == '⨌';
+    return inRange('∫', op, '∳') || op == '⨌';  // 222B..2233, 2A0C
 }
 
+function isNary(op) {
+    return '∑⅀⨊∏∐⨋∫∬∭⨌∮∯∰∱⨑∲∳⨍⨎⨏⨕⨖⨗⨘⨙⨚⨛⨜⨒⨓⨔⋀⋁⋂⋃⨃⨄⨅⨆⨀⨁⨂⨉⫿'.includes(op);
+}
 function isMathML(unicodemath) {
     return unicodemath.startsWith("<math") ||
            unicodemath.startsWith("<mml:math") ||
@@ -86,6 +165,84 @@ function foldSupDigit(char) {   // Fold Unicode superscript digit to ASCII
     if (inRange('⁰', char, '⁹') && !inRange('\u2071', char, '\u2073'))
         return String.fromCodePoint(char.codePointAt(0) - 0x2040);
     return '';
+}
+
+function foldMathAlphanumeric(code, ch) {   // Generalization of foldMathItalic()
+    var anCode = '';
+    if (code < 0x1D400) {
+        if (code < 0x2102)                  // 1st Letterlike math alphabetic
+            return ['mup', ch];
+        var letterLikeSymbol = letterLikeSymbols[ch];
+        return (letterLikeSymbol == undefined) ? ['mup', ch]
+            : [anCodesEng[letterLikeSymbol[0]], letterLikeSymbol[1]];
+    }
+    if (code > 0x1D7FF)
+        return ['', ch];                    // Not math alphanumeric
+
+    code -= 0x1D400;
+
+    if (code < 13 * 52) {                   // 13 English math alphabets
+        anCode = anCodesEng[Math.floor(code / 52)];
+        code %= 52;
+        if (code >= 26) { code += 6; }        // 'a' - 'Z' - 1
+        return [anCode, String.fromCodePoint(code + 65)];
+    }
+    code -= 13 * 52;                        // Bypass English math alphabets
+    if (code < 4) {
+        if (code > 2)
+            return ['', ' '];
+        return ['mit', code ? 'ȷ' : 'ı'];
+    }
+    code -= 4;                              // Advance to Greek math alphabets
+    if (code < 5 * 58) {
+        anCode = anCodesGr[Math.floor(code / 58)];
+        code = (code % 58) + 0x0391;
+        if (code <= 0x03AA) {               // Upper-case Greek
+            if (code == 0x03A2)
+                code = 0x03F4;			    // Upper-case ϴ variant
+            if (code == 0x03AA)
+                code = 0x2207;              // ∇
+        } else {                            // Lower-case Greek
+            code += 6;                      // Advance to α
+            if (code >= 0x03CA && code <= 0x03D1) {
+                return [anCode, '∂ϵϑϰϕϱϖ'[code - 0x03CA]];
+            }
+        }
+        return [anCode, String.fromCodePoint(code)];
+    }
+    code -= 5 * 58;						    // Bypass Greek math alphabets
+    if (code < 4) {
+        if (code > 1)
+            return ['', ' '];			    // Not defined (yet)
+        return ['mbf', code ? 'ϝ' : 'Ϝ'];   // Digammas
+    }
+    code -= 4;                              // Convert to offset of 5 digit sets
+    anCode = anCodesDg[Math.floor(code / 10)];
+    code = 0x30 + (code % 10);
+    return [anCode, String.fromCodePoint(code)];
+}
+
+function needParens(ret) {
+    // Return true if ret is a compound expression that needs to be parenthesized
+    let cch = ret.length;
+
+    for (let i = 0; i < cch; i++) {
+        if (ret[i] == '(' && i < cch - 1) {
+            // Handle nested brackets?
+            let j = ret.indexOf(')', i + 1);
+            if (j > 0) {
+                i = j;                      // Include parenthesized expression
+                continue;
+            }
+            return true;
+        }
+        if (!isAlphanumeric(ret[i]) && !digitSuperscripts.includes(ret[i]) &&
+            !isPrime(ret[i]) && !digitSubscripts.includes(ret[i]) &&
+            !'\u2061∞⬌!'.includes(ret[i]) && (i || ret[i] != '−')) {
+            return true;
+        }
+    }
+    return false;
 }
 
 function removeMmlPrefixes(mathML) {
@@ -1065,24 +1222,6 @@ var mathFonts = {
     '9': {'mbf': '𝟗', 'Bbb': '𝟡', 'msans': '𝟫', 'mbfsans': '𝟵', 'mtt': '𝟿'},
 };
 
-const mathvariants = {
-    // MathML mathvariant values to TeX unicode-math names in unimath-symbols.pdf
-    'normal': 'mup',
-    'bold': 'mbf',
-    'italic': 'mit',
-    'bold-italic': 'mbfit',
-    'double-struck': 'Bbb',
-    'bold-fraktur': 'mbffrak',
-    'script': 'mscr',
-    'bold-script': 'mbfscr',
-    'fraktur': 'mfrak',
-    'sans-serif': 'msans',
-    'bold-sans-serif': 'mbfsans',
-    'sans-serif-italic': 'mitsans',
-    'sans-serif-bold-italic': 'mbfitsans',
-    'monospace': 'mtt',
-};
-
 const narys = {
     '∏': 'product',
     '∑': 'sum',
@@ -1098,14 +1237,6 @@ const narys = {
     '∳': 'anticlockwise contour integral',
     '∐': 'coproduct',
 };
-
-const matrixIntents = {
-    '⒨': 'parenthesized-matrix',
-    '⒱': 'determinant',
-    '⒩': 'normed-matrix',
-    'ⓢ': 'bracketed-matrix',
-    'Ⓢ': 'curly-braced-matrix',
-}
 
 function isFunctionName(fn) {
     var cch = fn.length;
@@ -1150,77 +1281,6 @@ function foldMathItalics(chars) {
         fn += ch;
     }
     return fn;
-}
-
-const anCodesEng = [
-    // 0      1       2       3        4        5       6        7
-    'mbf', 'mit', 'mbfit', 'mscr', 'mbfscr', 'mfrak', 'Bbb', 'mbffrak',
-    // 8         9          10          11        12
-    'msans', 'mbfsans', 'mitsans', 'mbfitsans', 'mtt'];
-const anCodesGr = [
-    'mbf', 'mit', 'mbfit', 'mbfsans', 'mbfitsans'];
-const anCodesDg = [
-    'mbf', 'Bbb', 'msans', 'mbfsans', 'mtt'];
-const letterLikeSymbols = {
-    'ℂ': [6, 'C'], 'ℊ': [3, 'g'], 'ℋ': [3, 'H'], 'ℌ': [5, 'H'], 'ℍ': [6, 'H'], 'ℎ': [1, 'h'],
-    'ℐ': [3, 'I'], 'ℑ': [5, 'I'], 'ℒ': [3, 'L'], 'ℕ': [6, 'N'], 'ℙ': [6, 'P'], 'ℚ': [6, 'Q'],
-    'ℛ': [3, 'R'], 'ℜ': [5, 'R'], 'ℝ': [6, 'R'], 'ℤ': [6, 'Z'], 'ℨ': [5, 'Z'], 'ℬ': [3, 'B'],
-    'ℭ': [5, 'C'], 'ℯ': [3, 'e'], 'ℰ': [3, 'E'], 'ℱ': [3, 'F'], 'ℳ':[3, 'M'], 'ℴ': [3, 'o']
-};
-
-function foldMathAlphanumeric(code, ch) {   // Generalization of foldMathItalic()
-    var anCode = '';
-    if (code < 0x1D400) {
-        if (code < 0x2102)                  // 1st Letterlike math alphabetic
-            return ['mup', ch];
-        var letterLikeSymbol = letterLikeSymbols[ch];
-        return (letterLikeSymbol == undefined) ? ['mup', ch]
-            : [anCodesEng[letterLikeSymbol[0]], letterLikeSymbol[1]];
-    }
-    if (code > 0x1D7FF)
-        return ['', ch];                    // Not math alphanumeric
-
-    code -= 0x1D400;
-
-    if (code < 13 * 52) {                   // 13 English math alphabets
-        anCode = anCodesEng[Math.floor(code/52)];
-        code %= 52;
-        if (code >= 26) {code += 6;}        // 'a' - 'Z' - 1
-        return [anCode, String.fromCodePoint(code + 65)];
-    }
-    code -= 13 * 52;                        // Bypass English math alphabets
-    if (code < 4) {
-        if (code > 2)
-            return ['', ' '];
-        return ['mit', code ? 'ȷ' : 'ı'];
-    }
-    code -= 4;                              // Advance to Greek math alphabets
-    if (code < 5 * 58) {
-        anCode = anCodesGr[Math.floor(code/58)];
-        code = (code % 58) + 0x0391;
-        if (code <= 0x03AA) {               // Upper-case Greek
-            if (code == 0x03A2)
-                code = 0x03F4;			    // Upper-case ϴ variant
-            if (code == 0x03AA)
-                code = 0x2207;              // ∇
-        } else {                            // Lower-case Greek
-            code += 6;                      // Advance to α
-            if (code >= 0x03CA && code <= 0x03D1) {
-                return [anCode, '∂ϵϑϰϕϱϖ'[code - 0x03CA]];
-            }
-        }
-        return [anCode, String.fromCodePoint(code)];
-    }
-    code -= 5 * 58;						    // Bypass Greek math alphabets
-    if (code < 4) {
-        if (code > 1)
-            return ['', ' '];			    // Not defined (yet)
-        return ['mbf', code ? 'ϝ' : 'Ϝ'];   // Digammas
-    }
-    code -= 4;                              // Convert to offset of 5 digit sets
-    anCode = anCodesDg[Math.floor(code/10)];
-    code = 0x30 + (code % 10);
-    return [anCode, String.fromCodePoint(code)];
 }
 
 function italicizeCharacter(c) {
@@ -1904,33 +1964,6 @@ function naryOptions(mask) {
     return options;
 }
 
-// compute a list of enclosure notation attributes options based on a bit mask
-// or symbol
-const symbolClasses = {
-    '▭': 'box',
-    '̄': 'top',
-    '▁': 'bottom',
-    '▢': 'roundedbox',
-    '○': 'circle',
-    '⟌': 'longdiv',
-    "⃧": 'actuarial',
-    '⬭': 'circle',
-    '╱': 'cancel',
-    '╲': 'bcancel',
-    '╳': 'xcancel'
-};
-
-const maskClasses = {
-    1: 'top',
-    2: 'bottom',
-    4: 'left',
-    8: 'right',
-    16: 'horizontalstrike',
-    32: 'verticalstrike',
-    64: 'downdiagonalstrike',
-    128: 'updiagonalstrike'
-};
-
 function enclosureAttrs(mask, symbol) {
     if (mask < 0 || mask > 255) {
         throw "enclosure mask is not between 0 and 255";
@@ -2066,11 +2099,6 @@ function diacriticPosition(d) {
     }
     return 1;
 }
-
-// determine space width attribute values: x/18em
-//                    0         1                       2                   3               4                   5               6                       7               8      9      10    11    12    13    14    15    16    17     18
-const uniSpaces = ['\u200B', '\u200A',             '\u200A\u200A',     '\u2009',       '\u205F',          '\u2005',         '\u2004',            '\u2004\u200A',       '', '\u2002',  '',   '',   '',   '',   '',   '',   '',   '', '\u2003'];
-var spaceWidths = ['0', 'veryverythinmathspace','verythinmathspace','thinmathspace','mediummathspace','thickmathspace','verythickmathspace','veryverythickmathspace', null, '0.5em', null, null, null, null, null, null, null, null, '1em'];
 
 // determine sizes: negative numbers => smaller sizes, positive numbers =>
 // larger sizes, 0 => 1. constant 1.25 determined empirically based on what
@@ -3466,10 +3494,11 @@ function mtransform(dsty, puast) {
                             mis.push({mi: withAttrs(attrsDoublestruck, ch)});
                         } else if (str == '⊺' && value.intent == "transpose") {
                             let ch = transposeChar();
-                            if (ch == '⊤' || ch == '⊺')
+                            if (ch == '⊤' || ch == '⊺') {
                                 mis.push({mo: withAttrs(attrs, ch)});
-                            else if (ch == 'T' || ch == 't') {
-                                attrs.mathvariant = "normal";
+                            } else {
+                                if (ch == 'T' || ch == 't')
+                                    attrs.mathvariant = "normal";
                                 mis.push({mi: withAttrs(attrs, ch)});
                             }
                         } else {
@@ -3556,7 +3585,7 @@ function mtransform(dsty, puast) {
             } else if (value == 'space') {
                 // same deal: phantomized non-breaking space
                 //return {mphantom: noAttr({mtext: noAttr('\xa0')})};
-                  return {mo: noAttr('\u00A0')};
+                return {mo: noAttr('\u00A0')};
            } else {
                 throw "incorrect space"
             }
@@ -3735,7 +3764,7 @@ function escapeHTMLSpecialChars(str) {
     return str.replace(/[&<>]/g, tag => {
         return replacements[tag] || tag;
     });
-};
+    };
 
 function unary(node, op) {
     let ret = dump(node.firstElementChild);
@@ -3746,7 +3775,7 @@ function unary(node, op) {
 
 function binary(node, op) {
     let ret = dump(node.firstElementChild);
-    let retd = dump(node.lastElementChild); 
+    let retd = dump(node.lastElementChild);
 
     if (op == '⊘') {
         let ch = getUnicodeFraction(ret, retd);
@@ -3778,29 +3807,6 @@ function nary(node, op, cNode) {
             ret += op;
     }
     return ret;
-}
-
-function needParens(ret) {
-    // Return true if ret is a compound expression that needs to be parenthesized
-    let cch = ret.length;
-
-    for (let i = 0; i < cch; i++) {
-        if (ret[i] == '(' && i < cch - 1) {
-            // Handle nested brackets?
-            let j = ret.indexOf(')', i + 1);
-            if (j > 0) {
-                i = j;                      // Include parenthesized expression
-                continue;
-            }
-            return true;
-        }
-        if (!isAlphanumeric(ret[i]) && !digitSuperscripts.includes(ret[i]) &&
-            !isPrime(ret[i]) && !digitSubscripts.includes(ret[i]) &&
-            !'\u2061∞⬌!'.includes(ret[i]) && (i || ret[i] != '−')) {
-            return true;
-        }
-    }
-    return false;
 }
 
 function handleAccent(value) {
@@ -3955,11 +3961,11 @@ function dump(value, noAddParens, index) {
             if (value.lastElementChild.attributes.hasOwnProperty('intent') &&
                 value.lastElementChild.attributes.intent.nodeValue == 'transpose') {
                 let cRet = ret.length;
-                let code = codeAt(ret, cRet - 1);
+                let code = codeAt(ret, cRet - 2);
                 if (code != 0x22BA) {       // '⊺'
-                    if (code > 0xFFFF)
+                    if (code > 0xDC00)
                         cRet--;             // To remove whole surrogate pair
-                    return ret.substring(0, cRet - 1) + '⊺';
+                    return ret.substring(0, cRet - 2) + '⊺';
                 }
             }
             return ret;
@@ -4096,10 +4102,6 @@ function dump(value, noAddParens, index) {
             break;
     }
 
-    // For DLMF titles, which are sort of like intents
-    let title = value.children[0].attributes && value.children[0].attributes.title
-              ? value.children[0].attributes.title.nodeValue : '';
-
     for (var i = 0; i < cNode; i++) {
         let node = value.children[i];
         ret += dump(node, false, i);
@@ -4120,7 +4122,7 @@ function dump(value, noAddParens, index) {
             return needParens(ret) ? '⒜(' + ret + ')' : '⒜' + ret;
         }
         if (mrowIntent.startsWith('binomial-coefficient') ||
-            mrowIntent.endsWith('matrix') || mrowIntent == ':determinant') {
+            mrowIntent.endsWith('matrix') || mrowIntent.endsWith('determinant')) {
             // Remove enclosing parens for 𝑛⒞𝑘 and bracketed matrices
             return ret.substring(1, ret.length - 1);
         }
@@ -4131,7 +4133,7 @@ function dump(value, noAddParens, index) {
             return ' ' + ret;               // Separate variable & function name
         }
     }
-    if (value.firstElementChild.nodeName == 'mo' &&
+    if (value.firstElementChild && value.firstElementChild.nodeName == 'mo' &&
         '([{'.includes(value.firstElementChild.textContent)) {
         if (value.lastElementChild.nodeName != 'mo' || !value.lastElementChild.textContent)
             ret += '┤';                         // Happens for DLMF pmml

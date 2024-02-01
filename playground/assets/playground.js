@@ -702,6 +702,19 @@ function autocomplete() {
                     ? MathMLtoUnicodeMath(input.value)
                     : document.getElementById('output_source').innerText;
                 draw();
+            } else if (e.altKey && e.key == 's') {
+                // Speak MathML
+                e.preventDefault();
+                let mathML = isMathML(input.value)
+                    ? input.value : document.getElementById('output_source').innerText;
+                let speech = MathMLtoSpeech(mathML);
+                console.log('Math speech = ' + speech);
+                //const synth = window.speechSynthesis;
+                //var voices = synth.getVoices();
+                //utterance.voice = 'Microsoft Zira - English (United States)';
+                let utterance = new SpeechSynthesisUtterance(speech);
+               // speechSynthesis.speak(utterance);
+
             } else if (e.altKey && e.key == 'Enter') {
                 // Enter Examples[iExample]
                 x = document.getElementById('Examples').childNodes[0];
@@ -1409,10 +1422,6 @@ catch {}
 function isLcAscii(ch) { return /[a-z]/.test(ch); }
 
 function isUcAscii(ch) { return /[A-Z]/.test(ch); }
-
-function isAsciiDigit(ch) { return /[0-9]/.test(ch); }
-
-function isAsciiAlphanumeric(ch) { return /[\w]/.test(ch); }
 
 function initDictation() {
     const SpeechRecognition = window.SpeechRecognition ||
