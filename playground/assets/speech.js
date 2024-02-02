@@ -1,6 +1,10 @@
 ﻿// Math speech code
 
 const symbolSpeechStrings = {
+	// This list includes speech strings for math symbols. In addition, it has
+	// some nonmath symbols used to represent connecting words like 'from' and
+	// 'to'. As such, it is the only list that needs to be localized, provided
+	// English math speech order is adequate for the target language.
 	'!': 'factorial',
 	'#': 'equation',
 	'&': 'and',
@@ -86,6 +90,7 @@ const symbolSpeechStrings = {
 	'⁄': 'slash',							// 2044
 	'⁅': ', equation',						// 2045
 	'⁆': ',',								// 2046
+	'\u2061': ' ',							// 2061
 	'₁': 'tenths',							// 2081
 	'₂': 'halves',							// 2082
 	'₃': 'thirds',							// 2083
@@ -404,7 +409,7 @@ const symbolSpeechStrings = {
 	'█': 'equation array',					// 2588
 	'▒': 'of',								// 2592
 	'■': 'matrix, ',						// 25A0
-	'▭': 'boxed formula',					// 25AD
+	'▭': 'box',								// 25AD
 	'☁': 'back color',						// 2601
 	'★': 'complex conjugate',				// 2605 (for c.c.)
 	'☆': 'conjugate',						// 2606 (for variable conjugate like 𝑧^∗)
@@ -574,7 +579,7 @@ function speech(value, noAddParens, index) {
 			for (const [key, val] of Object.entries(symbolClasses)) {
 				if (val == notation) {
 					let ret = speech(value.firstElementChild, true);
-					return val + ' ' + ret + '¶ ' + val;
+					return key + ' ' + ret + '¶ ' + key;
 				}
 			}
 
@@ -639,8 +644,7 @@ function speech(value, noAddParens, index) {
 
 		case 'msqrt':
 			ret = speech(value.firstElementChild, true);
-			return needParens(ret)
-				? '√▒' + ret.substring(2) + '¶ √' : '√▒' + ret;
+			return needParens(ret) ? '√▒' + ret + '¶ √' : '√▒' + ret;
 
 		case 'mroot':
 			return '⒭' + speech(value.lastElementChild, true) + '▒ ' +
@@ -880,19 +884,26 @@ function MathMLtoSpeech(mathML) {
 	if (mathML.startsWith('<mml:math') || mathML.startsWith('<m:math'))
 		mathML = removeMmlPrefixes(mathML);
 
-	const parser = new DOMParser();
+	const parser = new DOMParser();			// Parse mathML
 	const doc = parser.parseFromString(mathML, "application/xml");
-	let text = speech(doc);
-	let ret = '';
-	let ch = '';
-	let cchCh;
+	let text = speech(doc);					// Get speech symbols
+	let ret = '';							// Collects speech
+	let ch;									// Current char
+	let cchCh;								// Code count of current
 
+	// Trim off 'end fraction', etc., from text end since speech stops there
+	while (text.length > 3 && text[text.length - 3] == '¶')
+		text = text.substring(0, text.length - 3);
+
+	// Convert symbols to words and eliminate some spaces
 	for (let i = 0; i < text.length; i += cchCh) {
 		let code = text.codePointAt(i);
 		cchCh = code > 0xFFFF ? 2 : 1;
 
 		if (text[i] == '\u2061') {
-			ch = text[i];
+			if(ch != ' ')
+				ret += ' ';
+			ch = ' ';
 			continue;
 		}
 
