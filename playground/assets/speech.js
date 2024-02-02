@@ -6,7 +6,7 @@ const symbolSpeechStrings = {
 	// 'to'. As such, it is the only list that needs to be localized, provided
 	// English math speech order is adequate for the target language.
 	'!': 'factorial',
-	'#': 'equation',
+	'#': ', equation',
 	'&': 'and',
 	'(': 'open paren',
 	')': 'close paren',
@@ -83,14 +83,14 @@ const symbolSpeechStrings = {
 	'Ϝ': 'cap digamma',
 	'ϝ': 'digamma',
 	'ϵ': 'epsilon',
-	'\u200B': ',',
+	'\u200B': ',',							// ZWSP
 	'‖': 'double vertical line',				// 2016
 	'…': 'dot dot dot',						// 2026
 	'′': 'prime',							// 2032
 	'⁄': 'slash',							// 2044
 	'⁅': ', equation',						// 2045
 	'⁆': ',',								// 2046
-	'\u2061': ' ',							// 2061
+	'\u2061': ' ',							// FunctionApply
 	'₁': 'tenths',							// 2081
 	'₂': 'halves',							// 2082
 	'₃': 'thirds',							// 2083
@@ -382,6 +382,8 @@ const symbolSpeechStrings = {
 	'⌊': 'open floor',						// 230A
 	'⌋': 'close floor',						// 230B
 	'⍁': 'fraction',						// 2341
+	'⍆': ', next case, ',					// 2346
+	"⍈": ', next equation, ',				// 2348
 	'⍨': 'as',								// 2368
 	'⎴': 'over bracket',					// 23B4
 	'⎵': 'under bracket',					// 23B5
@@ -403,6 +405,7 @@ const symbolSpeechStrings = {
 	'Ⓢ': 'curly braced matrix',				// 24C8
 	'ⓢ': 'bracketed matrix',				// 24E2
 	'│': 'vertical bar',					// 2502
+	'┤': 'close',							// 2524
 	'┬': 'lower limit',						// 252C
 	'┴': 'upper limit',						// 2534
 	'▁': 'underbar',						// 2581
@@ -416,6 +419,7 @@ const symbolSpeechStrings = {
 	'☟': 'from',							// 261A (as in ∫ from 0 to 1)
 	'☝': 'to',								// 261B
 	'✎': 'color',							// 270E
+	'⟡': 'phantom',							// 27E1
 	'⟦': 'open white square bracket',		// 27E6
 	'⟧': 'close white square bracket',		// 27E7
 	'⟨': 'open angle bracket',				// 27E8
@@ -539,13 +543,22 @@ function speech(value, noAddParens, index) {
 	switch (value.nodeName) {
 		case 'mtable':
 			var symbol = '■';
+			var sep = '@';
+			let intnt = '';
+			if (value.parentElement.attributes.hasOwnProperty('intent'))
+				intnt = value.parentElement.attributes.intent.nodeValue;
+
 			if (value.attributes.hasOwnProperty('intent') &&
 				value.attributes.intent.value == ':equations') {
 				symbol = '█';
-			} else if (value.parentElement.attributes.hasOwnProperty('intent')) {
-				let intent = value.parentElement.attributes.intent.nodeValue;
+				sep = '⍈';
+				if (intnt == 'cases') {
+					sep = '⍆';
+					symbol = 'Ⓒ';
+				}
+			} else if (intnt) {
 				for (const [key, val] of Object.entries(matrixIntents)) {
-					if (val == intent) {
+					if (val == intnt) {
 						symbol = key;
 						break;
 					}
@@ -554,22 +567,21 @@ function speech(value, noAddParens, index) {
 				value.firstElementChild.children.length == 2 &&
 				value.firstElementChild.firstElementChild.firstElementChild.nodeName == 'mtext') {
 				// Numbered equation: convert to UnicodeMath like 𝐸=𝑚𝑐²#(20)
+				let eqno = value.firstElementChild.firstElementChild.firstElementChild.textContent;
 				return speech(value.firstElementChild.lastElementChild.firstElementChild) +
-					'#' + value.firstElementChild.firstElementChild.firstElementChild.textContent;
+					'#' + eqno.substring(1, eqno.length - 1);
 			}
-			return symbol + nary(value, '@', cNode) + '¶ ' + symbol;
+			return symbol + nary(value, sep, cNode) + '¶ ' + symbol;
 
 		case 'mtr':
-			return nary(value, '&', cNode);
+			var op = '&';
+			if (value.parentElement.attributes.hasOwnProperty('intent') &&
+				value.parentElement.attributes.intent.textContent.endsWith('equations'))
+				op = '';
+			return nary(value, op, cNode);
 
 		case 'mtd':
 			return nary(value, '', cNode);
-
-		case 'maligngroup':
-			if (value.parentElement.nodeName == 'mtd')
-				return '';                  // else fall through
-		case 'malignmark':
-			return '&';
 
 		case 'menclose':
 			let notation = 'box';
@@ -890,10 +902,6 @@ function MathMLtoSpeech(mathML) {
 	let ret = '';							// Collects speech
 	let ch;									// Current char
 	let cchCh;								// Code count of current
-
-	// Trim off 'end fraction', etc., from text end since speech stops there
-	while (text.length > 3 && text[text.length - 3] == '¶')
-		text = text.substring(0, text.length - 3);
 
 	// Convert symbols to words and eliminate some spaces
 	for (let i = 0; i < text.length; i += cchCh) {
