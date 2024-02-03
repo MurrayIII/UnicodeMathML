@@ -1,5 +1,6 @@
 const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
 const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
+const underOverBrackets = '\u23B4\u23B5\u23DC\u23DD\u23DE\u23DF\u23E0\u23E1';
 
 const unicodeFractions = {
     "½": [1, 2], "⅓": [1, 3], "⅔": [2, 3], "¼": [1, 4], "¾": [3, 4], "⅕": [1, 5],

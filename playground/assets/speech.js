@@ -120,6 +120,7 @@ const symbolSpeechStrings = {
 	'↔': 'left right arrow',				// 2194
 	'⇒': 'implies',							// 21D2
 	'⇔': 'if and only if',					// 21D4
+	'⇳': 'height phantom',					// 21F3
 	'∀': 'for all',							// 2200 (All chars in 2200 block)
 	'∁': 'complement',
 	'∂': 'partial',
@@ -425,9 +426,11 @@ const symbolSpeechStrings = {
 	'⟨': 'open angle bracket',				// 27E8
 	'⟩': 'close angle bracket',				// 27E9
 	'⨯': 'cross',							// 2A2F
-	'⬆': 'eigh smash',						// 2B06 - ascent smash
-	'⬇': 'd smash',							// 2B07 - descent smash
-	'⬌': 'h smash',							// 2B0C - horizontal smash
+	'⬄': 'width phantom',					// 2B04
+	'⬆': 'ascent smash',						// 2B06
+	'⬇': 'descent smash',					// 2B07
+	'⬌': 'width smash',						// 2B0C - horizontal smash
+	'⬍': 'height smash',						// 2B0D
 	'⬢': 'hex',								// 2B22 (for hex in color/back color)
 	'⮵': 'to the',							// 2BB5
 	'〖': ', ',								// 3016
@@ -530,8 +533,12 @@ function Nary(node) {
 }
 
 function handleAccent(value) {
-	if (value.lastElementChild.attributes.hasOwnProperty('stretchy'))
+	if (value.lastElementChild.attributes.hasOwnProperty('stretchy')) {
+		let symbol = value.lastElementChild.textContent;
+		if (underOverBrackets.includes(symbol))
+			return symbol + speech(value.firstElementChild, true) + '¶ ' + symbol;
 		return speech(value.lastElementChild) + '(' + speech(value.firstElementChild, true) + ')';
+	}
 	return binary(value, '');
 }
 
@@ -584,33 +591,24 @@ function speech(value, noAddParens, index) {
 			return nary(value, '', cNode);
 
 		case 'menclose':
-			let notation = 'box';
-			if (value.attributes.hasOwnProperty('notation'))
+			let notation = '';
+			ret = speech(value.firstElementChild, true);
+
+			if (value.attributes.hasOwnProperty('notation')) {
 				notation = value.attributes.notation.nodeValue;
 
-			for (const [key, val] of Object.entries(symbolClasses)) {
-				if (val == notation) {
-					let ret = speech(value.firstElementChild, true);
-					return key + ' ' + ret + '¶ ' + key;
+				for (const [key, val] of Object.entries(symbolClasses)) {
+					if (val == notation) {
+						return key + ' ' + ret + '¶ ' + key;
+					}
 				}
+				notation += ' ';
 			}
-
-			while (notation) {
-				let attr = notation.match(/[a-z]+/)[0];
-				notation = notation.substring(attr.length + 1);
-				for (const [key, val] of Object.entries(maskClasses)) {
-					if (val == attr)
-						mask += Number(key);
-				}
-			}
-			if (mask) {
-				ret = speech(value.firstElementChild, true);
-				return '▭(' + (mask ^ 15) + '&' + ret + ')';
-			}
-			return unary(value, '▭');
+			return '▭' + ' ' + notation + ret + '¶ ' + '▭';
 
 		case 'mphantom':
-			return unary(value, '⟡');       // Full size, no display
+			// Full size, no display
+			return '⟡' + speech(value.firstElementChild, true) + '¶ ⟡';
 
 		case 'mpadded':
 			var op = '';
@@ -628,7 +626,7 @@ function speech(value, noAddParens, index) {
 					op = '⇳';               // fPhantomZeroWidth
 				else if (mask == 12)
 					op = '⬄';              // fPhantomZeroAscent | fPhantomZeroDescent
-				return op ? op + speech(value.firstElementChild).substring(1)
+				return op ? op + speech(value.firstElementChild, true).substring(1)
 					: '⟡(' + mask + '&' + speech(value.firstElementChild.firstElementChild, true) + ')';
 			}
 			const opsShow = { 2: '⬌', 4: '⬆', 8: '⬇', 12: '⬍' };
@@ -682,7 +680,8 @@ function speech(value, noAddParens, index) {
 				}
 			}
 			if (op == '/') {
-				if (needParens(num) || needParens(den)) {
+				if (needParens(num) || needParens(den) ||
+					value.parentElement.nodeName == 'mfrac') {
 					ret = '⍁' + num + "/" + den + '¶ ⍁';
 				} else if (isAsciiDigit(num) && (isAsciiDigit(den) || den == '10')) {
 					ret = (num == '1')
@@ -982,5 +981,5 @@ function MathMLtoSpeech(mathML) {
 		ret += mathstyle + cap + ch + ' ';
 		ch = ' ';
 	}
-	return ret;
+	return ret.trimEnd();
 }
