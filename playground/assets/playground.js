@@ -721,7 +721,7 @@ function autocomplete() {
                 //var voices = synth.getVoices();
                 //utterance.voice = 'Microsoft Zira - English (United States)';
                 let utterance = new SpeechSynthesisUtterance(speech);
-                //speechSynthesis.speak(utterance);
+                speechSynthesis.speak(utterance);
 
             } else if (e.altKey && e.key == 'Enter') {
                 // Enter Examples[iExample]
