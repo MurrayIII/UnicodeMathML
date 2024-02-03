@@ -776,6 +776,8 @@ function speech(value, noAddParens, index) {
 
 		case 'mo':
 			var val = value.innerHTML;
+			if (val == '\u2062')				// Ignore invisible times
+				return '';
 
 			if (val[0] == '&') {
 				if (val.startsWith('&#') && val.endsWith(';')) {
@@ -905,6 +907,7 @@ function MathMLtoSpeech(mathML) {
 
 	// Convert symbols to words and eliminate some spaces
 	for (let i = 0; i < text.length; i += cchCh) {
+		let mathstyle = '';
 		let code = text.codePointAt(i);
 		cchCh = code > 0xFFFF ? 2 : 1;
 
@@ -921,6 +924,27 @@ function MathMLtoSpeech(mathML) {
 				ch = ' ';
 			}
 			continue;
+		}
+		if (text[i] == '(' && ret.length > 1 && isAsciiAlphabetic(ret[ret.length - 2])) {
+			let code = text.codePointAt(i + 1);
+			let cchCh = code > 0xFFFF ? 2 : 1;
+
+			if (text[i + cchCh + 1] == ')') {
+				// If parens enclose a single char & are preceded by a letter,
+				// say 'of' + char instead of '(' + char + ')'. For example,
+				// say 'f of x' instead of 'f(x)'.
+				let ch1 = String.fromCodePoint(code);
+				[mathstyle, ch1] = foldMathAlphanumeric(code, ch1);
+				if (ch1 > 'z')
+					ch1 = symbolSpeech(ch1);
+				ret += symbolSpeech('▒') + ch1;
+				if (!'/='.includes(text[i + cchCh + 2]))
+					ret += symbolSpeech('⏳');
+				else
+					ret += ' ';
+				i += cchCh + 1;
+				continue;
+			}
 		}
 		if (isAsciiDigit(ch) && !isAsciiDigit(text[i]))
 			ret += ' ';
@@ -941,7 +965,6 @@ function MathMLtoSpeech(mathML) {
 		}
 
 		// Handle math alphanumerics
-		let mathstyle = '';
 		if (code > 122) {					// 'z'
 			[mathstyle, ch] = foldMathAlphanumeric(code, ch);
 			if (ch > 'z')
