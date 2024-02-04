@@ -123,7 +123,7 @@ const mathSpeech = [
     "sub n cap C sub k = n choose k = n factorial over k factorial open paren n minus k close paren factorial",
     "open paren eigh + b comma c + d close paren",
     "box eigh + b , end box",
-    "box right left bottom eigh + b , end box",
+    "line on right left bottom enclosing eigh + b , end enclosure",
     "over brace x sub 1 + dot dot dot + x sub k , end over brace upper limit open paren k times close paren",
     "under brace x sub 1 + dot dot dot + x sub k , end under brace lower limit open paren k times close paren",
     "a phantom eigh + b , end phantom + 1",

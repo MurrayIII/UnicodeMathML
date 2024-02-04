@@ -406,18 +406,22 @@ const symbolSpeechStrings = {
 	'Ⓢ': 'curly braced matrix',				// 24C8
 	'ⓢ': 'bracketed matrix',				// 24E2
 	'│': 'vertical bar',					// 2502
+	'┠': 'left',							// 2520 (for box 'left')
 	'┤': 'close',							// 2524
+	'┨': 'right',							// 2528 (for box 'right')
 	'┬': 'lower limit',						// 252C
+	'┯': 'top',								// 252F (for box 'top')
 	'┴': 'upper limit',						// 2534
+	'┷': 'bottom',							// 2537 (for box 'bottom')
 	'▁': 'underbar',						// 2581
 	'█': 'equation array',					// 2588
 	'▒': 'of',								// 2592
 	'■': 'matrix, ',						// 25A0
 	'▭': 'box',								// 25AD
 	'☁': 'back color',						// 2601
-	'★': 'complex conjugate',				// 2605 (for c.c.)
-	'☆': 'conjugate',						// 2606 (for variable conjugate like 𝑧^∗)
-	'☟': 'from',							// 261A (as in ∫ from 0 to 1)
+	'★': 'complex conjugate',				// 2605 (for 'c.c.')
+	'☆': 'conjugate',						// 2606 (for variable conjugate like '𝑧^∗')
+	'☟': 'from',							// 261A (as in ∫ 'from' 0 'to' 1)
 	'☝': 'to',								// 261B
 	'✎': 'color',							// 270E
 	'⟡': 'phantom',							// 27E1
@@ -426,6 +430,8 @@ const symbolSpeechStrings = {
 	'⟨': 'open angle bracket',				// 27E8
 	'⟩': 'close angle bracket',				// 27E9
 	'⨯': 'cross',							// 2A2F
+	'⼖': 'enclosing',						// 2F16
+	'⼞': 'enclosure',						// 2F1E
 	'⬄': 'width phantom',					// 2B04
 	'⬆': 'ascent smash',						// 2B06
 	'⬇': 'descent smash',					// 2B07
@@ -436,6 +442,8 @@ const symbolSpeechStrings = {
 	'〖': ', ',								// 3016
 	'〗': ', ',								// 3017
 }
+
+const boxNotations = {'left': '┠', 'right': '┨', 'top': '┯', 'bottom': '┷'}
 
 const ordinals = {
 	'4': 'fourth', '5': 'fifth', '6': 'sixth', '7': 'seventh', '8': 'eighth',
@@ -594,17 +602,21 @@ function speech(value, noAddParens, index) {
 			let notation = '';
 			ret = speech(value.firstElementChild, true);
 
-			if (value.attributes.hasOwnProperty('notation')) {
-				notation = value.attributes.notation.nodeValue;
+			if (!value.attributes.hasOwnProperty('notation'))
+				return '▭' + ret + '¶ ▭';
 
-				for (const [key, val] of Object.entries(symbolClasses)) {
-					if (val == notation) {
-						return key + ' ' + ret + '¶ ' + key;
-					}
+			notation = value.attributes.notation.nodeValue;
+
+			for (const [key, val] of Object.entries(symbolClasses)) {
+				if (val == notation) {
+					return key + ' ' + ret + '¶ ' + key;
 				}
-				notation += ' ';
 			}
-			return '▭' + ' ' + notation + ret + '¶ ' + '▭';
+			let nota = notation.split(' ').map(c => {
+				if (c in boxNotations)
+					return boxNotations[c];
+			});
+			return 'line on ' + nota.join('') + '⼖' + ret + '¶ ⼞';
 
 		case 'mphantom':
 			// Full size, no display
