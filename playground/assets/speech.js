@@ -8,8 +8,8 @@ const symbolSpeechStrings = {
 	'!': 'factorial',
 	'#': ', equation',
 	'&': 'and',
-	'(': 'open paren',
-	')': 'close paren',
+	'(': 'open',
+	')': 'close',
 	',': 'comma',
 	'/': 'over',
 	'<': 'less than',
@@ -90,6 +90,7 @@ const symbolSpeechStrings = {
 	'⁄': 'slash',							// 2044
 	'⁅': ', equation',						// 2045
 	'⁆': ',',								// 2046
+	'⁐': 'with',							// 2050
 	'\u2061': ' ',							// FunctionApply
 	'₁': 'tenths',							// 2081
 	'₂': 'halves',							// 2082
@@ -423,7 +424,9 @@ const symbolSpeechStrings = {
 	'★': 'complex conjugate',				// 2605 (for 'c.c.')
 	'☆': 'conjugate',						// 2606 (for variable conjugate like '𝑧^∗')
 	'☟': 'from',							// 261A (as in ∫ 'from' 0 'to' 1)
-	'☝': 'to',								// 261B
+	'☛': 'goes to',							// 261B (as in lim_(𝑛→∞))
+	'☝': 'to',								// 261D
+	'⚡': 'power',							// 26A1 (as in 𝑥^(𝑛−1))
 	'✎': 'color',							// 270E
 	'⟡': 'phantom',							// 27E1
 	'⟦': 'open white square bracket',		// 27E6
@@ -577,7 +580,7 @@ function speech(value, noAddParens, index) {
 				return speech(value.firstElementChild.lastElementChild.firstElementChild) +
 					'#' + eqno.substring(1, eqno.length - 1);
 			}
-			return symbol + nary(value, sep, cNode) + '¶ ' + symbol;
+			return symbol + nary(value, sep, cNode) + '¶' + symbol;
 
 		case 'mtr':
 			var op = '&';
@@ -594,13 +597,13 @@ function speech(value, noAddParens, index) {
 			ret = speech(value.firstElementChild, true);
 
 			if (!value.attributes.hasOwnProperty('notation'))
-				return '▭' + ret + '¶ ▭';
+				return '▭' + ret + '¶▭';
 
 			notation = value.attributes.notation.nodeValue;
 
 			for (const [key, val] of Object.entries(symbolClasses)) {
 				if (val == notation) {
-					return key + ' ' + ret + '¶ ' + key;
+					return key + ' ' + ret + '¶' + key;
 				}
 			}
 			let nota = notation.split(' ').map(c => {
@@ -608,11 +611,11 @@ function speech(value, noAddParens, index) {
 					return boxNotations[c];
 			});
 			// E.g., 'line on right left enclosing c + b , end enclosure'
-			return '─' + nota.join('') + '⼖' + ret + '¶ ⼞';
+			return '─' + nota.join('') + '⼖' + ret + '¶⼞';
 
 		case 'mphantom':
 			// Full size, no display
-			return '⟡' + speech(value.firstElementChild, true) + '¶ ⟡';
+			return '⟡' + speech(value.firstElementChild, true) + '¶⟡';
 
 		case 'mpadded':
 			var op = '';
@@ -646,23 +649,23 @@ function speech(value, noAddParens, index) {
 				let color = value.attributes.mathcolor.value;
 				if (color[0] == '#')
 					color = '⬢ ' + color.substring(1) + '⏳';
-				ret = '✎' + color + ' ' + ret + '¶ ✎';
+				ret = '✎' + color + ' ' + ret + '¶✎';
 			}
 			if (value.attributes.hasOwnProperty('mathbackground')) {
 				let color = value.attributes.mathbackground.value;
 				if (color[0] == '#')
 					color = '⬢ ' + color.substring(1) + '⏳';
-				ret = '☁' + color + ' ' + ret + '¶ ☁';
+				ret = '☁' + color + ' ' + ret + '¶☁';
 			}
 			return ret;
 
 		case 'msqrt':
 			ret = speech(value.firstElementChild, true);
-			return needParens(ret) ? '√▒' + ret + '¶ √' : '√▒' + ret;
+			return needParens(ret) ? '√▒' + ret + '¶√' : '√▒' + ret;
 
 		case 'mroot':
 			return '⒭' + speech(value.lastElementChild, true) + '▒ ' +
-				speech(value.firstElementChild, true) + '¶ ⒭';
+				speech(value.firstElementChild, true) + '¶⒭';
 
 		case 'mfrac':
 			var op = '/';
@@ -686,7 +689,7 @@ function speech(value, noAddParens, index) {
 			if (op == '/') {
 				if (needParens(num) || needParens(den) ||
 					value.parentElement.nodeName == 'mfrac') {
-					ret = '⍁' + num + "/" + den + '¶ ⍁';
+					ret = '⍁' + num + "/" + den + '¶⍁';
 				} else if (isAsciiDigit(num) && (isAsciiDigit(den) || den == '10')) {
 					ret = (num == '1')
 						? getUnicodeFraction(num, den)
@@ -711,30 +714,33 @@ function speech(value, noAddParens, index) {
 				value.lastElementChild.attributes.intent.nodeValue == 'transpose') {
 				return speech(value.firstElementChild) + '⏉';	// 'transpose'
 			}
-			var op = '⮵ ';				// 'to the'
 			if (isPrime(value.lastElementChild.textContent))
-				op = '';
-			else if (value.lastElementChild.textContent == '∗')
-				return speech(value.firstElementChild) + '☆';
-			return binary(value, op);
+				return binary(value, '');
+
+			if (value.lastElementChild.textContent == '∗')
+				return speech(value.firstElementChild) + '☆';	// 'conjugate'
+
+			ret = speech(value.lastElementChild, true);
+			return speech(value.firstElementChild) + '⮵' + ret +
+				(needParens(ret) ? '⚡' : '⏳');	// 'power' : pause
 
 		case 'mover':
 			if (value.attributes.hasOwnProperty('accent'))
 				return binary(value, '');
 
 			return 'modified ' + speech(value.firstElementChild, true) +
-				'with ' + speech(value.lastElementChild, true) + '┴';
+				'⁐' + speech(value.lastElementChild, true) + '┴'; // 'with' ... 'above'
 
 		case 'munder':
 			if (value.firstElementChild.innerHTML == 'lim') {
-				return speech(value.firstElementChild) + '⍨' +
+				return speech(value.firstElementChild) + '⍨' +	// 'limit as' ... 'of'
 					speech(value.lastElementChild, true) + '▒';
 			}
 			if (value.attributes.hasOwnProperty('accentunder'))
 				return binary(value, '');
 
 			return 'modified ' + speech(value.firstElementChild, true) +
-				'with ' + speech(value.lastElementChild, true) + '┬';
+				'⁐' + speech(value.lastElementChild, true) + '┬'; // 'with' ... 'below'
 
 		case 'msub':
 			return binary(value, '_');
@@ -817,7 +823,7 @@ function speech(value, noAddParens, index) {
 			if (val == '→' && value.parentElement.nodeName == 'mrow' &&
 				value.parentElement.parentElement.nodeName == 'munder' &&
 				value.parentElement.parentElement.firstElementChild.innerHTML == 'lim') {
-				return 'goes to';
+				return '☛';					// 'goes to'
 			}
 			return val;
 
@@ -874,7 +880,8 @@ function speech(value, noAddParens, index) {
 
 		if (mrowIntent.startsWith('absolute-value')) {
 			ret = ret.substring(1, ret.length - 1); // Remove '|'s
-			return '⒜' + ret + 'end absolute value';
+			ret += needParens(ret) ? '¶⒜' : '⏳';
+			return '⒜▒' + ret;
 		}
 		if (mrowIntent.startsWith('binomial-coefficient')) {
 			// Remove enclosing parens for 𝑛⒞𝑘
@@ -882,7 +889,7 @@ function speech(value, noAddParens, index) {
 		}
 		if (mrowIntent.endsWith('matrix') || mrowIntent.endsWith('determinant')) {
 			// Remove enclosing parens for bracketed matrices
-			ret = ret[1] + ret.substring(3, ret.length - 2) + '¶ ' + ret[1];
+			ret = ret[1] + ret.substring(3, ret.length - 2) + '¶' + ret[1];
 		}
 		else if (mrowIntent == ':function' && value.previousElementSibling &&
 			value.firstElementChild.nodeName == 'mi' &&
