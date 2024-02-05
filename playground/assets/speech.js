@@ -115,7 +115,7 @@ const symbolSpeechStrings = {
 	'⅛': 'one eighth',						// 215B
 	'←': 'left arrow',						// 2190
 	'↑': 'up arrow',						// 2191
-	'→': 'goes to',							// 2192
+	'→': 'right arrow',						// 2192
 	'↓': 'down arrow',						// 2193
 	'↔': 'left right arrow',				// 2194
 	'⇒': 'implies',							// 21D2
@@ -405,13 +405,14 @@ const symbolSpeechStrings = {
 	'Ⓒ': 'cases',							// 24B8
 	'Ⓢ': 'curly braced matrix',				// 24C8
 	'ⓢ': 'bracketed matrix',				// 24E2
+	'─': 'line on',							// 2500 (for partial box lead-in)
 	'│': 'vertical bar',					// 2502
 	'┠': 'left',							// 2520 (for box 'left')
 	'┤': 'close',							// 2524
 	'┨': 'right',							// 2528 (for box 'right')
-	'┬': 'lower limit',						// 252C
+	'┬': 'below',							// 252C
 	'┯': 'top',								// 252F (for box 'top')
-	'┴': 'upper limit',						// 2534
+	'┴': 'above',							// 2534
 	'┷': 'bottom',							// 2537 (for box 'bottom')
 	'▁': 'underbar',						// 2581
 	'█': 'equation array',					// 2588
@@ -540,16 +541,6 @@ function Nary(node) {
 		speech(node.lastElementChild, true) + '▒';	// 'of'
 }
 
-function handleAccent(value) {
-	if (value.lastElementChild.attributes.hasOwnProperty('stretchy')) {
-		let symbol = value.lastElementChild.textContent;
-		if (underOverBrackets.includes(symbol))
-			return symbol + speech(value.firstElementChild, true) + '¶ ' + symbol;
-		return speech(value.lastElementChild) + '(' + speech(value.firstElementChild, true) + ')';
-	}
-	return binary(value, '');
-}
-
 function speech(value, noAddParens, index) {
 	// Convert MathML to UnicodeMath
 	let cNode = value.children.length;
@@ -616,7 +607,8 @@ function speech(value, noAddParens, index) {
 				if (c in boxNotations)
 					return boxNotations[c];
 			});
-			return 'line on ' + nota.join('') + '⼖' + ret + '¶ ⼞';
+			// E.g., 'line on right left enclosing c + b , end enclosure'
+			return '─' + nota.join('') + '⼖' + ret + '¶ ⼞';
 
 		case 'mphantom':
 			// Full size, no display
@@ -727,20 +719,23 @@ function speech(value, noAddParens, index) {
 			return binary(value, op);
 
 		case 'mover':
-			return value.attributes.hasOwnProperty('accent')
-				? handleAccent(value) : binary(value, '┴');
+			if (value.attributes.hasOwnProperty('accent'))
+				return binary(value, '');
+
+			return 'modified ' + speech(value.firstElementChild, true) +
+				'with ' + speech(value.lastElementChild, true) + '┴';
 
 		case 'munder':
-			if (value.attributes.hasOwnProperty('accentunder'))
-				return handleAccent(value);
-
 			if (value.firstElementChild.innerHTML == 'lim') {
 				return speech(value.firstElementChild) + '⍨' +
 					speech(value.lastElementChild, true) + '▒';
 			}
-			if (value.firstElementChild.nodeName != 'mi')
-				return binary(value, '┬');
-			                                // Fall through to msub
+			if (value.attributes.hasOwnProperty('accentunder'))
+				return binary(value, '');
+
+			return 'modified ' + speech(value.firstElementChild, true) +
+				'with ' + speech(value.lastElementChild, true) + '┬';
+
 		case 'msub':
 			return binary(value, '_');
 
@@ -818,6 +813,11 @@ function speech(value, noAddParens, index) {
 					case 'binomial coefficient':
 						return '';
 				}
+			}
+			if (val == '→' && value.parentElement.nodeName == 'mrow' &&
+				value.parentElement.parentElement.nodeName == 'munder' &&
+				value.parentElement.parentElement.firstElementChild.innerHTML == 'lim') {
+				return 'goes to';
 			}
 			return val;
 

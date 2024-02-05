@@ -1,6 +1,8 @@
 const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
 const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
-const underOverBrackets = '\u23B4\u23B5\u23DC\u23DD\u23DE\u23DF\u23E0\u23E1';
+
+const overBrackets = '\u23B4\u23DC\u23DE\u23E0¯';
+const underBrackets = '\u23B5\u23DD\u23DF\u23E1';
 
 const unicodeFractions = {
     "½": [1, 2], "⅓": [1, 3], "⅔": [2, 3], "¼": [1, 4], "¾": [3, 4], "⅕": [1, 5],
@@ -39,8 +41,8 @@ function getUnicodeFraction(chNum, chDenom) {
 }
 
 // determine space width attribute values: x/18em
-//                    0         1                       2                   3               4                   5               6                       7               8      9      10    11    12    13    14    15    16    17     18
-const uniSpaces = ['\u200B', '\u200A', '\u200A\u200A', '\u2009', '\u205F', '\u2005', '\u2004', '\u2004\u200A', '', '\u2002', '', '', '', '', '', '', '', '', '\u2003'];
+//                    0         1                       2                   3                  4                   5               6                       7                 8       9      10    11    12   13    14     15    16   17     18
+const uniSpaces = ['\u200B', '\u200A',            '\u200A\u200A',       '\u2009',          '\u205F',          '\u2005',         '\u2004',              '\u2004\u200A',       '', '\u2002',  '',   '',   '',   '',  '',    '',   '',  '', '\u2003'];
 var spaceWidths = ['0', 'veryverythinmathspace', 'verythinmathspace', 'thinmathspace', 'mediummathspace', 'thickmathspace', 'verythickmathspace', 'veryverythickmathspace', null, '0.5em', null, null, null, null, null, null, null, null, '1em'];
 
 const anCodesEng = [
@@ -3315,18 +3317,10 @@ function mtransform(dsty, puast) {
             var base = dropSingletonLists(value.of);
             var expLow, expHigh;
             var attrs = getAttrs(value, '');
-            var mtag = '';
+            var mtag = overBrackets.includes(value.bracket) ? 'mover' : 'munder';
 
-            if (["⏜", "⏞", "⏠", "⎴", "¯"].includes(value.bracket)) {
-                mtag = "mover";
-                attrs.accent = true;
-            } else {
-                mtag = "munder";
-                attrs.accentunder = true;
-            }
-            if (value.intent) {
+            if (value.intent)
                 attrs.intent = value.intent;
-            }
 
             if (base.hasOwnProperty("script") &&
                 (base.script.type == "subsup" || base.script.type == "abovebelow")) {
@@ -3812,12 +3806,6 @@ function nary(node, op, cNode) {
     return ret;
 }
 
-function handleAccent(value) {
-    if (value.lastElementChild.attributes.hasOwnProperty('stretchy'))
-        return dump(value.lastElementChild) + '(' + dump(value.firstElementChild, true) + ')';
-    return binary(value, '');
-}
-
 function dump(value, noAddParens, index) {
     // Convert MathML to UnicodeMath
     let cNode = value.children.length;
@@ -3974,17 +3962,21 @@ function dump(value, noAddParens, index) {
             return ret;
 
         case 'mover':
-            return value.attributes.hasOwnProperty('accent')
-                ? handleAccent(value) : binary(value, '┴');
+            if (overBrackets.includes(value.lastElementChild.textContent))
+                return dump(value.lastElementChild) + dump(value.firstElementChild);
+
+            op = value.attributes.hasOwnProperty('accent') ? '' : '┴';
+            return binary(value, op);
 
         case 'munder':
-            if (value.attributes.hasOwnProperty('accentunder'))
-                return handleAccent(value);
+            if (underBrackets.includes(value.lastElementChild.textContent))
+                return dump(value.lastElementChild) + dump(value.firstElementChild);
 
-            if (value.firstElementChild.nodeName != 'mi' ||
-                value.firstElementChild.innerHTML != 'lim') {
-                return binary(value, '┬');
-            }                               // Fall through to msub
+            op = value.attributes.hasOwnProperty('accentunder') ? '' : '┬';
+            if (value.firstElementChild.innerHTML == 'lim')
+                op = '_';
+            return binary(value, op);
+
         case 'msub':
             if (value.lastElementChild.nodeName == 'mn' &&
                 isAsciiDigit(value.lastElementChild.textContent)) {
