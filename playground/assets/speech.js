@@ -35,7 +35,10 @@ const symbolSpeechStrings = {
 	'×': 'times',							// 00D7
 	'·': 'dot',								// 00B7
 	'÷': 'divided by',						// 00F7
+	'ď': 'partial-derivative',				// 010F
+	'đ': 'derivative',						// 0111
 	'ı': 'dotless i',						// 0131
+	'ŵ': 'with respect to',					// 0175
 	'ȷ': 'dotless j',						// 0237
 	'\u0300': 'grave',
 	'\u0301': 'acute',
@@ -450,8 +453,8 @@ const symbolSpeechStrings = {
 const boxNotations = {'left': '┠', 'right': '┨', 'top': '┯', 'bottom': '┷'}
 
 const ordinals = {
-	'4': 'fourth', '5': 'fifth', '6': 'sixth', '7': 'seventh', '8': 'eighth',
-	'9': 'ninth', '10': 'tenth'
+	'2': 'second', '3': 'third', '4': 'fourth', '5': 'fifth', '6': 'sixth',
+	'7': 'seventh', '8': 'eighth', '9': 'ninth', '10': 'tenth'
 }
 
 const functions = {
@@ -499,6 +502,69 @@ function styleSpeech(mathStyle) {
 		if (val == mathStyle)
 			return key;
 	}
+}
+
+function findArg(value, arg) {
+	let n = value.children.length;
+	let i, j;
+
+	for (i = 0; i < n; i++) {
+		let node = value.children[i];
+		let name = node.nodeName;
+		if (name == 'mrow') {
+			for (j = 0; j < node.children.length; j++) {
+				let node1 = node.children[j];
+				if (node1.attributes.arg && node1.attributes.arg.textContent == arg)
+					return speech(node1);
+			}
+		} else if (node.attributes.arg && node.attributes.arg == arg)
+			return speech(node);
+	}
+	return '';
+}
+
+function checkIntent(value) {
+	if (!value.attributes.intent)
+		return '';
+	let intent = value.attributes.intent.textContent;
+	if (intent[0] == ':')
+		return '';							// It's a property
+	let i = intent.indexOf('(');
+	if (i == -1)
+		return '';
+
+	let args = [];
+	let j;
+	let name = intent.substring(0, i);
+	let opDerivative = 'ď';					// 'partial-derivative'
+	let ret = '';
+
+	for (i++; i < intent.length; i = j + 1) {
+		j = intent.indexOf(',', i);
+		if (j == -1)
+			j = intent.length - 1;
+		let arg = intent.substring(i, j);
+		if (arg[0] == '$')
+			arg = findArg(value, arg.substring(1));
+		args.push(arg);
+	}
+
+	switch (name) {
+		case 'derivative':
+			if (args.length != 3)
+				return '';
+			opDerivative = 'đ';
+											// Fall through to partial-derivative
+		case 'partial-derivative':
+			let order = args[0];
+			if (isAsciiDigit(order))
+				order = order >= '2' ? ordinals[order] : '';
+			ret = order + opDerivative + '▒' + args[1] + 'ŵ' + args[2];
+			for (i = 3; i < args.length; i++)
+				ret += '&' + args[i];
+			break;
+	}
+	return ret;
 }
 
 function unary(node, op) {
@@ -664,10 +730,13 @@ function speech(value, noAddParens, index) {
 			return needParens(ret) ? '√▒' + ret + '¶√' : '√▒' + ret;
 
 		case 'mroot':
-			return '⒭' + speech(value.lastElementChild, true) + '▒ ' +
+			return '⒭' + speech(value.lastElementChild, true) + '▒' +
 				speech(value.firstElementChild, true) + '¶⒭';
 
 		case 'mfrac':
+			ret = checkIntent(value);
+			if (ret)
+				return ret;
 			var op = '/';
 			let num = speech(value.firstElementChild, true);
 			let den = speech(value.lastElementChild, true);
