@@ -69,7 +69,7 @@ const symbolSpeechStrings = {
 	'λ': 'lambda',
 	'μ': 'mu',
 	'ν': 'nu',
-	'ξ': 'xi',
+	'ξ': 'xkai',
 	'ο': 'omicron',
 	'π': 'pi',
 	'ρ': 'rho',
@@ -393,6 +393,10 @@ const symbolSpeechStrings = {
 	'⎴': 'over bracket',					// 23B4
 	'⎵': 'under bracket',					// 23B5
 	'⏉': 'transpose',						// 23C9
+	'⏒': 'closed-open interval',				// 23D2
+	'⏓': 'open-closed interval',				// 23D3
+	'⏔': 'closed interval',					// 23D4
+	'⏕': 'open interval',					// 23D5
 	'⏜': 'over paren',						// 23DC
 	'⏝': 'under paren',						// 23DD
 	'⏞': 'over brace',						// 23DE
@@ -479,6 +483,13 @@ const functions = {
 	'lim': 'limit',
 }
 
+const intervals = {
+	'closed-open interval':	'⏒',		// 23D2
+	'open-closed interval':	'⏓',		// 23D3
+	'closed-interval': '⏔',			// 23D4
+	'open-interval': '⏕'			// 23D5
+}
+
 function symbolSpeech(ch) {
 	if (ch >= 'ℂ' && (ch <= 'ℴ' || ch > '〗')) {
 		// Get speech for math alphanumerics
@@ -499,6 +510,7 @@ function symbolSpeech(ch) {
 			return mathstyle + cap + ch + ' ';
 		}
 	}
+	// Get speech for operators and other symbols
 	let ret = symbolSpeechStrings[ch];
 	return ret ? ret + ' ' : ch;
 }
@@ -564,6 +576,15 @@ function checkIntent(value) {
 		args.push(arg);
 	}
 
+	if (name.indexOf('interval') != -1 && value.children.length == 3) {
+		let val = value.children[1];
+		name = intervals[name];
+		if (name != undefined && val.children.length == 3) {
+			// <interval> + 'from' + <start> + 'to' + <end>
+			return name + '☟' + speech(val.children[0], true) + '☝' +
+				speech(val.children[2], true);
+		}
+	}
 	switch (name) {
 		case 'derivative':
 			if (args.length != 3)
@@ -591,6 +612,7 @@ function checkIntent(value) {
 			for (i = 3; i < args.length; i++) // Partial deriv's may have more wrt's
 				ret += '&' + args[i];
 			break;
+
 	}
 	return ret;
 }
@@ -601,7 +623,7 @@ function unary(node, op) {
 
 function binary(node, op) {
 	let ret = speech(node.firstElementChild);
-	let retd = speech(node.lastElementChild);
+	let retd = speech(node.children[1]);
 
 	if (op == '/' && (ret.endsWith('^∗ )') || ret.endsWith('^† )'))) {
 		// Remove superfluous build-up space & parens
@@ -849,6 +871,11 @@ function speech(value, noAddParens, index) {
 			return ternary(value, '┬', '┴');
 
 		case 'msubsup':
+			if (value.lastElementChild.nodeName == 'mn' &&
+				isAsciiDigit(value.lastElementChild.textContent[0])) {
+				let power = getPower(value.lastElementChild.textContent);
+				return binary(value, '_') + power;
+			}
 			return isNary(value.firstElementChild.innerHTML)
 				? Nary(value) : ternary(value, '_', '⮵');	// 'to the'
 
@@ -963,12 +990,19 @@ function speech(value, noAddParens, index) {
 	let mrowIntent = value.nodeName == 'mrow' && value.attributes.hasOwnProperty('intent')
 		? value.attributes.intent.nodeValue : '';
 
+	if (mrowIntent) {
+		ret = checkIntent(value);			// Might be an interval
+		if (ret)
+			return ret;
+	}
+
 	for (var i = 0; i < cNode; i++) {
 		let node = value.children[i];
 		ret += speech(node, false, i);
 	}
 
 	if (mrowIntent) {
+
 		if (mrowIntent == 'cases')
 			return 'Ⓒ' + ret.substring(2);
 

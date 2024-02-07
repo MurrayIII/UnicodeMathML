@@ -419,15 +419,6 @@ function GetCodePoint(i, cch) {
     return n;
 }
 
-function codeAt(chars, i) {
-    // Get UTF-32 code of character at position i, where i can be at a
-    // trail surrogate
-    var code = chars.codePointAt(i);
-    if (code >= 0xDC00 && code <= 0xDFFF)
-        code = chars.codePointAt(i - 1);
-    return code;
-}
-
 function closeAutocompleteList() {
     var x = document.getElementsByClassName("autocomplete-items");
     if (x == undefined) return;

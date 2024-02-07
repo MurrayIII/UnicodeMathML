@@ -340,6 +340,7 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * The Alt+Enter hot key and Demo mode cycle through the Examples. The space key pauses/resumes the Demo mode. When paused, the left/right arrow key displays the previous/next equation. Clicking on the Demo button starts/stops the demo mode.
 * Pasting MathML into the input text area passes the MathML to the renderer, and converts the MathML to UnicodeMath, which it displays in the MathML output window.
 * Unicode numeric fractions like ⁵⁶/₆₂₅ are converted into standard fractions.
+* Math speech is added with support for some intent attributes, e.g., derivatives and intervals.
 
 ## MathML intent-attribute support:
 * The derivative and partial-derivative intent attributes are defined for Leipzig and Euler derivative notations.

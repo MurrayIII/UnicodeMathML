@@ -51,6 +51,7 @@ const mathML = [
     "<math display=\"block\"><mrow><mi>𝑎</mi><mo>+</mo><mfrac displaystyle=\"false\"><mn>1</mn><mn>20</mn></mfrac><mo>+</mo><mfrac displaystyle=\"false\"><mn>56</mn><mn>625</mn></mfrac><mo>=</mo><mn>0</mn></mrow></math>",
     "<math display=\"block\"><mrow><mfrac intent=\"derivative(𝑛,$f,𝑥)\"><mrow><msup><mi>𝑑</mi><mi>𝑛</mi></msup><mrow arg=\"f\"><mi>𝑓</mi><mrow intent=\":fenced\"><mo>(</mo><mi>𝑥</mi><mo>)</mo></mrow></mrow></mrow><mrow><mi>𝑑</mi><msup><mi>𝑥</mi><mi>𝑛</mi></msup></mrow></mfrac><mo>=</mo><mn>0</mn></mrow></math>",
     "<math display=\"block\"><mrow><mfrac intent=\"derivative($n,$f,𝑥)\"><mrow><msup><mi>𝑑</mi><mrow arg=\"n\"><mi>𝑛</mi><mo>−</mo><mn>1</mn></mrow></msup><mrow arg=\"f\"><mi>𝑓</mi><mrow intent=\":fenced\"><mo>(</mo><mi>𝑥</mi><mo>)</mo></mrow></mrow></mrow><mrow><mi>𝑑</mi><msup><mi>𝑥</mi><mrow><mi>𝑛</mi><mo>−</mo><mn>1</mn></mrow></msup></mrow></mfrac><mo>=</mo><mn>0</mn></mrow></math>",
+    "<math display=\"block\"><mrow intent=\"closed-interval(−∞,3)\"><mo>[</mo><mrow><mrow><mo>−</mo><mi>∞</mi></mrow><mo>,</mo><mn>3</mn></mrow><mo>]</mo></mrow></math>",
 ];
 
 const unicodeMath = [
@@ -103,6 +104,7 @@ const unicodeMath = [
     "𝑎+¹⁄₂₀+⁵⁶⁄₆₂₅=0",
     "𝑑^𝑛 𝑓(𝑥)/𝑑𝑥^𝑛=0",
     "𝑑^(𝑛−1) 𝑓(𝑥)/𝑑𝑥^(𝑛−1)=0",
+    "[−∞,3]",
 ];
 
 const mathSpeech = [
@@ -117,7 +119,7 @@ const mathSpeech = [
     "integral from minus infinity to infinity of e to the minus x squared , differential d x = square root of pi",
     "eigh   b",
     "limit as n goes to infinity of open 1 + 1 over n close to the n , = e",
-    "f hat of xi  = integral from minus infinity to infinity of f of x , e to the minus 2 pi i x xi , differential d x",
+    "f hat of xkai  = integral from minus infinity to infinity of f of x , e to the minus 2 pi i x xkai , differential d x",
     "root n of eigh + b , end root",
     "cosine theta = one half e to the i theta , + complex conjugate",
     "open matrix,  eigh and b , next row, c and d , end matrix,  close",
@@ -161,6 +163,7 @@ const mathSpeech = [
     "eigh + 1 over 20 + 56 over 625 = 0",
     "nth derivative of f of x with respect to x = 0",
     "n minus first derivative of f of x with respect to x = 0",
+    "closed interval from minus infinity to 3",
 ]
 
 function testMathMLtoUnicodeMath() {
