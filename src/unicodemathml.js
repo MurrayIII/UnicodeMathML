@@ -230,6 +230,7 @@ function foldMathAlphanumeric(code, ch) {   // Generalization of foldMathItalic(
 function needParens(ret) {
     // Return true if ret is a compound expression that needs to be parenthesized
     let cch = ret.length;
+    let ch1;
 
     for (let i = 0; i < cch; i++) {
         if (ret[i] == '(' && i < cch - 1) {
@@ -241,11 +242,19 @@ function needParens(ret) {
             }
             return true;
         }
-        if (!isAlphanumeric(ret[i]) && !digitSuperscripts.includes(ret[i]) &&
+        if (ret.codePointAt(i) > 0xFFFF) {
+            i++;
+            continue;
+        }
+        if (ret[i] == ' ' && ch1 == '^' || isAlphanumeric(ret[i]))
+            continue;                       // Space is removed in build up
+
+        if (!digitSuperscripts.includes(ret[i]) &&
             !isPrime(ret[i]) && !digitSubscripts.includes(ret[i]) &&
-            !'\u2061∞⬌!'.includes(ret[i]) && (i || ret[i] != '−')) {
+            !'\u2061∞⬌!^'.includes(ret[i]) && (i || ret[i] != '−')) {
             return true;
         }
+        ch1 = ret[i];
     }
     return false;
 }
@@ -304,6 +313,15 @@ function isMathMLObject(value) {
 function hasSingleMrow(value) {
     return Array.isArray(value) && value.length == 1 &&
         value[0].hasOwnProperty('mrow');
+}
+
+function codeAt(chars, i) {
+    // Get UTF-32 code of character at position i, where i can be at a
+    // trail surrogate
+    var code = chars.codePointAt(i);
+    if (code >= 0xDC00 && code <= 0xDFFF)
+        code = chars.codePointAt(i - 1);
+    return code;
 }
 
 function getCh(str, i) {
@@ -1349,6 +1367,8 @@ function getIntervalEndPoint(arg, content) {
             return high[0].number;
         if (high[0].hasOwnProperty('operator'))
             return '';
+        if (high[0].hasOwnProperty('atoms'))
+            return high[0].atoms[0].chars;
     }
     return '$n';                            // Order n
 }
@@ -2468,8 +2488,8 @@ function preprocess(dsty, uast, index, arr) {
                                 if (of[0].length == 3 &&
                                     of[0][1].hasOwnProperty('atoms') &&
                                     of[0][2].hasOwnProperty('bracketed')) {
-                                    value.of[0] = [s,[{arg: arg0.substring(1)}, of[0][1],
-                                                      {operator: '\u2061'}, of[0][2]]];
+                                    value.of[0] = [s, [{arg: arg0.substring(1)},
+                                                        of[0][1], of[0][2]]];
                                 } else if (of[0].length == 2) {
                                     // For, e.g., 𝑑^(n-1) y/𝑑𝑥^(n-1)
                                     value.of[0] = [s, of[0][1]];
@@ -2486,7 +2506,7 @@ function preprocess(dsty, uast, index, arr) {
                                 if (s.atoms[0].chars.length > ch.length) {
                                     value.of[0] = [{atoms: [{chars: ch}]}, [{arg: arg0.substring(1)},
                                     {atoms: [{chars: getCh(s.atoms[0].chars, ch.length)}]},
-                                    {operator: '\u2061'}, of[0][1]]];
+                                    of[0][1]]];
                                 }
                             }
                         }

@@ -453,8 +453,8 @@ const symbolSpeechStrings = {
 const boxNotations = {'left': '┠', 'right': '┨', 'top': '┯', 'bottom': '┷'}
 
 const ordinals = {
-	'2': 'second', '3': 'third', '4': 'fourth', '5': 'fifth', '6': 'sixth',
-	'7': 'seventh', '8': 'eighth', '9': 'ninth', '10': 'tenth'
+	'1': 'first', '2': 'second', '3': 'third', '4': 'fourth', '5': 'fifth',
+	'6': 'sixth', '7': 'seventh', '8': 'eighth', '9': 'ninth', '10': 'tenth'
 }
 
 const functions = {
@@ -480,6 +480,25 @@ const functions = {
 }
 
 function symbolSpeech(ch) {
+	if (ch >= 'ℂ' && (ch <= 'ℴ' || ch > '〗')) {
+		// Get speech for math alphanumerics
+		let code = ch.codePointAt(0);
+		let mathstyle;
+		[mathstyle, ch] = foldMathAlphanumeric(code, ch);
+
+		if (mathstyle) {
+			if (ch > 'z')
+				ch = symbolSpeechStrings[ch]; // Greek
+				if (mathstyle == 'mit' || mathstyle == 'mup')
+					mathstyle = '';			  // Suppress 'italic'
+				else
+					mathstyle = styleSpeech(mathstyle) + ' ';
+			let cap = inRange('A', ch, 'Z') ? 'cap ' : '';
+			if (ch == 'a' || ch == 'A')
+				ch = 'eigh';
+			return mathstyle + cap + ch + ' ';
+		}
+	}
 	let ret = symbolSpeechStrings[ch];
 	return ret ? ret + ' ' : ch;
 }
@@ -505,25 +524,20 @@ function styleSpeech(mathStyle) {
 }
 
 function findArg(value, arg) {
-	let n = value.children.length;
-	let i, j;
-
-	for (i = 0; i < n; i++) {
-		let node = value.children[i];
-		let name = node.nodeName;
-		if (name == 'mrow') {
-			for (j = 0; j < node.children.length; j++) {
-				let node1 = node.children[j];
-				if (node1.attributes.arg && node1.attributes.arg.textContent == arg)
-					return speech(node1);
-			}
-		} else if (node.attributes.arg && node.attributes.arg == arg)
-			return speech(node);
+	if (value.attributes.arg) {
+		return value.attributes.arg.textContent == arg
+			? speech(value) : '';
+	}
+	for (let i = 0; i < value.children.length; i++) {
+		let ret = findArg(value.children[i], arg)
+		if (ret)
+			return ret;
 	}
 	return '';
 }
 
 function checkIntent(value) {
+	// Handle intents like "intent='derivative($n,$f,𝑥)'"
 	if (!value.attributes.intent)
 		return '';
 	let intent = value.attributes.intent.textContent;
@@ -533,12 +547,13 @@ function checkIntent(value) {
 	if (i == -1)
 		return '';
 
-	let args = [];
+	let args = [];							// Intent arguments
 	let j;
 	let name = intent.substring(0, i);
 	let opDerivative = 'ď';					// 'partial-derivative'
 	let ret = '';
 
+	// Collect intent arguments
 	for (i++; i < intent.length; i = j + 1) {
 		j = intent.indexOf(',', i);
 		if (j == -1)
@@ -557,10 +572,23 @@ function checkIntent(value) {
 											// Fall through to partial-derivative
 		case 'partial-derivative':
 			let order = args[0];
-			if (isAsciiDigit(order))
-				order = order >= '2' ? ordinals[order] : '';
+			if (order) {
+				if (isAsciiDigit(order)) {
+					order = order >= '2' ? ordinals[order] : '';
+				} else if (order[0] == '(') {
+					order = order.substring(1, order.length - 1);
+					if (isAsciiDigit(order[order.length - 1])) {
+						order = order.substring(0, order.length - 1) +
+							ordinals[order[order.length - 1]];
+					}
+				} else {
+					let code = codeAt(order, 0);
+					order = foldMathItalic(code) + 'th';
+				}
+			}
+			// E.g., "second derivative of f(x) with respect to x"
 			ret = order + opDerivative + '▒' + args[1] + 'ŵ' + args[2];
-			for (i = 3; i < args.length; i++)
+			for (i = 3; i < args.length; i++) // Partial deriv's may have more wrt's
 				ret += '&' + args[i];
 			break;
 	}
@@ -989,11 +1017,12 @@ function MathMLtoSpeech(mathML) {
 	const doc = parser.parseFromString(mathML, "application/xml");
 	let text = speech(doc);					// Get speech symbols
 	let ret = '';							// Collects speech
+	let cchText = text.length;
 	let ch;									// Current char
 	let cchCh;								// Code count of current
 
 	// Convert symbols to words and eliminate some spaces
-	for (let i = 0; i < text.length; i += cchCh) {
+	for (let i = 0; i < cchText; i += cchCh) {
 		let mathstyle = '';
 		let code = text.codePointAt(i);
 		cchCh = code > 0xFFFF ? 2 : 1;
@@ -1012,26 +1041,35 @@ function MathMLtoSpeech(mathML) {
 			}
 			continue;
 		}
-		if (text[i] == '(' && ret.length > 1 && isAsciiAlphabetic(ret[ret.length - 2])) {
-			let code = text.codePointAt(i + 1);
-			let cchCh = code > 0xFFFF ? 2 : 1;
+		if (text[i] == '(') {
+			// For 𝑓(𝑥), say 'f of x' if possible
+			let j = text.indexOf(')', i + 1);
 
-			if (text[i + cchCh + 1] == ')') {
-				// If parens enclose a single char & are preceded by a letter,
-				// say 'of' + char instead of '(' + char + ')'. For example,
-				// say 'f of x' instead of 'f(x)'.
-				let ch1 = String.fromCodePoint(code);
-				[mathstyle, ch1] = foldMathAlphanumeric(code, ch1);
-				if (ch1 > 'z')
-					ch1 = symbolSpeech(ch1);
-				ret += symbolSpeech('▒') + ch1;
-				if (!'/='.includes(text[i + cchCh + 2]))
-					ret += symbolSpeech('⏳');
-				else
-					ret += ' ';
-				i += cchCh + 1;
-				continue;
+			if (j != -1) {
+				if (cchText > j && text[j + 1] == 'ŵ') { 'with respect to'
+					// Set up 'f of ' ... 'with respect to'
+					ret += symbolSpeech('▒');
+					continue;
+				}
+				if (ret.length > 1 && isAsciiAlphabetic(ret[ret.length - 2])) {
+					let code = text.codePointAt(i + 1);
+					let cchCh = code > 0xFFFF ? 2 : 1;
+
+					if (j == i + cchCh + 1) {
+						// Parens enclose a single char & are preceded by a
+						// letter: say 'of' + char instead of '(' + char + ')'.
+						// For example, say 'f of x' instead of 'f(x)'.
+						let ch1 = String.fromCodePoint(code);
+						ret += symbolSpeech('▒') + symbolSpeech(ch1);
+						ret += !'/='.includes(text[i + cchCh + 2])
+							? symbolSpeech('⏳') : ' ';
+						i += cchCh + 1;
+						continue;
+					}
+				}
 			}
+		} else if (text[i] == ')' && cchText > i + 1 && text[i + 1] == 'ŵ') {
+			continue;			// Don't need ')' since 'ŵ' terminates arg list
 		}
 		if (isAsciiDigit(ch) && !isAsciiDigit(text[i]))
 			ret += ' ';
@@ -1050,23 +1088,7 @@ function MathMLtoSpeech(mathML) {
 			ch = ' ';
 			continue;
 		}
-
-		// Handle math alphanumerics
-		if (code > 122) {					// 'z'
-			[mathstyle, ch] = foldMathAlphanumeric(code, ch);
-			if (ch > 'z')
-				ch = symbolSpeech(ch);		// Greek
-		}
-		if (mathstyle) {
-			if (mathstyle == 'mit' || mathstyle == 'mup')
-				mathstyle = '';				// Suppress 'italic'
-			else
-				mathstyle = styleSpeech(mathstyle) + ' ';
-		}
-		let cap = inRange('A', ch, 'Z') ? 'cap ' : '';
-		if (ch == 'a' || ch == 'A')
-			ch = 'eigh';
-		ret += mathstyle + cap + ch + ' ';
+		ret += ch + ' ';
 		ch = ' ';
 	}
 	return ret.trimEnd();
