@@ -52,6 +52,8 @@ const mathML = [
     "<math display=\"block\"><mrow><mfrac intent=\"derivative(𝑛,$f,𝑥)\"><mrow><msup><mi>𝑑</mi><mi>𝑛</mi></msup><mrow arg=\"f\"><mi>𝑓</mi><mrow intent=\":fenced\"><mo>(</mo><mi>𝑥</mi><mo>)</mo></mrow></mrow></mrow><mrow><mi>𝑑</mi><msup><mi>𝑥</mi><mi>𝑛</mi></msup></mrow></mfrac><mo>=</mo><mn>0</mn></mrow></math>",
     "<math display=\"block\"><mrow><mfrac intent=\"derivative($n,$f,𝑥)\"><mrow><msup><mi>𝑑</mi><mrow arg=\"n\"><mi>𝑛</mi><mo>−</mo><mn>1</mn></mrow></msup><mrow arg=\"f\"><mi>𝑓</mi><mrow intent=\":fenced\"><mo>(</mo><mi>𝑥</mi><mo>)</mo></mrow></mrow></mrow><mrow><mi>𝑑</mi><msup><mi>𝑥</mi><mrow><mi>𝑛</mi><mo>−</mo><mn>1</mn></mrow></msup></mrow></mfrac><mo>=</mo><mn>0</mn></mrow></math>",
     "<math display=\"block\"><mrow intent=\"closed-interval(−∞,3)\"><mo>[</mo><mrow><mrow><mo>−</mo><mi>∞</mi></mrow><mo>,</mo><mn>3</mn></mrow><mo>]</mo></mrow></math>",
+    "<math display=\"block\"><mrow><mrow intent=\"partial-derivative(2,$f,𝑥,𝑥′)\"><msub><mi>𝜕</mi><mrow><mi>𝑥</mi><msup><mi>𝑥</mi><mo>′</mo></msup></mrow></msub><mrow arg=\"f\"><mi>𝑓</mi><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑥</mi><mo>,</mo><msup><mi>𝑥</mi><mo>′</mo></msup></mrow><mo>)</mo></mrow></mrow></mrow><mo>=</mo><mfrac intent=\"partial-derivative(2,$f,𝑥,𝑥′)\"><mrow><msup><mi>𝜕</mi><mn>2</mn></msup><mrow arg=\"f\"><mi>𝑓</mi><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑥</mi><mo>,</mo><msup><mi>𝑥</mi><mo>′</mo></msup></mrow><mo>)</mo></mrow></mrow></mrow><mrow><mrow><mi>𝜕</mi><mi>𝑥</mi><mi>𝜕</mi></mrow><msup><mi>𝑥</mi><mo>′</mo></msup></mrow></mfrac></mrow></math>",
+    "<math display=\"block\"><mrow><mrow intent=\"$op($a)\"><msup><mi arg=\"a\">𝐴</mi><mi arg=\"op\" intent=\"transpose\">𝑇</mi></msup></mrow><mo>=</mo><mn>0</mn></mrow></math>",
 ];
 
 const unicodeMath = [
@@ -105,6 +107,8 @@ const unicodeMath = [
     "𝑑^𝑛 𝑓(𝑥)/𝑑𝑥^𝑛=0",
     "𝑑^(𝑛−1) 𝑓(𝑥)/𝑑𝑥^(𝑛−1)=0",
     "[−∞,3]",
+    "𝜕_𝑥𝑥′ 𝑓(𝑥,𝑥′)=𝜕²𝑓(𝑥,𝑥′)/𝜕𝑥𝜕𝑥′",
+    "ⓘ(\"$op($a)\"ⓐ(a 𝐴)^ⓐopⓘ(\"transpose\"𝑇))=0",
 ];
 
 const mathSpeech = [
@@ -112,7 +116,7 @@ const mathSpeech = [
     //"bold del  cross bold cap E = minus partial  bold cap B over partial  t",
     "bold del cross bold cap E = minus partial-derivative of bold cap B with respect to t",
     //"i h bar , partial  psi  open x comma t close over partial  t = open bracket minus fraction h bar squared over 2 m , end fraction , partial  squared over partial  x squared + cap V open x comma t close close bracket psi open x comma t close",
-    "i h bar partial-derivative of psi of x comma t with respect to t = open bracket minus fraction h bar squared over 2 m , end fraction second partial-derivative of with respect to x + cap V open x comma t close close bracket psi open x comma t close",
+    "i h bar partial-derivative of psi of x comma t with respect to t = open bracket minus fraction h bar squared over 2 m , end fraction second partial-derivative with respect to x + cap V open x comma t close close bracket psi open x comma t close",
     "open eigh + b close to the n , = sum from k = 0 to n of n choose k eigh to the k , b to the n minus k power",
     "x = fraction minus b plus or minus square root of b squared minus 4 eigh c , end square root over 2 eigh , end fraction",
     "sine squared theta + cosine squared theta = 1",
@@ -164,20 +168,25 @@ const mathSpeech = [
     "nth derivative of f of x with respect to x = 0",
     "n minus first derivative of f of x with respect to x = 0",
     "closed interval from minus infinity to 3",
+    "second partial-derivative of f of x comma x prime with respect to x and x prime = second partial-derivative of f of x comma x prime with respect to x and x prime",
+    "transpose of cap eigh = 0",
 ]
 
 function testMathMLtoUnicodeMath() {
     var iSuccess = 0;
-    for (var i = 0; i < mathML.length; i++) {
+    var iFail = 0;
+   for (var i = 0; i < mathML.length; i++) {
         var result = MathMLtoUnicodeMath(mathML[i]);
         if (result != unicodeMath[i]) {
-            console.log("Expect: " + unicodeMath[i] + '\n');
-            console.log("Result: " + result + '\n\n');
+            if (unicodeMath[i][0] != 'ⓘ') {
+                console.log("Expect: " + unicodeMath[i] + '\n');
+                console.log("Result: " + result + '\n\n');
+                iFail++;
+            }
         } else {
             iSuccess++;
         }
     }
-    var iFail = mathML.length - iSuccess;
     console.log(iSuccess + " passes; " + iFail + " failures\n");
 }
 

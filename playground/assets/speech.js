@@ -536,10 +536,9 @@ function styleSpeech(mathStyle) {
 }
 
 function findArg(value, arg) {
-	if (value.attributes.arg) {
-		return value.attributes.arg.textContent == arg
-			? speech(value) : '';
-	}
+	if (value.attributes.arg && value.attributes.arg.textContent == arg)
+		return value;
+
 	for (let i = 0; i < value.children.length; i++) {
 		let ret = findArg(value.children[i], arg)
 		if (ret)
@@ -550,30 +549,43 @@ function findArg(value, arg) {
 
 function checkIntent(value) {
 	// Handle intents like "intent='derivative($n,$f,𝑥)'"
-	if (!value.attributes.intent)
-		return '';
+	if (!value.attributes || !value.attributes.intent)
+		return '';							// No intent
 	let intent = value.attributes.intent.textContent;
 	if (intent[0] == ':')
 		return '';							// It's a property
 	let i = intent.indexOf('(');
-	if (i == -1)
-		return '';
+	if (i <= 0)
+		return '';							// No name
 
-	let args = [];							// Intent arguments
-	let j;
+	let args = [];
 	let name = intent.substring(0, i);
-	let opDerivative = 'ď';					// 'partial-derivative'
+	let j;
+	let opDerivative = 'ď';					// Default 'partial-derivative'
 	let ret = '';
 
-	// Collect intent arguments
+	// Set args = intent arguments
 	for (i++; i < intent.length; i = j + 1) {
 		j = intent.indexOf(',', i);
 		if (j == -1)
 			j = intent.length - 1;
 		let arg = intent.substring(i, j);
 		if (arg[0] == '$')
-			arg = findArg(value, arg.substring(1));
+			arg = speech(findArg(value, arg.substring(1)));
 		args.push(arg);
+	}
+
+	if (name[0] == '$') {
+		let val = findArg(value, name.substring(1));
+		if (!val.attributes.intent)
+			return '';
+		ret = val.attributes.intent.textContent + '▒'; // intent + 'of'
+		for (i = 0; i < args.length; i++) {
+			ret += args[i];
+			if (i < args.length - 1)
+				ret += '&';
+		}
+		return ret;
 	}
 
 	if (name.indexOf('interval') != -1 && value.children.length == 3) {
@@ -607,12 +619,13 @@ function checkIntent(value) {
 					order = foldMathItalic(code) + 'th';
 				}
 			}
+			let arg = args[1] ? '▒' + args[1] : '';
+
 			// E.g., "second derivative of f(x) with respect to x"
-			ret = order + opDerivative + '▒' + args[1] + 'ŵ' + args[2];
+			ret = order + opDerivative + arg + 'ŵ' + args[2];
 			for (i = 3; i < args.length; i++) // Partial deriv's may have more wrt's
 				ret += '&' + args[i];
 			break;
-
 	}
 	return ret;
 }
@@ -664,6 +677,10 @@ function speech(value, noAddParens, index) {
 	// Convert MathML to UnicodeMath
 	let cNode = value.children.length;
 	let ret = '';
+
+	ret = checkIntent(value);
+	if (ret)
+		return ret;
 
 	switch (value.nodeName) {
 		case 'mtable':
@@ -784,9 +801,6 @@ function speech(value, noAddParens, index) {
 				speech(value.firstElementChild, true) + '¶⒭';
 
 		case 'mfrac':
-			ret = checkIntent(value);
-			if (ret)
-				return ret;
 			var op = '/';
 			let num = speech(value.firstElementChild, true);
 			let den = speech(value.lastElementChild, true);
@@ -989,12 +1003,6 @@ function speech(value, noAddParens, index) {
 
 	let mrowIntent = value.nodeName == 'mrow' && value.attributes.hasOwnProperty('intent')
 		? value.attributes.intent.nodeValue : '';
-
-	if (mrowIntent) {
-		ret = checkIntent(value);			// Might be an interval
-		if (ret)
-			return ret;
-	}
 
 	for (var i = 0; i < cNode; i++) {
 		let node = value.children[i];

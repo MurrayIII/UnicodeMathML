@@ -2231,6 +2231,8 @@ function preprocess(dsty, uast, index, arr) {
     var arg = dsty.arg;
     if (!arg)
         arg = uast.arg;
+    if (!intent)
+        intent = uast.intent;
     dsty.intent = dsty.arg = '';
 
     switch (key) {
@@ -3027,6 +3029,14 @@ function mtransform(dsty, puast) {
     // is a boolean; it doesn't include an intent property
 
     if (Array.isArray(puast)) {
+        if (puast[0].hasOwnProperty('script') && puast[0].script.intent &&
+            puast[0].script.intent.indexOf('derivative') != -1) {
+            // Move intent from script to mrow containing script, e.g.,
+            // for 𝜕_𝑥𝑥′ 𝑓(𝑥, 𝑥′))
+            let attrs = getAttrs(puast[0].script);
+            puast[0].script.intent = '';
+            return {mrow: withAttrs(attrs, puast.map(e => mtransform(dsty, e)))};
+        }
         let arg = {};
         if (puast.hasOwnProperty("arg"))
             arg = {arg: puast.arg};

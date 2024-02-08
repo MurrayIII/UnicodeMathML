@@ -684,37 +684,39 @@ function autocomplete() {
     input.addEventListener("keydown", function (e) {
         var x = document.getElementById(this.id + "autocomplete-list");
         if (!x) {                           // Target is input
-            if (e.key == 'x' && e.altKey) {
+            if (e.key == 'x' && e.altKey) { // Alt+x
                 e.preventDefault();
                 hexToUnicode();
             } else if (e.ctrlKey && (e.key == 'b' || e.key == 'i')) {
-                // Toggle math bold/italic
+                // Toggle math bold/italic (Alt+b/Alt+i)
                 e.preventDefault();
                 boldItalicToggle(e.key);
-            } else if (e.shiftKey && e.key == 'Enter') {
+            } else if (e.shiftKey && e.key == 'Enter') { // Shift+Enter
                 //e.preventDefault();
-                insertAtCursorPos('\u200B');
-            } else if (e.altKey && e.key == 'm') {
+                //insertAtCursorPos('\u200B');  // Want VT for math paragraph
+            } else if (e.altKey && e.key == 'm') { // Alt+m
                 // Toggle Unicode and MathML in input
                 e.preventDefault();
                 input.value = isMathML(input.value)
                     ? MathMLtoUnicodeMath(input.value)
                     : document.getElementById('output_source').innerText;
                 draw();
-            } else if (e.altKey && e.key == 's') {
+            } else if (e.altKey && e.key == 's') { // Alt+s
                 // Speak MathML
                 e.preventDefault();
                 let mathML = isMathML(input.value)
-                    ? input.value : document.getElementById('output_source').innerText;
+                    ? input.value
+                    : document.getElementById('output_source').innerText;
                 let speech = MathMLtoSpeech(mathML);
                 console.log('Math speech = ' + speech);
+                speechDisplay.innerText = '\n' + speech;
                 //const synth = window.speechSynthesis;
                 //var voices = synth.getVoices();
                 //utterance.voice = 'Microsoft Zira - English (United States)';
                 let utterance = new SpeechSynthesisUtterance(speech);
                 speechSynthesis.speak(utterance);
 
-            } else if (e.altKey && e.key == 'Enter') {
+            } else if (e.altKey && e.key == 'Enter') { // Alt+Enter
                 // Enter Examples[iExample]
                 x = document.getElementById('Examples').childNodes[0];
                 input.value = x.childNodes[iExample].innerText;
@@ -890,6 +892,7 @@ async function draw() {
 
     // clear some stuff
     codepoints.innerHTML = "";
+    speechDisplay.innerHTML = "";
     if (ummlConfig.tracing) {
         output_trace.innerHTML = "";
     }
