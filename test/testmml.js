@@ -56,6 +56,7 @@ const mathML = [
     "<math display=\"block\"><mrow><mrow intent=\"$op($a)\"><msup><mi arg=\"a\">𝐴</mi><mi arg=\"op\" intent=\"transpose\">𝑇</mi></msup></mrow><mo>=</mo><mn>0</mn></mrow></math>",
     "<math display=\"block\"><mrow><mrow intent=\"derivative(1,𝑓(𝑥),𝑥)\"><msup><mi>𝑓</mi><mo>′</mo></msup><mrow intent=\":fenced\"><mo>(</mo><mi>𝑥</mi><mo>)</mo></mrow></mrow><mo>=</mo><mrow intent=\"derivative(1,𝑓(𝑥′),𝑥′)\"><msup><mi>𝑓</mi><mo>′</mo></msup><mrow intent=\":fenced\"><mo>(</mo><msup><mi>𝑥</mi><mo>′</mo></msup><mo>)</mo></mrow></mrow></mrow></math>",
     "<math display=\"block\"><msup intent=\":sup\"><mi>𝑎</mi><mn>2</mn></msup></math>",
+    "<math display=\"block\"><mrow><mrow intent=\"cardinality(𝑥)\"><mo>|</mo><mi>𝑥</mi><mo>|</mo></mrow><mrow intent=\"absolute-value($a)\"><mo>|</mo><mrow arg=\"a\"><mi>𝑥</mi><mo>+</mo><mn>2</mn></mrow><mo>|</mo></mrow><mo>=</mo><mn>0</mn></mrow></math>",
 ];
 
 const unicodeMath = [
@@ -113,6 +114,7 @@ const unicodeMath = [
     "ⓘ(\"$op($a)\"ⓐ(a 𝐴)^ⓐopⓘ(\"transpose\"𝑇))=0",
     "ⓘ(\":derivative\"𝑓′(𝑥))=ⓘ(\":derivative\"𝑓′(𝑥′))",
     "ⓘ(\": sup\"𝑎²)",
+    "ⓒ𝑥 ⒜(𝑥+2)=0",
 ];
 
 const mathSpeech = [
@@ -176,6 +178,7 @@ const mathSpeech = [
     "transpose of cap eigh = 0",
     "derivative of f of x with respect to x = derivative of f of x prime with respect to x prime",
     "eigh soup 2",
+    "cardinality of x , absolute value of x + 2 , end absolute value = 0",
 ]
 
 function testMathMLtoUnicodeMath() {

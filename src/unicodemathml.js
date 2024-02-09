@@ -11,6 +11,8 @@ const unicodeFractions = {
     "⅒": [1, 10]
 };
 
+const symbolsIntent = {'⒜': 'absolute-value', 'ⓒ': 'cardinality'}
+
 function getUnicodeFraction(chNum, chDenom) {
     if (chNum.length == 1) {
         if (chDenom == '10' && chNum == '1')
@@ -515,6 +517,7 @@ var controlWords = {
     'by':               '×',	// 00D7
     'cancel':           '╱',	// 2571
     'cap':              '∩',	// 2229
+    'card':             'ⓒ',   // 24D2
     'cases':            'Ⓒ',	// 24B8
     'cbrt':             '∛',	    // 221B
     'ccwint':           '⨑',    // 2A11
@@ -2967,18 +2970,18 @@ function preprocess(dsty, uast, index, arr) {
                     if (!intent)
                         intent = value.intent;
                     value.content = {expr:
-                        [getIntervalEndPoint(arg0, value.content[0]),
-                         {operator: ','},
-                         getIntervalEndPoint(arg1, value.content[2])]
+                            [getIntervalEndPoint(arg0, value.content[0]),
+                             {operator: ','},
+                             getIntervalEndPoint(arg1, value.content[2])]
                     };
                     value.content = preprocess(dsty, value.content);
                 } else {
                     value.content = preprocess(dsty, value.content);
                     if (!arg && value.arg)
-                        arg = value.arg;        // Happens for derivative with bracketed order
+                        arg = value.arg;        // Happens for derivative w bracketed order
                     if (!intent && value.intent) {
-                        intent = value.intent;  // Happens for cases and absolute-value
-                        if (intent == "absolute-value") {
+                        intent = value.intent;  // Happens for cases & absolute-value
+                        if (intent == '⒜' || intent == 'ⓒ') {
                             var arg0 = getAbsArg(value.content);
                             intent += '(' + arg0 + ')';
                             if (arg0 == "$a") {
@@ -3696,6 +3699,9 @@ function mtransform(dsty, puast) {
                 ret.push({mo: withAttrs({minsize: closeSize, maxsize: closeSize}, value.close.bracket)});
             }
             var attrs = getAttrs(value, ':fenced');
+            if (attrs.intent && attrs.intent[0] in symbolsIntent)
+                attrs.intent = symbolsIntent[attrs.intent[0]] + attrs.intent.substring(1);
+
             ret = [{mrow: withAttrs(attrs, ret)}];
             return ret;
 
@@ -4172,9 +4178,11 @@ function dump(value, noAddParens, index) {
         if (mrowIntent == ':fenced' && !value.lastElementChild.textContent)
             return !value.firstElementChild.textContent ? '〖' + ret + '〗' : ret + '┤';
 
-        if (mrowIntent.startsWith('absolute-value')) {
+        if (mrowIntent.startsWith('absolute-value') ||
+            mrowIntent.startsWith('cardinality')) {
+            let abs = mrowIntent[0] == 'a' ? '⒜' : 'ⓒ';
             ret = ret.substring(1, ret.length - 1); // Remove '|'s
-            return needParens(ret) ? '⒜(' + ret + ')' : '⒜' + ret;
+            return needParens(ret) ? abs + '(' + ret + ')' : abs + ret + ' ';
         }
         if (mrowIntent.startsWith('binomial-coefficient') ||
             mrowIntent.endsWith('matrix') || mrowIntent.endsWith('determinant')) {

@@ -412,6 +412,7 @@ const symbolSpeechStrings = {
 	'⒱': 'determinant',						// 24B1
 	'Ⓒ': 'cases',							// 24B8
 	'Ⓢ': 'curly braced matrix',				// 24C8
+	'ⓒ': 'cardinality',						// 24D2
 	'ⓢ': 'bracketed matrix',				// 24E2
 	'─': 'line on',							// 2500 (for partial box lead-in)
 	'│': 'vertical bar',					// 2502
@@ -1010,6 +1011,13 @@ function speech(value, noAddParens, index) {
 	let mrowIntent = value.nodeName == 'mrow' && value.attributes.hasOwnProperty('intent')
 		? value.attributes.intent.nodeValue : '';
 
+	if (mrowIntent.startsWith('absolute-value') ||
+		mrowIntent.startsWith('cardinality')) {
+		let op = mrowIntent[0] == 'a' ? '⒜' : 'ⓒ';
+		ret = speech(value.children[1], true);
+		return op + '▒' + ret + (needParens(ret) ? '¶' + op : '⏳');
+	}
+
 	for (var i = 0; i < cNode; i++) {
 		let node = value.children[i];
 		ret += speech(node, false, i);
@@ -1022,11 +1030,6 @@ function speech(value, noAddParens, index) {
 		if (mrowIntent == ':fenced' && !value.lastElementChild.textContent)
 			return !value.firstElementChild.textContent ? '〖' + ret + '〗' : ret + '┤';
 
-		if (mrowIntent.startsWith('absolute-value')) {
-			ret = ret.substring(1, ret.length - 1); // Remove '|'s
-			ret += needParens(ret) ? '¶⒜' : '⏳';
-			return '⒜▒' + ret;
-		}
 		if (mrowIntent.startsWith('binomial-coefficient')) {
 			// Remove enclosing parens for 𝑛⒞𝑘
 			return ret.substring(1, ret.length - 1);

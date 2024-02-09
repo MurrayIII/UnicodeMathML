@@ -308,6 +308,7 @@ diacritic
 αnOrNumber = ('-' / '−' / '+')? (αn+ / [0-9]+ / "∞")
 unicodeFraction = [↉½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅐⅛⅜⅝⅞⅑]
 opEnclosedMatrix = [⒨⒩ⓢⓈ⒱]
+opAbs = [⒜ⓒ]
 opArray
     = "█"  // equation array
     / "■"  // matrix
@@ -1232,9 +1233,9 @@ expBracketContents
     /// exp  // ⚡ performance optimization
 
 absoluteValue
-    = "⒜(" e:exp ")" {
-        return {bracketed: {open: "|", close: "|", intent: "absolute-value", content: e}};
+    = o:opAbs "(" e:exp ")" {
+        return {bracketed: {open: "|", close: "|", intent: o, content: e}};
     }
-    / "⒜" o:operand {
-        return {bracketed: {open: "|", close: "|", intent: "absolute-value", content: o}};
+    / o:opAbs a:operand {
+        return {bracketed: {open: "|", close: "|", intent: o, content: a}};
     }
