@@ -17,7 +17,7 @@ const symbolSpeechStrings = {
 	'@': ', next row,',
 	'[': 'open bracket',
 	']': 'close bracket',
-	'^': 'sup',
+	'^': 'soup',
 	'_': 'sub',
 	'{': 'open brace',
 	'|': 'vertical bar',
@@ -622,9 +622,12 @@ function checkIntent(value) {
 			let arg = args[1] ? '▒' + args[1] : '';
 
 			// E.g., "second derivative of f(x) with respect to x"
-			ret = order + opDerivative + arg + 'ŵ' + args[2];
-			for (i = 3; i < args.length; i++) // Partial deriv's may have more wrt's
-				ret += '&' + args[i];
+			ret = order + opDerivative + arg;
+			if (args[2]) {
+				ret += 'ŵ' + args[2];
+				for (i = 3; i < args.length; i++) // Partial deriv's may have more wrt's
+					ret += '&' + args[i];
+			}
 			break;
 	}
 	return ret;
@@ -838,6 +841,9 @@ function speech(value, noAddParens, index) {
 			return ret;
 
 		case 'msup':
+			if (value.attributes.intent && value.attributes.intent.textContent == ':sup')
+				return speech(value.firstElementChild) + '^' + speech(value.lastElementChild);
+
 			if (value.lastElementChild.nodeName == 'mn' &&
 				isAsciiDigit(value.lastElementChild.textContent[0])) {
 				let power = getPower(value.lastElementChild.textContent);
@@ -1010,7 +1016,6 @@ function speech(value, noAddParens, index) {
 	}
 
 	if (mrowIntent) {
-
 		if (mrowIntent == 'cases')
 			return 'Ⓒ' + ret.substring(2);
 

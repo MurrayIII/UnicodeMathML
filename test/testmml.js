@@ -54,6 +54,8 @@ const mathML = [
     "<math display=\"block\"><mrow intent=\"closed-interval(−∞,3)\"><mo>[</mo><mrow><mrow><mo>−</mo><mi>∞</mi></mrow><mo>,</mo><mn>3</mn></mrow><mo>]</mo></mrow></math>",
     "<math display=\"block\"><mrow><mrow intent=\"partial-derivative(2,$f,𝑥,𝑥′)\"><msub><mi>𝜕</mi><mrow><mi>𝑥</mi><msup><mi>𝑥</mi><mo>′</mo></msup></mrow></msub><mrow arg=\"f\"><mi>𝑓</mi><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑥</mi><mo>,</mo><msup><mi>𝑥</mi><mo>′</mo></msup></mrow><mo>)</mo></mrow></mrow></mrow><mo>=</mo><mfrac intent=\"partial-derivative(2,$f,𝑥,𝑥′)\"><mrow><msup><mi>𝜕</mi><mn>2</mn></msup><mrow arg=\"f\"><mi>𝑓</mi><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑥</mi><mo>,</mo><msup><mi>𝑥</mi><mo>′</mo></msup></mrow><mo>)</mo></mrow></mrow></mrow><mrow><mrow><mi>𝜕</mi><mi>𝑥</mi><mi>𝜕</mi></mrow><msup><mi>𝑥</mi><mo>′</mo></msup></mrow></mfrac></mrow></math>",
     "<math display=\"block\"><mrow><mrow intent=\"$op($a)\"><msup><mi arg=\"a\">𝐴</mi><mi arg=\"op\" intent=\"transpose\">𝑇</mi></msup></mrow><mo>=</mo><mn>0</mn></mrow></math>",
+    "<math display=\"block\"><mrow><mrow intent=\"derivative(1,𝑓(𝑥),𝑥)\"><msup><mi>𝑓</mi><mo>′</mo></msup><mrow intent=\":fenced\"><mo>(</mo><mi>𝑥</mi><mo>)</mo></mrow></mrow><mo>=</mo><mrow intent=\"derivative(1,𝑓(𝑥′),𝑥′)\"><msup><mi>𝑓</mi><mo>′</mo></msup><mrow intent=\":fenced\"><mo>(</mo><msup><mi>𝑥</mi><mo>′</mo></msup><mo>)</mo></mrow></mrow></mrow></math>",
+    "<math display=\"block\"><msup intent=\":sup\"><mi>𝑎</mi><mn>2</mn></msup></math>",
 ];
 
 const unicodeMath = [
@@ -109,6 +111,8 @@ const unicodeMath = [
     "[−∞,3]",
     "𝜕_𝑥𝑥′ 𝑓(𝑥,𝑥′)=𝜕²𝑓(𝑥,𝑥′)/𝜕𝑥𝜕𝑥′",
     "ⓘ(\"$op($a)\"ⓐ(a 𝐴)^ⓐopⓘ(\"transpose\"𝑇))=0",
+    "ⓘ(\":derivative\"𝑓′(𝑥))=ⓘ(\":derivative\"𝑓′(𝑥′))",
+    "ⓘ(\": sup\"𝑎²)",
 ];
 
 const mathSpeech = [
@@ -170,6 +174,8 @@ const mathSpeech = [
     "closed interval from minus infinity to 3",
     "second partial-derivative of f of x comma x prime with respect to x and x prime = second partial-derivative of f of x comma x prime with respect to x and x prime",
     "transpose of cap eigh = 0",
+    "derivative of f of x with respect to x = derivative of f of x prime with respect to x prime",
+    "eigh soup 2",
 ]
 
 function testMathMLtoUnicodeMath() {

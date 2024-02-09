@@ -2862,6 +2862,31 @@ function preprocess(dsty, uast, index, arr) {
                     return [{atoms: {chars: chars.substring(0, cch - cchCh)}},
                             {primed: {base: base, intent: intent, arg: arg, primes: value.primes}}];
                 }
+                if (intent == ':derivative') {
+                    // Handle, e.g., ⓘ(":derivative"𝑓′(𝑥))
+                    intent = 'derivative(' + String.fromCodePoint(value.primes + 0x30) + ',' + chars;
+
+                    if (index < arr.length - 1 && arr[index + 1].hasOwnProperty('bracketed')) {
+                        let val = arr[index + 1].bracketed.content;
+                        let wrt = '';
+
+                        if (val.hasOwnProperty('expr') && Array.isArray(val.expr))
+                            val = val.expr[0];
+                        if (Array.isArray(val))
+                            val = val[0];
+                        if (val.hasOwnProperty('primed')) {
+                            // Handle, e.g., ⓘ(":derivative"𝑓′(𝑥′))
+                            wrt = processPrimes(val.primed.primes);
+                            val = val.primed.base;
+                        }
+                        if (val.hasOwnProperty('atoms') && Array.isArray(val.atoms)) {
+                            wrt = val.atoms[0].chars + wrt;
+                            intent += '(' + wrt + '),' + wrt + ')';
+                        }
+                    } else {
+                        intent += ',)';
+                    }
+                }
             }
             return {primed: {base: base, intent: intent, arg: arg, primes: value.primes}};
 
@@ -3029,12 +3054,17 @@ function mtransform(dsty, puast) {
     // is a boolean; it doesn't include an intent property
 
     if (Array.isArray(puast)) {
-        if (puast[0].hasOwnProperty('script') && puast[0].script.intent &&
-            puast[0].script.intent.indexOf('derivative') != -1) {
-            // Move intent from script to mrow containing script, e.g.,
-            // for 𝜕_𝑥𝑥′ 𝑓(𝑥, 𝑥′))
-            let attrs = getAttrs(puast[0].script);
-            puast[0].script.intent = '';
+        let val;
+        if (puast[0].hasOwnProperty('script'))
+            val = puast[0].script;
+        else if (puast[0].hasOwnProperty('primed'))
+            val = puast[0].primed;
+
+        if (val && val.intent && val.intent.indexOf('derivative') != -1) {
+            // Move intent from script/primed to mrow containing script/primed,
+            // e.g., for 𝜕_𝑥𝑥′ 𝑓(𝑥, 𝑥′) or ⓘ("derivative"𝑓′(𝑥))
+            let attrs = getAttrs(val);
+            val.intent = '';
             return {mrow: withAttrs(attrs, puast.map(e => mtransform(dsty, e)))};
         }
         let arg = {};
