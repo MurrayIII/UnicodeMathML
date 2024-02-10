@@ -82,11 +82,11 @@ const mathvariants = {
 };
 
 const matrixIntents = {
-    '⒨': 'parenthesized-matrix',
-    '⒱': 'determinant',
-    '⒩': 'normed-matrix',
-    'ⓢ': 'bracketed-matrix',
-    'Ⓢ': 'curly-braced-matrix',
+    '⒨': ':parenthesized-matrix',
+    '⒱': ':determinant',
+    '⒩': ':normed-matrix',
+    'ⓢ': ':bracketed-matrix',
+    'Ⓢ': ':curly-braced-matrix',
 }
 
 // Enclosure notation attributes options based on a bit mask or symbol
@@ -567,6 +567,7 @@ var controlWords = {
     'degf':             '℉',	    // 2109
     'degree':           '°',	// 00B0
     'delta':            'δ',	// 03B4
+    'det':              '⒱',	// 24B1
     'diamond':          '⋄',	    // 22C4
     'diamondsuit':      '♢',	    // 2662
     'div':              '÷',	// 00F7
@@ -2280,11 +2281,13 @@ function preprocess(dsty, uast, index, arr) {
 
         case "specialMatrix":               // n×m or identity matrix
             t = value[2];
-            if (t == '⒱' && !intent && (!value[1] || value[0] == value[1]) && emitDefaultIntents) {
-                intent = 'determinant';
-            }
             value = matrixRows(value[0], value[1]);
 
+            if (emitDefaultIntents) {
+                var val = matrixIntents[t];
+                if (val)
+                    intent = val;
+            }
             if (t != "■") {
                 var o = brackets[t][0];
                 var c = brackets[t][1];
@@ -2953,7 +2956,7 @@ function preprocess(dsty, uast, index, arr) {
             if (!value.intent && emitDefaultIntents) {
                 var val = matrixIntents[t];
                 if (val)
-                    value.intent = ':' + val;
+                    value.intent = val;
             }
             return {bracketed: {open: o, close: c, intent: value.intent, arg: arg, content: preprocess(dsty, value.content)}};
 
@@ -3814,20 +3817,9 @@ function pretty(mast) {
     }
 }
 
-//////////////
-// PLUMBING //
-//////////////
-
-function escapeHTMLSpecialChars(str) {
-    var replacements = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;'
-    };
-    return str.replace(/[&<>]/g, tag => {
-        return replacements[tag] || tag;
-    });
-    };
+///////////////////////////
+// MathML to UnicodeMath //
+///////////////////////////
 
 function unary(node, op) {
     let ret = dump(node.firstElementChild);
@@ -3864,7 +3856,6 @@ function nary(node, op, cNode) {
     let ret = '';
 
     for (let i = 0; i < cNode; i++) {
-        // Get the rows
         ret += dump(node.children[i]);
         if (i < cNode - 1)
             ret += op;
@@ -3872,8 +3863,8 @@ function nary(node, op, cNode) {
     return ret;
 }
 
-function dump(value, noAddParens, index) {
-    // Convert MathML to UnicodeMath
+function dump(value, noAddParens) {
+	// Function called recursively to convert MathML to UnicodeMath
     let cNode = value.children.length;
     let ret = '';
 
@@ -3884,7 +3875,8 @@ function dump(value, noAddParens, index) {
                 value.attributes.intent.value == ':equations') {
                 symbol = '█';
             } else if (value.parentElement.attributes.hasOwnProperty('intent')) {
-                let intent = value.parentElement.attributes.intent.nodeValue.substring(1);
+                let intent = value.parentElement.attributes.intent.nodeValue;
+
                 for (const [key, val] of Object.entries(matrixIntents)) {
                     if (val == intent) {
                         symbol = key;
@@ -4239,6 +4231,21 @@ function MathMLtoUnicodeMath(mathML) {
     }
     return unicodeMath;
 }
+
+//////////////
+// PLUMBING //
+//////////////
+
+function escapeHTMLSpecialChars(str) {
+    var replacements = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;'
+    };
+    return str.replace(/[&<>]/g, tag => {
+        return replacements[tag] || tag;
+    });
+};
 
 function unicodemathml(unicodemath, displaystyle) {
     debugGroup(unicodemath);

@@ -1,10 +1,16 @@
-﻿// Math speech code
+﻿// Code that generates math speech from MathML. Create DOM for MathML, extract
+// symbols from DOM inserting nonmath symbols for connecting words, and convert
+// the symbols to speech using symbolSpeech(). The default speech language is
+// English. To localize the speech in another languages, translate the strings
+// in symbolSpeechString, functions, mathstyles, and ordinals. The speech
+// generation can be guided by MathML intent attributes, which may allow one
+// to change the speech ordering from English.
 
 const symbolSpeechStrings = {
 	// This list includes speech strings for math symbols. In addition, it has
 	// some nonmath symbols used to represent connecting words like 'from' and
-	// 'to'. As such, it is the only list that needs to be localized, provided
-	// English math speech order is adequate for the target language.
+	// 'to'. It is the principal list that needs to be localized. See also
+	// ordinals and functions.
 	'!': 'factorial',
 	'#': ', equation',
 	'&': 'and',
@@ -15,6 +21,7 @@ const symbolSpeechStrings = {
 	'<': 'less than',
 	'>': 'greater than',
 	'@': ', next row,',
+	'A': 'eigh',							// Letter 'A', which TTS may pronounce incorrectly
 	'[': 'open bracket',
 	']': 'close bracket',
 	'^': 'soup',
@@ -435,6 +442,7 @@ const symbolSpeechStrings = {
 	'☛': 'goes to',							// 261B (as in lim_(𝑛→∞))
 	'☝': 'to',								// 261D
 	'⚡': 'power',							// 26A1 (as in 𝑥^(𝑛−1))
+	'⛑': 'cap',							// 26D1 (for capital letter)
 	'✎': 'color',							// 270E
 	'⟡': 'phantom',							// 27E1
 	'⟦': 'open white square bracket',		// 27E6
@@ -453,13 +461,6 @@ const symbolSpeechStrings = {
 	'⮵': 'to the',							// 2BB5
 	'〖': ', ',								// 3016
 	'〗': ', ',								// 3017
-}
-
-const boxNotations = {'left': '┠', 'right': '┨', 'top': '┯', 'bottom': '┷'}
-
-const ordinals = {
-	'1': 'first', '2': 'second', '3': 'third', '4': 'fourth', '5': 'fifth',
-	'6': 'sixth', '7': 'seventh', '8': 'eighth', '9': 'ninth', '10': 'tenth'
 }
 
 const functions = {
@@ -484,11 +485,27 @@ const functions = {
 	'lim': 'limit',
 }
 
-const intervals = {
-	'closed-open interval':	'⏒',		// 23D2
-	'open-closed interval':	'⏓',		// 23D3
-	'closed-interval': '⏔',			// 23D4
-	'open-interval': '⏕'			// 23D5
+const mathstyles = {
+	// TeX unicode-math names in unimath-symbols.pdf to speech
+	'mup': 'normal',
+	'mbf': 'bold',
+	'mit': 'italic',
+	'mbfit': 'bold-italic',
+	'Bbb': 'double-struck',
+	'mbffrak': 'bold-fraktur',
+	'mscr': 'script',
+	'mbfscr': 'bold-script',
+	'mfrak': 'fraktur',
+	'msans': 'sans-serif',
+	'mbfsans': 'bold-sans-serif',
+	'mitsans': 'sans-serif-italic',
+	'mbfitsans': 'sans-serif-bold-italic',
+	'mtt': 'monospace',
+};
+
+const ordinals = {
+	'1': 'first', '2': 'second', '3': 'third', '4': 'fourth', '5': 'fifth',
+	'6': 'sixth', '7': 'seventh', '8': 'eighth', '9': 'ninth', '10': 'tenth'
 }
 
 function symbolSpeech(ch) {
@@ -504,16 +521,25 @@ function symbolSpeech(ch) {
 				if (mathstyle == 'mit' || mathstyle == 'mup')
 					mathstyle = '';			  // Suppress 'italic'
 				else
-					mathstyle = styleSpeech(mathstyle) + ' ';
+				mathstyle = mathstyles[mathstyle] + ' ';
 			let cap = inRange('A', ch, 'Z') ? 'cap ' : '';
 			if (ch == 'a' || ch == 'A')
-				ch = 'eigh';
+				ch = symbolSpeechStrings['A'];
 			return mathstyle + cap + ch + ' ';
 		}
 	}
 	// Get speech for operators and other symbols
 	let ret = symbolSpeechStrings[ch];
 	return ret ? ret + ' ' : ch;
+}
+
+const boxNotations = { 'left': '┠', 'right': '┨', 'top': '┯', 'bottom': '┷' }
+
+const intervals = {
+	'closed-open interval': '⏒',		// 23D2
+	'open-closed interval': '⏓',		// 23D3
+	'closed-interval': '⏔',			// 23D4
+	'open-interval': '⏕'			// 23D5
 }
 
 function getPower(value) {
@@ -526,7 +552,7 @@ function getPower(value) {
 	if (inRange('4', value, '10'))
 		return '⮵' + ordinals[value] + ' '; // 'to the'
 
-	return '⮵' + speech(value);		// 'to the'
+	return '⮵' + speech(value);				// 'to the'
 }
 
 function styleSpeech(mathStyle) {
@@ -677,30 +703,30 @@ function Nary(node) {
 		speech(node.lastElementChild, true) + '▒';	// 'of'
 }
 
-function speech(value, noAddParens, index) {
-	// Convert MathML to UnicodeMath
+function speech(value, noAddParens) {
+	// Function called recursively to convert MathML to speech
 	let cNode = value.children.length;
 	let ret = '';
 
-	ret = checkIntent(value);
+	ret = checkIntent(value);				// Check for MathML intent
 	if (ret)
-		return ret;
+		return ret;							// Intent overrules default speech
 
 	switch (value.nodeName) {
 		case 'mtable':
-			var symbol = '■';
-			var sep = '@';
+			var symbol = '■';				// 'matrix'
+			var sep = '@';					// 'next row'
 			let intnt = '';
 			if (value.parentElement.attributes.hasOwnProperty('intent'))
 				intnt = value.parentElement.attributes.intent.nodeValue;
 
 			if (value.attributes.hasOwnProperty('intent') &&
 				value.attributes.intent.value == ':equations') {
-				symbol = '█';
-				sep = '⍈';
+				symbol = '█';				// 'equation array'
+				sep = '⍈';					// 'next equation'
 				if (intnt == 'cases') {
-					sep = '⍆';
-					symbol = 'Ⓒ';
+					sep = '⍆';				// 'next case'
+					symbol = 'Ⓒ';			// 'cases'
 				}
 			} else if (intnt) {
 				for (const [key, val] of Object.entries(matrixIntents)) {
@@ -1027,22 +1053,21 @@ function speech(value, noAddParens, index) {
 		if (mrowIntent == 'cases')
 			return 'Ⓒ' + ret.substring(2);
 
-		if (mrowIntent == ':fenced' && !value.lastElementChild.textContent)
+		if (mrowIntent == ':fenced' && !value.lastElementChild.textContent) {
+			// No open [and close] delimiter: insert as needed
 			return !value.firstElementChild.textContent ? '〖' + ret + '〗' : ret + '┤';
-
-		if (mrowIntent.startsWith('binomial-coefficient')) {
-			// Remove enclosing parens for 𝑛⒞𝑘
+		}
+		if (mrowIntent.startsWith('binomial-coefficient') ||
+			mrowIntent.endsWith('matrix') || mrowIntent.endsWith('determinant')) {
+			// Remove enclosing parens for 𝑛⒞𝑘, bracketed matrices, determinants
 			return ret.substring(1, ret.length - 1);
 		}
-		if (mrowIntent.endsWith('matrix') || mrowIntent.endsWith('determinant')) {
-			// Remove enclosing parens for bracketed matrices
-			ret = ret[1] + ret.substring(3, ret.length - 2) + '¶' + ret[1];
-		}
-		else if (mrowIntent == ':function' && value.previousElementSibling &&
+		if (mrowIntent == ':function' && value.previousElementSibling &&
 			value.firstElementChild.nodeName == 'mi' &&
 			value.firstElementChild.textContent < '\u2100' &&
 			value.previousElementSibling.nodeName == 'mi') {
-			return ' ' + ret;               // Separate variable & function name
+			// Separate variable & function name
+			return ' ' + ret;
 		}
 	}
 	if (value.firstElementChild && value.firstElementChild.nodeName == 'mo' &&

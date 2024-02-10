@@ -57,6 +57,7 @@ const mathML = [
     "<math display=\"block\"><mrow><mrow intent=\"derivative(1,𝑓(𝑥),𝑥)\"><msup><mi>𝑓</mi><mo>′</mo></msup><mrow intent=\":fenced\"><mo>(</mo><mi>𝑥</mi><mo>)</mo></mrow></mrow><mo>=</mo><mrow intent=\"derivative(1,𝑓(𝑥′),𝑥′)\"><msup><mi>𝑓</mi><mo>′</mo></msup><mrow intent=\":fenced\"><mo>(</mo><msup><mi>𝑥</mi><mo>′</mo></msup><mo>)</mo></mrow></mrow></mrow></math>",
     "<math display=\"block\"><msup intent=\":sup\"><mi>𝑎</mi><mn>2</mn></msup></math>",
     "<math display=\"block\"><mrow><mrow intent=\"cardinality(𝑥)\"><mo>|</mo><mi>𝑥</mi><mo>|</mo></mrow><mrow intent=\"absolute-value($a)\"><mo>|</mo><mrow arg=\"a\"><mi>𝑥</mi><mo>+</mo><mn>2</mn></mrow><mo>|</mo></mrow><mo>=</mo><mn>0</mn></mrow></math>",
+    "<math display=\"block\"><mrow intent=\":parenthesized-matrix\"><mo>(</mo><mtable intent=\":matrix(2,2)\"><mtr><mtd><mn>1</mn></mtd><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mn>0</mn></mtd><mtd><mn>1</mn></mtd></mtr></mtable><mo>)</mo></mrow></math>",
 ];
 
 const unicodeMath = [
@@ -115,6 +116,7 @@ const unicodeMath = [
     "ⓘ(\":derivative\"𝑓′(𝑥))=ⓘ(\":derivative\"𝑓′(𝑥′))",
     "ⓘ(\": sup\"𝑎²)",
     "ⓒ𝑥 ⒜(𝑥+2)=0",
+    "⒨(1&0@0&1)",
 ];
 
 const mathSpeech = [
@@ -179,6 +181,7 @@ const mathSpeech = [
     "derivative of f of x with respect to x = derivative of f of x prime with respect to x prime",
     "eigh soup 2",
     "cardinality of x , absolute value of x + 2 , end absolute value = 0",
+    "parenthesized matrix 1 and 0 , next row, 0 and 1 , end parenthesized matrix",
 ]
 
 function testMathMLtoUnicodeMath() {
