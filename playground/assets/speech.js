@@ -696,6 +696,7 @@ function nary(node, op, cNode) {
 }
 
 
+function speech(value, noAddParens) {
 function Nary(node) {
 	// symbol 'from' lower-limit 'to' upper-limit 'of'
 	return speech(node.firstElementChild) + '☟' +	// 'from'
@@ -703,7 +704,6 @@ function Nary(node) {
 		speech(node.lastElementChild, true) + '▒';	// 'of'
 }
 
-function speech(value, noAddParens) {
 	// Function called recursively to convert MathML to speech
 	let cNode = value.children.length;
 	let ret = '';
@@ -824,7 +824,7 @@ function speech(value, noAddParens) {
 
 		case 'msqrt':
 			ret = speech(value.firstElementChild, true);
-			return needParens(ret) ? '√▒' + ret + '¶√' : '√▒' + ret;
+			return needParens(ret) ? '√⏳' + ret + '¶√' : '√⏳' + ret;
 
 		case 'mroot':
 			return '⒭' + speech(value.lastElementChild, true) + '▒' +
@@ -1084,12 +1084,7 @@ function speech(value, noAddParens) {
 }
 
 function MathMLtoSpeech(mathML) {
-	// Convert MathML to speech
-	if (mathML.startsWith('<mml:math') || mathML.startsWith('<m:math'))
-		mathML = removeMmlPrefixes(mathML);
-
-	const parser = new DOMParser();			// Parse mathML
-	const doc = parser.parseFromString(mathML, "application/xml");
+	const doc = getMathMLDOM(mathML);
 	let text = speech(doc);					// Get speech symbols
 	let ret = '';							// Collects speech
 	let cchText = text.length;

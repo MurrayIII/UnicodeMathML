@@ -341,6 +341,7 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Pasting MathML into the input text area passes the MathML to the renderer, and converts the MathML to UnicodeMath, which it displays in the MathML output window.
 * Unicode numeric fractions like ⁵⁶/₆₂₅ are converted into standard fractions.
 * Math speech is added with support for some intent attributes, e.g., derivatives and intervals.
+* Nemeth math braille is added.
 
 ## MathML intent-attribute support:
 * The derivative and partial-derivative intent attributes are defined for Leipzig and Euler derivative notations.

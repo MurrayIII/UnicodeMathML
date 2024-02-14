@@ -131,6 +131,10 @@ function isAsciiDigit(ch) {
     return inRange('0', ch, '9');
 }
 
+function isBraille(ch) {
+    return inRange('\u2800', ch, '\u28FF');
+}
+
 function isDoubleStruck(ch) {
     return inRange('\u2145', ch, '\u2149');
 }
@@ -158,6 +162,15 @@ function isMathML(unicodemath) {
     return unicodemath.startsWith("<math") ||
            unicodemath.startsWith("<mml:math") ||
            unicodemath.startsWith("<m:math");
+}
+
+function getMathMLDOM(mathML) {
+    // Convert MathML to UnicodeMath
+    if (mathML.startsWith('<mml:math') || mathML.startsWith('<m:math'))
+        mathML = removeMmlPrefixes(mathML);
+
+    const parser = new DOMParser();
+    return parser.parseFromString(mathML, "application/xml");
 }
 
 function foldSupDigit(char) {   // Fold Unicode superscript digit to ASCII
@@ -4203,12 +4216,7 @@ function dump(value, noAddParens) {
 }
 
 function MathMLtoUnicodeMath(mathML) {
-    // Convert MathML to UnicodeMath
-    if (mathML.startsWith('<mml:math') || mathML.startsWith('<m:math'))
-        mathML = removeMmlPrefixes(mathML);
-
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(mathML, "application/xml");
+    const doc = getMathMLDOM(mathML);
     let unicodeMath = dump(doc);
 
     // Remove some unnecessary spaces

@@ -27,6 +27,7 @@
         <span> <a href="https://github.com/MurrayIII/UnicodeMathML/" target="_blank">About</a></span>
         <button id="demos" onclick="startDemo()"><span> Demo</span></button>
         <button id="speech" onclick="speak()"><span> Speak</span></button>
+        <button id="braille" onclick="mathBraille()"><span> Braille</span></button>
     </h1>
     <aside id="config"><h2>⚙︎</h2></aside>
     <script>
@@ -485,6 +486,7 @@
     <script src="assets/charinfo.js">/* no need to avoid caching here – it's massive and it's not gonna change */</script>
     <script>loadUncachedScript("assets/dictation.js")</script>
     <script>loadUncachedScript("assets/speech.js")</script>
+    <script>loadUncachedScript("assets/braille.js")</script>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script>
         if (ummlConfig.forceMathJax) {

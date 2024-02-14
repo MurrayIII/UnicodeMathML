@@ -120,15 +120,15 @@ const unicodeMath = [
 ];
 
 const mathSpeech = [
-    "1 over 2 pi integral from 0 to 2 width smash pi of , fraction differential d theta over eigh + b sine theta , end fraction = fraction 1 over square root of eigh squared minus b squared , end square root , end fraction",
+    "1 over 2 pi integral from 0 to 2 width smash pi of , fraction differential d theta over eigh + b sine theta , end fraction = fraction 1 over square root , eigh squared minus b squared , end square root , end fraction",
     //"bold del  cross bold cap E = minus partial  bold cap B over partial  t",
     "bold del cross bold cap E = minus partial-derivative of bold cap B with respect to t",
     //"i h bar , partial  psi  open x comma t close over partial  t = open bracket minus fraction h bar squared over 2 m , end fraction , partial  squared over partial  x squared + cap V open x comma t close close bracket psi open x comma t close",
     "i h bar partial-derivative of psi of x comma t with respect to t = open bracket minus fraction h bar squared over 2 m , end fraction second partial-derivative with respect to x + cap V open x comma t close close bracket psi open x comma t close",
     "open eigh + b close to the n , = sum from k = 0 to n of n choose k eigh to the k , b to the n minus k power",
-    "x = fraction minus b plus or minus square root of b squared minus 4 eigh c , end square root over 2 eigh , end fraction",
+    "x = fraction minus b plus or minus square root , b squared minus 4 eigh c , end square root over 2 eigh , end fraction",
     "sine squared theta + cosine squared theta = 1",
-    "integral from minus infinity to infinity of e to the minus x squared , differential d x = square root of pi",
+    "integral from minus infinity to infinity of e to the minus x squared , differential d x = square root , pi",
     "eigh   b",
     "limit as n goes to infinity of open 1 + 1 over n close to the n , = e",
     "f hat of xkai  = integral from minus infinity to infinity of f of x , e to the minus 2 pi i x xkai , differential d x",
@@ -156,7 +156,7 @@ const mathSpeech = [
     "eigh less than or equal to b less than or equal to c",
     "d psi open x comma t close over d t = 0",
     "eigh squared + b squared = c squared",
-    "cap Z open gamma + i omega minus i nu close = fraction i over square root of pi , end fraction integral from minus infinity to infinity of fraction e to the minus open omega minus omega prime close squared over open Delta omega close squared power over gamma + i open omega prime minus nu close , end fraction differential d omega prime",
+    "cap Z open gamma + i omega minus i nu close = fraction i over square root , pi , end fraction integral from minus infinity to infinity of fraction e to the minus open omega minus omega prime close squared over open Delta omega close squared power over gamma + i open omega prime minus nu close , end fraction differential d omega prime",
     "sine ,  fraction x + eigh over 2 , end fraction ,",
     "vertical bar x vertical bar = open brace equation array , x if x greater than or equal to 0 , next equation,  minus x if x less than 0 , end equation array close",
     "differential d over differential d z arcsine z= open 1 minus z squared close to the minus 1 over 2 power comma",
@@ -182,6 +182,14 @@ const mathSpeech = [
     "eigh soup 2",
     "cardinality of x , absolute value of x + 2 , end absolute value = 0",
     "parenthesized matrix 1 and 0 , next row, 0 and 1 , end parenthesized matrix",
+]
+
+const mathBraille = [
+    "⠹⠂⠌⠆⠨⠏⠼⠮⠰⠴⠘⠆⠨⠏⠐⠹⠙⠨⠹⠌⠁⠬⠃⠀⠎⠊⠝⠀⠨⠹⠼⠀⠨⠅⠀⠹⠂⠌⠜⠁⠘⠆⠐⠤⠃⠘⠆⠐⠻⠼",
+    "⠸⠨⠫⠈⠡⠸⠰⠠⠑⠀⠨⠅⠀⠤⠹⠈⠙⠸⠰⠠⠃⠌⠈⠙⠞⠼",
+    "⠊⠈⠓⠹⠈⠙⠨⠽⠀⠷⠭⠠⠀⠞⠾⠌⠈⠙⠞⠼⠀⠨⠅⠀⠈⠷⠤⠹⠈⠓⠘⠆⠐⠌⠆⠍⠼⠹⠈⠙⠘⠆⠐⠌⠈⠙⠭⠘⠆⠐⠼⠬⠠⠧⠷⠭⠠⠀⠞⠾⠈⠾⠨⠽⠷⠭⠠⠀⠞⠾",
+    "⠷⠁⠬⠃⠾⠘⠝⠀⠨⠅⠀⠐⠨⠠⠎⠩⠅⠀⠨⠅⠀⠴⠣⠝⠻⠷⠝⠩⠅⠾⠁⠘⠅⠐⠃⠘⠝⠤⠅",
+    "⠭⠀⠨⠅⠀⠹⠤⠃⠬⠤⠜⠃⠘⠆⠐⠤⠲⠁⠉⠻⠌⠆⠁⠼",
 ]
 
 function testMathMLtoUnicodeMath() {
@@ -218,6 +226,22 @@ function testMathMLtoSpeech() {
     console.log(iSuccess + " passes; " + iFail + " failures\n");
 }
 
+function testMathMLtoBraille() {
+    var iSuccess = 0;
+    for (var i = 0; i < mathML.length; i++) {
+        var result = MathMLtoBraille(mathML[i]);
+        if (result != mathBraille[i]) {
+            console.log(unicodeMath[i] + '\n');
+            console.log("Expect: " + mathBraille[i] + '\n');
+            console.log("Result: " + result + '\n\n');
+        } else {
+            iSuccess++;
+        }
+    }
+    var iFail = mathML.length - iSuccess;
+    console.log(iSuccess + " passes; " + iFail + " failures\n");
+}
+
 input.addEventListener("keydown", function (e) {
     if (e.key == 'Enter') {
         e.preventDefault();
@@ -229,4 +253,5 @@ input.addEventListener("keydown", function (e) {
 
     root.testMathMLtoUnicodeMath = testMathMLtoUnicodeMath;
     root.testMathMLtoSpeech = testMathMLtoSpeech;
+    root.testMathMLtoBraille = testMathMLtoBraille;
 })(this);

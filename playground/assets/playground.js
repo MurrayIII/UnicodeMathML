@@ -62,6 +62,14 @@ function speak() {
     input.dispatchEvent(event);
 }
 
+function mathBraille() {
+    input.focus();
+    const event = new Event('keydown');
+    event.key = 'b';
+    event.altKey = true;
+    input.dispatchEvent(event);
+}
+
 function endDemo() {
     var demoEq = document.getElementById('demos');
     clearInterval(demoID);
@@ -323,6 +331,8 @@ function hexToUnicode() {
 function boldItalicToggle(key) {
     // Get current bold and italic states from first char in selection
     var chars = getInputSelection();
+    if (!chars)
+        return;                             // Nothing selected
     var code = chars.codePointAt(0);
     var ch = chars[0];
     var [font, chFolded] = foldMathAlphanumeric(code, ch);
@@ -701,6 +711,15 @@ function autocomplete() {
                     ? MathMLtoUnicodeMath(input.value)
                     : document.getElementById('output_source').innerText;
                 draw();
+            } else if (e.altKey && e.key == 'b') { // Alt+b
+                // Braille MathML
+                e.preventDefault();
+                let mathML = isMathML(input.value)
+                    ? input.value
+                    : document.getElementById('output_source').innerText;
+                let braille = MathMLtoBraille(mathML);
+                console.log('Math braille = ' + braille);
+                speechDisplay.innerText += '\n' + braille;
             } else if (e.altKey && e.key == 's') { // Alt+s
                 // Speak MathML
                 e.preventDefault();
@@ -710,12 +729,9 @@ function autocomplete() {
                 let speech = MathMLtoSpeech(mathML);
                 console.log('Math speech = ' + speech);
                 speechDisplay.innerText = '\n' + speech;
-                //const synth = window.speechSynthesis;
-                //var voices = synth.getVoices();
-                //utterance.voice = 'Microsoft Zira - English (United States)';
                 let utterance = new SpeechSynthesisUtterance(speech);
+                //utterance.voice = 'Microsoft Zira - English (United States)';
                 speechSynthesis.speak(utterance);
-
             } else if (e.altKey && e.key == 'Enter') { // Alt+Enter
                 // Enter Examples[iExample]
                 x = document.getElementById('Examples').childNodes[0];
