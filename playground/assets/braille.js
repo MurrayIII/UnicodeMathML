@@ -30,6 +30,7 @@ function MathMLtoBraille(mathML) {
 const symbolBrailleStrings = {
 
 	// Math symbol braille strings in braille order
+	'\u2524': '',				// ┤	Missing close bracket
 	'\u2061': '⠀',				//		Use braille space for function apply
 	'\u2062': '',				//		Ignore invisible times
 	'\u2026': '⠀⠄⠄⠄',			// …	Ellipsis
@@ -115,7 +116,7 @@ const symbolBrailleStrings = {
 	'\u2ABF': '⠀⠐⠸⠐⠅⠩⠬⠻⠀',		// ⪿	Subset with plus sign below
 	'\u2AC2': '⠀⠐⠸⠨⠂⠩⠈⠡⠻⠀',		// ⫂	Superset with multiplication sign below
 	'\u2AC0': '⠀⠐⠸⠨⠂⠩⠬⠻⠀',		// ⫀	Superset with plus sign below
-	//'\u22EF': '⠀⠒⠒⠒':	'',		// ⋯		Midline horizontal ellipsis
+	'\u22EF': '⠀⠄⠄⠄ ',			// ⋯		Midline horizontal ellipsis
 	'\u22F0': '⠀⠘⠒⠒⠒⠀',			// ⋰		Up right diagonal ellipsis
 	'\u2234': '⠀⠠⠡⠀',			// ∴	Therefore
 	'\u223D': '⠀⠠⠱⠀',			// ∽	Reversed tilde
@@ -326,6 +327,10 @@ const symbolBrailleStrings = {
 	'\u2AD4': '⠀⠸⠨⠂⠸⠐⠅⠀',		// ⫔	Superset above subset
 	'\u2AD6': '⠀⠸⠨⠂⠸⠨⠂⠀',		// ⫖	Superset above superset
 	'\u221D': '⠀⠸⠿⠀',			// ∝	Proportional to
+	'\u2032': '⠄',				// ′	Prime
+	'\u2033': '⠄⠄',				// ″	Double prime
+	'\u2034': '⠄⠄⠄',			// ‴	Triple prime
+	'\u2057': '⠄⠄⠄⠄',			// ⁗		Quadruple prime
 	'\u0040': '⠈⠁',				// @	Commercial at
 	'\u2113': '⠈⠇',				// ℓ	Script small (differs from 1d4c1: 4 - 56 - 123)
 	'\u210F': '⠈⠓',				// ℏ		Planck constant over two pi
@@ -345,6 +350,7 @@ const symbolBrailleStrings = {
 	'\u2200': '⠈⠯',				// ∀	For all
 	'\u230A': '⠈⠰⠷',			// ⌊		Left floor	
 	'\u230B': '⠈⠰⠾',			// ⌋		Right floor	
+	'\u007C': '⠳',				// |	Vertical bar
 	'\u007E': '⠈⠱',				// ~	Tilde
 	'\u0025': '⠈⠴',				// %	Percent sign
 	'\u005B': '⠈⠷',				// [	Left square bracket
@@ -367,7 +373,7 @@ const symbolBrailleStrings = {
 	'\u2A2A': '⠐⠱⠩⠡⠻',			// ⨪	Minus sign w dot below
 	// '\u2022': '⠔⠔',			// •	Bullet
 	'\u00B0': '⠘⠨⠡',			// °	Degree sign
-	// '\u221A': '⠜':	'',			// √	Square root	
+	// '\u221A': '⠜':	'',		// √	Square root
 	'\u002C': '⠠⠀',				// ,	Comma	
 	'\u221E': '⠠⠿',				// ∞	Infinity	
 	'\u22C5': '⠡',				// ⋅		Dot operator 
@@ -393,9 +399,11 @@ const symbolBrailleStrings = {
 	'\u2229': '⠨⠩',				// ∩	Intersection
 	'\u222A': '⠨⠬',				// ∪	Union
 	'\u007B': '⠨⠷',				// {	Left curly brace
+	'\u23DE': '⠨⠷',				// {	Curly overbrace
 	'\u2983': '⠨⠸⠷',			// ⦃		Left white curly bracket	
 	'\u2984': '⠨⠸⠾',			// ⦄		Right white curly bracket	
 	'\u0023': '⠨⠼',				// #	Number sign
+	'\u23DF': '⠨⠾',				// {	Curly underbrace
 	'\u007D': '⠨⠾',				// }	Right curly brace
 	'\u002B': '⠬',				// +	Plus
 	'\u00B1': '⠬⠤',				// ±	Plus minus
@@ -462,7 +470,8 @@ const symbolBrailleStrings = {
 	'\u2A42': '⠱⠨⠬',			// ⩂	Union w overbar
 	'\u2A5E': '⠱⠱⠈⠩',			// ⩞	Logical AND w double overbar
 	'\u2A62': '⠱⠱⠈⠬',			// ⩢	Logical OR w double overbar
-	'\u0028': '⠷',				//(		Left paren
+	'\u007C': '⠳',				// |	Vertical bar
+	'\u0028': '⠷',				// (	Left paren
 	'\u003B': '⠸⠆',				// ;	Semicolon
 	'\u002F': '⠌',				// /	Solidus (nonmath mapping: ⠸⠌)
 	'\u2215': '⠸⠌',				// ∕	Division slash
@@ -661,19 +670,16 @@ function braille(value, noAddParens, subsup) {
 
 	switch (value.nodeName) {
 		case 'mtable':
-			var symbol = '■';				// 'matrix'
-			var sep = '@';					// 'next row'
+			var sep = '⣍';					// 'next row'
 			let intnt = '';
 			if (value.parentElement.attributes.hasOwnProperty('intent'))
 				intnt = value.parentElement.attributes.intent.nodeValue;
 
 			if (value.attributes.hasOwnProperty('intent') &&
 				value.attributes.intent.value == ':equations') {
-				symbol = '█';				// 'equation array'
 				sep = '⍈';					// 'next equation'
 				if (intnt == 'cases') {
 					sep = '⍆';				// 'next case'
-					symbol = 'Ⓒ';			// 'cases'
 				}
 			} else if (intnt) {
 				for (const [key, val] of Object.entries(matrixIntents)) {
@@ -690,10 +696,10 @@ function braille(value, noAddParens, subsup) {
 				return braille(value.firstElementChild.lastElementChild.firstElementChild) +
 					'#' + eqno.substring(1, eqno.length - 1);
 			}
-			return symbol + nary(value, sep, cNode) + '¶' + symbol;
+			return nary(value, sep, cNode);
 
 		case 'mtr':
-			var op = '&';
+			var op = '⠀';					// Braille space (U+2800)
 			if (value.parentElement.attributes.hasOwnProperty('intent') &&
 				value.parentElement.attributes.intent.textContent.endsWith('equations'))
 				op = '';
@@ -730,20 +736,7 @@ function braille(value, noAddParens, subsup) {
 			return braille(value.firstElementChild, true);
 
 		case 'mstyle':
-			ret = braille(value.firstElementChild);
-			if (value.attributes.hasOwnProperty('mathcolor')) {
-				let color = value.attributes.mathcolor.value;
-				if (color[0] == '#')
-					color = '⬢ ' + color.substring(1) + '⏳';
-				ret = '✎' + color + ' ' + ret + '¶✎';
-			}
-			if (value.attributes.hasOwnProperty('mathbackground')) {
-				let color = value.attributes.mathbackground.value;
-				if (color[0] == '#')
-					color = '⬢ ' + color.substring(1) + '⏳';
-				ret = '☁' + color + ' ' + ret + '¶☁';
-			}
-			return ret;
+			return braille(value.firstElementChild);
 
 		case 'mroot':
 			ret = '⠣' + braille(value.lastElementChild, true);
@@ -763,11 +756,11 @@ function braille(value, noAddParens, subsup) {
 			return '⠹' + num + '⠌' + den + '⠼';
 
 		case 'msup':
+			ret = braille(value.firstElementChild, false, subsup);
 			if (subsup == undefined || subsup[0] != '⠘' && subsup[0] != '⠰')
 				subsup = '⠘';
 			else
 				subsup += '⠘';
-			ret = braille(value.firstElementChild, false, subsup);
 			var val = braille(value.lastElementChild, true, subsup);
 			if (isPrime(val[0])) {
 				ret += val[0];
@@ -786,7 +779,7 @@ function braille(value, noAddParens, subsup) {
 				'⠣' + braille(value.lastElementChild, true) + '⠻';
 
 		case 'munder':
-			return '⠐' + braille(value.firstElementChild) + '⠩' +
+			return '⠐' + braille(value.firstElementChild, true) + '⠩' +
 				braille(value.lastElementChild, true) + '⠻';
 
 			//if (value.attributes.hasOwnProperty('accentunder'))
@@ -871,6 +864,8 @@ function braille(value, noAddParens, subsup) {
 						break;
 				}
 			}
+			if (val == '\u0302')
+				val = '^';
 			return val;
 
 		case 'mi':
@@ -908,9 +903,39 @@ function braille(value, noAddParens, subsup) {
 
 	if (mrowIntent.startsWith('absolute-value') ||
 		mrowIntent.startsWith('cardinality')) {
-		let op = mrowIntent[0] == 'a' ? '⒜' : 'ⓒ';
-		ret = braille(value.children[1], true);
-		return op + '▒' + ret + (needParens(ret) ? '¶' + op : '⏳');
+		return '|' + braille(value.children[1], true) + '|';
+	}
+
+	if (cNode == 3 && value.children[1].nodeName == 'mtable') {
+		let open = value.firstElementChild.textContent;
+		let close = value.lastElementChild.textContent;
+
+		if ('([{|'.includes(open) && ')]}|'.includes(close)) {
+			if ('(|'.includes(open)) {
+				open = '⠠' + open;
+				close = '⠠' + close;
+			} else if (close) {
+				open = symbolBrailleStrings[open];
+				close = symbolBrailleStrings[close];
+				open = open[0] + '⠠⠷';
+				close = close[0] + '⠠⠾';
+			}
+		}
+		return open + braille(value.children[1], true) + close;
+	}
+	if (mrowIntent == ':function') {
+		// Separate function name and argument by braille space
+		ret = braille(value.firstElementChild, true) + '⠀' +
+			braille(value.lastElementChild, true);
+
+		if (value.previousElementSibling &&
+			value.firstElementChild.nodeName == 'mi' &&
+			value.firstElementChild.textContent < '\u2100' &&
+			value.previousElementSibling.nodeName == 'mi') {
+			// Separate variable & function name
+			ret = '⠀' + ret;				// Braille space: '\u2800'
+		}
+		return ret;
 	}
 
 	for (var i = 0; i < cNode; i++) {
@@ -918,27 +943,6 @@ function braille(value, noAddParens, subsup) {
 		ret += braille(node, false, subsup);
 	}
 
-	if (mrowIntent) {
-		if (mrowIntent == 'cases')
-			return 'Ⓒ' + ret.substring(2);
-
-		if (mrowIntent == ':fenced' && !value.lastElementChild.textContent) {
-			// No open [and close] delimiter: insert as needed
-			return !value.firstElementChild.textContent ? '〖' + ret + '〗' : ret + '┤';
-		}
-		if (mrowIntent == ':function' && value.previousElementSibling &&
-			value.firstElementChild.nodeName == 'mi' &&
-			value.firstElementChild.textContent < '\u2100' &&
-			value.previousElementSibling.nodeName == 'mi') {
-			// Separate variable & function name
-			return '⠀' + ret;				// Braille space: '\u2800'
-		}
-	}
-	if (value.firstElementChild && value.firstElementChild.nodeName == 'mo' &&
-		'([{'.includes(value.firstElementChild.textContent)) {
-		if (value.lastElementChild.nodeName != 'mo' || !value.lastElementChild.textContent)
-			ret += '┤';						// Happens for DLMF pmml
-	}
 	if (cNode > 1 && value.nodeName != 'math' && !noAddParens &&
 		(!mrowIntent || mrowIntent != ':fenced') &&
 		isMathMLObject(value.parentElement) && needParens(ret)) {

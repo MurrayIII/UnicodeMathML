@@ -298,7 +298,7 @@ function removeMmlPrefixes(mathML) {
 }
 
 function isPrime(ch) {
-    return '′″‴'.includes(ch);
+    return '′″‴⁗	'.includes(ch);
 }
 
 // generate prime symbol(s) based on a number of desired primes
