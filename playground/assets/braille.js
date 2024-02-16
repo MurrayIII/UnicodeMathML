@@ -663,7 +663,7 @@ function braille(value, noAddParens, subsup) {
 	}
 
 	function Nary(node) {
-		// symbol 'from' lower-limit 'to' upper-limit 'of'
+		// symbol sub lower-limit sup upper-limit
 		return braille(node.firstElementChild) + '⠰' +
 			braille(node.children[1], true) + '⠘' +
 			braille(node.lastElementChild, true) + '⠐';
@@ -678,10 +678,7 @@ function braille(value, noAddParens, subsup) {
 
 	switch (value.nodeName) {
 		case 'mtable':
-			var sep = '⣍';					// 'next row'
-			let intnt = '';
-			if (value.parentElement.attributes.hasOwnProperty('intent'))
-				intnt = value.parentElement.attributes.intent.nodeValue;
+			var sep = '⣍';					// 'inline next row'
 
 			if (value.firstElementChild.nodeName == 'mlabeledtr' &&
 				value.firstElementChild.children.length == 2 &&
@@ -698,7 +695,10 @@ function braille(value, noAddParens, subsup) {
 			if (value.parentElement.attributes.hasOwnProperty('intent') &&
 				value.parentElement.attributes.intent.textContent.endsWith('equations'))
 				op = '';
-			return nary(value, op, cNode);
+			ret = '';
+			if (value.firstElementChild.firstElementChild.nodeName == 'mn')
+				ret = '⠼';
+			return ret + nary(value, op, cNode);
 
 		case 'mtd':
 			return nary(value, '', cNode);

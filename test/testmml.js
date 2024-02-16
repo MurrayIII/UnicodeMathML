@@ -240,7 +240,7 @@ const mathBraille = [
     "⠋⠄⠷⠭⠾⠀⠨⠅⠀⠋⠄⠷⠭⠄⠾",
     "⠁⠘⠆",
     "⠳⠭⠳⠳⠭⠬⠆⠳⠀⠨⠅⠀⠼⠴",
-    "⠠⠷⠂⠀⠼⠴⣍⠴⠀⠼⠂⠠⠾",
+    "⠠⠷⠼⠂⠀⠼⠴⣍⠼⠴⠀⠼⠂⠠⠾",
 ]
 
 function testMathMLtoUnicodeMath() {

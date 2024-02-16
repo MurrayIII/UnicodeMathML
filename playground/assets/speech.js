@@ -580,8 +580,12 @@ function checkIntent(value) {
 	if (!value.attributes || !value.attributes.intent)
 		return '';							// No intent
 	let intent = value.attributes.intent.textContent;
-	if (intent[0] == ':')
-		return '';							// It's a property
+	if (intent[0] == ':') {
+		if (intent.indexOf('derivative') == -1)
+			return '';						// It's a property
+		intent = intent.substring(1);
+	}
+
 	let i = intent.indexOf('(');
 	if (i <= 0)
 		return '';							// No name

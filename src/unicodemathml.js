@@ -2532,7 +2532,7 @@ function preprocess(dsty, uast, index, arr) {
                             }
                         }
                         var intent = '∂𝜕'.includes(chDifferential0)
-                            ? 'partial-derivative' : 'derivative';
+                            ? ':partial-derivative' : ':derivative';
                         intent += '(' + order0 + ',' + arg0 + ',' + wrt + ')';
                         return {fraction: {symbol: value.symbol, intent: intent, of: preprocess(dsty, value.of)}};
                    }
@@ -2699,7 +2699,7 @@ function preprocess(dsty, uast, index, arr) {
                     }
                     if (darg) {
                         ret.intent = str[0] == 'ⅅ'
-                            ? 'derivative' : 'partial-derivative';
+                            ? ':derivative' : ':partial-derivative';
                         ret.intent += '(' + order + ',' + darg + ',' + chars1 + ')';
                     }
                     break;
@@ -2883,7 +2883,7 @@ function preprocess(dsty, uast, index, arr) {
                 }
                 if (intent == ':derivative') {
                     // Handle, e.g., ⓘ(":derivative"𝑓′(𝑥))
-                    intent = 'derivative(' + String.fromCodePoint(value.primes + 0x30) + ',' + chars;
+                    intent = ':derivative(' + String.fromCodePoint(value.primes + 0x30) + ',' + chars;
 
                     if (index < arr.length - 1 && arr[index + 1].hasOwnProperty('bracketed')) {
                         let val = arr[index + 1].bracketed.content;
@@ -2944,7 +2944,7 @@ function preprocess(dsty, uast, index, arr) {
                            val.arg = 'x';
                         }
                     }
-                    intent = 'derivative(1,' + chars.substring(1) + ',' + darg + ')';
+                    intent = ':derivative(1,' + chars.substring(1) + ',' + darg + ')';
                 }
             }
             if (!arg && value.arg)
