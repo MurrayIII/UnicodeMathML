@@ -421,7 +421,9 @@ const symbolSpeechStrings = {
 	'Ⓢ': 'curly braced matrix',				// 24C8
 	'ⓒ': 'cardinality',						// 24D2
 	'ⓢ': 'bracketed matrix',				// 24E2
+	'ⓣ': 'the',								// 24E3
 	'─': 'line on',							// 2500 (for partial box lead-in)
+	'━': 'line',							// 2501 (for matrix array)
 	'│': 'vertical bar',					// 2502
 	'┠': 'left',							// 2520 (for box 'left')
 	'┤': '',								// 2524
@@ -430,6 +432,7 @@ const symbolSpeechStrings = {
 	'┯': 'top',								// 252F (for box 'top')
 	'┴': 'above',							// 2534
 	'┷': 'bottom',							// 2537 (for box 'bottom')
+	'═': 'lines',							// 2550 (for matrix array)
 	'▁': 'underbar',						// 2581
 	'█': 'equation array',					// 2588
 	'▒': 'of',								// 2592
@@ -723,6 +726,7 @@ function Nary(node) {
 			var symbol = '■';				// 'matrix'
 			var sep = '@';					// 'row'
 			let intnt = '';
+			let the = 'ⓣ';
 
 			if (value.parentElement.attributes.hasOwnProperty('intent'))
 				intnt = value.parentElement.attributes.intent.nodeValue;
@@ -735,11 +739,13 @@ function Nary(node) {
 					sep = '⍆';				// 'case'
 					symbol = 'Ⓒ';			// 'cases'
 				}
+				the = '';
 				ret = cNode + ' ' + symbol;
 			} else if (intnt) {
 				for (const [key, val] of Object.entries(matrixIntents)) {
 					if (val == intnt) {
-						symbol = key;
+						if (val != ':parenthesized-matrix')
+							symbol = key;
 						break;
 					}
 				}
@@ -750,13 +756,20 @@ function Nary(node) {
 				let eqno = value.firstElementChild.firstElementChild.firstElementChild.textContent;
 				return speech(value.firstElementChild.lastElementChild.firstElementChild) +
 					'#' + eqno.substring(1, eqno.length - 1);
+			} else if (value.parentElement.nodeName != 'mrow' ||
+				!value.previousElementSibling ||
+				value.previousElementSibling.nodeName != 'mo') {
+				symbol = '═⏳';				// 'lines'
+				sep = '━';					// 'line'
+				ret = cNode + ' ' + symbol;
+				the = '';
 			}
 			if (ret.endsWith('☒'))
 				ret += value.firstElementChild.children.length + symbol;
 			for (let i = 0; i < cNode; i++) {
 				ret += sep + (i + 1) + '⏳' + speech(value.children[i]);
 			}
-			return ret + '¶' + symbol;
+			return the ? the + ret + '¶' + symbol : ret;
 
 		case 'mtr':
 			var op = '⏳';
@@ -1064,6 +1077,10 @@ function Nary(node) {
 			(cNode == 2 || !value.lastElementChild.textContent ||
 			 value.lastElementChild.textContent == '┤')) {
 			value.setAttribute('intent', ':cases');
+		} else if (cNode == 3 && value.firstElementChild.textContent == '(' &&
+			value.children[1].nodeName == 'mtable' &&
+			value.lastElementChild.textContent == ')') {
+			return speech(value.children[1], true);	// Discard parens for 'matrix'
 		}
 	}
 
@@ -1179,5 +1196,8 @@ function MathMLtoSpeech(mathML) {
 		ret += ch + ' ';
 		ch = ' ';
 	}
-	return ret.trimEnd();
+	ret = ret.trimEnd();
+	if (ret.endsWith(','))
+		ret = ret.substring(0, ret.length - 1);
+	return ret;
 }
