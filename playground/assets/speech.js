@@ -20,7 +20,7 @@ const symbolSpeechStrings = {
 	'/': 'over',
 	'<': 'less than',
 	'>': 'greater than',
-	'@': ', next row,',
+	'@': ', row',
 	'A': 'eigh',							// Letter 'A', which TTS may pronounce incorrectly
 	'[': 'open bracket',
 	']': 'close bracket',
@@ -394,8 +394,8 @@ const symbolSpeechStrings = {
 	'⌊': 'open floor',						// 230A
 	'⌋': 'close floor',						// 230B
 	'⍁': 'fraction',						// 2341
-	'⍆': ', next case, ',					// 2346
-	"⍈": ', next equation, ',				// 2348
+	'⍆': ', case',							// 2346
+	"⍈": ', equation',						// 2348
 	'⍨': 'as',								// 2368
 	'⎴': 'over bracket',					// 23B4
 	'⎵': 'under bracket',					// 23B5
@@ -424,7 +424,7 @@ const symbolSpeechStrings = {
 	'─': 'line on',							// 2500 (for partial box lead-in)
 	'│': 'vertical bar',					// 2502
 	'┠': 'left',							// 2520 (for box 'left')
-	'┤': 'close',							// 2524
+	'┤': '',								// 2524
 	'┨': 'right',							// 2528 (for box 'right')
 	'┬': 'below',							// 252C
 	'┯': 'top',								// 252F (for box 'top')
@@ -438,6 +438,7 @@ const symbolSpeechStrings = {
 	'☁': 'back color',						// 2601
 	'★': 'complex conjugate',				// 2605 (for 'c.c.')
 	'☆': 'conjugate',						// 2606 (for variable conjugate like '𝑧^∗')
+	'☒': 'by',								// 2612 (as in '2 by 2 determinant')
 	'☟': 'from',							// 261A (as in ∫ 'from' 0 'to' 1)
 	'☛': 'goes to',							// 261B (as in lim_(𝑛→∞))
 	'☝': 'to',								// 261D
@@ -714,20 +715,23 @@ function Nary(node) {
 
 	switch (value.nodeName) {
 		case 'mtable':
+			ret = cNode + '☒';				// cNode 'by' ...
 			var symbol = '■';				// 'matrix'
-			var sep = '@';					// 'next row'
+			var sep = '@';					// 'row'
 			let intnt = '';
+
 			if (value.parentElement.attributes.hasOwnProperty('intent'))
 				intnt = value.parentElement.attributes.intent.nodeValue;
 
 			if (value.attributes.hasOwnProperty('intent') &&
 				value.attributes.intent.value == ':equations') {
 				symbol = '█';				// 'equation array'
-				sep = '⍈';					// 'next equation'
-				if (intnt == 'cases') {
-					sep = '⍆';				// 'next case'
+				sep = '⍈';					// 'equation'
+				if (intnt == ':cases') {
+					sep = '⍆';				// 'case'
 					symbol = 'Ⓒ';			// 'cases'
 				}
+				ret = cNode + ' ' + symbol;
 			} else if (intnt) {
 				for (const [key, val] of Object.entries(matrixIntents)) {
 					if (val == intnt) {
@@ -743,10 +747,15 @@ function Nary(node) {
 				return speech(value.firstElementChild.lastElementChild.firstElementChild) +
 					'#' + eqno.substring(1, eqno.length - 1);
 			}
-			return symbol + nary(value, sep, cNode) + '¶' + symbol;
+			if (ret.endsWith('☒'))
+				ret += value.firstElementChild.children.length + symbol;
+			for (let i = 0; i < cNode; i++) {
+				ret += sep + (i + 1) + '⏳' + speech(value.children[i]);
+			}
+			return ret + '¶' + symbol;
 
 		case 'mtr':
-			var op = '&';
+			var op = '⏳';
 			if (value.parentElement.attributes.hasOwnProperty('intent') &&
 				value.parentElement.attributes.intent.textContent.endsWith('equations'))
 				op = '';
@@ -959,8 +968,13 @@ function Nary(node) {
 
 		case 'mo':
 			var val = value.innerHTML;
-			if (val == '\u2062')				// Ignore invisible times
+			if (val == '\u2062')			// Ignore invisible times
 				return '';
+
+			if (val == '{' && value.parentElement.attributes.intent &&
+				value.parentElement.attributes.intent.nodeValue == ':cases') {
+				return '';					// Don't add 'open brace'
+			}
 
 			if (val[0] == '&') {
 				if (val.startsWith('&#') && val.endsWith(';')) {
@@ -1037,6 +1051,18 @@ function Nary(node) {
 	let mrowIntent = value.nodeName == 'mrow' && value.attributes.hasOwnProperty('intent')
 		? value.attributes.intent.nodeValue : '';
 
+	if ((!mrowIntent || mrowIntent == ':fenced') && (cNode == 2 || cNode == 3)) {
+		if (value.firstElementChild.textContent == '|' &&
+			value.lastElementChild.textContent == '|') {
+			mrowIntent = 'absolute-value';
+		} else if (value.firstElementChild.textContent == '{' &&
+			value.children[1].nodeName == 'mtable' &&
+			(cNode == 2 || !value.lastElementChild.textContent ||
+			 value.lastElementChild.textContent == '┤')) {
+			value.setAttribute('intent', ':cases');
+		}
+	}
+
 	if (mrowIntent.startsWith('absolute-value') ||
 		mrowIntent.startsWith('cardinality')) {
 		let op = mrowIntent[0] == 'a' ? '⒜' : 'ⓒ';
@@ -1050,13 +1076,6 @@ function Nary(node) {
 	}
 
 	if (mrowIntent) {
-		if (mrowIntent == 'cases')
-			return 'Ⓒ' + ret.substring(2);
-
-		if (mrowIntent == ':fenced' && !value.lastElementChild.textContent) {
-			// No open [and close] delimiter: insert as needed
-			return !value.firstElementChild.textContent ? '〖' + ret + '〗' : ret + '┤';
-		}
 		if (mrowIntent.startsWith('binomial-coefficient') ||
 			mrowIntent.endsWith('matrix') || mrowIntent.endsWith('determinant')) {
 			// Remove enclosing parens for 𝑛⒞𝑘, bracketed matrices, determinants
@@ -1069,11 +1088,6 @@ function Nary(node) {
 			// Separate variable & function name
 			return ' ' + ret;
 		}
-	}
-	if (value.firstElementChild && value.firstElementChild.nodeName == 'mo' &&
-		'([{'.includes(value.firstElementChild.textContent)) {
-		if (value.lastElementChild.nodeName != 'mo' || !value.lastElementChild.textContent)
-			ret += '┤';						// Happens for DLMF pmml
 	}
 	if (cNode > 1 && value.nodeName != 'math' && !noAddParens &&
 		(!mrowIntent || mrowIntent != ':fenced') &&

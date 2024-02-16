@@ -471,6 +471,7 @@ const symbolBrailleStrings = {
 	'\u2A5E': '⠱⠱⠈⠩',			// ⩞	Logical AND w double overbar
 	'\u2A62': '⠱⠱⠈⠬',			// ⩢	Logical OR w double overbar
 	'\u007C': '⠳',				// |	Vertical bar
+	'\u2502': '⠳',				// |	Vertical bar
 	'\u0028': '⠷',				// (	Left paren
 	'\u003B': '⠸⠆',				// ;	Semicolon
 	'\u002F': '⠌',				// /	Solidus (nonmath mapping: ⠸⠌)
@@ -675,20 +676,7 @@ function braille(value, noAddParens, subsup) {
 			if (value.parentElement.attributes.hasOwnProperty('intent'))
 				intnt = value.parentElement.attributes.intent.nodeValue;
 
-			if (value.attributes.hasOwnProperty('intent') &&
-				value.attributes.intent.value == ':equations') {
-				sep = '⍈';					// 'next equation'
-				if (intnt == 'cases') {
-					sep = '⍆';				// 'next case'
-				}
-			} else if (intnt) {
-				for (const [key, val] of Object.entries(matrixIntents)) {
-					if (val == intnt) {
-						symbol = key;
-						break;
-					}
-				}
-			} else if (value.firstElementChild.nodeName == 'mlabeledtr' &&
+			if (value.firstElementChild.nodeName == 'mlabeledtr' &&
 				value.firstElementChild.children.length == 2 &&
 				value.firstElementChild.firstElementChild.firstElementChild.nodeName == 'mtext') {
 				// Numbered equation: convert to UnicodeMath like 𝐸=𝑚𝑐²#(20)

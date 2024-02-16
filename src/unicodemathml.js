@@ -2993,6 +2993,12 @@ function preprocess(dsty, uast, index, arr) {
                     value.content = preprocess(dsty, value.content);
                 } else {
                     value.content = preprocess(dsty, value.content);
+                    if (!value.intent && value.open == '{' && !value.close &&
+                        value.content.hasOwnProperty('expr') &&
+                        Array.isArray(value.content.expr) &&
+                        value.content.expr[0].hasOwnProperty('array')) {
+                        value.intent = ':cases';
+                    }
                     if (!arg && value.arg)
                         arg = value.arg;        // Happens for derivative w bracketed order
                     if (!intent && value.intent) {
@@ -4177,7 +4183,7 @@ function dump(value, noAddParens) {
         ? value.attributes.intent.nodeValue : '';
 
     if (mrowIntent) {
-        if (mrowIntent == 'cases')
+        if (mrowIntent == ':cases')
             return 'Ⓒ' + ret.substring(2);
 
         if (mrowIntent == ':fenced' && !value.lastElementChild.textContent)

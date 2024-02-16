@@ -1173,10 +1173,10 @@ expBracket
         return {bracketed: {open: op, close: cl, content: e}};
     }
     / "Ⓒ(" r:arows ")" {  // cases
-        return {bracketed: {open: "{", close: "", intent: "cases", content: {array: r}}};  // }
+        return {bracketed: {open: "{", close: "", intent: ":cases", content: {array: r}}};  // }
     }
     / "Ⓒ〖" r:arows "〗" {  // cases
-        return {bracketed: {open: "{", close: "", intent: "cases", content: {array: r}}};  // }
+        return {bracketed: {open: "{", close: "", intent: ":cases", content: {array: r}}};  // }
     }
     / op:expBracketOpen {
         return {colored: {color: '#F00', of: {operator: op}}};  // Suppress error message
