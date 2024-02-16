@@ -8,11 +8,18 @@ function MathMLtoBraille(mathML) {
 	let ch;									// Current char
 	let code;								// UTF-32 code of current char
 
+	if (isAsciiDigit(text[0]))				// Prefix numeric indicator since
+		ret = '⠼';							//  digit starts expression
+
 	// Convert symbols to braille chars
 	for (let i = 0; i < text.length; i += cchCh) {
 		code = text.codePointAt(i);
 		cchCh = code > 0xFFFF ? 2 : 1;
 		ch = text.substring(i, i + cchCh);
+		if (isAsciiDigit(ch) && ret[ret.length - 1] == '\u2800') {
+			// Need numeric indicator after braille space;
+			ret += '⠼';
+		}
 		ch = symbolBraille(ch);
 		if (ch[0] == '\u2800' && ret[ret.length - 1] == '⠐') {
 			// Braille space returns to base line, so don't need '⠐'
@@ -701,25 +708,30 @@ function braille(value, noAddParens, subsup) {
 			ret = braille(value.firstElementChild, true);
 
 			if (!value.attributes.hasOwnProperty('notation'))
-				return '▭' + ret + '¶▭';
+				return '⠫⠗⠸⠫' + ret + '⠻';
 
 			notation = value.attributes.notation.nodeValue;
 
 			for (const [key, val] of Object.entries(symbolClasses)) {
-				if (val == notation) {
-					return key + ' ' + ret + '¶' + key;
-				}
+				if (val == notation)
+					return key + '⠸⠫' + ret + '⠻';
 			}
-			let nota = notation.split(' ').map(c => {
-				if (c in boxNotations)
-					return boxNotations[c];
-			});
-			// E.g., 'line on right left enclosing c + b , end enclosure'
-			return '─' + nota.join('') + '⼖' + ret + '¶⼞';
+			let nota = notation.split(' ');
+			if (nota.includes('top') || nota.includes('bottom')) {
+				if (nota.includes('top'))
+					ret += '⠣⠱';
+				if (nota.includes('bottom'))
+					ret += '⠩⠱';
+				ret = '⠐' + ret + '⠻';
+			}
+			if (nota.includes('left'))
+				ret = '⠳' + ret;
+			if (nota.includes('right'))
+				ret = ret + '⠳';
+
+			return ret;
 
 		case 'mphantom':
-			return braille(value.firstElementChild, true);
-
 		case 'mpadded':
 			return braille(value.firstElementChild, true);
 
@@ -805,17 +817,17 @@ function braille(value, noAddParens, subsup) {
 			ret = '';
 			if (value.children[3].nodeName == 'mprescripts') {
 				if (value.children[4].nodeName != 'none')
-					ret = '_' + braille(value.children[4]);
+					ret = '⠰' + braille(value.children[4]);
 				if (value.children[5].nodeName != 'none')
-					ret += '^' + braille(value.children[5]);
+					ret += '⠘' + braille(value.children[5]);
 				if (ret)
 					ret += ' ';
 			}
 			ret += braille(value.children[0]);
 			if (value.children[1].nodeName != 'none')
-				ret += '_' + braille(value.children[1]);
+				ret += '⠰' + braille(value.children[1]);
 			if (value.children[2].nodeName != 'none')
-				ret += '^' + braille(value.children[2]);
+				ret += '⠘' + braille(value.children[2]);
 			return ret;
 
 		case 'mfenced':
@@ -877,13 +889,7 @@ function braille(value, noAddParens, subsup) {
 			return value.textContent;
 
 		case 'mspace':
-			if (value.attributes.hasOwnProperty('width')) {
-				for (let i = 0; i < spaceWidths.length; i++) {
-					if (value.attributes.width.nodeValue == spaceWidths[i])
-						return uniSpaces[i];
-				}
-			}
-			break;
+			return '';
 	}
 
 	let mrowIntent = value.nodeName == 'mrow' && value.attributes.hasOwnProperty('intent')
