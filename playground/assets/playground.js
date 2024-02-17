@@ -723,15 +723,20 @@ function autocomplete() {
             } else if (e.altKey && e.key == 's') { // Alt+s
                 // Speak MathML
                 e.preventDefault();
-                let mathML = isMathML(input.value)
-                    ? input.value
-                    : document.getElementById('output_source').innerText;
-                let speech = MathMLtoSpeech(mathML);
-                console.log('Math speech = ' + speech);
-                speechDisplay.innerText = '\n' + speech;
-                let utterance = new SpeechSynthesisUtterance(speech);
-                //utterance.voice = 'Microsoft Zira - English (United States)';
-                speechSynthesis.speak(utterance);
+                if (speechSynthesis.speaking) {
+                    speechSynthesis.cancel();
+                } else {
+                    let mathML = isMathML(input.value)
+                        ? input.value
+                        : document.getElementById('output_source').innerText;
+                    let speech = MathMLtoSpeech(mathML);
+                    console.log('Math speech = ' + speech);
+                    speechDisplay.innerText = '\n' + speech;
+                    let utterance = new SpeechSynthesisUtterance(speech);
+                    if (voiceZira)
+                        utterance.voice = voiceZira;
+                    speechSynthesis.speak(utterance);
+                }
             } else if (e.altKey && e.key == 'Enter') { // Alt+Enter
                 // Enter Examples[iExample]
                 x = document.getElementById('Examples').childNodes[0];
@@ -887,6 +892,24 @@ if (window.localStorage.getItem('history')) {
 
 // Enable autocorrect and autocomplete
 autocomplete();
+function setSpeech() {
+    return new Promise(
+        function (resolve, reject) {
+            let synth = window.speechSynthesis;
+            let id = setInterval(() => {
+                if (synth.getVoices().length !== 0) {
+                    resolve(synth.getVoices());
+                    clearInterval(id);
+                }
+            }, 10);
+        }
+    )
+}
+// Use Zira for speech if she's available
+var voiceZira
+let s = setSpeech();
+
+s.then(v => voiceZira = v.filter(val => val.name.startsWith('Microsoft Zira'))[0])
 
 // compile and draw mathml code from input field
 async function draw() {
