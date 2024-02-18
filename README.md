@@ -328,7 +328,7 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Control words and operator combinations typed into the Playground input text area are autocorrected there as well as in the output window.
 * Variables are displayed in math italic in the Playground input as well as in the output.
 * Many more LaTeX control words are included. \pmatrix, \bmatrix, \Bmatrix, \nmatrix, \vmatrix, \cancel, \bcancel, and \xcancel are implemented. Unicode LaTeX math alphanumeric control words like \mitX for 𝑥 are supported.
-* Math dictation infrastructure is added. Math dictation needs the file dictationljs, which is currently private.
+* Math dictation infrastructure is added. Math dictation needs the file dictation.js, which is currently private.
 * In dictation input, ASCII letters and lower-case Greek letters are converted to math italic unless they comprise a function name, simple digit subscripts and superscripts are converted to the corresponding Unicode characters, ane three-character numeric fractions are converted to Unicode fractions.
 * Most symbols in the Playground galleries have LaTeX control-word tooltips.
 * Alt+x hex-to-Unicode (and vice versa) hot key is implemented in the Playground input. The Ctrl+b hot key toggles the selected characters between math bold and not math bold. Similarly, the Ctrl+i hot key toggles the selected characters between math italic and not math italic.
@@ -341,7 +341,7 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Pasting MathML into the input text area passes the MathML to the renderer, and converts the MathML to UnicodeMath, which it displays in the MathML output window.
 * Unicode numeric fractions like ⁵⁶/₆₂₅ are converted into standard fractions.
 * Math speech is added with support for some intent attributes, e.g., derivatives and intervals.
-* Nemeth math braille is added.
+* Nemeth math braille support is added.
 
 ## MathML intent-attribute support:
 * The derivative and partial-derivative intent attributes are defined for Leipzig and Euler derivative notations.

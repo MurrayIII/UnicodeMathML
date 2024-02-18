@@ -1151,24 +1151,36 @@ function MathMLtoSpeech(mathML) {
 			let j = text.indexOf(')', i + 1);
 
 			if (j != -1) {
-				if (cchText > j && text[j + 1] == 'ŵ') { 'with respect to'
+				if (cchText > j && text[j + 1] == 'ŵ') { // 'with respect to'
 					// Set up 'f of ' ... 'with respect to'
-					ret += symbolSpeech('▒');
+					ret += symbolSpeech('▒');	// 'of'
 					continue;
 				}
-				if (ret.length > 1 && isAsciiAlphabetic(ret[ret.length - 2])) {
-					let code = text.codePointAt(i + 1);
-					let cchCh = code > 0xFFFF ? 2 : 1;
+				let ch1 = i ? text[i - 1] : '';
 
-					if (j == i + cchCh + 1) {
-						// Parens enclose a single char & are preceded by a
-						// letter: say 'of' + char instead of '(' + char + ')'.
+				if (isAsciiAlphabetic(ch1) || inRange('\uDC00', ch1, '\uDFFF') ||
+					isGreek(ch1) || inRange('\u0300', ch1, '\u036F')) {
+					// Paren preceded by variable. Check for argument list
+					let arglist = '';
+					let cchCh;
+					let k;
+					for (k = i + 1; k < j; k += cchCh) {
+						let code = text.codePointAt(k);
+						cchCh = code > 0xFFFF ? 2 : 1;
+						ch1 = String.fromCodePoint(code);
+						if (!isAlphanumeric(ch1) && ch1 != ',' && ch1 != '′')
+							break;
+						arglist += symbolSpeech(ch1);
+					}
+					if (k == j) {
+						// Parens enclose an argument list & are preceded by a
+						// variable: say 'of' + char instead of '(' + char + ')'.
 						// For example, say 'f of x' instead of 'f(x)'.
-						let ch1 = String.fromCodePoint(code);
-						ret += symbolSpeech('▒') + symbolSpeech(ch1);
-						ret += !'/='.includes(text[i + cchCh + 2])
-							? symbolSpeech('⏳') : ' ';
-						i += cchCh + 1;
+						ret += symbolSpeech('▒') + arglist;	// 'of' + arglist
+						if (j + 1 < text.length)
+							ret += !'/='.includes(text[j + 1]) ? symbolSpeech('⏳') : ' ';
+						i = j;
+						cchCh = 0;
 						continue;
 					}
 				}

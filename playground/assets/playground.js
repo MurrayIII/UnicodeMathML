@@ -691,6 +691,14 @@ function autocomplete() {
         }
     });
 
+    output.addEventListener("keydown", function (e) {
+        if (e.key == 'ArrowRight') {
+            console.log('ArrowRight')
+        } else if (e.key == 'ArrowLeft') {
+            console.log('ArrowRight')
+        }
+    });
+
     input.addEventListener("keydown", function (e) {
         var x = document.getElementById(this.id + "autocomplete-list");
         if (!x) {                           // Target is input
