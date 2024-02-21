@@ -691,13 +691,170 @@ function autocomplete() {
         }
     });
 
-    output.addEventListener("keydown", function (e) {
-        if (e.key == 'ArrowRight') {
-            console.log('ArrowRight')
-        } else if (e.key == 'ArrowLeft') {
-            console.log('ArrowRight')
+    output.addEventListener("click", function (e) {
+        let sel = window.getSelection();
+        if (sel.anchorNode.nodeName == 'DIV')
+            return;                         // </math>
+        let ch = sel.anchorNode.data;
+        if (ch != undefined && sel.anchorNode.length > sel.anchorOffset) {
+            if (ch[0] >= '\uD835' || sel.anchorNode.length == 1)
+                speak(ch)
+            else
+                speak(ch[sel.anchorOffset])
         }
-    });
+    })
+
+    function speak(s) {
+        console.log(s)
+        s = symbolSpeech(s)
+        let utterance = new SpeechSynthesisUtterance(s);
+        if (voiceZira)
+            utterance.voice = voiceZira;
+        speechSynthesis.speak(utterance);
+    }
+
+    function speechSel(sel) {
+        let node = sel.anchorNode;
+
+        if (node.nodeType != 3) {
+            let name = node.nodeName
+            if (names[name])
+                name = names[name];
+            speak(name)
+            return
+        }
+        if (node.length == sel.anchorOffset)
+            return
+
+        let ch = node.data;
+        if (ch[0] >= '\uD835' || sel.anchorNode.length == 1)
+            speak(ch)
+        else
+            speak(ch[sel.anchorOffset])
+    }
+
+    function setSelection(sel, node, offset) {
+        let range = new Range();
+        range.setStart(node, offset);
+        range.setEnd(node, offset);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        return sel;
+    }
+    // MathML elements with fixed number of arguments
+    const mFixedArgs = ['msup', 'msub', 'mover', 'munder', 'mfrac', 'mroot', 'msubsup', 'munderover', 'msqrt', 'menclose']
+
+    // MathML elements with no children
+    const mleaves = ['mi', 'mo', 'mn', 'mtext']
+
+    const names = { 'msup': 'superscript', 'msub': 'subscript', 'mfrac': 'fraction', 'msqrt': 'square root' }
+
+    output.addEventListener("keydown", function (e) {
+        let sel = window.getSelection();
+        let dir = ''
+
+        if (sel.anchorNode.nodeName == 'DIV')
+            return;
+
+        switch (e.key) {
+            case 'ArrowRight':
+                e.preventDefault();
+                dir = '→'
+                break;
+
+            case 'ArrowLeft':
+                dir = '←'
+                return;
+
+            default:
+                e.preventDefault();
+                return;                     // Ignore other input for now
+        }
+        let node = sel.anchorNode;
+
+        if (node.nodeType == 1) {           // At element
+            if (mleaves.includes(node.nodeName)) {
+                if (!node.nextElementSibling && node.parentElement)
+                    node = node.parentElement;
+
+                while (!node.nextElementSibling && node.parentElement) {
+                    node = node.parentElement;
+                    let name = node.nodeName;
+                    if (names[name])
+                        name = names[name]
+                    if (name != 'mrow')
+                        speak('end ' + name);
+                    if (name == 'math')
+                        return;
+                }
+                if (!node.nextElementSibling)
+                    return;
+                node = node.nextElementSibling;
+                if (node.nodeName == 'mrow')
+                    node = node.firstElementChild;
+            } else {
+                // Element with element children: move down to first child
+                node = node.firstElementChild;
+            }
+            if (node.nodeType == 3 || !node.childElementCount)
+                node = node.firstChild;
+            sel = setSelection(sel, node, 0)
+            speechSel(sel)
+            return
+        }
+        if (node.nodeType != 3)
+            return
+
+        // Text node: child of <mi>, <mo>, <mn>, or <mtext>
+        let offset = sel.anchorOffset;
+        if (offset < sel.anchorNode.length) {
+            let code = node.data.codePointAt(offset);
+            offset += code > 0xFFFF ? 2 : 1;
+            if (offset < sel.anchorNode.length) {
+                sel = setSelection(sel, node, offset);
+                speechSel(sel)
+                return
+            }
+        }
+
+        // At end of text node: move up to <mi>, <mo>, <mn>, <mtext>. Then
+        // move to next sibling if in same <mrow>
+        node = sel.anchorNode.parentElement;
+        let nodeParent = node.parentElement;
+
+        if (mFixedArgs.includes(nodeParent.nodeName)) {
+            let name = nodeParent.nodeName
+            if (node.previousElementSibling) {
+                if (node.nextElementSibling)
+                    name = 'lower limit'
+            } else if (node.nextElementSibling) {
+                name = name == 'mfrac' ? 'numerator' : 'base';
+            }
+            if (names[name])
+                name = names[name];
+            speak('end ' + name);
+            sel = setSelection(sel, node, 0);
+            return
+        }
+        if (nodeParent.nodeName == 'mrow') {
+            if (node.nextElementSibling) {
+                node = node.nextElementSibling;
+                if (node.nodeName == 'mrow')
+                    node = node.firstElementChild;
+                if (node.nodeType == 3 || !node.childElementCount)
+                    node = node.firstChild;
+            }
+        }
+        sel = setSelection(sel, node, 0);
+        if (sel.anchorNode.nodeName == 'msup') {
+            let s = speech(sel.anchorNode)
+            if (s.endsWith('²') && s.length <= 3) {
+                speak(symbolSpeech(s) + ' squared')
+                return
+            }
+        }
+        speechSel(sel)
+   });
 
     input.addEventListener("keydown", function (e) {
         var x = document.getElementById(this.id + "autocomplete-list");
