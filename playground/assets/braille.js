@@ -619,6 +619,12 @@ function symbolBraille(ch) {
 	return ret ? ret : ch;
 }
 
+function isNumericSubscript(value) {
+	return value.children[1].nodeName == 'mn' &&
+		isAsciiDigit(value.children[1].textContent[0]) &&
+		value.firstElementChild.nodeName == 'mi'
+}
+
 function styleBraille(mathStyle) {
 	for (const [key, val] of Object.entries(mathvariants)) {
 		if (val == mathStyle)
@@ -635,7 +641,7 @@ function braille(value, noAddParens, subsup) {
 
 	function binary(node, op) {
 		let ret = braille(node.firstElementChild);
-		let retd = braille(node.lastElementChild);
+		let retd = braille(node.children[1]);
 
 		if (op == '/' && (ret.endsWith('^∗ )') || ret.endsWith('^† )'))) {
 			// Remove superfluous build-up space & parens
@@ -793,11 +799,9 @@ function braille(value, noAddParens, subsup) {
 				subsup = '⠰';
 			else
 				subsup += '⠰';
-			if (value.lastElementChild.nodeName == 'mn' &&
-				isAsciiDigit(value.lastElementChild.textContent[0]) &&
-				value.firstElementChild.nodeName == 'mi') {
+			if (isNumericSubscript(value))
 				return binary(value, '');	// No sub op for sub'd numerals
-			}
+
 			var val = braille(value.lastElementChild, true, subsup);
 			if (!val.endsWith('⠐'))
 				val += '⠐';
@@ -810,8 +814,13 @@ function braille(value, noAddParens, subsup) {
 				braille(value.lastElementChild, true) + '⠻';
 
 		case 'msubsup':
-			return isNary(value.firstElementChild.innerHTML)
-				? Nary(value) : ternary(value, '⠰', '⠘');
+			if (isNary(value.firstElementChild.innerHTML))
+				return Nary(value);
+			if (isNumericSubscript(value))
+				val = binary(value, '') + '⠘' + braille(value.lastElementChild, true);
+			else
+				val = ternary(value, '⠰', '⠘');
+			return val.endsWith('⠐') ? val : val + '⠐';
 
 		case 'mmultiscripts':
 			ret = '';

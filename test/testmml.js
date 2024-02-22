@@ -58,6 +58,7 @@ const mathML = [
     "<math display=\"block\"><msup intent=\":sup\"><mi>𝑎</mi><mn>2</mn></msup></math>",
     "<math display=\"block\"><mrow><mrow intent=\"cardinality(𝑥)\"><mo>|</mo><mi>𝑥</mi><mo>|</mo></mrow><mrow intent=\"absolute-value($a)\"><mo>|</mo><mrow arg=\"a\"><mi>𝑥</mi><mo>+</mo><mn>2</mn></mrow><mo>|</mo></mrow><mo>=</mo><mn>0</mn></mrow></math>",
     "<math display=\"block\"><mrow intent=\":parenthesized-matrix\"><mo>(</mo><mtable intent=\":matrix(2,2)\"><mtr><mtd><mn>1</mn></mtd><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mn>0</mn></mtd><mtd><mn>1</mn></mtd></mtr></mtable><mo>)</mo></mrow></math>",
+    "<math display=\"block\"><mfrac><msubsup><mi>𝛼</mi><mn>2</mn><mn>3</mn></msubsup><mrow><msubsup><mi>𝛽</mi><mn>2</mn><mn>3</mn></msubsup><mo>+</mo><msubsup><mi>𝛾</mi><mn>2</mn><mn>3</mn></msubsup></mrow></mfrac></math>",
 ];
 
 const unicodeMath = [
@@ -117,6 +118,7 @@ const unicodeMath = [
     "ⓘ(\": sup\"𝑎²)",
     "ⓒ𝑥 ⒜(𝑥+2)=0",
     "⒨(1&0@0&1)",
+    "𝛼₂³/(𝛽₂³ + 𝛾₂³)",
 ];
 
 const mathSpeech = [
@@ -182,6 +184,7 @@ const mathSpeech = [
     "eigh soup 2",
     "cardinality of x , absolute value of x + 2 , end absolute value = 0",
     "the 2 by 2 matrix,  , row 1 , 1 , 0 , row 2 , 0 , 1 , end matrix",
+    "fraction alpha sub 2 cubed over beta sub 2 cubed + gamma sub 2 cubed , end fraction",
 ]
 
 const mathBraille = [
@@ -241,6 +244,7 @@ const mathBraille = [
     "⠁⠘⠆",
     "⠳⠭⠳⠳⠭⠬⠆⠳⠀⠨⠅⠀⠼⠴",
     "⠠⠷⠼⠂⠀⠼⠴⣍⠼⠴⠀⠼⠂⠠⠾",
+    "⠹⠨⠁⠆⠘⠒⠐⠌⠨⠃⠆⠘⠒⠐⠬⠨⠛⠆⠘⠒⠐⠼"
 ]
 
 function testMathMLtoUnicodeMath() {
