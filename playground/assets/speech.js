@@ -705,12 +705,12 @@ function nary(node, op, cNode) {
 
 
 function speech(value, noAddParens) {
-function Nary(node) {
-	// symbol 'from' lower-limit 'to' upper-limit 'of'
-	return speech(node.firstElementChild) + '☟' +	// 'from'
-		speech(node.children[1], true) + '☝' +		// 'to'
-		speech(node.lastElementChild, true) + '▒';	// 'of'
-}
+	function Nary(node) {
+		// symbol 'from' lower-limit 'to' upper-limit 'of'
+		return speech(node.firstElementChild) + '☟' +	// 'from'
+			speech(node.children[1], true) + '☝' +		// 'to'
+			speech(node.lastElementChild, true) + '▒';	// 'of'
+	}
 
 	// Function called recursively to convert MathML to speech
 	let cNode = value.children.length;
@@ -1015,9 +1015,6 @@ function Nary(node) {
 				// The DLMF title attribute implies the following intents
 				// (see also for 'mi')
 				switch (value.attributes.title.textContent) {
-					case 'differential':
-					case 'derivative':
-						return 'ⅆ';
 					case 'binomial coefficient':
 						return '';
 				}
@@ -1031,11 +1028,6 @@ function Nary(node) {
 
 		case 'mi':
 			let c = value.innerHTML;
-			if (value.attributes.hasOwnProperty('intent')) {
-				let ch = value.attributes.intent.nodeValue;
-				if (isDoubleStruck(ch))
-					c = ch;
-			}
 			if (value.attributes.hasOwnProperty('mathvariant')) {
 				// Convert to Unicode math alphanumeric. Conversion to speech
 				// is done upon returning from the original speech() call.
@@ -1120,7 +1112,14 @@ function Nary(node) {
 
 function MathMLtoSpeech(mathML) {
 	const doc = getMathMLDOM(mathML);
+	return getSpeech(doc);
+}
+
+function getSpeech(doc) {
 	let text = speech(doc);					// Get speech symbols
+	return resolveSymbols(text);
+}
+function resolveSymbols(text) {
 	let ret = '';							// Collects speech
 	let cchText = text.length;
 	let ch;									// Current char

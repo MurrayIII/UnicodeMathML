@@ -693,15 +693,11 @@ function autocomplete() {
 
     output.addEventListener("click", function (e) {
         let sel = window.getSelection();
-        if (sel.anchorNode.nodeName == 'DIV')
+        let node = sel.anchorNode;
+        if (node.nodeName == 'DIV')
             return;                         // </math>
-        let ch = sel.anchorNode.data;
-        if (ch != undefined && sel.anchorNode.length > sel.anchorOffset) {
-            if (ch[0] >= '\uD835' || sel.anchorNode.length == 1)
-                speak(ch)
-            else
-                speak(ch[sel.anchorOffset])
-        }
+        speak(getSpeech(node.parentElement.parentElement))
+        speechSel(sel)
     })
 
     function speak(s) {
@@ -727,7 +723,10 @@ function autocomplete() {
             return
 
         let ch = node.data;
-        if (ch[0] >= '\uD835' || sel.anchorNode.length == 1)
+        let intent = getIntent(node.parentElement);
+        if (isDoubleStruck(intent))
+            speak(intent)
+        else if (ch[0] >= '\uD835' || sel.anchorNode.length == 1)
             speak(ch)
         else
             speak(ch[sel.anchorOffset])
@@ -741,17 +740,21 @@ function autocomplete() {
         sel.addRange(range);
         return sel;
     }
-    // MathML elements with fixed number of arguments
-    const mFixedArgs = ['msup', 'msub', 'mover', 'munder', 'mfrac', 'mroot', 'msubsup', 'munderover', 'msqrt', 'menclose']
+
+    function getIntent(node) {
+        return node.attributes.intent ? node.attributes.intent.value : '';
+    }
 
     // MathML elements with no children
     const mleaves = ['mi', 'mo', 'mn', 'mtext']
 
-    const names = { 'msup': 'superscript', 'msub': 'subscript', 'mfrac': 'fraction', 'msqrt': 'square root' }
+    const names = {'msup': 'superscript', 'msub': 'subscript',
+        'mfrac': 'fraction', 'msqrt': 'square root'}
 
     output.addEventListener("keydown", function (e) {
         let sel = window.getSelection();
         let dir = ''
+        let intent = ''
 
         if (sel.anchorNode.nodeName == 'DIV')
             return;
@@ -771,30 +774,39 @@ function autocomplete() {
                 return;                     // Ignore other input for now
         }
         let node = sel.anchorNode;
+        let name = node.nodeName;
 
-        if (node.nodeType == 1) {           // At element
-            if (mleaves.includes(node.nodeName)) {
+        if (node.nodeType == 1) {           // At an element
+            if (mleaves.includes(name) || name == 'mrow') {
                 if (!node.nextElementSibling && node.parentElement)
                     node = node.parentElement;
 
                 while (!node.nextElementSibling && node.parentElement) {
                     node = node.parentElement;
-                    let name = node.nodeName;
+                    name = node.nodeName;
                     if (names[name])
                         name = names[name]
                     if (name != 'mrow')
                         speak('end ' + name);
-                    if (name == 'math')
+                    if (name == 'math') {
+                        setSelection(sel, node, 0)
                         return;
+                    }
                 }
                 if (!node.nextElementSibling)
                     return;
                 node = node.nextElementSibling;
-                if (node.nodeName == 'mrow')
+                if (node.nodeName == 'mrow') {
+                    let intent = getIntent(node);
+                    if (intent == ':function' || intent.startsWith('integral'))
+                        speak(getSpeech(node))
                     node = node.firstElementChild;
+                }
             } else {
                 // Element with element children: move down to first child
                 node = node.firstElementChild;
+                if (node.nodeName == 'mrow')
+                    node = node.firstElementChild;
             }
             if (node.nodeType == 3 || !node.childElementCount)
                 node = node.firstChild;
@@ -821,39 +833,75 @@ function autocomplete() {
         // move to next sibling if in same <mrow>
         node = sel.anchorNode.parentElement;
         let nodeParent = node.parentElement;
+        name = nodeParent.nodeName
 
-        if (mFixedArgs.includes(nodeParent.nodeName)) {
-            let name = nodeParent.nodeName
-            if (node.previousElementSibling) {
-                if (node.nextElementSibling)
-                    name = 'lower limit'
-            } else if (node.nextElementSibling) {
-                name = name == 'mfrac' ? 'numerator' : 'base';
-            }
-            if (names[name])
-                name = names[name];
-            speak('end ' + name);
-            sel = setSelection(sel, node, 0);
-            return
+        switch (name) {
+            case 'msup':
+            case 'msub':
+            case 'mover':
+            case 'munder':
+            case 'mfrac':
+            case 'mroot':
+                if (!node.previousElementSibling)
+                    name = name == 'mfrac' ? 'numerator' :
+                           name == 'mroot' ? 'radicand' : 'base';
+                break;
+
+            case 'msubsup':
+            case 'munderover':
+                if (!node.previousElementSibling)
+                    name = 'base';
+                else if (node.nextElementSibling)
+                    name = 'lower limit';
+                break;
+
+            case 'msqrt':
+                name = 'radicand';
+                break;
+
+            case 'menclose':
+                break;
+
+            case 'mrow':
+                if (node.nextElementSibling) {
+                    node = node.nextElementSibling;
+                    if (node.nodeName == 'mrow') {
+                        intent = getIntent(node);
+                        if (intent == ':function' || intent.startsWith('integral')) {
+                            speak(getSpeech(node));
+                            setSelection(sel, node.firstElementChild, 0)
+                            return
+                        }
+                        node = node.firstElementChild;
+                    }
+                    if (node.nodeType == 3 || !node.childElementCount)
+                        node = node.firstChild;
+                } else {
+                    node = node.parentElement;
+                    name = node.parentElement.nodeName;
+                    break;
+                }
+                sel = setSelection(sel, node, 0);
+                if (sel.anchorNode.nodeName == 'msup') {
+                    let s = speech(sel.anchorNode)
+                    if (s.length <= 3) {
+                        speak(resolveSymbols(s))
+                        return
+                    }
+                }
+                speechSel(sel)
+                return;
         }
-        if (nodeParent.nodeName == 'mrow') {
-            if (node.nextElementSibling) {
-                node = node.nextElementSibling;
-                if (node.nodeName == 'mrow')
-                    node = node.firstElementChild;
-                if (node.nodeType == 3 || !node.childElementCount)
-                    node = node.firstChild;
-            }
-        }
+        if (names[name])
+            name = names[name];
+        intent = getIntent(node);
+        if (intent == ':function')
+            name = 'function';
+        if (intent.startsWith('integral'))
+            name = 'integrand';
+
+        speak('end ' + name);
         sel = setSelection(sel, node, 0);
-        if (sel.anchorNode.nodeName == 'msup') {
-            let s = speech(sel.anchorNode)
-            if (s.endsWith('²') && s.length <= 3) {
-                speak(symbolSpeech(s) + ' squared')
-                return
-            }
-        }
-        speechSel(sel)
    });
 
     input.addEventListener("keydown", function (e) {
