@@ -749,7 +749,7 @@ function autocomplete() {
     const mleaves = ['mi', 'mo', 'mn', 'mtext']
 
     const names = {'msup': 'superscript', 'msub': 'subscript',
-        'mfrac': 'fraction', 'msqrt': 'square root'}
+        'mfrac': 'fraction', 'msqrt': 'square root', 'msubsup': 'subsoup'}
 
     output.addEventListener("keydown", function (e) {
         let sel = window.getSelection();
@@ -798,7 +798,7 @@ function autocomplete() {
                 node = node.nextElementSibling;
                 if (node.nodeName == 'mrow') {
                     let intent = getIntent(node);
-                    if (intent == ':function' || intent.startsWith('integral'))
+                    if (intent == ':function' || intent.indexOf('integral') != -1)
                         speak(getSpeech(node))
                     node = node.firstElementChild;
                 }
@@ -867,7 +867,7 @@ function autocomplete() {
                     node = node.nextElementSibling;
                     if (node.nodeName == 'mrow') {
                         intent = getIntent(node);
-                        if (intent == ':function' || intent.startsWith('integral')) {
+                        if (intent == ':function' || intent.indexOf('integral') != -1) {
                             speak(getSpeech(node));
                             setSelection(sel, node.firstElementChild, 0)
                             return
@@ -897,10 +897,11 @@ function autocomplete() {
         intent = getIntent(node);
         if (intent == ':function')
             name = 'function';
-        if (intent.startsWith('integral'))
+        else if (intent.indexOf('integral') != -1)
             name = 'integrand';
 
-        speak('end ' + name);
+        if(name != 'mrow')
+            speak('end ' + name);
         sel = setSelection(sel, node, 0);
    });
 

@@ -1263,19 +1263,19 @@ var mathFonts = {
 };
 
 const narys = {
-    '∏': 'product',
-    '∑': 'sum',
-    '∫': 'integral',
-    '∬': 'double integral',
-    '∭': 'triple integral',
-    '∮': 'contour integral',
-    '∯': 'surface integral',
-    '∰': 'volume integral',
-    '⨌': 'quadruple integral',
-    '∱': 'clockwise integral',
-    '∱': 'clockwise contour integral',
-    '∳': 'anticlockwise contour integral',
-    '∐': 'coproduct',
+    '∏': ':product',
+    '∑': ':sum',
+    '∫': ':integral',
+    '∬': ':double integral',
+    '∭': ':triple integral',
+    '∮': ':contour integral',
+    '∯': ':surface integral',
+    '∰': ':volume integral',
+    '⨌': ':quadruple integral',
+    '∱': ':clockwise integral',
+    '∱': ':clockwise contour integral',
+    '∳': ':anticlockwise contour integral',
+    '∐': ':coproduct',
 };
 
 function isFunctionName(fn) {
@@ -2413,7 +2413,7 @@ function preprocess(dsty, uast, index, arr) {
                     if (value.limits.script.base.hasOwnProperty('script'))
                         intent = narys[value.limits.script.base.script.base.opnary];
                     if(intent == undefined)
-                        intent = 'n-ary';
+                        intent = ':n-ary';
                 }
                 var arg0 = getScript(value.limits.script.low, '$l');
                 var arg1 = getScript(value.limits.script.high, '$h');
@@ -4064,7 +4064,7 @@ function dump(value, noAddParens) {
 
         case 'munderover':
             if (!value.parentElement.attributes.hasOwnProperty('intent') ||
-                !value.parentElement.attributes.intent.nodeValue.startsWith('sum')) {
+                !value.parentElement.attributes.intent.nodeValue.startsWith(':sum')) {
                 return ternary(value, '┬', '┴');
             }                               // Fall through to msubsup
         case 'msubsup':
