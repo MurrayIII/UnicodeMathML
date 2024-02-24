@@ -747,7 +747,7 @@ function autocomplete() {
         return sel;
     }
 
-    function checkEq(node) {
+    function checkTable(node) {
         let unit = 'row'
         let intent = getIntent(node.parentElement);
         if (intent == ':equations') {
@@ -759,6 +759,8 @@ function autocomplete() {
     }
 
     function getNaryOp(node) {
+        // If the first child of mrow is a msubsup or munderover with an N-ary
+        // op for its first child, return the N-ary op; else return ''
         if (node.nodeName != 'mrow')
             return '';
         node = node.firstElementChild;
@@ -775,8 +777,16 @@ function autocomplete() {
         return node.attributes.intent ? node.attributes.intent.value : '';
     }
 
-    // MathML elements with no children
-    const mleaves = ['mi', 'mo', 'mn', 'mtext']
+    function checkSimpleSup(node) {
+        if (node.nodeName == 'msup') {
+            let s = speech(node)
+            if (s.length <= 3) {
+                speak(resolveSymbols(s))
+                return true
+            }
+        }
+        return false
+    }
 
     const names = {
         'msup': 'superscript', 'msub': 'subscript', 'msubsup': 'subsoup',
@@ -811,8 +821,10 @@ function autocomplete() {
         let node = sel.anchorNode;
         let name = node.nodeName;
 
-        if (node.nodeType == 1) {           // At an element
-            if (mleaves.includes(name)) {
+        // Move selection forward in the MathML DOM and describe what's there
+        if (node.nodeType == 1) {           // Starting at an element...
+            if (!node.childElementCount) {  // mi, mo, mn, or mtext
+                // Move to start of next element in tree
                 if (!node.nextElementSibling && node.parentElement)
                     node = node.parentElement;
 
@@ -831,6 +843,12 @@ function autocomplete() {
                 if (!node.nextElementSibling)
                     return;
                 atEnd = false;
+                if (node.parentElement.nodeName == 'mfrac') {
+                    atEnd = true;
+                    speak('end numerator')
+                    setSelection(sel, node, 0)
+                    return
+                }
                 node = node.nextElementSibling;
                 if (node.nodeName == 'mrow') {
                     let ch = getNaryOp(node);
@@ -843,9 +861,9 @@ function autocomplete() {
                     }
                     node = node.firstElementChild;
                 } else if (node.nodeName == 'mtr') {
-                    node = checkEq(node)
+                    node = checkTable(node)
                 }
-            } else if (atEnd) {
+            } else if (atEnd) {             // At end of element
                 if (node.nextElementSibling) {
                     atEnd = false;
                     node = node.nextElementSibling
@@ -860,7 +878,7 @@ function autocomplete() {
                         }
                         node = node.firstElementChild;
                     } else if (node.nodeName == 'mtr') {
-                        node = checkEq(node)
+                        node = checkTable(node)
                     }
                 } else {
                     node = node.parentElement;
@@ -879,6 +897,8 @@ function autocomplete() {
                 node = node.firstChild;
             sel = setSelection(sel, node, 0)
             name = node.nodeName;
+            if (!atEnd && checkSimpleSup(node)) // E.g., say "b squared" if at 𝑏²
+                return;
             if (names[name])
                 name = names[name];
             if (atEnd) {
@@ -932,7 +952,7 @@ function autocomplete() {
                 if (!node.previousElementSibling)
                     name = 'base';
                 else if (node.nextElementSibling)
-                    name = 'lower limit';
+                    name = isNary(node.previousElementSibling.textContent) ? 'lower limit' : 'subscript';
                 break;
 
             case 'msqrt':
@@ -1025,13 +1045,8 @@ function autocomplete() {
                     break;
                 }
                 sel = setSelection(sel, node, 0);
-                if (sel.anchorNode.nodeName == 'msup') {
-                    let s = speech(sel.anchorNode)
-                    if (s.length <= 3) {
-                        speak(resolveSymbols(s))
-                        return
-                    }
-                }
+                if (checkSimpleSup(node))
+                    return;
                 speechSel(sel)
                 return;
         }

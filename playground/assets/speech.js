@@ -11,6 +11,7 @@ const symbolSpeechStrings = {
 	// some nonmath symbols used to represent connecting words like 'from' and
 	// 'to'. It is the principal list that needs to be localized. See also
 	// ordinals and functions.
+	' ': 'space',
 	'!': 'factorial',
 	'#': ', equation',
 	'&': 'and',
@@ -29,6 +30,7 @@ const symbolSpeechStrings = {
 	'{': 'open brace',
 	'|': 'vertical bar',
 	'}': 'close brace',
+	' ': 'space',							// 00A0
 	'¦': ', atop,',							// 00A6
 	'¬': 'not',								// 00AC
 	'¯': 'overbar',							// 00AF

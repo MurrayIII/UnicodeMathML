@@ -3882,6 +3882,11 @@ function nary(node, op, cNode) {
     return ret;
 }
 
+function isDigitArg(node) {
+    return node.lastElementChild.nodeName == 'mn' &&
+        isAsciiDigit(node.children[1].textContent)
+}
+
 function dump(value, noAddParens) {
 	// Function called recursively to convert MathML to UnicodeMath
     let cNode = value.children.length;
@@ -4015,8 +4020,7 @@ function dump(value, noAddParens) {
             return ret;
 
         case 'msup':
-            if (value.lastElementChild.nodeName == 'mn' &&
-                isAsciiDigit(value.lastElementChild.textContent)) {
+            if (isDigitArg(value)) {
                 return dump(value.firstElementChild) +
                     digitSuperscripts[value.lastElementChild.textContent];
             }
@@ -4055,8 +4059,7 @@ function dump(value, noAddParens) {
             return binary(value, op);
 
         case 'msub':
-            if (value.lastElementChild.nodeName == 'mn' &&
-                isAsciiDigit(value.lastElementChild.textContent)) {
+            if (isDigitArg(value)) {
                 return dump(value.firstElementChild) +
                     digitSubscripts[value.lastElementChild.textContent];
             }
@@ -4068,6 +4071,13 @@ function dump(value, noAddParens) {
                 return ternary(value, '┬', '┴');
             }                               // Fall through to msubsup
         case 'msubsup':
+            if (isDigitArg(value)) {
+                ret = dump(value.firstElementChild) +
+                    digitSubscripts[value.children[1].textContent];
+                if (isAsciiDigit(value.lastElementChild.textContent))
+                    return ret + digitSuperscripts[value.lastElementChild.textContent]
+                return ret + '^' + dump(value.lastElementChild);
+            }
             return ternary(value, '_', '^');
 
         case 'mmultiscripts':
