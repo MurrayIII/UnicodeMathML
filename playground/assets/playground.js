@@ -736,12 +736,26 @@ function autocomplete() {
     }
 
     function setSelection(sel, node, offset) {
+        if (!node )
+            return sel;
+
         let range = new Range();
         range.setStart(node, offset);
         range.setEnd(node, offset);
         sel.removeAllRanges();
         sel.addRange(range);
         return sel;
+    }
+
+    function checkEq(node) {
+        let unit = 'row'
+        let intent = getIntent(node.parentElement);
+        if (intent == ':equations') {
+            intent = getIntent(node.parentElement.parentElement)
+            unit = intent == ':cases' ? 'case' : 'equation';
+        }
+        speak('next ' + unit)
+        return node.firstElementChild;
     }
 
     function getNaryOp(node) {
@@ -764,8 +778,11 @@ function autocomplete() {
     // MathML elements with no children
     const mleaves = ['mi', 'mo', 'mn', 'mtext']
 
-    const names = {'msup': 'superscript', 'msub': 'subscript',
-        'mfrac': 'fraction', 'msqrt': 'square root', 'msubsup': 'subsoup'}
+    const names = {
+        'msup': 'superscript', 'msub': 'subscript', 'msubsup': 'subsoup',
+        'mover': 'above', 'munder': 'below', 'munderover': 'below above',
+        'mfrac': 'fraction', 'msqrt': 'square root',
+    }
 
     var atEnd = false;                      // True if at end of sel object
 
@@ -820,11 +837,13 @@ function autocomplete() {
                     if (ch) {
                         node = node.firstElementChild;
                     } else {
-                        let intent = getIntent(node);
+                        intent = getIntent(node);
                         if (intent == ':function')
                             speak(getSpeech(node))
                     }
                     node = node.firstElementChild;
+                } else if (node.nodeName == 'mtr') {
+                    node = checkEq(node)
                 }
             } else if (atEnd) {
                 if (node.nextElementSibling) {
@@ -840,17 +859,23 @@ function autocomplete() {
                                 speak(getSpeech(node))
                         }
                         node = node.firstElementChild;
+                    } else if (node.nodeName == 'mtr') {
+                        node = checkEq(node)
                     }
                 } else {
                     node = node.parentElement;
                 }
             } else {
                 // Element with element children: move down to first child
+                if (!node.childNodes.length)  // 'malignmark' or 'maligngroup'
+                    node = node.nextElementSibling;
                 node = node.firstElementChild;
+                if (!node.childNodes.length)  // 'malignmark' or 'maligngroup'
+                    node = node.nextElementSibling;
                 if (node.nodeName == 'mrow')
                     node = node.firstElementChild;
             }
-            if (node.nodeType == 3 || !node.childElementCount)
+            if (node.nodeType == 3 || !node.childElementCount && node.childNodes.length)
                 node = node.firstChild;
             sel = setSelection(sel, node, 0)
             name = node.nodeName;
@@ -866,7 +891,7 @@ function autocomplete() {
             }
             if (name == '#text')
                 speechSel(sel)
-            else
+            else if(name != 'mtd')
                 speak(name)
             return
         }
@@ -874,7 +899,7 @@ function autocomplete() {
             return
 
         // Text node: child of <mi>, <mo>, <mn>, or <mtext>
-        let offset = sel.anchorOffset;      // Move through, e.g., 'sin'
+        let offset = sel.anchorOffset;      // Move through, e.g., for 'sin'
         if (offset < sel.anchorNode.length) {
             let code = node.data.codePointAt(offset);
             offset += code > 0xFFFF ? 2 : 1;
@@ -921,16 +946,29 @@ function autocomplete() {
                 atEnd = false;
                 if (node.nextElementSibling) {
                     node = node.nextElementSibling;
-                    if (node.nodeName == 'mo' && node.textContent == '\u2061')
-                        node = node.nextElementSibling;
-                    if (node.nodeName == 'mrow') {
+                    intent = getIntent(node);
+                    if (node.nodeName == 'mo') {
+                        if (node.textContent == '\u2061')
+                            node = node.nextElementSibling;
+                    } else if (node.nodeName == 'mtable') {
+                        name = 'row';
+                        if (intent == ':equations')
+                            name = 'equation';
+                        intent = getIntent(node.parentElement)
+                        if (intent == ':cases')
+                            name = 'case'
+                        speak(name + '1');
+                        setSelection(sel, node.firstElementChild, 0);
+                        return;
+                    } else if (node.nodeName == 'mrow') {
                         let ch = getNaryOp(node);
                         if (ch) {
                             node = node.firstElementChild;
                         } else {
-                            intent = getIntent(node);
                             if (intent == ':function')
                                 speak(getSpeech(node));
+                            else if (intent == ':cases')
+                                speak('cases');
                         }
                         node = node.firstElementChild;
                     }
@@ -953,6 +991,22 @@ function autocomplete() {
                         case 'msup':
                             name = node.nextElementSibling ?
                                 'base' : (name == 'msub' ? 'subscript' : 'superscript')
+                            break;
+                        case 'mtd':
+                            if (node.nextElementSibling) {
+                                node = node.nextElementSibling;
+                                if (!node.childElementCount)    // 'malignmark' or 'maligngroup'
+                                    node = node.nextElementSibling;
+                                node = node.firstElementChild
+                                atEnd = false;
+                                if (!node.childElementCount && node.childNodes.length)
+                                    node = node.firstChild;
+                                setSelection(sel, node, 0);
+                                speechSel(sel)
+                                return
+                            }
+                            node = node.parentElement;
+                            name = node.nodeName;
                             break;
                         case 'mrow':
                             if (node.nextElementSibling) {
@@ -993,7 +1047,7 @@ function autocomplete() {
                 name = 'integrand';
         }
         if (name != 'mrow')
-            speak('end ' + name);
+            speak('end of ' + name);
         setSelection(sel, node, 0);
    });
 
