@@ -700,7 +700,8 @@ function autocomplete() {
         if (name == 'msup' || name == 'msqrt')
             speak(getSpeech(node.parentElement.parentElement))
         speechSel(sel)
-        atEnd = false;
+        atEnd = false
+        iNode = -1
     })
 
     function speak(s) {
@@ -795,9 +796,14 @@ function autocomplete() {
     }
 
     var atEnd = false;                      // True if at end of sel object
+    var iNode = 0
 
     output.addEventListener("keydown", function (e) {
         let sel = window.getSelection();
+        //if (iNode >= 0)
+        //    setSelection(sel, nodeP, 0)
+        let node = sel.anchorNode;
+        let name = node.nodeName;
         let dir = ''
         let intent = ''
 
@@ -814,12 +820,51 @@ function autocomplete() {
                 dir = '←'
                 return;
 
+            case 'ArrowDown':
+                var walker = document.createTreeWalker(output, NodeFilter.SHOW_ELEMENT, null, false)
+                while (walker.nextNode())
+                    console.log('tag = ' + walker.currentNode.tagName + ' text = ' + walker.currentNode.textContent)
+                return;
+
             default:
+                if (e.key.length > 1)       // 'Shift', etc.
+                    return
                 e.preventDefault();
+
+                if (name == '#text') {
+                    let nodeNewName
+                    if (isAsciiAlphabetic(e.key)) {
+                        nodeNewName = 'mi'
+                    } else if (isAsciiDigit(e.key)) {
+                        nodeNewName = 'mn'
+                    } else if (e.key >= ' ') {
+                        nodeNewName = e.key == '\\' ? 'mtext' : 'mo'
+                    } else {
+                        return
+                    }
+                    let nodeP = node.parentElement
+                    let nodeNew = document.createElement(nodeNewName)
+                    let nodePP = nodeP.parentElement
+                    nodeNew.textContent = e.key
+
+                    for (iNode = 0; iNode < nodePP.childElementCount; iNode++) {
+                        if (nodeP == nodePP.children[iNode])
+                            break;
+                    }
+
+                    if (nodePP.nodeName == 'mrow') {
+                        nodePP.insertBefore(nodeNew, nodeP)
+                    } else {
+                        let nodeMrow = document.createElement('mrow')
+                        nodeMrow.appendChild(nodeNew)
+                        nodePP.insertBefore(nodeMrow, nodeP)
+                        nodeMrow.appendChild(nodeP)
+                    }
+                    nodePP.innerHTML = nodePP.innerHTML // Force redraw
+                    output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
+                }
                 return;                     // Ignore other input for now
         }
-        let node = sel.anchorNode;
-        let name = node.nodeName;
 
         // Move selection forward in the MathML DOM and describe what's there
         if (node.nodeType == 1) {           // Starting at an element...
