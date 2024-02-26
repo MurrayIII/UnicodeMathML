@@ -274,7 +274,7 @@ function highlightJson(json) {
     });
 }
 
-function hexToUnicode() {
+function hexToUnicode(input) {
     var cchSel = input.selectionEnd - input.selectionStart;
     if (cchSel > 10)
         return;
@@ -795,6 +795,10 @@ function autocomplete() {
         'mfrac': 'fraction', 'msqrt': 'square root',
     }
 
+    function refreshMathMLDisplay() {
+        output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
+    }
+
     var atEnd = false;                      // True if at end of sel object
     var iNode = 0
 
@@ -826,12 +830,40 @@ function autocomplete() {
                     console.log('tag = ' + walker.currentNode.tagName + ' text = ' + walker.currentNode.textContent)
                 return;
 
+            case 'Delete':
+                e.preventDefault()
+                node.remove()
+                refreshMathMLDisplay()
+                return
+
             default:
+                if (e.key == 'Backspace') {
+                    e.preventDefault()
+                    return
+                }
+                if (e.key == 'Space')
+                    e.key = ' ';
                 if (e.key.length > 1)       // 'Shift', etc.
                     return
                 e.preventDefault();
 
-                if (name == '#text') {
+                if (name == '#text')
+                    node = node.parentElement
+
+                if (node.previousSibling && node.previousSibling.textContent[0] == '\\') {
+                    node = node.previousSibling.textContent += e.key
+                    refreshMathMLDisplay()
+                    return
+                }
+                if (node.nodeName == 'mrow' && e.key == ' ') {
+                    noMathTag = true;
+                    var t = unicodemathml(node.textContent, true);
+                    noMathTag = false
+                    node.innerHTML = t.mathml
+                    refreshMathMLDisplay()
+                    return
+                }
+                if (!node.childElementCount && node.childNodes.length || atEnd) {
                     let nodeNewName
                     if (isAsciiAlphabetic(e.key)) {
                         nodeNewName = 'mi'
@@ -842,26 +874,31 @@ function autocomplete() {
                     } else {
                         return
                     }
-                    let nodeP = node.parentElement
                     let nodeNew = document.createElement(nodeNewName)
-                    let nodePP = nodeP.parentElement
+                    let nodeP = node.parentElement
                     nodeNew.textContent = e.key
 
-                    for (iNode = 0; iNode < nodePP.childElementCount; iNode++) {
-                        if (nodeP == nodePP.children[iNode])
-                            break;
-                    }
-
-                    if (nodePP.nodeName == 'mrow') {
-                        nodePP.insertBefore(nodeNew, nodeP)
+                    if (node.nodeName == 'mrow' && atEnd) {
+                        node.appendChild(nodeNew)
+                    } else if (nodeP.nodeName == 'mrow') {
+                        if (atEnd)
+                            nodeP.appendChild(nodeNew)
+                        else
+                            nodeP.insertBefore(nodeNew, node)
                     } else {
                         let nodeMrow = document.createElement('mrow')
-                        nodeMrow.appendChild(nodeNew)
-                        nodePP.insertBefore(nodeMrow, nodeP)
-                        nodeMrow.appendChild(nodeP)
+                        nodeP.insertBefore(nodeMrow, node)
+                        if (atEnd) {
+                            nodeMrow.appendChild(node)
+                            nodeMrow.appendChild(nodeNew)
+                        } else {
+                            nodeMrow.appendChild(nodeNew)
+                            nodeMrow.appendChild(node)
+                        }
+                        atEnd = false;
                     }
-                    nodePP.innerHTML = nodePP.innerHTML // Force redraw
-                    output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
+                    nodeP.innerHTML = nodeP.innerHTML // Force redraw
+                    refreshMathMLDisplay();
                 }
                 return;                     // Ignore other input for now
         }
@@ -987,9 +1024,13 @@ function autocomplete() {
             case 'munder':
             case 'mfrac':
             case 'mroot':
-                if (!node.previousElementSibling)
+                if (!node.previousElementSibling) {
                     name = name == 'mfrac' ? 'numerator' :
                            name == 'mroot' ? 'radicand' : 'base';
+                } else {
+                    name = name == 'mfrac' ? 'denominator' :
+                           name == 'mroot' ? 'index' : name;
+                }
                 break;
 
             case 'msubsup':
@@ -1052,6 +1093,9 @@ function autocomplete() {
                         case 'mfrac':
                             name = node.nextElementSibling ? 'numerator' : 'denominator'
                             break;
+                        case 'mroot':
+                            name = node.nextElementSibling ? 'radicand' : 'index'
+                            break;
                         case 'msub':
                         case 'msup':
                             name = node.nextElementSibling ?
@@ -1106,8 +1150,10 @@ function autocomplete() {
             else if (intent.indexOf('integral') != -1)
                 name = 'integrand';
         }
-        if (name != 'mrow')
+        if (name != 'mrow') {
             speak('end of ' + name);
+            atEnd = true;
+        }
         setSelection(sel, node, 0);
    });
 
@@ -1116,7 +1162,7 @@ function autocomplete() {
         if (!x) {                           // Target is input
             if (e.key == 'x' && e.altKey) { // Alt+x
                 e.preventDefault();
-                hexToUnicode();
+                hexToUnicode(input);
             } else if (e.ctrlKey && (e.key == 'b' || e.key == 'i')) {
                 // Toggle math bold/italic (Alt+b/Alt+i)
                 e.preventDefault();
