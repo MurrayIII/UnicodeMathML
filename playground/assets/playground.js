@@ -696,11 +696,11 @@ function autocomplete() {
         let node = sel.anchorNode;
         if (node.nodeName == 'DIV')
             return;                         // </math>
+        atEnd = node.length == sel.anchorOffset
         let name = node.parentElement.parentElement.nodeName
         if (name == 'msup' || name == 'msqrt')
             speak(getSpeech(node.parentElement.parentElement))
         speechSel(sel)
-        atEnd = false
         iNode = -1
     })
 
@@ -737,7 +737,9 @@ function autocomplete() {
     }
 
     function setSelection(sel, node, offset) {
-        if (!node )
+        if (!sel)
+            sel = window.getSelection();
+        if (!node)
             return sel;
 
         let range = new Range();
@@ -797,6 +799,18 @@ function autocomplete() {
 
     function refreshMathMLDisplay() {
         output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
+        var walker = document.createTreeWalker(output, NodeFilter.SHOW_ELEMENT, null, false)
+        while (walker.nextNode()) {         // Restore selection
+            console.log('tag = ' + walker.currentNode.tagName + ' text = ' + walker.currentNode.textContent)
+            if (walker.currentNode.attributes.selip) {
+                let offset = walker.currentNode.attributes.selip.nodeValue;
+                if (offset == walker.currentNode.textContent.length) {
+                    atEnd = true
+                }
+                setSelection(null, walker.currentNode, offset)
+                return
+            }
+        }
     }
 
     var atEnd = false;                      // True if at end of sel object
@@ -804,8 +818,6 @@ function autocomplete() {
 
     output.addEventListener("keydown", function (e) {
         let sel = window.getSelection();
-        //if (iNode >= 0)
-        //    setSelection(sel, nodeP, 0)
         let node = sel.anchorNode;
         let name = node.nodeName;
         let dir = ''
@@ -850,21 +862,38 @@ function autocomplete() {
                 if (name == '#text')
                     node = node.parentElement
 
-                if (node.previousSibling && node.previousSibling.textContent[0] == '\\') {
-                    node = node.previousSibling.textContent += e.key
-                    refreshMathMLDisplay()
-                    return
-                }
-                if (node.nodeName == 'mrow' && e.key == ' ') {
-                    noMathTag = true;
+                if (node.nodeName == 'mrow' && '+-=/ )]}'.includes(e.key)) {
+                    // Try building up an mrow
+                    noMathTag = true;       // Don't include <math> tags
+                    if (e.key != ' ')
+                        node.textContent += e.key
                     var t = unicodemathml(node.textContent, true);
                     noMathTag = false
                     node.innerHTML = t.mathml
+                    node.setAttribute('selip', '1')
                     refreshMathMLDisplay()
                     return
                 }
                 if (!node.childElementCount && node.childNodes.length || atEnd) {
+                    let nodeP = node.parentElement
                     let nodeNewName
+
+                    if (node.nodeName == 'mtext' && node.textContent[0] == '\\') {
+                        // Collect control word; offer autocompletion...
+                        if (e.key == ' ') {
+                            let symbol = resolveCW(node.textContent)
+                            let nodeNew = document.createElement('mi')
+                            nodeNew.textContent = symbol
+                            nodeNew.setAttribute('selip', '1')
+                            nodeP.replaceChild(nodeNew, node)
+                        } else {
+                            node.textContent += e.key   // Collect control word
+                        }
+                        //node.setAttribute('selip', node.textContent.length)
+                        nodeP.innerHTML = nodeP.innerHTML // Force redraw
+                        refreshMathMLDisplay()
+                        return
+                    }
                     if (isAsciiAlphabetic(e.key)) {
                         nodeNewName = 'mi'
                     } else if (isAsciiDigit(e.key)) {
@@ -875,14 +904,25 @@ function autocomplete() {
                         return
                     }
                     let nodeNew = document.createElement(nodeNewName)
-                    let nodeP = node.parentElement
+                    let walker = document.createTreeWalker(nodeP, NodeFilter.SHOW_ELEMENT, null, false)
+                    while (walker.nextNode()) {         // Remove current selip attribute
+                        if (walker.currentNode.attributes.selip) {
+                            walker.currentNode.removeAttribute('selip');
+                            break
+                        }
+                    }
                     nodeNew.textContent = e.key
+                    nodeNew.setAttribute('selip', '1')
 
                     if (node.nodeName == 'mrow' && atEnd) {
                         node.appendChild(nodeNew)
                     } else if (nodeP.nodeName == 'mrow') {
-                        if (atEnd)
-                            nodeP.appendChild(nodeNew)
+                        if (atEnd) {
+                            if (node.nextElementSibling)
+                                nodeP.insertBefore(nodeNew, node.nextElementSibling)
+                            else
+                                nodeP.appendChild(nodeNew)
+                        }
                         else
                             nodeP.insertBefore(nodeNew, node)
                     } else {
@@ -925,12 +965,6 @@ function autocomplete() {
                 if (!node.nextElementSibling)
                     return;
                 atEnd = false;
-                if (node.parentElement.nodeName == 'mfrac') {
-                    atEnd = true;
-                    speak('end numerator')
-                    setSelection(sel, node, 0)
-                    return
-                }
                 node = node.nextElementSibling;
                 if (node.nodeName == 'mrow') {
                     let ch = getNaryOp(node);
