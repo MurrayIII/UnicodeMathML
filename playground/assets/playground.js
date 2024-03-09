@@ -553,9 +553,51 @@ function opAutocorrect(ip, delim) {
 }
 
 // Symbols whose autocomplete options should be selected by default
-var commonSymbols = "αβδθλχϕϵ⁡←√∞⒨■"; // 03B1 03B2 03B4 03B8 03BB 03C7 03D5 03F5 2061 2190 221A 221E 24A8 25A0
+var commonSymbols = "αβδζθλχϕϵ⁡←√∞⒨■"; // 03B1 03B2 03B4 03B6 03B8 03BB 03C7 03D5 03F5 2061 2190 221A 221E 24A8 25A0
+var currentFocus = -1;
+
+function createAutoCompleteMenu(cw, id, onAutoCompleteClick) {
+    // Create an autocomplete menu of control-words that partially match cw
+    let matches = getPartialMatches(cw);
+    if (!matches.length)
+        return;
+
+    // Create a <div> element to contain matching control words
+    currentFocus = -1;
+    let autocl = document.createElement("div");
+    autocl.setAttribute("id", id + "autocomplete-list");
+    autocl.setAttribute("class", "autocomplete-items");
+
+    // Create a div element for each matching control word
+    for (let j = 0; j < matches.length; j++) {
+        let b = document.createElement("div");
+        let cwOption = matches[j];
+
+        // Bold the matching letters and insert an input field to hold
+        // the current control word and symbol
+        b.innerHTML = "<strong>" + cwOption.substring(0, cw.length) + "</strong>";
+        b.innerHTML += matches[j].substring(cw.length);
+        b.innerHTML += "<input type='hidden' value='" + cwOption + "'>";
+
+        if (commonSymbols.includes(cwOption[cwOption.length - 1])) {
+            // Activate option for most common symbol, e.g., for '\be'
+            // highlight '\beta β'
+            currentFocus = j;
+            b.classList.add("autocomplete-active");
+        }
+        // Add click function for user click on a control word
+        b.addEventListener("click", onAutoCompleteClick);
+        autocl.appendChild(b);
+    }
+    if (currentFocus == -1) {
+        // No common control-word option identified: highlight first option
+        currentFocus = 0;
+        autocl.firstChild.classList.add("autocomplete-active");
+    }
+    return autocl
+}
+
 function autocomplete() {
-    var currentFocus = -1;
     // Try autocorrecting or autocompleting a control word when user
     // modifies text input
     input.addEventListener("input", function (e) {
@@ -638,58 +680,25 @@ function autocomplete() {
         }
         if (ip - i < 3) return;
 
-        var cw = input.value.substring(i + 1, ip);
-        var matches = getPartialMatches(cw);
-        if (!matches.length) return;
+        let cw = input.value.substring(i + 1, ip);  // Partial control word
+        let autocl = createAutoCompleteMenu(cw, this.id, e => {
+            // User clicked matching control word: insert its symbol
+            let val = e.currentTarget.innerText;
+            let ch = italicizeCharacter(val[val.length - 1]);
+            let code = ch.codePointAt(0);
 
-        // Create autocomplete menu of control-word partial matches. Start
-        // by creating a <div> element to contain matching control words
-        currentFocus = -1;
-        var autocl = document.createElement("div");
-        autocl.setAttribute("id", this.id + "autocomplete-list");
-        autocl.setAttribute("class", "autocomplete-items");
+            input.value = input.value.substring(0, i) + ch + input.value.substring(ip);
+            ip = i + (code > 0xFFFF ? 2 : 1);
+            input.selectionStart = input.selectionEnd = ip;
+            if (code >= 0x2061 && code <= 0x2C00)
+                opAutocorrect(ip, ch);
+            closeAutocompleteList();
+        })
 
         // Append div element as a child of the autocomplete container
-        this.parentNode.appendChild(autocl);
-
-        // Create a div element for each matching control word
-        for (var j = 0; j < matches.length; j++) {
-            var b = document.createElement("div");
-            var cwOption = matches[j];
-
-            // Bold the matching letters and insert an input field to hold
-            // the current control word and symbol
-            b.innerHTML = "<strong>" + cwOption.substring(0, cw.length) + "</strong>";
-            b.innerHTML += matches[j].substring(cw.length);
-            b.innerHTML += "<input type='hidden' value='" + cwOption + "'>";
-
-            if (commonSymbols.includes(cwOption[cwOption.length - 1])) {
-                // Activate option for most common symbol, e.g., for '\be'
-                // highlight '\beta β'
-                currentFocus = j;
-                b.classList.add("autocomplete-active");
-            }
-            // Add click function for user click on a control word
-            b.addEventListener("click", function (e) {
-                // Insert control-word symbol 
-                var val = this.getElementsByTagName("input")[0].value;
-                var ch = italicizeCharacter(val[val.length - 1]);
-                var code = ch.codePointAt(0);
-                input.value = input.value.substring(0, i) + ch + input.value.substring(ip);
-                ip = i + (code > 0xFFFF ? 2 : 1);
-                input.selectionStart = input.selectionEnd = ip;
-                if (code >= 0x2061 && code <= 0x2C00)
-                    opAutocorrect(ip, ch);
-                closeAutocompleteList();
-            });
-            autocl.appendChild(b);
-        }
-        if (currentFocus == -1) {
-            // No common control-word option identified: highlight first option
-            currentFocus = 0;
-            autocl.firstChild.classList.add("autocomplete-active");
-        }
-    });
+        if(autocl)
+            this.parentNode.appendChild(autocl);
+    })
 
     output.addEventListener("click", function (e) {
         let sel = window.getSelection();
@@ -813,10 +822,48 @@ function autocomplete() {
         }
     }
 
+    function handleAutocompleteKeys(x, e) {
+        if (!x)
+            return false;                   // Didn't handle keydown
+
+        x = x.getElementsByTagName("div");
+
+        switch (e.key) {
+            case "ArrowDown":
+                // Increase currentFocus; highlight corresponding control-word
+                e.preventDefault();
+                currentFocus++;
+                addActive(x);
+                break;
+
+            case "ArrowUp":
+                // Decrease currentFocus; highlight corresponding control-word
+                e.preventDefault();
+                currentFocus--;
+                addActive(x);
+                break;
+
+            case " ":
+            case "Enter":
+            case "Tab":
+                // Prevent form from being submitted; simulate a click on the
+                // "active" control-word option
+                e.preventDefault();
+                if (currentFocus >= 0 && x)
+                    x[currentFocus].click();
+                break
+        }
+        return true                         // Handled keydown
+    }
+
     var atEnd = false;                      // True if at end of sel object
     var iNode = 0
 
     output.addEventListener("keydown", function (e) {
+        var x = document.getElementById(this.id + "autocomplete-list");
+        if (handleAutocompleteKeys(x, e))
+            return
+
         let sel = window.getSelection();
         let node = sel.anchorNode;
         let name = node.nodeName;
@@ -880,6 +927,7 @@ function autocomplete() {
 
                     if (node.nodeName == 'mtext' && node.textContent[0] == '\\') {
                         // Collect control word; offer autocompletion...
+                        closeAutocompleteList();
                         if (e.key == ' ') {
                             let symbol = resolveCW(node.textContent)
                             let nodeNew = document.createElement('mi')
@@ -888,6 +936,30 @@ function autocomplete() {
                             nodeP.replaceChild(nodeNew, node)
                         } else {
                             node.textContent += e.key   // Collect control word
+                            if (node.textContent.length > 2) {
+                                let cw = node.textContent.substring(1)
+                                let autocl = createAutoCompleteMenu(cw, this.id, e => {
+                                    // User clicked matching control word: insert its symbol
+                                    let val = e.currentTarget.innerText;
+                                    let symbol = val[val.length - 1];
+                                    let nodeNew = document.createElement('mi')
+                                    nodeNew.textContent = symbol
+                                    nodeNew.setAttribute('selip', '1')
+
+                                    // node is no longer a child of nodeP; find it
+                                    let walker = document.createTreeWalker(nodeP,
+                                        NodeFilter.SHOW_ELEMENT, null, false)
+                                    while (walker.nextNode() && !walker.currentNode.attributes.selip)
+                                        ;
+                                    nodeP.replaceChild(nodeNew, walker.currentNode)
+                                    closeAutocompleteList();
+                                    nodeP.innerHTML = nodeP.innerHTML // Force redraw
+                                    refreshMathMLDisplay()
+                                })
+                                // Append div element as a child of the autocomplete container
+                                if (autocl)
+                                    this.appendChild(autocl);
+                            }
                         }
                         //node.setAttribute('selip', node.textContent.length)
                         nodeP.innerHTML = nodeP.innerHTML // Force redraw
@@ -1189,119 +1261,93 @@ function autocomplete() {
             atEnd = true;
         }
         setSelection(sel, node, 0);
-   });
+    });
 
     input.addEventListener("keydown", function (e) {
-        var x = document.getElementById(this.id + "autocomplete-list");
-        if (!x) {                           // Target is input
-            if (e.key == 'x' && e.altKey) { // Alt+x
-                e.preventDefault();
-                hexToUnicode(input);
-            } else if (e.ctrlKey && (e.key == 'b' || e.key == 'i')) {
-                // Toggle math bold/italic (Alt+b/Alt+i)
-                e.preventDefault();
-                boldItalicToggle(e.key);
-            } else if (e.shiftKey && e.key == 'Enter') { // Shift+Enter
-                //e.preventDefault();
-                //insertAtCursorPos('\u200B');  // Want VT for math paragraph
-            } else if (e.altKey && e.key == 'm') { // Alt+m
-                // Toggle Unicode and MathML in input
-                e.preventDefault();
-                input.value = isMathML(input.value)
-                    ? MathMLtoUnicodeMath(input.value)
-                    : document.getElementById('output_source').innerText;
-                draw();
-            } else if (e.altKey && e.key == 'b') { // Alt+b
-                // Braille MathML
-                e.preventDefault();
+        var x = document.getElementById(this.id + "autocomplete-list")
+        if (handleAutocompleteKeys(x, e))
+            return
+
+        // Target is input
+        if (e.key == 'x' && e.altKey) { // Alt+x
+            e.preventDefault();
+            hexToUnicode(input);
+        } else if (e.ctrlKey && (e.key == 'b' || e.key == 'i')) {
+            // Toggle math bold/italic (Alt+b/Alt+i)
+            e.preventDefault();
+            boldItalicToggle(e.key);
+        } else if (e.shiftKey && e.key == 'Enter') { // Shift+Enter
+            //e.preventDefault();
+            //insertAtCursorPos('\u200B');  // Want VT for math paragraph
+        } else if (e.altKey && e.key == 'm') { // Alt+m
+            // Toggle Unicode and MathML in input
+            e.preventDefault();
+            input.value = isMathML(input.value)
+                ? MathMLtoUnicodeMath(input.value)
+                : document.getElementById('output_source').innerText;
+            draw();
+        } else if (e.altKey && e.key == 'b') { // Alt+b
+            // Braille MathML
+            e.preventDefault();
+            let mathML = isMathML(input.value)
+                ? input.value
+                : document.getElementById('output_source').innerText;
+            let braille = MathMLtoBraille(mathML);
+            console.log('Math braille = ' + braille);
+            speechDisplay.innerText += '\n' + braille;
+        } else if (e.altKey && e.key == 's') { // Alt+s
+            // Speak MathML
+            e.preventDefault();
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+            } else {
                 let mathML = isMathML(input.value)
                     ? input.value
                     : document.getElementById('output_source').innerText;
-                let braille = MathMLtoBraille(mathML);
-                console.log('Math braille = ' + braille);
-                speechDisplay.innerText += '\n' + braille;
-            } else if (e.altKey && e.key == 's') { // Alt+s
-                // Speak MathML
-                e.preventDefault();
-                if (speechSynthesis.speaking) {
-                    speechSynthesis.cancel();
-                } else {
-                    let mathML = isMathML(input.value)
-                        ? input.value
-                        : document.getElementById('output_source').innerText;
-                    let speech = MathMLtoSpeech(mathML);
-                    console.log('Math speech = ' + speech);
-                    speechDisplay.innerText = '\n' + speech;
-                    let utterance = new SpeechSynthesisUtterance(speech);
-                    if (voiceZira)
-                        utterance.voice = voiceZira;
-                    speechSynthesis.speak(utterance);
-                }
-            } else if (e.altKey && e.key == 'Enter') { // Alt+Enter
-                // Enter Examples[iExample]
-                x = document.getElementById('Examples').childNodes[0];
-                input.value = x.childNodes[iExample].innerText;
-                var cExamples = x.childNodes.length;
+                let speech = MathMLtoSpeech(mathML);
+                console.log('Math speech = ' + speech);
+                speechDisplay.innerText = '\n' + speech;
+                let utterance = new SpeechSynthesisUtterance(speech);
+                if (voiceZira)
+                    utterance.voice = voiceZira;
+                speechSynthesis.speak(utterance);
+            }
+        } else if (e.altKey && e.key == 'Enter') { // Alt+Enter
+            // Enter Examples[iExample]
+            x = document.getElementById('Examples').childNodes[0];
+            input.value = x.childNodes[iExample].innerText;
+            var cExamples = x.childNodes.length;
 
-                iExample++;                 // Increment for next time
-                if (iExample > cExamples - 1)
-                    iExample = 0;
-            }
-            if (demoID) {
-                var demoEq = document.getElementById('demos');
-                switch (e.key) {
-                    case 'Escape':
-                        // Turn off demo mode
-                        endDemo();
-                        return;
-                    case ' ':
-                        // Toggle pause
-                        e.preventDefault();
-                        if (demoPause) {
-                            demoID = 0;         // Needed to start (instead of end)
-                            startDemo();
-                        } else {
-                            demoPause = true;
-                            clearInterval(demoID);
-                            demoEq.style.backgroundColor = 'green';
-                        }
-                        return;
-                    case 'ArrowRight':
-                        nextEq();
-                        return;
-                    case 'ArrowLeft':
-                        prevEq();
-                        return;
-                }
-            }
-            return;
+            iExample++;                 // Increment for next time
+            if (iExample > cExamples - 1)
+                iExample = 0;
         }
-        x = x.getElementsByTagName("div");
-
-        switch (e.key) {
-            case "ArrowDown":
-                // Increase currentFocus and highlight the corresponding control-word
-                e.preventDefault();
-                currentFocus++;
-                addActive(x);
-                break;
-
-            case "ArrowUp":
-                // Decrease currentFocus and highlight the corresponding control-word
-                e.preventDefault();
-                currentFocus--;
-                addActive(x);
-                break;
-
-            case " ":
-            case "Enter":
-            case "Tab":
-                // Prevent form from being submitted and simulate a click on the
-                // "active" control-word option
-                e.preventDefault();
-                if (currentFocus >= 0 && x) {
-                    x[currentFocus].click();
-                }
+        if (demoID) {
+            var demoEq = document.getElementById('demos');
+            switch (e.key) {
+                case 'Escape':
+                    // Turn off demo mode
+                    endDemo();
+                    return;
+                case ' ':
+                    // Toggle pause
+                    e.preventDefault();
+                    if (demoPause) {
+                        demoID = 0;         // Needed to start (instead of end)
+                        startDemo();
+                    } else {
+                        demoPause = true;
+                        clearInterval(demoID);
+                        demoEq.style.backgroundColor = 'green';
+                    }
+                    return;
+                case 'ArrowRight':
+                    nextEq();
+                    return;
+                case 'ArrowLeft':
+                    prevEq();
+                    return;
+            }
         }
     });
     function addActive(x) {
