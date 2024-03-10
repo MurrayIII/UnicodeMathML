@@ -924,24 +924,27 @@ function autocomplete() {
                 if (!node.childElementCount && node.childNodes.length || atEnd) {
                     let nodeP = node.parentElement
                     let nodeNewName
+                    let key = e.key
 
                     if (node.nodeName == 'mtext' && node.textContent[0] == '\\') {
-                        // Collect control word; offer autocompletion...
+                        // Collect control word; offer autocompletion menu
                         closeAutocompleteList();
-                        if (e.key == ' ') {
+                        if (key == ' ') {
                             let symbol = resolveCW(node.textContent)
+                            if (symbol[0] == '"')
+                                return
                             let nodeNew = document.createElement('mi')
                             nodeNew.textContent = symbol
                             nodeNew.setAttribute('selip', '1')
                             nodeP.replaceChild(nodeNew, node)
                         } else {
-                            node.textContent += e.key   // Collect control word
+                            node.textContent += key   // Collect control word
                             if (node.textContent.length > 2) {
                                 let cw = node.textContent.substring(1)
                                 let autocl = createAutoCompleteMenu(cw, this.id, e => {
                                     // User clicked matching control word: insert its symbol
-                                    let val = e.currentTarget.innerText;
-                                    let symbol = val[val.length - 1];
+                                    let val = e.currentTarget.innerText
+                                    let symbol = val[val.length - 1]
                                     let nodeNew = document.createElement('mi')
                                     nodeNew.textContent = symbol
                                     nodeNew.setAttribute('selip', '1')
@@ -952,13 +955,13 @@ function autocomplete() {
                                     while (walker.nextNode() && !walker.currentNode.attributes.selip)
                                         ;
                                     nodeP.replaceChild(nodeNew, walker.currentNode)
-                                    closeAutocompleteList();
+                                    closeAutocompleteList()
                                     nodeP.innerHTML = nodeP.innerHTML // Force redraw
                                     refreshMathMLDisplay()
                                 })
                                 // Append div element as a child of the autocomplete container
                                 if (autocl)
-                                    this.appendChild(autocl);
+                                    this.appendChild(autocl)
                             }
                         }
                         //node.setAttribute('selip', node.textContent.length)
@@ -966,13 +969,37 @@ function autocomplete() {
                         refreshMathMLDisplay()
                         return
                     }
-                    if (isAsciiAlphabetic(e.key)) {
-                        nodeNewName = 'mi'
-                    } else if (isAsciiDigit(e.key)) {
+                    if (key < ' ')
+                        return
+                    if (isAsciiDigit(key)) {
                         nodeNewName = 'mn'
-                    } else if (e.key >= ' ') {
-                        nodeNewName = e.key == '\\' ? 'mtext' : 'mo'
+                        if (node.nodeName == 'mn') {
+                            node.textContent += key
+                            nodeNewName = ''  // No new node
+                        }
+                    } else if (isAsciiAlphabetic(key)) {
+                        nodeNewName = 'mi'
+                    } else if (key >= '\\') {
+                        nodeNewName = 'mtext'
                     } else {
+                        nodeNewName = 'mo'
+                        if (node.nodeName == 'mo') {
+                            if (node.textContent == '/' && key in negs) {
+                                node.textContent = negs[key]
+                                nodeNewName = ''
+                            } else if (node.textContent + key in mappedPair) {
+                                node.textContent = mappedPair[node.textContent + key]
+                                nodeNewName = ''
+                            }
+                        }
+                        if (key in mappedSingle)
+                            key = mappedSingle[key]
+                    }
+                    if (!nodeNewName) {
+                        // node textContent modified; no new node
+                        node.setAttribute('selip', '1')
+                        nodeP.innerHTML = nodeP.innerHTML // Force redraw
+                        refreshMathMLDisplay();
                         return
                     }
                     let nodeNew = document.createElement(nodeNewName)
@@ -983,7 +1010,7 @@ function autocomplete() {
                             break
                         }
                     }
-                    nodeNew.textContent = e.key
+                    nodeNew.textContent = key
                     nodeNew.setAttribute('selip', '1')
 
                     if (node.nodeName == 'mrow' && atEnd) {
