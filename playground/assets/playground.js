@@ -701,16 +701,16 @@ function autocomplete() {
     })
 
     output.addEventListener("click", function (e) {
+        if (removeSelipAttribute(output))
+            refreshMathMLDisplay()
         let sel = window.getSelection();
         let node = sel.anchorNode;
+
         if (node.nodeName == 'DIV')
             return;                         // </math>
         atEnd = node.length == sel.anchorOffset
-        let name = node.parentElement.parentElement.nodeName
-        if (name == 'msup' || name == 'msqrt')
-            speak(getSpeech(node.parentElement.parentElement))
+        checkSimpleSup(node.parentElement.parentElement)
         speechSel(sel)
-        iNode = -1
     })
 
     function speak(s) {
@@ -732,8 +732,10 @@ function autocomplete() {
             speak(name)
             return
         }
-        if (node.length == sel.anchorOffset)
+        if (node.length == sel.anchorOffset) {
+            handleEndOfTextNode(node.parentElement)
             return
+        }
 
         let ch = node.data;
         let intent = getIntent(node.parentElement);
@@ -790,7 +792,7 @@ function autocomplete() {
     }
 
     function checkSimpleSup(node) {
-        if (node.nodeName == 'msup') {
+        if (node.nodeName == 'msup' || node.nodeName == 'msqrt') {
             let s = speech(node)
             if (s.length <= 3) {
                 speak(resolveSymbols(s))
@@ -808,6 +810,8 @@ function autocomplete() {
 
     function refreshMathMLDisplay() {
         output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
+        input.value = MathMLtoUnicodeMath(output.innerHTML)
+
         var walker = document.createTreeWalker(output, NodeFilter.SHOW_ELEMENT, null, false)
         while (walker.nextNode()) {         // Restore selection
             console.log('tag = ' + walker.currentNode.tagName + ' text = ' + walker.currentNode.textContent)
@@ -857,7 +861,70 @@ function autocomplete() {
     }
 
     var atEnd = false;                      // True if at end of sel object
-    var iNode = 0
+
+    function removeSelipAttribute(node) {
+        let walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, null, false)
+        while (walker.nextNode()) {         // Remove current selip attribute
+            if (walker.currentNode.attributes.selip) {
+                walker.currentNode.removeAttribute('selip');
+                return true
+            }
+        }
+        return false
+    }
+
+    function handleEndOfTextNode(node) {
+        let name = node.parentElement.nodeName
+
+        if (name == 'mrow') {
+            let intent = getIntent(node);
+            node = node.parentElement;
+            name = node.parentElement.nodeName
+            if (intent == ':function')
+                name = 'function';
+            else if (intent.indexOf('integral') != -1)
+                name = 'integrand';
+        }
+        switch (name) {
+            case 'msup':
+            case 'msub':
+            case 'mover':
+            case 'munder':
+            case 'mfrac':
+            case 'mroot':
+                if (!node.previousElementSibling) {
+                    name = name == 'mfrac' ? 'numerator' :
+                        name == 'mroot' ? 'radicand' : 'base';
+                } else {
+                    name = name == 'mfrac' ? 'denominator' :
+                        name == 'mroot' ? 'index' : name;
+                }
+                break;
+
+            case 'msubsup':
+            case 'munderover':
+                if (!node.previousElementSibling)
+                    name = 'base';
+                else if (node.nextElementSibling)
+                    name = isNary(node.previousElementSibling.textContent) ? 'lower limit' : 'subscript';
+                break;
+
+            case 'msqrt':
+                name = 'radicand';
+                break;
+
+            case 'menclose':
+                break;
+        }
+        if (names[name])
+            name = names[name];
+
+        if (name != 'mrow') {
+            speak('end of ' + name);
+            atEnd = true;
+        }
+        return node
+    }
 
     output.addEventListener("keydown", function (e) {
         var x = document.getElementById(this.id + "autocomplete-list");
@@ -958,6 +1025,7 @@ function autocomplete() {
                                     closeAutocompleteList()
                                     nodeP.innerHTML = nodeP.innerHTML // Force redraw
                                     refreshMathMLDisplay()
+                                    speak(resolveSymbols(symbol))
                                 })
                                 // Append div element as a child of the autocomplete container
                                 if (autocl)
@@ -967,6 +1035,7 @@ function autocomplete() {
                         //node.setAttribute('selip', node.textContent.length)
                         nodeP.innerHTML = nodeP.innerHTML // Force redraw
                         refreshMathMLDisplay()
+                        speak(resolveSymbols(key))
                         return
                     }
                     if (key < ' ')
@@ -985,16 +1054,17 @@ function autocomplete() {
                         nodeNewName = 'mo'
                         if (node.nodeName == 'mo') {
                             if (node.textContent == '/' && key in negs) {
-                                node.textContent = negs[key]
+                                node.textContent = key = negs[key]
                                 nodeNewName = ''
                             } else if (node.textContent + key in mappedPair) {
-                                node.textContent = mappedPair[node.textContent + key]
+                                node.textContent = key = mappedPair[node.textContent + key]
                                 nodeNewName = ''
                             }
                         }
                         if (key in mappedSingle)
                             key = mappedSingle[key]
                     }
+                    speak(resolveSymbols(key))
                     if (!nodeNewName) {
                         // node textContent modified; no new node
                         node.setAttribute('selip', '1')
@@ -1003,13 +1073,7 @@ function autocomplete() {
                         return
                     }
                     let nodeNew = document.createElement(nodeNewName)
-                    let walker = document.createTreeWalker(nodeP, NodeFilter.SHOW_ELEMENT, null, false)
-                    while (walker.nextNode()) {         // Remove current selip attribute
-                        if (walker.currentNode.attributes.selip) {
-                            walker.currentNode.removeAttribute('selip');
-                            break
-                        }
-                    }
+                    removeSelipAttribute(nodeP)
                     nodeNew.textContent = key
                     nodeNew.setAttribute('selip', '1')
 
@@ -1126,7 +1190,7 @@ function autocomplete() {
             }
             if (name == '#text')
                 speechSel(sel)
-            else if(name != 'mtd')
+            else if (name != 'mtd')
                 speak(name)
             return
         }
@@ -1150,144 +1214,98 @@ function autocomplete() {
         node = sel.anchorNode.parentElement;
         name = node.parentElement.nodeName
 
-        switch (name) {
-            case 'msup':
-            case 'msub':
-            case 'mover':
-            case 'munder':
-            case 'mfrac':
-            case 'mroot':
-                if (!node.previousElementSibling) {
-                    name = name == 'mfrac' ? 'numerator' :
-                           name == 'mroot' ? 'radicand' : 'base';
-                } else {
-                    name = name == 'mfrac' ? 'denominator' :
-                           name == 'mroot' ? 'index' : name;
-                }
-                break;
-
-            case 'msubsup':
-            case 'munderover':
-                if (!node.previousElementSibling)
-                    name = 'base';
-                else if (node.nextElementSibling)
-                    name = isNary(node.previousElementSibling.textContent) ? 'lower limit' : 'subscript';
-                break;
-
-            case 'msqrt':
-                name = 'radicand';
-                break;
-
-            case 'menclose':
-                break;
-
-            case 'mrow':
-                atEnd = false;
-                if (node.nextElementSibling) {
+        if (name != 'mrow') {
+            node = handleEndOfTextNode(node)
+            setSelection(sel, node, 0);
+            return
+        }
+        atEnd = false;
+        if (node.nextElementSibling) {
+            node = node.nextElementSibling;
+            intent = getIntent(node);
+            if (node.nodeName == 'mo') {
+                if (node.textContent == '\u2061')
                     node = node.nextElementSibling;
-                    intent = getIntent(node);
-                    if (node.nodeName == 'mo') {
-                        if (node.textContent == '\u2061')
-                            node = node.nextElementSibling;
-                    } else if (node.nodeName == 'mtable') {
-                        name = 'row';
-                        if (intent == ':equations')
-                            name = 'equation';
-                        intent = getIntent(node.parentElement)
-                        if (intent == ':cases')
-                            name = 'case'
-                        speak(name + '1');
-                        setSelection(sel, node.firstElementChild, 0);
-                        return;
-                    } else if (node.nodeName == 'mrow') {
-                        let ch = getNaryOp(node);
-                        if (ch) {
-                            node = node.firstElementChild;
-                        } else {
-                            if (intent == ':function')
-                                speak(getSpeech(node));
-                            else if (intent == ':cases')
-                                speak('cases');
-                        }
-                        node = node.firstElementChild;
-                    }
-                    if (node.nodeType == 3 || !node.childElementCount)
-                        node = node.firstChild;
-                } else {                        // No next sibling
-                    node = node.parentElement;  // Up to <mrow>
-                    name = node.parentElement.nodeName;
-                    atEnd = true;               // At end of <mrow>
+            } else if (node.nodeName == 'mtable') {
+                name = 'row';
+                if (intent == ':equations')
+                    name = 'equation';
+                intent = getIntent(node.parentElement)
+                if (intent == ':cases')
+                    name = 'case'
+                speak(name + '1');
+                setSelection(sel, node.firstElementChild, 0);
+                return;
+            } else if (node.nodeName == 'mrow') {
+                let ch = getNaryOp(node);
+                if (ch) {
+                    node = node.firstElementChild;
+                } else {
+                    if (intent == ':function')
+                        speak(getSpeech(node));
+                    else if (intent == ':cases')
+                        speak('cases');
+                }
+                node = node.firstElementChild;
+            }
+            if (node.nodeType == 3 || !node.childElementCount)
+                node = node.firstChild;
+        } else {                        // No next sibling
+            node = node.parentElement;  // Up to <mrow>
+            name = node.parentElement.nodeName;
+            atEnd = true;               // At end of <mrow>
 
-                    switch (name) {
-                        case 'msubsup':
-                        case 'munderover':
-                            name = node.nextElementSibling ? 'lower limit' : 'upper limit'
-                            break;
-                        case 'mfrac':
-                            name = node.nextElementSibling ? 'numerator' : 'denominator'
-                            break;
-                        case 'mroot':
-                            name = node.nextElementSibling ? 'radicand' : 'index'
-                            break;
-                        case 'msub':
-                        case 'msup':
-                            name = node.nextElementSibling ?
-                                'base' : (name == 'msub' ? 'subscript' : 'superscript')
-                            break;
-                        case 'mtd':
-                            if (node.nextElementSibling) {
-                                node = node.nextElementSibling;
-                                if (!node.childElementCount)    // 'malignmark' or 'maligngroup'
-                                    node = node.nextElementSibling;
-                                node = node.firstElementChild
-                                atEnd = false;
-                                if (!node.childElementCount && node.childNodes.length)
-                                    node = node.firstChild;
-                                setSelection(sel, node, 0);
-                                speechSel(sel)
-                                return
-                            }
-                            node = node.parentElement;
-                            name = node.nodeName;
-                            break;
-                        case 'mrow':
-                            if (node.nextElementSibling) {
-                                node = node.nextElementSibling;
-                                name = node.nodeName
-                                atEnd = false;
-                                if (!node.childElementCount) {
-                                    node = node.firstChild;
-                                    setSelection(sel, node, 0);
-                                    speechSel(sel)
-                                    return;
-                                }
-                            }
-                            break;
+            switch (name) {
+                case 'msubsup':
+                case 'munderover':
+                    name = node.nextElementSibling ? 'lower limit' : 'upper limit'
+                    break;
+                case 'mfrac':
+                    name = node.nextElementSibling ? 'numerator' : 'denominator'
+                    break;
+                case 'mroot':
+                    name = node.nextElementSibling ? 'radicand' : 'index'
+                    break;
+                case 'msub':
+                case 'msup':
+                    name = node.nextElementSibling ?
+                        'base' : (name == 'msub' ? 'subscript' : 'superscript')
+                    break;
+                case 'mtd':
+                    if (node.nextElementSibling) {
+                        node = node.nextElementSibling;
+                        if (!node.childElementCount)    // 'malignmark' or 'maligngroup'
+                            node = node.nextElementSibling;
+                        node = node.firstElementChild
+                        atEnd = false;
+                        if (!node.childElementCount && node.childNodes.length)
+                            node = node.firstChild;
+                        setSelection(sel, node, 0);
+                        speechSel(sel)
+                        return
+                    }
+                    node = node.parentElement;
+                    name = node.nodeName;
+                    break;
+                case 'mrow':
+                    if (node.nextElementSibling) {
+                        node = node.nextElementSibling;
+                        name = node.nodeName
+                        atEnd = false;
+                        if (!node.childElementCount) {
+                            node = node.firstChild;
+                            setSelection(sel, node, 0);
+                            speechSel(sel)
+                            return;
+                        }
                     }
                     break;
-                }
-                sel = setSelection(sel, node, 0);
-                if (checkSimpleSup(node))
-                    return;
-                speechSel(sel)
-                return;
+            }
         }
-        if (names[name])
-            name = names[name];
-
-        if (name == 'mrow') {
-            intent = getIntent(node);
-            node = node.parentElement;
-            if (intent == ':function')
-                name = 'function';
-            else if (intent.indexOf('integral') != -1)
-                name = 'integrand';
-        }
-        if (name != 'mrow') {
-            speak('end of ' + name);
-            atEnd = true;
-        }
-        setSelection(sel, node, 0);
+        sel = setSelection(sel, node, 0);
+        if (checkSimpleSup(node))
+            return;
+        speechSel(sel)
     });
 
     input.addEventListener("keydown", function (e) {
