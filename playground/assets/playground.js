@@ -700,19 +700,6 @@ function autocomplete() {
             this.parentNode.appendChild(autocl);
     })
 
-    output.addEventListener("click", function (e) {
-        if (removeSelipAttribute(output))
-            refreshMathMLDisplay()
-        let sel = window.getSelection();
-        let node = sel.anchorNode;
-
-        if (node.nodeName == 'DIV')
-            return;                         // </math>
-        atEnd = node.length == sel.anchorOffset
-        checkSimpleSup(node.parentElement.parentElement)
-        speechSel(sel)
-    })
-
     function speak(s) {
         console.log(s)
         s = symbolSpeech(s)
@@ -926,6 +913,39 @@ function autocomplete() {
         return node
     }
 
+    // output editing and navigation
+
+    var onac = false                        // true immediately after autocomplete click
+
+    output.addEventListener("click", function (e) {
+        if (onac) {                         // Ignore click that follows autocomplete click
+            onac = false
+            return
+        }
+        if (removeSelipAttribute(output))
+            refreshMathMLDisplay()
+        let sel = window.getSelection();
+        let node = sel.anchorNode;
+
+        if (node.nodeName == 'DIV')
+            return;                         // </math>
+        atEnd = node.length == sel.anchorOffset
+        checkSimpleSup(node.parentElement.parentElement)
+            speechSel(sel)
+    })
+
+    function getMmlTag(ch) {
+        if (ch < ' ')
+            return ''
+        if (isAsciiDigit(ch))
+            return 'mn'
+        if (isAsciiAlphabetic(ch) || isGreek(ch))
+            return 'mi'
+        if (ch == '\\')
+            return 'mtext'
+        return 'mo'
+    }
+
     output.addEventListener("keydown", function (e) {
         var x = document.getElementById(this.id + "autocomplete-list");
         if (handleAutocompleteKeys(x, e))
@@ -948,12 +968,6 @@ function autocomplete() {
 
             case 'ArrowLeft':
                 dir = '←'
-                return;
-
-            case 'ArrowDown':
-                var walker = document.createTreeWalker(output, NodeFilter.SHOW_ELEMENT, null, false)
-                while (walker.nextNode())
-                    console.log('tag = ' + walker.currentNode.tagName + ' text = ' + walker.currentNode.textContent)
                 return;
 
             case 'Delete':
@@ -981,7 +995,7 @@ function autocomplete() {
                     noMathTag = true;       // Don't include <math> tags
                     if (e.key != ' ')
                         node.textContent += e.key
-                    var t = unicodemathml(node.textContent, true);
+                    var t = unicodemathml(node.textContent, true)
                     noMathTag = false
                     node.innerHTML = t.mathml
                     node.setAttribute('selip', '1')
@@ -995,7 +1009,7 @@ function autocomplete() {
 
                     if (node.nodeName == 'mtext' && node.textContent[0] == '\\') {
                         // Collect control word; offer autocompletion menu
-                        closeAutocompleteList();
+                        closeAutocompleteList()
                         if (key == ' ') {
                             let symbol = resolveCW(node.textContent)
                             if (symbol[0] == '"')
@@ -1012,7 +1026,7 @@ function autocomplete() {
                                     // User clicked matching control word: insert its symbol
                                     let val = e.currentTarget.innerText
                                     let symbol = val[val.length - 1]
-                                    let nodeNew = document.createElement('mi')
+                                    let nodeNew = document.createElement(getMmlTag(symbol))
                                     nodeNew.textContent = symbol
                                     nodeNew.setAttribute('selip', '1')
 
@@ -1026,6 +1040,7 @@ function autocomplete() {
                                     nodeP.innerHTML = nodeP.innerHTML // Force redraw
                                     refreshMathMLDisplay()
                                     speak(resolveSymbols(symbol))
+                                    onac = true    // Suppress default speech, e.g., for 'mi'
                                 })
                                 // Append div element as a child of the autocomplete container
                                 if (autocl)
@@ -1038,31 +1053,33 @@ function autocomplete() {
                         speak(resolveSymbols(key))
                         return
                     }
-                    if (key < ' ')
-                        return
-                    if (isAsciiDigit(key)) {
-                        nodeNewName = 'mn'
-                        if (node.nodeName == 'mn') {
-                            node.textContent += key
-                            nodeNewName = ''  // No new node
-                        }
-                    } else if (isAsciiAlphabetic(key)) {
-                        nodeNewName = 'mi'
-                    } else if (key >= '\\') {
-                        nodeNewName = 'mtext'
-                    } else {
-                        nodeNewName = 'mo'
-                        if (node.nodeName == 'mo') {
+                    nodeNewName = getMmlTag(key)
+
+                    switch (nodeNewName) {
+                        case 'mn':
+                            if (node.nodeName == 'mn') {
+                                // What if IP isn't at end of node?
+                                node.textContent += key
+                                nodeNewName = ''  // No new node
+                            }
+                            break;
+                        case 'mo':
                             if (node.textContent == '/' && key in negs) {
                                 node.textContent = key = negs[key]
                                 nodeNewName = ''
                             } else if (node.textContent + key in mappedPair) {
                                 node.textContent = key = mappedPair[node.textContent + key]
                                 nodeNewName = ''
+                            } else if (key in mappedSingle) {
+                                key = mappedSingle[key]
                             }
-                        }
-                        if (key in mappedSingle)
-                            key = mappedSingle[key]
+                            break
+                        case 'mi':
+                            if (node.nodeName == 'mi') {
+                                // TODO: handle editing inside <mi>, recognize
+                                // a sequence of <mi>'s as a function name
+                            }
+                            break;
                     }
                     speak(resolveSymbols(key))
                     if (!nodeNewName) {
@@ -1104,7 +1121,7 @@ function autocomplete() {
                     refreshMathMLDisplay();
                 }
                 return;                     // Ignore other input for now
-        }
+        }                                   // switch(e.key)
 
         // Move selection forward in the MathML DOM and describe what's there
         if (node.nodeType == 1) {           // Starting at an element...
