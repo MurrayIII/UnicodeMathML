@@ -340,6 +340,9 @@ function codeAt(chars, i) {
         code = chars.codePointAt(i - 1);
     return code;
 }
+function getCch(chars, i) {
+    return codeAt(chars, i) > 0xFFFF ? 2 : 1
+}
 
 function getCh(str, i) {
     // Get BMP character or surrogate pair at offset i

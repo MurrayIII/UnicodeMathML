@@ -463,6 +463,7 @@ const symbolSpeechStrings = {
 	'⬇': 'descent smash',					// 2B07
 	'⬌': 'width smash',						// 2B0C - horizontal smash
 	'⬍': 'height smash',						// 2B0D
+	'⬚': 'empty',							// 2B1A (for empty argument in fraction, sub/sup, etc.)
 	'⬢': 'hex',								// 2B22 (for hex in color/back color)
 	'⮵': 'to the',							// 2BB5
 	'〖': ', ',								// 3016

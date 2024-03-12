@@ -913,6 +913,132 @@ function autocomplete() {
         return node
     }
 
+    function handleKeyboardInput(node, key) {
+        let nodeP = node.parentElement
+        let nodeNewName
+
+        if (node.nodeName == 'mtext' && node.textContent[0] == '\\') {
+            // Collect control word; offer autocompletion menu
+            closeAutocompleteList()
+            if (key == ' ') {
+                let symbol = resolveCW(node.textContent)
+                if (symbol[0] == '"')
+                    return
+                let nodeNew = document.createElement('mi')
+                nodeNew.textContent = symbol
+                nodeNew.setAttribute('selip', '1')
+                nodeP.replaceChild(nodeNew, node)
+            } else {
+                node.textContent += key   // Collect control word
+                if (node.textContent.length > 2) {
+                    let cw = node.textContent.substring(1)
+                    let autocl = createAutoCompleteMenu(cw, this.id, e => {
+                        // User clicked matching control word: insert its symbol
+                        let val = e.currentTarget.innerText
+                        let symbol = val[val.length - 1]
+                        let nodeNew = document.createElement(getMmlTag(symbol))
+                        nodeNew.textContent = symbol
+                        nodeNew.setAttribute('selip', '1')
+
+                        // node is no longer a child of nodeP; find it
+                        let walker = document.createTreeWalker(nodeP,
+                            NodeFilter.SHOW_ELEMENT, null, false)
+                        while (walker.nextNode() && !walker.currentNode.attributes.selip)
+                            ;
+                        nodeP.replaceChild(nodeNew, walker.currentNode)
+                        closeAutocompleteList()
+                        nodeP.innerHTML = nodeP.innerHTML // Force redraw
+                        refreshMathMLDisplay()
+                        speak(resolveSymbols(symbol))
+                        onac = true    // Suppress default speech, e.g., for 'mi'
+                    })
+                    // Append div element as a child of the autocomplete container
+                    if (autocl)
+                        this.appendChild(autocl)
+                }
+            }
+            //node.setAttribute('selip', node.textContent.length)
+            nodeP.innerHTML = nodeP.innerHTML // Force redraw
+            refreshMathMLDisplay()
+            speak(resolveSymbols(key))
+            return
+        }
+        nodeNewName = getMmlTag(key)
+
+        switch (nodeNewName) {
+            case 'mn':
+                if (node.nodeName == 'mn') {
+                    // What if IP isn't at end of node?
+                    node.textContent += key
+                    nodeNewName = ''  // No new node
+                }
+                break;
+            case 'mo':
+                if (node.textContent == '/' && key in negs) {
+                    node.textContent = key = negs[key]
+                    nodeNewName = ''
+                } else if (node.textContent + key in mappedPair) {
+                    node.textContent = key = mappedPair[node.textContent + key]
+                    nodeNewName = ''
+                } else if (key in mappedSingle) {
+                    key = mappedSingle[key]
+                }
+                break
+            case 'mi':
+                if (node.nodeName == 'mi') {
+                    // TODO: handle editing inside <mi>, recognize
+                    // a sequence of <mi>'s as a function name
+                }
+                break;
+        }
+        speak(resolveSymbols(key))
+        if (!nodeNewName) {
+            // node textContent modified; no new node
+            node.setAttribute('selip', '1')
+            nodeP.innerHTML = nodeP.innerHTML // Force redraw
+            refreshMathMLDisplay();
+            return
+        }
+        let nodeNew = document.createElement(nodeNewName)
+        removeSelipAttribute(nodeP)
+        nodeNew.textContent = key
+        nodeNew.setAttribute('selip', '1')
+
+        if (node.textContent == '⬚') {
+            // Replace empty arg place holder with key 
+            if (nodeNewName == node.nodeName) {
+                node.textContent = key
+                node.setAttribute('selip', '1')
+            } else {
+                nodeP.replaceChild(nodeNew, node)
+            }
+        } else if (node.nodeName == 'mrow' && atEnd) {
+            node.appendChild(nodeNew)
+        } else if (nodeP.nodeName == 'mrow') {
+            if (atEnd) {
+                if (node.nextElementSibling)
+                    nodeP.insertBefore(nodeNew, node.nextElementSibling)
+                else
+                    nodeP.appendChild(nodeNew)
+            }
+            else
+                nodeP.insertBefore(nodeNew, node)
+        } else {
+            let nodeMrow = document.createElement('mrow')
+            nodeP.insertBefore(nodeMrow, node)
+            if (atEnd) {
+                nodeMrow.appendChild(node)
+                nodeMrow.appendChild(nodeNew)
+            } else {
+                nodeMrow.appendChild(nodeNew)
+                nodeMrow.appendChild(node)
+            }
+            atEnd = false;
+        }
+        nodeP.innerHTML = nodeP.innerHTML // Force redraw
+        refreshMathMLDisplay();
+    }
+
     // output editing and navigation
 
     var onac = false                        // true immediately after autocomplete click
@@ -946,23 +1072,33 @@ function autocomplete() {
         return 'mo'
     }
 
+    function checkEmpty(node) {
+        if (!node.textContent) {
+            if (!isMathMLObject(node.parentElement))
+                node.remove()
+            else
+                node.textContent = '⬚'
+        }
+    }
+
     output.addEventListener("keydown", function (e) {
         var x = document.getElementById(this.id + "autocomplete-list");
         if (handleAutocompleteKeys(x, e))
             return
 
-        let sel = window.getSelection();
-        let node = sel.anchorNode;
-        let name = node.nodeName;
+        let cchCh
         let dir = ''
         let intent = ''
+        let sel = window.getSelection()
+        let node = sel.anchorNode
+        let name = node.nodeName
 
         if (sel.anchorNode.nodeName == 'DIV')
-            return;
+            return
 
         switch (e.key) {
             case 'ArrowRight':
-                e.preventDefault();
+                e.preventDefault()
                 dir = '→'
                 break;
 
@@ -972,15 +1108,46 @@ function autocomplete() {
 
             case 'Delete':
                 e.preventDefault()
-                node.remove()
+                if (node.nodeName == 'mrow')
+                    node = node.firstElementChild
+                else if (node.nodeName == '#text')
+                    node = node.parentElement
+                if (sel.anchorOffset < node.textContent.length) {
+                    cchCh = getCch(node.textContent, sel.anchorOffset)
+                    node.textContent = node.textContent.substring(0, sel.anchorOffset)
+                        + node.textContent.substring(sel.anchorOffset + cchCh)
+                } else if (node.nextSibling) {
+                    node = node.nextSibling
+                    cchCh = getCch(node.textContent, 0)
+                    node.textContent = node.textContent.substring(cchCh)
+                }
+                checkEmpty(node)
+                node.setAttribute('selip', '0')
+                refreshMathMLDisplay()
+                return
+
+            case 'Backspace':
+                e.preventDefault()
+                if (node.nodeName == 'mrow')
+                    node = node.firstElementChild
+                else if (node.nodeName == '#text')
+                    node = node.parentElement
+                if (sel.anchorOffset > 0) {
+                    cchCh = getCch(node.textContent, sel.anchorOffset - 1) 
+                    node.textContent = node.textContent.substring(0, sel.anchorOffset - cchCh) +
+                        node.textContent.substring(sel.anchorOffset)
+                } else if (node.previousSibling) {
+                    node = node.previousSibling
+                    cchCh = getCch(node.textContent, node.textContent.length - 1)
+                    node.textContent = node.textContent.substring(0,
+                        node.textContent.length - cchCh)
+                }
+                checkEmpty(node)
+                node.setAttribute('selip', 0)
                 refreshMathMLDisplay()
                 return
 
             default:
-                if (e.key == 'Backspace') {
-                    e.preventDefault()
-                    return
-                }
                 if (e.key == 'Space')
                     e.key = ' ';
                 if (e.key.length > 1)       // 'Shift', etc.
@@ -1002,124 +1169,8 @@ function autocomplete() {
                     refreshMathMLDisplay()
                     return
                 }
-                if (!node.childElementCount && node.childNodes.length || atEnd) {
-                    let nodeP = node.parentElement
-                    let nodeNewName
-                    let key = e.key
-
-                    if (node.nodeName == 'mtext' && node.textContent[0] == '\\') {
-                        // Collect control word; offer autocompletion menu
-                        closeAutocompleteList()
-                        if (key == ' ') {
-                            let symbol = resolveCW(node.textContent)
-                            if (symbol[0] == '"')
-                                return
-                            let nodeNew = document.createElement('mi')
-                            nodeNew.textContent = symbol
-                            nodeNew.setAttribute('selip', '1')
-                            nodeP.replaceChild(nodeNew, node)
-                        } else {
-                            node.textContent += key   // Collect control word
-                            if (node.textContent.length > 2) {
-                                let cw = node.textContent.substring(1)
-                                let autocl = createAutoCompleteMenu(cw, this.id, e => {
-                                    // User clicked matching control word: insert its symbol
-                                    let val = e.currentTarget.innerText
-                                    let symbol = val[val.length - 1]
-                                    let nodeNew = document.createElement(getMmlTag(symbol))
-                                    nodeNew.textContent = symbol
-                                    nodeNew.setAttribute('selip', '1')
-
-                                    // node is no longer a child of nodeP; find it
-                                    let walker = document.createTreeWalker(nodeP,
-                                        NodeFilter.SHOW_ELEMENT, null, false)
-                                    while (walker.nextNode() && !walker.currentNode.attributes.selip)
-                                        ;
-                                    nodeP.replaceChild(nodeNew, walker.currentNode)
-                                    closeAutocompleteList()
-                                    nodeP.innerHTML = nodeP.innerHTML // Force redraw
-                                    refreshMathMLDisplay()
-                                    speak(resolveSymbols(symbol))
-                                    onac = true    // Suppress default speech, e.g., for 'mi'
-                                })
-                                // Append div element as a child of the autocomplete container
-                                if (autocl)
-                                    this.appendChild(autocl)
-                            }
-                        }
-                        //node.setAttribute('selip', node.textContent.length)
-                        nodeP.innerHTML = nodeP.innerHTML // Force redraw
-                        refreshMathMLDisplay()
-                        speak(resolveSymbols(key))
-                        return
-                    }
-                    nodeNewName = getMmlTag(key)
-
-                    switch (nodeNewName) {
-                        case 'mn':
-                            if (node.nodeName == 'mn') {
-                                // What if IP isn't at end of node?
-                                node.textContent += key
-                                nodeNewName = ''  // No new node
-                            }
-                            break;
-                        case 'mo':
-                            if (node.textContent == '/' && key in negs) {
-                                node.textContent = key = negs[key]
-                                nodeNewName = ''
-                            } else if (node.textContent + key in mappedPair) {
-                                node.textContent = key = mappedPair[node.textContent + key]
-                                nodeNewName = ''
-                            } else if (key in mappedSingle) {
-                                key = mappedSingle[key]
-                            }
-                            break
-                        case 'mi':
-                            if (node.nodeName == 'mi') {
-                                // TODO: handle editing inside <mi>, recognize
-                                // a sequence of <mi>'s as a function name
-                            }
-                            break;
-                    }
-                    speak(resolveSymbols(key))
-                    if (!nodeNewName) {
-                        // node textContent modified; no new node
-                        node.setAttribute('selip', '1')
-                        nodeP.innerHTML = nodeP.innerHTML // Force redraw
-                        refreshMathMLDisplay();
-                        return
-                    }
-                    let nodeNew = document.createElement(nodeNewName)
-                    removeSelipAttribute(nodeP)
-                    nodeNew.textContent = key
-                    nodeNew.setAttribute('selip', '1')
-
-                    if (node.nodeName == 'mrow' && atEnd) {
-                        node.appendChild(nodeNew)
-                    } else if (nodeP.nodeName == 'mrow') {
-                        if (atEnd) {
-                            if (node.nextElementSibling)
-                                nodeP.insertBefore(nodeNew, node.nextElementSibling)
-                            else
-                                nodeP.appendChild(nodeNew)
-                        }
-                        else
-                            nodeP.insertBefore(nodeNew, node)
-                    } else {
-                        let nodeMrow = document.createElement('mrow')
-                        nodeP.insertBefore(nodeMrow, node)
-                        if (atEnd) {
-                            nodeMrow.appendChild(node)
-                            nodeMrow.appendChild(nodeNew)
-                        } else {
-                            nodeMrow.appendChild(nodeNew)
-                            nodeMrow.appendChild(node)
-                        }
-                        atEnd = false;
-                    }
-                    nodeP.innerHTML = nodeP.innerHTML // Force redraw
-                    refreshMathMLDisplay();
-                }
+                if (!node.childElementCount && node.childNodes.length || atEnd)
+                    handleKeyboardInput(node, e.key)
                 return;                     // Ignore other input for now
         }                                   // switch(e.key)
 
