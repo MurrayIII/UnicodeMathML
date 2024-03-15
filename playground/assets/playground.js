@@ -95,6 +95,28 @@ function prevEq() {
     nextEq();
 }
 
+function addActive(x) {
+    if (!x) return false;
+
+    // Classify an option as "active". First, remove "autocomplete-active"
+    // class from all options, and ensure the currentFocus is valid
+    removeActive(x);
+    if (currentFocus >= x.length) currentFocus = 0;
+    if (currentFocus < 0) currentFocus = (x.length - 1);
+
+    // Add class "autocomplete-active" to x[currentFocus]
+    console.log("x[" + currentFocus + "] = " + x[currentFocus].innerText);
+    x[currentFocus].classList.add("autocomplete-active");
+}
+
+function removeActive(x) {
+    // Remove "autocomplete-active" class from all autocomplete options
+    for (var i = 0; i < x.length; i++) {
+        x[i].classList.remove("autocomplete-active");
+    }
+}
+
+
 // escape mathml tags and entities, via https://stackoverflow.com/a/13538245
 function escapeMathMLSpecialChars(str) {
     var replacements = {
@@ -737,7 +759,7 @@ function autocomplete() {
         })
 
         // Append div element as a child of the autocomplete container
-        if(autocl)
+        if (autocl)
             this.parentNode.appendChild(autocl);
     })
 
@@ -750,9 +772,9 @@ function autocomplete() {
         speechSynthesis.speak(utterance);
     }
 
-///////////////////////////////////
-// OUTPUT EDITING AND NAVIGATION //
-///////////////////////////////////
+    ///////////////////////////////////
+    // OUTPUT EDITING AND NAVIGATION //
+    ///////////////////////////////////
 
     function speechSel(sel) {
         let node = sel.anchorNode;
@@ -836,7 +858,7 @@ function autocomplete() {
 
     const names = {
         'msup': 'superscript', 'msub': 'subscript', 'msubsup': 'subsoup',
-        'mover': 'above', 'munder': 'below', 'munderover': 'below above',
+        'munder': 'modify below', 'mover': 'modify above', 'munderover': 'below above',
         'mfrac': 'fraction', 'msqrt': 'square root',
     }
 
@@ -884,39 +906,10 @@ function autocomplete() {
                 name = 'function';
             else if (intent.indexOf('integral') != -1)
                 name = 'integrand';
-        }
-        switch (name) {
-            case 'msup':
-            case 'msub':
-            case 'mover':
-            case 'munder':
-            case 'mfrac':
-            case 'mroot':
-                if (!node.previousElementSibling) {
-                    name = name == 'mfrac' ? 'numerator' :
-                        name == 'mroot' ? 'radicand' : 'base';
-                } else {
-                    name = name == 'mfrac' ? 'denominator' :
-                        name == 'mroot' ? 'index' : name;
-                }
-                break;
-
-            case 'msubsup':
-            case 'munderover':
-                if (!node.previousElementSibling)
-                    name = 'base';
-                else if (node.nextElementSibling)
-                    name = isNary(node.previousElementSibling.textContent) ? 'lowwer limit' : 'subscript';
-                else
-                    name = isNary(node.parentElement.firstElementChild.textContent) ? 'upper limit' : 'superscript';
-                break;
-
-            case 'msqrt':
-                name = 'radicand';
-                break;
-
-            case 'menclose':
-                break;
+        } else {
+            let nameT = getArgName(node)
+            if (nameT)
+                name = nameT
         }
         if (names[name])
             name = names[name];
@@ -1090,12 +1083,18 @@ function autocomplete() {
     }
 
     function getArgName(node) {
-        let name = ''
+        let attrs
+        let name = node.parentElement.nodeName
 
-        switch (node.parentElement.nodeName) {
+        switch (name) {
             case 'msubsup':
             case 'munderover':
-                name = node.nextElementSibling ? 'lower limit' : 'upper limit'
+                if (!node.previousElementSibling)
+                    name = 'base';
+                else if (node.nextElementSibling)
+                    name = isNary(node.previousElementSibling.textContent) ? 'lowwer limit' : 'subscript';
+                else
+                    name = isNary(node.parentElement.firstElementChild.textContent) ? 'upper limit' : 'superscript';
                 break;
             case 'mfrac':
                 name = node.nextElementSibling ? 'numerator' : 'denominator'
@@ -1105,9 +1104,23 @@ function autocomplete() {
                 break;
             case 'msub':
             case 'msup':
-                name = node.nextElementSibling ?
-                    'base' : (name == 'msub' ? 'subscript' : 'superscript')
+                name = node.nextElementSibling ? 'base'
+                    : name == 'msub' ? 'subscript' : 'superscript'
                 break;
+            case 'mover':
+            case 'munder':
+                name = node.nextElementSibling ? 'base'
+                    : name == 'munder' ? 'below' : 'above'
+                break;
+            case 'menclose':
+                if (node.parentElement.attributes.notation)
+                    return node.parentElement.attributes.notation.nodeValue
+            case 'msqrt':
+                name = names[name]
+                break;
+
+            default:
+                name = ''
         }
         return name
     }
@@ -1181,7 +1194,7 @@ function autocomplete() {
                 else if (node.nodeName == '#text')
                     node = node.parentElement
                 if (sel.anchorOffset > 0) {
-                    cchCh = getCch(node.textContent, sel.anchorOffset - 1) 
+                    cchCh = getCch(node.textContent, sel.anchorOffset - 1)
                     node.textContent = node.textContent.substring(0, sel.anchorOffset - cchCh) +
                         node.textContent.substring(sel.anchorOffset)
                 } else if (node.previousSibling) {
@@ -1389,7 +1402,11 @@ function autocomplete() {
                 name = resolveSymbols(node.textContent.substring(0, cch))
             } else {
                 name = node.nodeName
-                if (names[name])
+                if (name == 'menclose') {
+                    name = 'box'
+                    if (node.attributes.notation)
+                        name = node.attributes.notation.nodeValue
+                } else if (names[name])
                     name = names[name];
             }
         } else {                        // No next sibling
@@ -1524,25 +1541,6 @@ function autocomplete() {
             }
         }
     });
-    function addActive(x) {
-        if (!x) return false;
-
-        // Classify an option as "active". First, remove "autocomplete-active"
-        // class from all options, and ensure the currentFocus is valid
-        removeActive(x);
-        if (currentFocus >= x.length) currentFocus = 0;
-        if (currentFocus < 0) currentFocus = (x.length - 1);
-
-        // Add class "autocomplete-active" to x[currentFocus]
-        console.log("x[" + currentFocus + "] = " + x[currentFocus].innerText);
-        x[currentFocus].classList.add("autocomplete-active");
-    }
-    function removeActive(x) {
-        // Remove "autocomplete-active" class from all autocomplete options
-        for (var i = 0; i < x.length; i++) {
-            x[i].classList.remove("autocomplete-active");
-        }
-    }
 }
 
 function checkResize() {
