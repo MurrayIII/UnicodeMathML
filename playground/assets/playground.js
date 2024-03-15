@@ -274,6 +274,10 @@ function highlightJson(json) {
     });
 }
 
+///////////////////
+// INPUT EDITING //
+///////////////////
+
 function hexToUnicode(input) {
     var cchSel = input.selectionEnd - input.selectionStart;
     if (cchSel > 10)
@@ -557,7 +561,8 @@ var commonSymbols = "αβδζθλχϕϵ⁡←√∞⒨■"; // 03B1 03B2 03B4 03
 var currentFocus = -1;
 
 function createAutoCompleteMenu(cw, id, onAutoCompleteClick) {
-    // Create an autocomplete menu of control-words that partially match cw
+    // Create an autocomplete menu of control-words that partially match cw.
+    // Called for both input-window and output-window editing
     let matches = getPartialMatches(cw);
     if (!matches.length)
         return;
@@ -597,9 +602,45 @@ function createAutoCompleteMenu(cw, id, onAutoCompleteClick) {
     return autocl
 }
 
+function handleAutocompleteKeys(x, e) {
+    // Callback to handle autocomplete drop-down input. Called for both
+    // input-window and output-window editing
+    if (!x)                             // Empty autocomplete list
+        return false;                   // Signal didn't handle keydown
+
+    x = x.getElementsByTagName("div");  // x = autocomplete entries
+
+    switch (e.key) {
+        case "ArrowDown":
+            // Increase currentFocus; highlight corresponding control-word
+            e.preventDefault();
+            currentFocus++;
+            addActive(x);
+            break;
+
+        case "ArrowUp":
+            // Decrease currentFocus; highlight corresponding control-word
+            e.preventDefault();
+            currentFocus--;
+            addActive(x);
+            break;
+
+        case " ":
+        case "Enter":
+        case "Tab":
+            // Prevent form from being submitted; simulate a click on the
+            // "active" control-word option
+            e.preventDefault();
+            if (currentFocus >= 0 && x)
+                x[currentFocus].click();
+            break
+    }
+    return true                         // Handled keydown
+}
+
 function autocomplete() {
     // Try autocorrecting or autocompleting a control word when user
-    // modifies text input
+    // modifies UnicodeMath in input window
     input.addEventListener("input", function (e) {
         var ip = input.selectionStart;      // Insertion point
 
@@ -709,6 +750,10 @@ function autocomplete() {
         speechSynthesis.speak(utterance);
     }
 
+///////////////////////////////////
+// OUTPUT EDITING AND NAVIGATION //
+///////////////////////////////////
+
     function speechSel(sel) {
         let node = sel.anchorNode;
 
@@ -796,11 +841,13 @@ function autocomplete() {
     }
 
     function refreshMathMLDisplay() {
+        // Update MathML & UnicodeMath displays; restore selection from selip
         output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
         input.value = MathMLtoUnicodeMath(output.innerHTML)
 
         var walker = document.createTreeWalker(output, NodeFilter.SHOW_ELEMENT, null, false)
-        while (walker.nextNode()) {         // Restore selection
+        while (walker.nextNode()) {
+            // Restore selection; previous code has to set attribute 'selip'
             console.log('tag = ' + walker.currentNode.tagName + ' text = ' + walker.currentNode.textContent)
             if (walker.currentNode.attributes.selip) {
                 let offset = walker.currentNode.attributes.selip.nodeValue;
@@ -811,40 +858,6 @@ function autocomplete() {
                 return
             }
         }
-    }
-
-    function handleAutocompleteKeys(x, e) {
-        if (!x)
-            return false;                   // Didn't handle keydown
-
-        x = x.getElementsByTagName("div");
-
-        switch (e.key) {
-            case "ArrowDown":
-                // Increase currentFocus; highlight corresponding control-word
-                e.preventDefault();
-                currentFocus++;
-                addActive(x);
-                break;
-
-            case "ArrowUp":
-                // Decrease currentFocus; highlight corresponding control-word
-                e.preventDefault();
-                currentFocus--;
-                addActive(x);
-                break;
-
-            case " ":
-            case "Enter":
-            case "Tab":
-                // Prevent form from being submitted; simulate a click on the
-                // "active" control-word option
-                e.preventDefault();
-                if (currentFocus >= 0 && x)
-                    x[currentFocus].click();
-                break
-        }
-        return true                         // Handled keydown
     }
 
     var atEnd = false;                      // True if at end of sel object
@@ -893,7 +906,9 @@ function autocomplete() {
                 if (!node.previousElementSibling)
                     name = 'base';
                 else if (node.nextElementSibling)
-                    name = isNary(node.previousElementSibling.textContent) ? 'lower limit' : 'subscript';
+                    name = isNary(node.previousElementSibling.textContent) ? 'lowwer limit' : 'subscript';
+                else
+                    name = isNary(node.parentElement.firstElementChild.textContent) ? 'upper limit' : 'superscript';
                 break;
 
             case 'msqrt':
@@ -914,6 +929,7 @@ function autocomplete() {
     }
 
     function handleKeyboardInput(node, key) {
+        // Handle keyboard input into output window
         let nodeP = node.parentElement
         let nodeNewName
 
@@ -1005,7 +1021,7 @@ function autocomplete() {
         nodeNew.setAttribute('selip', '1')
 
         if (node.textContent == '⬚') {
-            // Replace empty arg place holder with key 
+            // Replace empty arg place holder symbol with key
             if (nodeNewName == node.nodeName) {
                 node.textContent = key
                 node.setAttribute('selip', '1')
@@ -1035,30 +1051,9 @@ function autocomplete() {
             }
             atEnd = false;
         }
-        nodeP.innerHTML = nodeP.innerHTML // Force redraw
+        nodeP.innerHTML = nodeP.innerHTML   // Force redraw
         refreshMathMLDisplay();
     }
-
-    // output editing and navigation
-
-    var onac = false                        // true immediately after autocomplete click
-
-    output.addEventListener("click", function (e) {
-        if (onac) {                         // Ignore click that follows autocomplete click
-            onac = false
-            return
-        }
-        if (removeSelipAttribute(output))
-            refreshMathMLDisplay()
-        let sel = window.getSelection();
-        let node = sel.anchorNode;
-
-        if (node.nodeName == 'DIV')
-            return;                         // </math>
-        atEnd = node.length == sel.anchorOffset
-        checkSimpleSup(node.parentElement.parentElement)
-            speechSel(sel)
-    })
 
     function getMmlTag(ch) {
         if (ch < ' ')
@@ -1073,13 +1068,68 @@ function autocomplete() {
     }
 
     function checkEmpty(node) {
+        // If a deletion empties the active node, remove the node unless it's
+        // required, e.g., for numerator, denominator, subscript, etc. For the
+        // latter, insert the empty argument place holder '⬚'. Set the 'selip'
+        // attribute for the node at the desired selection IP
         if (!node.textContent) {
-            if (!isMathMLObject(node.parentElement))
+            if (!isMathMLObject(node.parentElement)) {
+                if (node.nextElementSibling)
+                    node.nextElementSibling.setAttribute('selip', 0)
+                else if (node.previousElementSibling)
+                    node.previousElementSibling.setAttribute('selip', 1)
                 node.remove()
-            else
+            } else {
                 node.textContent = '⬚'
+                node.setAttribute('selip', '0')
+            }
+        } else {
+            node.setAttribute('selip', '0')
         }
+        refreshMathMLDisplay()
     }
+
+    function getArgName(node) {
+        let name = ''
+
+        switch (node.parentElement.nodeName) {
+            case 'msubsup':
+            case 'munderover':
+                name = node.nextElementSibling ? 'lower limit' : 'upper limit'
+                break;
+            case 'mfrac':
+                name = node.nextElementSibling ? 'numerator' : 'denominator'
+                break;
+            case 'mroot':
+                name = node.nextElementSibling ? 'radicand' : 'index'
+                break;
+            case 'msub':
+            case 'msup':
+                name = node.nextElementSibling ?
+                    'base' : (name == 'msub' ? 'subscript' : 'superscript')
+                break;
+        }
+        return name
+    }
+
+    var onac = false                        // true immediately after autocomplete click
+
+    output.addEventListener("click", function () {
+        if (onac) {                         // Ignore click that follows autocomplete click
+            onac = false
+            return
+        }
+        if (removeSelipAttribute(output))
+            refreshMathMLDisplay()
+        let sel = window.getSelection();
+        let node = sel.anchorNode;
+
+        if (node.nodeName == 'DIV')
+            return;                         // </math>
+        atEnd = node.length == sel.anchorOffset
+        checkSimpleSup(node.parentElement.parentElement)
+        speechSel(sel)
+    })
 
     output.addEventListener("keydown", function (e) {
         var x = document.getElementById(this.id + "autocomplete-list");
@@ -1116,14 +1166,12 @@ function autocomplete() {
                     cchCh = getCch(node.textContent, sel.anchorOffset)
                     node.textContent = node.textContent.substring(0, sel.anchorOffset)
                         + node.textContent.substring(sel.anchorOffset + cchCh)
-                } else if (node.nextSibling) {
-                    node = node.nextSibling
+                } else if (node.nextElementSibling) {
+                    node = node.nextElementSibling
                     cchCh = getCch(node.textContent, 0)
                     node.textContent = node.textContent.substring(cchCh)
                 }
                 checkEmpty(node)
-                node.setAttribute('selip', '0')
-                refreshMathMLDisplay()
                 return
 
             case 'Backspace':
@@ -1143,8 +1191,6 @@ function autocomplete() {
                         node.textContent.length - cchCh)
                 }
                 checkEmpty(node)
-                node.setAttribute('selip', 0)
-                refreshMathMLDisplay()
                 return
 
             default:
@@ -1240,19 +1286,40 @@ function autocomplete() {
                 if (node.nodeName == 'mrow')
                     node = node.firstElementChild;
             }
-            if (node.nodeType == 3 || !node.childElementCount && node.childNodes.length)
-                node = node.firstChild;
-            sel = setSelection(sel, node, 0)
             name = node.nodeName;
+            if (node.nodeType == 3 || !node.childElementCount && node.childNodes.length) {
+                node = node.firstChild;
+                name = node.nodeName;
+            }
+            sel = setSelection(sel, node, 0)
             if (!atEnd && checkSimpleSup(node)) // E.g., say "b squared" if at 𝑏²
                 return;
-            if (names[name])
-                name = names[name];
+            let fixedNumberArgs = false
+            if (names[name]) {
+                fixedNumberArgs = true
+                name = names[name]
+            }
             if (atEnd) {
                 if (name == 'mrow') {
+                    if (node.attributes.arg && node.attributes.arg.nodeValue == 'naryand')
+                        node = node.parentElement
                     let ch = getNaryOp(node)
-                    if (ch)
-                        name = symbolSpeech(ch);
+                    name = ch ? symbolSpeech(ch) : getArgName(node)
+                } else if (fixedNumberArgs && node.nextElementSibling) {
+                    atEnd = false
+                    node = node.nextElementSibling
+                    if (node.nodeName == 'mrow')
+                        node = node.firstElementChild
+                    if (!node.childElementCount)
+                        name = node.firstChild.textContent
+                    else {
+                        name = node.nodeName
+                        if (names[name])
+                            name = names[name];
+                    }
+                    speak(name)
+                    setSelection(sel, node, 0);
+                    return
                 }
                 name = 'finish ' + name
             }
@@ -1314,32 +1381,24 @@ function autocomplete() {
                     else if (intent == ':cases')
                         speak('cases');
                 }
-                node = node.firstElementChild;
+                node = node.firstElementChild
             }
-            if (node.nodeType == 3 || !node.childElementCount)
-                node = node.firstChild;
+            if (node.nodeType == 3 || !node.childElementCount) {
+                node = node.firstChild
+                let cch = getCch(node.textContent, 0)
+                name = resolveSymbols(node.textContent.substring(0, cch))
+            } else {
+                name = node.nodeName
+                if (names[name])
+                    name = names[name];
+            }
         } else {                        // No next sibling
             node = node.parentElement;  // Up to <mrow>
-            name = node.parentElement.nodeName;
             atEnd = true;               // At end of <mrow>
+            name = getArgName(node)
 
-            switch (name) {
-                case 'msubsup':
-                case 'munderover':
-                    name = node.nextElementSibling ? 'lower limit' : 'upper limit'
-                    break;
-                case 'mfrac':
-                    name = node.nextElementSibling ? 'numerator' : 'denominator'
-                    break;
-                case 'mroot':
-                    name = node.nextElementSibling ? 'radicand' : 'index'
-                    break;
-                case 'msub':
-                case 'msup':
-                    name = node.nextElementSibling ?
-                        'base' : (name == 'msub' ? 'subscript' : 'superscript')
-                    break;
-                case 'mtd':
+            if (!name) {
+                if (node.parentElement.nodeName == 'mtd') {
                     if (node.nextElementSibling) {
                         node = node.nextElementSibling;
                         if (!node.childElementCount)    // 'malignmark' or 'maligngroup'
@@ -1354,8 +1413,7 @@ function autocomplete() {
                     }
                     node = node.parentElement;
                     name = node.nodeName;
-                    break;
-                case 'mrow':
+                } else if (node.parentElement.nodeName == 'mrow') {
                     if (node.nextElementSibling) {
                         node = node.nextElementSibling;
                         name = node.nodeName
@@ -1366,14 +1424,17 @@ function autocomplete() {
                             speechSel(sel)
                             return;
                         }
-                    }
-                    break;
+                    } else if (node.attributes.intent)
+                        name = node.attributes.intent.value
+                }
             }
         }
-        sel = setSelection(sel, node, 0);
+        sel = setSelection(sel, node, atEnd ? 1 : 0);
         if (checkSimpleSup(node))
             return;
-        speechSel(sel)
+        if (!name)
+            name = node.nodeName
+        speak(atEnd ? 'at end ' + name : name)
     });
 
     input.addEventListener("keydown", function (e) {

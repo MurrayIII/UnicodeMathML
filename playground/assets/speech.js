@@ -952,6 +952,10 @@ function speech(value, noAddParens) {
 				let power = getPower(value.lastElementChild.textContent);
 				return binary(value, '_') + power;
 			}
+			if (isPrime(value.lastElementChild.textContent)) {
+				return speech(value.firstElementChild) +
+					value.lastElementChild.textContent + '_' + speech(value.children[1])
+			}
 			return isNary(value.firstElementChild.innerHTML)
 				? Nary(value) : ternary(value, '_', '⮵');	// 'to the'
 

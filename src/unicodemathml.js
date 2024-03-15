@@ -2422,8 +2422,8 @@ function preprocess(dsty, uast, index, arr) {
                 }
                 var arg0 = getScript(value.limits.script.low, '$l');
                 var arg1 = getScript(value.limits.script.high, '$h');
-                intent += '(' + arg0 + ',' + arg1 + ',$n)';
-                value.naryand.arg = 'n';
+                intent += '(' + arg0 + ',' + arg1 + ',$naryand)';
+                value.naryand.arg = 'naryand';
                 if (arg0 == '$l')
                     value.limits.script.low.arg = arg0.substring(1);
                 if (arg1 == '$h')
