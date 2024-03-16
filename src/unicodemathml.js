@@ -2864,6 +2864,8 @@ function preprocess(dsty, uast, index, arr) {
             return {sizeoverride: {size: value.size, of: preprocess(dsty, value.of)}};
 
         case "colored":
+            if (noMathTag)
+                return preprocess(dsty, value.of)
             return {colored: {color: value.color, of: preprocess(dsty, value.of)}};
         case "bgcolored":
             return {bgcolored: {color: value.color, of: preprocess(dsty, value.of)}};
@@ -4126,7 +4128,7 @@ function dump(value, noAddParens) {
                 return '<';
             if (val == '&gt;')
                 return '>';
-            if (val == '/')                 // Quote other ops...
+            if (val == '/' && !noMathTag)   // Quote other ops...
                 return '\\/';
             if (val.startsWith('&#') && val.endsWith(';')) {
                 ret = value.innerHTML.substring(2, val.length - 1);
@@ -4758,5 +4760,6 @@ root.isFunctionName = isFunctionName;
 root.foldMathItalic = foldMathItalic;
 root.foldMathAlphanumeric = foldMathAlphanumeric;
 root.MathMLtoUnicodeMath = MathMLtoUnicodeMath;
+root.dump = dump
 
 })(this);
