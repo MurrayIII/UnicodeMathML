@@ -987,11 +987,16 @@ function autocomplete() {
                 }
                 break;
             case 'mo':
-                if (node.textContent == '/' && key in negs) {
-                    node.textContent = key = negs[key]
+                let nodeT = node
+                if (nodeT.nodeName == 'mrow')
+                    nodeT = nodeT.lastElementChild
+                if (nodeT.nodeName == 'mrow')
+                    nodeT = nodeT.lastElementChild
+                if (nodeT.textContent == '/' && key in negs) {
+                    nodeT.textContent = key = negs[key]
                     nodeNewName = ''
-                } else if (node.textContent + key in mappedPair) {
-                    node.textContent = key = mappedPair[node.textContent + key]
+                } else if (nodeT.textContent + key in mappedPair) {
+                    nodeT.textContent = key = mappedPair[nodeT.textContent + key]
                     nodeNewName = ''
                 } else if (key in mappedSingle) {
                     key = mappedSingle[key]
@@ -1234,20 +1239,27 @@ function autocomplete() {
                 if (!node.childElementCount)
                     nodeP = node.parentElement
 
-                if (nodeP.nodeName == 'mrow' && e.key == ' ') {
-                    // Try building up an mrow
+                if (nodeP.nodeName == 'mrow' && '+=-<> '.includes(e.key)) {
+                    // Try building up nodeP
                     noMathTag = true;       // Don't include <math> tags
-                    let uMath = dump(nodeP)
-                    var t = unicodemathml(uMath, true)
+                    let uMath = dump(nodeP) // Convert nodeP to UnicodeMath
+                    var t = unicodemathml(uMath, true) // Get corresponding MathML
                     noMathTag = false
                     nodeP.innerHTML = t.mathml
-                    nodeP.lastElementChild.setAttribute('selip', '1')
-                    refreshMathMLDisplay()
-                    return
+                    if (e.key == ' ') {
+                        // ' ' builds up UnicodeMath and isn't inserted. The
+                        // other operators are inserted
+                        nodeP.lastElementChild.setAttribute('selip', '1')
+                        refreshMathMLDisplay()
+                        return
+                    }
+                    node = nodeP
+                    atEnd = true
                 }
                 if (!node.childElementCount && node.childNodes.length || atEnd) {
                     let autocl = handleKeyboardInput(node, e.key)
-                    // Append div element as a child of the autocomplete container
+
+                    // If defined, append autocomplete list
                     if (autocl != undefined)
                         this.appendChild(autocl)
                 }
