@@ -15,7 +15,6 @@ var activeTab = "source";
 var hist = [];
 
 var prevInputValue = "";
-var setFocusOutput = false
 var atEnd = false;                          // True if at end of sel object
 
 function setSelection(sel, node, offset) {
@@ -70,7 +69,8 @@ function startDemo() {
     demoEq.style.backgroundColor = 'DodgerBlue'; // Show user demo mode is active
 }
 
-function speak() {
+function mathSpeak() {
+    // Called if Speak button is clicked on
     input.focus();
     const event = new Event('keydown');
     event.key = 's';
@@ -79,6 +79,7 @@ function speak() {
 }
 
 function mathBraille() {
+    // Called if Braille button is clicked on
     input.focus();
     const event = new Event('keydown');
     event.key = 'b';
@@ -782,10 +783,12 @@ function autocomplete() {
     function speak(s) {
         console.log(s)
         s = symbolSpeech(s)
-        let utterance = new SpeechSynthesisUtterance(s);
+        let utterance = new SpeechSynthesisUtterance(s)
         if (voiceZira)
-            utterance.voice = voiceZira;
-        speechSynthesis.speak(utterance);
+            utterance.voice = voiceZira
+        if (speechSynthesis.pending)        // Inter-utterance pause is too long
+            speechSynthesis.cancel()
+        speechSynthesis.speak(utterance)
     }
 
     ///////////////////////////////////
@@ -925,12 +928,22 @@ function autocomplete() {
 
     function handleKeyboardInput(node, key) {
         // Handle keyboard input into output window
+        let nodeNewName = getMmlTag(key)
+
         if (node.nodeName == 'math') {
             console.log('Input at end of math zone')
-            node = node.lastElementChild
+            if (node.lastElementChild)
+                node = node.lastElementChild
+            else {
+                let nodeNew = document.createElement(nodeNewName)
+                nodeNew.textContent = key
+                nodeNew.setAttribute('selip', '1')
+                node.appendChild(nodeNew)
+                refreshMathMLDisplay()
+                return
+            }
         }
         let nodeP = node.parentElement
-        let nodeNewName
         let autocl
 
         if (node.nodeName == 'mtext' && node.textContent[0] == '\\') {
@@ -976,7 +989,6 @@ function autocomplete() {
             speak(resolveSymbols(key))
             return autocl
         }
-        nodeNewName = getMmlTag(key)
 
         switch (nodeNewName) {
             case 'mn':
@@ -988,10 +1000,11 @@ function autocomplete() {
                 break;
             case 'mo':
                 let nodeT = node
-                if (nodeT.nodeName == 'mrow')
+                if (nodeT.nodeName == 'mrow' && nodeT.lastElementChild) {
                     nodeT = nodeT.lastElementChild
-                if (nodeT.nodeName == 'mrow')
-                    nodeT = nodeT.lastElementChild
+                    if (nodeT.nodeName == 'mrow' && nodeT.lastElementChild)
+                        nodeT = nodeT.lastElementChild
+                }
                 if (nodeT.textContent == '/' && key in negs) {
                     nodeT.textContent = key = negs[key]
                     nodeNewName = ''
@@ -1082,6 +1095,7 @@ function autocomplete() {
                 else if (node.previousElementSibling)
                     node.previousElementSibling.setAttribute('selip', 1)
                 node.remove()
+                atEnd = true
             } else {
                 node.textContent = '⬚'
                 node.setAttribute('selip', '0')
@@ -1144,18 +1158,18 @@ function autocomplete() {
         }
         if (removeSelipAttribute(output))
             refreshMathMLDisplay()
-        let sel = window.getSelection();
-        let node = sel.anchorNode;
+        let sel = window.getSelection()
+        let node = sel.anchorNode
 
         if (node.nodeName == 'DIV')
-            return;                         // </math>
+            return                          // </math>
         atEnd = node.length == sel.anchorOffset
         checkSimpleSup(node.parentElement.parentElement)
         speechSel(sel)
     })
 
     output.addEventListener("keydown", function (e) {
-        var x = document.getElementById(this.id + "autocomplete-list");
+        var x = document.getElementById(this.id + "autocomplete-list")
         if (handleAutocompleteKeys(x, e))
             return
 
@@ -1167,15 +1181,12 @@ function autocomplete() {
         let name = node.nodeName
 
         if (sel.anchorNode.nodeName == 'DIV') {
-            // No MathML in output display: pass keydown to input to create
-            // the MathML for the keydown, and set setFocusOutput to return
-            // the focus to the output display
-            input.focus();
-            const event = new Event('keydown');
-            event.key = e.key;
-            input.dispatchEvent(event);
-            setFocusOutput = true
-            return
+            // No MathML in output display; insert a math zone
+            node.innerHTML = `<math display="block"></math>`
+            node = node.firstElementChild
+            name = 'math'
+            sel = setSelection(sel, node, 0)
+            atEnd = true
         }
 
         switch (e.key) {
@@ -1208,11 +1219,18 @@ function autocomplete() {
 
             case 'Backspace':
                 e.preventDefault()
-                if (node.nodeName == 'mrow')
-                    node = node.firstElementChild
-                else if (node.nodeName == '#text')
+                if (node.nodeName == '#text')
                     node = node.parentElement
-                if (sel.anchorOffset > 0) {
+                while ((node.nodeName == 'mrow' || node.nodeName == 'math') &&
+                    node.lastElementChild) {
+                    node = node.lastElementChild
+                }
+                if (node.nodeName in names) {
+                    // Should select first and then remove...
+                    let nodeP = node.parentElement
+                    node.remove()
+                    node = nodeP
+                } else if (sel.anchorOffset > 0) {
                     cchCh = getCch(node.textContent, sel.anchorOffset - 1)
                     node.textContent = node.textContent.substring(0, sel.anchorOffset - cchCh) +
                         node.textContent.substring(sel.anchorOffset)
@@ -1227,7 +1245,7 @@ function autocomplete() {
 
             default:
                 if (e.key == 'Space')
-                    e.key = ' ';
+                    e.key = ' '
                 if (e.key.length > 1)       // 'Shift', etc.
                     return
                 e.preventDefault();
@@ -1235,26 +1253,29 @@ function autocomplete() {
                 if (name == '#text')
                     node = node.parentElement
 
-                let nodeP = node;
-                if (!node.childElementCount)
+                let nodeP = node
+                if (!node.childElementCount && name != 'math')
                     nodeP = node.parentElement
 
-                if (nodeP.nodeName == 'mrow' && '+=-<> '.includes(e.key)) {
+                if (nodeP.nodeName == 'mrow' && '+=-<> '.includes(e.key) &&
+                    !checkBrackets(nodeP)) {
                     // Try building up nodeP
-                    noMathTag = true;       // Don't include <math> tags
-                    let uMath = dump(nodeP) // Convert nodeP to UnicodeMath
-                    var t = unicodemathml(uMath, true) // Get corresponding MathML
-                    noMathTag = false
-                    nodeP.innerHTML = t.mathml
-                    if (e.key == ' ') {
-                        // ' ' builds up UnicodeMath and isn't inserted. The
-                        // other operators are inserted
-                        nodeP.lastElementChild.setAttribute('selip', '1')
-                        refreshMathMLDisplay()
-                        return
+                    autoBuildUp = true
+                    let uMath = dump(nodeP, true) // nodeP → UnicodeMath
+                    var t = unicodemathml(uMath, true) // uMath → MathML
+                    if (autoBuildUp) {      // Autobuildup succeeded
+                        autoBuildUp = false
+                        nodeP.innerHTML = t.mathml
+                        if (e.key == ' ') {
+                            // ' ' builds up UnicodeMath and isn't inserted. The
+                            // other operators are inserted
+                            nodeP.lastElementChild.setAttribute('selip', '1')
+                            refreshMathMLDisplay()
+                            return
+                        }
+                        node = nodeP
+                        atEnd = true
                     }
-                    node = nodeP
-                    atEnd = true
                 }
                 if (!node.childElementCount && node.childNodes.length || atEnd) {
                     let autocl = handleKeyboardInput(node, e.key)
@@ -1263,7 +1284,7 @@ function autocomplete() {
                     if (autocl != undefined)
                         this.appendChild(autocl)
                 }
-                return;                     // Ignore other input for now
+                return                      // Ignore other input for now
         }                                   // switch(e.key)
 
         // Move selection forward in the MathML DOM and describe what's there
@@ -1877,14 +1898,6 @@ async function draw() {
             MathJax.typeset([output]);
         }
         catch { }
-    }
-    if (setFocusOutput) {
-        // Return focus from input to output after initial keyboard input
-        setFocusOutput = false
-        output.focus()
-        let sel = window.getSelection()
-        setSelection(sel, sel.anchorNode, sel.anchorNode.textContent.length)
-        atEnd = true                        // Put IP at end of output
     }
 }
 

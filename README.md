@@ -342,6 +342,7 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Unicode numeric fractions like ⁵⁶/₆₂₅ are converted into standard fractions.
 * Math speech is added with support for some intent attributes, e.g., derivatives and intervals.
 * Nemeth math braille support is added.
+* Elementary formula autobuildup is supported in the output window provided native MathML rendering is active.
 
 ## MathML intent-attribute support:
 * The derivative and partial-derivative intent attributes are defined for Leipzig and Euler derivative notations.

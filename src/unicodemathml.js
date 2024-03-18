@@ -1,4 +1,4 @@
-var noMathTag = false;
+var autoBuildUp = false;
 
 const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
 const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
@@ -164,6 +164,37 @@ function isMathML(unicodemath) {
     return unicodemath.startsWith("<math") ||
            unicodemath.startsWith("<mml:math") ||
            unicodemath.startsWith("<m:math");
+}
+
+function isOpenDelimiter(op) {
+    return '([{⟨〖⌈⌊❲⟦⟨⟪⟬⟮⦃⦅⦇⦉⦋⦍⦏⦑⦓⦕⦗⧘⧚⧼'.includes(op)
+}
+
+function isCloseDelimiter(op) {
+    return ')]}⟩〗⌉⌋❳⟧⟩⟫⟭⟯⦄⦆⦈⦊⦌⦎⦐⦒⦔⦖⦘⧙⧛⧽'.includes(op)
+}
+
+function checkBrackets(node) {
+    // Return count of open brackets - count of close brackets. The value 0
+    // implies equal counts, but the code doesn't check for correct balance
+    // order
+    let cNode = node.children.length;
+    let cParen = 0
+
+    if (node.nodeName != 'mrow' || !cNode)
+        return 0
+
+    for (let i = 0; i < cNode; i++) {
+        let nodeC = node.children[i]
+
+        if (nodeC.nodeName == 'mo') {
+            if (isOpenDelimiter(nodeC.textContent))
+                cParen++
+            else if (isCloseDelimiter(nodeC.textContent))
+                cParen--
+        }
+    }
+    return cParen
 }
 
 function getMathMLDOM(mathML) {
@@ -2864,7 +2895,7 @@ function preprocess(dsty, uast, index, arr) {
             return {sizeoverride: {size: value.size, of: preprocess(dsty, value.of)}};
 
         case "colored":
-            if (noMathTag)
+            if (autoBuildUp)
                 return preprocess(dsty, value.of)
             return {colored: {color: value.color, of: preprocess(dsty, value.of)}};
         case "bgcolored":
@@ -3114,7 +3145,7 @@ function mtransform(dsty, puast) {
     }
     switch (key) {
         case "unicodemath":
-            if (noMathTag)                  // Used for WYSIWYG editing
+            if (autoBuildUp)                // Used for WYSIWYG editing
                 return mtransform(dsty, value.content);
             //var attrs = {class: "unicodemath", xmlns: "http://www.w3.org/1998/Math/MathML", display: dsty? "block" : "inline"}
             var attrs = {display: dsty ? "block" : "inline"};
@@ -4128,7 +4159,7 @@ function dump(value, noAddParens) {
                 return '<';
             if (val == '&gt;')
                 return '>';
-            if (val == '/' && !noMathTag)   // Quote other ops...
+            if (val == '/' && !autoBuildUp) // Quote other ops...
                 return '\\/';
             if (val.startsWith('&#') && val.endsWith(';')) {
                 ret = value.innerHTML.substring(2, val.length - 1);
@@ -4227,9 +4258,9 @@ function dump(value, noAddParens) {
         }
     }
     if (value.firstElementChild && value.firstElementChild.nodeName == 'mo' &&
-        '([{'.includes(value.firstElementChild.textContent)) {
+        !autoBuildUp && isOpenDelimiter(value.firstElementChild.textContent)) {
         if (value.lastElementChild.nodeName != 'mo' || !value.lastElementChild.textContent)
-            ret += '┤';                         // Happens for DLMF pmml
+            ret += '┤';                     // Happens for some DLMF pmml
     }
 
     if (cNode > 1 && value.nodeName != 'math' && !noAddParens &&
@@ -4293,7 +4324,8 @@ function unicodemathml(unicodemath, displaystyle) {
         uast = parse(unicodemath);
     } catch (error) {
         // Display unparsable string in red
-        uast = {unicodemath:{content:[{expr:[{colored:{color:'#F00',of:{text:unicodemath}}}]}],eqnumber:null}};
+        uast = {unicodemath: {content: [{expr: [{colored: {color: '#F00', of: {text: unicodemath}}}]}], eqnumber: null}}
+        autoBuildUp = false                 // If called for autobuildup, return failure
     }
     var jsonParse;                          // Initially undefined
     var puast;
