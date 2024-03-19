@@ -349,13 +349,14 @@ function processPrimes(primes) {
 }
 
 function isMathMLObject(value) {
+    // Return true iff objs includes value.nodeName
     const objs = ['mfrac', 'msqrt', 'mroot', 'menclose', 'msup', 'msub',
-        'munderover', 'msubsup', 'mover', 'munder', 'mpadded', 'mphantom'];
+        'munderover', 'msubsup', 'mover', 'munder', 'mpadded', 'mphantom']
 
     if (value.nodeName == 'mrow' && value.children.length == 1)
-        value = value.parentElement;
+        value = value.parentElement
 
-    return objs.includes(value.nodeName);
+    return objs.includes(value.nodeName)
 }
 
 function hasSingleMrow(value) {

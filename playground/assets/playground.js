@@ -867,10 +867,11 @@ function autocomplete() {
         'mfrac': 'fraction', 'msqrt': 'square root',
     }
 
-    function refreshMathMLDisplay() {
-        // Update MathML & UnicodeMath displays; restore selection from selip
+    function refreshDisplays() {
+        // Update MathML, UnicodeMath, and code-point displays; restore selection from selip
         output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
         input.value = MathMLtoUnicodeMath(output.innerHTML)
+        codepoints.innerHTML = getCodePoints()
 
         var walker = document.createTreeWalker(output, NodeFilter.SHOW_ELEMENT, null, false)
         while (walker.nextNode()) {
@@ -939,7 +940,7 @@ function autocomplete() {
                 nodeNew.textContent = key
                 nodeNew.setAttribute('selip', '1')
                 node.appendChild(nodeNew)
-                refreshMathMLDisplay()
+                refreshDisplays()
                 return
             }
         }
@@ -977,7 +978,7 @@ function autocomplete() {
                         nodeP.replaceChild(nodeNew, walker.currentNode)
                         closeAutocompleteList()
                         nodeP.innerHTML = nodeP.innerHTML // Force redraw
-                        refreshMathMLDisplay()
+                        refreshDisplays()
                         speak(resolveSymbols(symbol))
                         onac = true    // Suppress default speech, e.g., for 'mi'
                     })
@@ -985,7 +986,7 @@ function autocomplete() {
             }
             //node.setAttribute('selip', node.textContent.length)
             nodeP.innerHTML = nodeP.innerHTML // Force redraw
-            refreshMathMLDisplay()
+            refreshDisplays()
             speak(resolveSymbols(key))
             return autocl
         }
@@ -1027,7 +1028,7 @@ function autocomplete() {
             // node textContent modified; no new node
             node.setAttribute('selip', '1')
             nodeP.innerHTML = nodeP.innerHTML // Force redraw
-            refreshMathMLDisplay();
+            refreshDisplays();
             return
         }
         let nodeNew = document.createElement(nodeNewName)
@@ -1067,7 +1068,7 @@ function autocomplete() {
             atEnd = false;
         }
         nodeP.innerHTML = nodeP.innerHTML   // Force redraw
-        refreshMathMLDisplay();
+        refreshDisplays();
         return autocl
     }
 
@@ -1088,13 +1089,19 @@ function autocomplete() {
         // required, e.g., for numerator, denominator, subscript, etc. For the
         // latter, insert the empty argument place holder '⬚'. Set the 'selip'
         // attribute for the node at the desired selection IP
+
+        removeSelipAttribute(output.firstElementChild)
         if (!node.textContent) {
             if (!isMathMLObject(node.parentElement)) {
+                let nodeT = node.parentElement
                 if (node.nextElementSibling)
-                    node.nextElementSibling.setAttribute('selip', 0)
+                    nodeT = node.nextElementSibling
                 else if (node.previousElementSibling)
-                    node.previousElementSibling.setAttribute('selip', 1)
+                    nodeT = node.previousElementSibling
                 node.remove()
+                if (nodeT.nodeName != 'math')
+                    nodeT.setAttribute('selip', nodeT.textContent ? '1' : '0')
+                setSelection(null, nodeT, 0)
                 atEnd = true
             } else {
                 node.textContent = '⬚'
@@ -1103,7 +1110,7 @@ function autocomplete() {
         } else {
             node.setAttribute('selip', '0')
         }
-        refreshMathMLDisplay()
+        refreshDisplays()
     }
 
     function getArgName(node) {
@@ -1157,7 +1164,7 @@ function autocomplete() {
             return
         }
         if (removeSelipAttribute(output))
-            refreshMathMLDisplay()
+            refreshDisplays()
         let sel = window.getSelection()
         let node = sel.anchorNode
 
@@ -1179,6 +1186,7 @@ function autocomplete() {
         let sel = window.getSelection()
         let node = sel.anchorNode
         let name = node.nodeName
+        let offset = sel.anchorOffset
 
         if (sel.anchorNode.nodeName == 'DIV') {
             // No MathML in output display; insert a math zone
@@ -1197,18 +1205,32 @@ function autocomplete() {
 
             case 'ArrowLeft':
                 dir = '←'
-                return;
+                return;                     // Do default for now
 
             case 'Delete':
                 e.preventDefault()
-                if (node.nodeName == 'mrow')
-                    node = node.firstElementChild
-                else if (node.nodeName == '#text')
+                if (node.nodeName == '#text')
                     node = node.parentElement
-                if (sel.anchorOffset < node.textContent.length) {
-                    cchCh = getCch(node.textContent, sel.anchorOffset)
-                    node.textContent = node.textContent.substring(0, sel.anchorOffset)
-                        + node.textContent.substring(sel.anchorOffset + cchCh)
+                while ((node.nodeName == 'mrow' || node.nodeName == 'math') &&
+                    node.firstElementChild) {
+                    node = node.firstElementChild
+                }
+                if (isMathMLObject(node)) {
+                    // Should select node first. If selected, remove...
+                    let nodeP = node.parentElement
+                    node.remove()
+                    node = nodeP
+                } else if (offset < node.textContent.length) {
+                    cchCh = 1
+                    let code = node.textContent.codePointAt(offset)
+                    if (isTrailSurrogate(code)) {
+                        cchCh = 2
+                        offset--
+                    } else if (code > 0xFFFF) {
+                        cchCh = 2
+                    }
+                    node.textContent = node.textContent.substring(0, offset)
+                        + node.textContent.substring(offset + cchCh)
                 } else if (node.nextElementSibling) {
                     node = node.nextElementSibling
                     cchCh = getCch(node.textContent, 0)
@@ -1225,15 +1247,17 @@ function autocomplete() {
                     node.lastElementChild) {
                     node = node.lastElementChild
                 }
-                if (node.nodeName in names) {
-                    // Should select first and then remove...
+                if (isMathMLObject(node)) {
+                    // Should select node first. If selected, remove...
                     let nodeP = node.parentElement
                     node.remove()
                     node = nodeP
                 } else if (sel.anchorOffset > 0) {
-                    cchCh = getCch(node.textContent, sel.anchorOffset - 1)
-                    node.textContent = node.textContent.substring(0, sel.anchorOffset - cchCh) +
-                        node.textContent.substring(sel.anchorOffset)
+                    cchCh = getCch(node.textContent, offset - 1)
+                    if (offset < cchCh)
+                        offset = cchCh
+                    node.textContent = node.textContent.substring(0, offset - cchCh) +
+                        node.textContent.substring(offset)
                 } else if (node.previousSibling) {
                     node = node.previousSibling
                     cchCh = getCch(node.textContent, node.textContent.length - 1)
@@ -1270,22 +1294,20 @@ function autocomplete() {
                             // ' ' builds up UnicodeMath and isn't inserted. The
                             // other operators are inserted
                             nodeP.lastElementChild.setAttribute('selip', '1')
-                            refreshMathMLDisplay()
+                            refreshDisplays()
                             return
                         }
                         node = nodeP
                         atEnd = true
                     }
                 }
-                if (!node.childElementCount && node.childNodes.length || atEnd) {
-                    let autocl = handleKeyboardInput(node, e.key)
+                let autocl = handleKeyboardInput(node, e.key)
 
-                    // If defined, append autocomplete list
-                    if (autocl != undefined)
-                        this.appendChild(autocl)
-                }
+                // If defined, append autocomplete list
+                if (autocl != undefined)
+                    this.appendChild(autocl)
                 return                      // Ignore other input for now
-        }                                   // switch(e.key)
+        }                                   // End of switch(e.key)
 
         // Move selection forward in the MathML DOM and describe what's there
         if (node.nodeType == 1) {           // Starting at an element...
@@ -1401,8 +1423,8 @@ function autocomplete() {
             return
 
         // Text node: child of <mi>, <mo>, <mn>, or <mtext>
-        let offset = sel.anchorOffset;      // Move through, e.g., for 'sin'
         if (offset < sel.anchorNode.length) {
+            // Move through, e.g., for 'sin'
             let code = node.data.codePointAt(offset);
             offset += code > 0xFFFF ? 2 : 1;
             if (offset < sel.anchorNode.length) {
@@ -1684,6 +1706,53 @@ let s = setSpeech();
 
 s.then(v => voiceZira = v.filter(val => val.name.startsWith('Microsoft Zira'))[0])
 
+function getCodePoints() {
+    // display code points corresponding to the characters
+    if (window.innerHeight < 1000)
+        input.style.height = "200px";
+    input.style.fontSize = "1.5rem";
+    var codepoints_HTML = "";
+    Array.from(input.value).forEach(c => {
+        var cp = c.codePointAt(0).toString(16).padStart(4, '0').toUpperCase();
+
+        // highlight special invisible characters and spaces (via
+        // https://en.wikipedia.org/wiki/Whitespace_character#Unicode,
+        // https://www.ptiglobal.com/2018/04/26/the-beauty-of-unicode-zero-width-characters/,
+        // https://330k.github.io/misc_tools/unicode_steganography.html)
+        var invisibleChar = [
+            "0009", "000A", "000B", "000C", "000D", "0020", "0085", "00A0",
+            "1680", "2000", "2001", "2002", "2003", "2004", "2005", "2006",
+            "2007", "2008", "2009", "200A", "200B", "200C", "200D", "200E",
+            "2028", "2029", "202A", "202C", "202D", "202F", "205F", "2060",
+            "2061", "2062", "2063", "2064", "2800", "3000", "180E", "FEFF",
+        ].includes(cp);
+
+        // lookup unicode data for tooltip
+        var tooltip = "";
+        if (typeof getCodepointData === "function") {
+            try {
+                var cpd = getCodepointData(cp);
+                tooltip = `Name: ${cpd["name"].replace("<", "&amp;lt;").replace(">", "&amp;gt;")}<br>Block: ${cpd["block"]}<br>Category: ${cpd["category"]}`;
+            } catch (e) {
+                tooltip = "no info found";
+            }
+        }
+
+        // lookup tooltip data as previously defined for the on-screen buttons
+        // and prepend it
+        if (symbolTooltips[c] != undefined && symbolTooltips[c] != "") {
+            tooltip = symbolTooltips[c] + "<hr>" + tooltip;
+        }
+
+        codepoints_HTML += '<div class="cp' + (invisibleChar ? ' invisible-char' : '') + '" data-tooltip="' + tooltip + '"><div class="p">' + cp + '</div><div class="c">' + c + '</div></div>'
+
+        if (c == "\n") {
+            codepoints_HTML += "<br>";
+        }
+    });
+    return codepoints_HTML
+}
+
 // compile and draw mathml code from input field
 async function draw() {
 
@@ -1737,50 +1806,7 @@ async function draw() {
         input.style.height = window.innerHeight > 1000 ? "500px" : "400px";
         input.style.fontSize = "0.9rem";
     } else {
-        // display code points corresponding to the characters
-        if (window.innerHeight < 1000)
-            input.style.height = "200px";
-        input.style.fontSize = "1.5rem";
-        var codepoints_HTML = "";
-        Array.from(input.value).forEach(c => {
-            var cp = c.codePointAt(0).toString(16).padStart(4, '0').toUpperCase();
-
-            // highlight special invisible characters and spaces (via
-            // https://en.wikipedia.org/wiki/Whitespace_character#Unicode,
-            // https://www.ptiglobal.com/2018/04/26/the-beauty-of-unicode-zero-width-characters/,
-            // https://330k.github.io/misc_tools/unicode_steganography.html)
-            var invisibleChar = [
-                "0009", "000A", "000B", "000C", "000D", "0020", "0085", "00A0",
-                "1680", "2000", "2001", "2002", "2003", "2004", "2005", "2006",
-                "2007", "2008", "2009", "200A", "200B", "200C", "200D", "200E",
-                "2028", "2029", "202A", "202C", "202D", "202F", "205F", "2060",
-                "2061", "2062", "2063", "2064", "2800", "3000", "180E", "FEFF",
-            ].includes(cp);
-
-            // lookup unicode data for tooltip
-            var tooltip = "";
-            if (typeof getCodepointData === "function") {
-                try {
-                    var cpd = getCodepointData(cp);
-                    tooltip = `Name: ${cpd["name"].replace("<", "&amp;lt;").replace(">", "&amp;gt;")}<br>Block: ${cpd["block"]}<br>Category: ${cpd["category"]}`;
-                } catch (e) {
-                    tooltip = "no info found";
-                }
-            }
-
-            // lookup tooltip data as previously defined for the on-screen buttons
-            // and prepend it
-            if (symbolTooltips[c] != undefined && symbolTooltips[c] != "") {
-                tooltip = symbolTooltips[c] + "<hr>" + tooltip;
-            }
-
-            codepoints_HTML += '<div class="cp' + (invisibleChar ? ' invisible-char' : '') + '" data-tooltip="' + tooltip + '"><div class="p">' + cp + '</div><div class="c">' + c + '</div></div>'
-
-            if (c == "\n") {
-                codepoints_HTML += "<br>";
-            }
-        });
-        codepoints.innerHTML = codepoints_HTML;
+        codepoints.innerHTML = getCodePoints()
     }
     // update local storage
     window.localStorage.setItem('unicodemath', input.value.replace(/\n\r?/g, 'LINEBREAK'));
