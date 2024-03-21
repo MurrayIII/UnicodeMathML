@@ -174,12 +174,12 @@ function isCloseDelimiter(op) {
     return ')]}⟩〗⌉⌋❳⟧⟩⟫⟭⟯⦄⦆⦈⦊⦌⦎⦐⦒⦔⦖⦘⧙⧛⧽'.includes(op)
 }
 
-function checkBrackets(node) {
+function checkBrackets(node, ch) {
     // Return count of open brackets - count of close brackets. The value 0
     // implies equal counts, but the code doesn't check for correct balance
     // order
     let cNode = node.children.length;
-    let cParen = 0
+    let cParen = ch == ')' ? -1 : 0
 
     if (node.nodeName != 'mrow' || !cNode)
         return 0
@@ -1316,27 +1316,20 @@ const narys = {
 };
 
 function isFunctionName(fn) {
-    var cch = fn.length;
-    var i = 0;
+    if (!fn.length)
+        return false
 
-    if (!cch) return false;
-
-    if (cch >= 4 && fn[0] == 'a') {
-        // Handle 'a' and 'arc' prefixes
-        cch--;
-        i++;
-        if (fn[i] == 'r' && fn[i + 1] == 'c') {
-            i += 2;
-            cch -= 2;
-        }
+    if (fn.length >= 4 && fn[0] == 'a') {
+        // Remove 'a' or 'arc' trigonmetric prefix
+        let i = (fn.substring(1, 3) == 'rc') ? 3 : 1
+        fn = fn.substring(i)
     }
-    if (cch == 4 && fn[i + 3] == 'h')
-        cch--; // Hyperbolic
+    if (fn.length == 4 && fn[3] == 'h')     // Possibly hyperbolic
+        fn = fn.substring(0, 3)             // Remove h suffix
 
-    if (["cos", "cot", "csc", "sec", "sin", "tan", "ctg"].includes(fn.substring(i, i + 3)))
-        return true;
-
-    return ["Im", "Pr", "Re", "arg", "def", "deg", "det", "dim", "erf", "exp", "gcd", "hom", "inf", "ker", "lim", "log", "ln", "max", "min", "mod", "sup", "tg"].includes(fn);
+    return ["Im", "Pr", "Re", "arg", "cos", "cot", "csc", "ctg", "def", "deg",
+        "det", "dim", "erf", "exp", "gcd", "hom", "inf", "ker", "lim", "log",
+        "ln", "max", "min", "mod", "sec", "sin", "sup", "tan", "tg"].includes(fn)
 }
 
 function foldMathItalic(code) {
@@ -1351,7 +1344,7 @@ function foldMathItalics(chars) {
     var fn = "";
     for (var i = 0; i < chars.length; i += code > 0xFFFF ? 2 : 1) {
         var ch = chars[i];
-        var code = chars.charCodeAt(i);
+        var code = chars.codePointAt(i);
         if (code >= 0x2102) {
             ch = foldMathItalic(code);
         }
@@ -4162,6 +4155,8 @@ function dump(value, noAddParens) {
                 return '>';
             if (val == '/' && !autoBuildUp) // Quote other ops...
                 return '\\/';
+            if (val == '\u202F' && autoBuildUp)
+                return ' '
             if (val.startsWith('&#') && val.endsWith(';')) {
                 ret = value.innerHTML.substring(2, val.length - 1);
                 if (ret[0] == 'x') 
@@ -4227,6 +4222,12 @@ function dump(value, noAddParens) {
 
     for (var i = 0; i < cNode; i++) {
         let node = value.children[i];
+        if (i && node.nodeName == 'mrow' && node.firstElementChild &&
+            node.firstElementChild.nodeName == 'mi' &&
+            isAsciiAlphabetic(node.firstElementChild.textContent[0]) &&
+            isAlphanumeric(ret[ret.length - 1])) {
+            ret += ' ';
+        }
         ret += dump(node, false, i);
     }
 
@@ -4380,6 +4381,7 @@ function unicodemathml(unicodemath, displaystyle) {
         //    strError = "(Resolved to \"" + resolveCW(unicodemath) + "\".) " + error;
         //}
 
+        autoBuildUp = false                 // If called for autobuildup, return failure
         debugGroup();
         return {
             //mathml: `<math class="unicodemath" xmlns="http://www.w3.org/1998/Math/MathML"><merror><mrow><mtext>⚠ [${escapeHTMLSpecialChars(unicodemath)}] ${escapeHTMLSpecialChars(strError)}</mtext></mrow></merror></math>`,
@@ -4781,18 +4783,19 @@ function unicodemathtex(unicodemath, displaystyle = false) {
     }
 }
 
+root.dump = dump
+root.foldMathItalic = foldMathItalic;
+root.foldMathItalics = foldMathItalics;
+root.foldMathAlphanumeric = foldMathAlphanumeric;
 root.getPartialMatches = getPartialMatches;
-root.mathFonts = mathFonts;
+root.isFunctionName = isFunctionName;
 root.italicizeCharacter = italicizeCharacter;
 root.italicizeCharacters = italicizeCharacters;
+root.mathFonts = mathFonts;
+root.MathMLtoUnicodeMath = MathMLtoUnicodeMath;
 root.negs = negs;
 root.resolveCW = resolveCW;
 root.unicodemathml = unicodemathml;
 root.unicodemathtex = unicodemathtex;
-root.isFunctionName = isFunctionName;
-root.foldMathItalic = foldMathItalic;
-root.foldMathAlphanumeric = foldMathAlphanumeric;
-root.MathMLtoUnicodeMath = MathMLtoUnicodeMath;
-root.dump = dump
 
 })(this);

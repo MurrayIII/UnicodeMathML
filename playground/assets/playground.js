@@ -887,6 +887,23 @@ function autocomplete() {
         }
     }
 
+    function checkFunction(node) {
+        let cNode = node.childElementCount
+        let i = cNode - 1
+        let fn = ''
+
+        for (; i >= 0 && node.children[i].nodeName == 'mi'; i--) {
+            fn = node.children[i].textContent + fn
+        }
+        fn = foldMathItalics(fn)
+        if (!isFunctionName(fn))
+            return
+        node.children[i + 1].textContent = fn
+        i += 2
+        for (cNode = cNode - i; cNode > 0; cNode--)
+            node.children[i].remove()       // Remove trailing <mi>'s
+    }
+
     function removeSelipAttribute(node) {
         let walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, null, false)
         while (walker.nextNode()) {         // Remove current selip attribute
@@ -998,23 +1015,37 @@ function autocomplete() {
                     node.textContent += key
                     nodeNewName = ''  // No new node
                 }
-                break;
+                break
             case 'mo':
-                let nodeT = node
-                if (nodeT.nodeName == 'mrow' && nodeT.lastElementChild) {
-                    nodeT = nodeT.lastElementChild
-                    if (nodeT.nodeName == 'mrow' && nodeT.lastElementChild)
-                        nodeT = nodeT.lastElementChild
+                if (node.nodeName == 'mi' && nodeP.nodeName == 'mrow') {
+                    checkFunction(nodeP)
+                    break
                 }
-                if (nodeT.textContent == '/' && key in negs) {
-                    nodeT.textContent = key = negs[key]
+                if (node.nodeName == 'mrow' && node.lastElementChild) {
+                    if (node.lastElementChild.nodeName == 'mi') {
+                        checkFunction(node)
+                    } else if (node.lastElementChild.nodeName == 'mrow') {
+                        let nodeT = node.lastElementChild
+                        if (nodeT.nodeName == 'mrow' && nodeT.lastElementChild &&
+                            nodeT.lastElementChild.nodeName == 'mrow') {
+                            nodeT = nodeT.lastElementChild
+                        }
+                        if (!nodeT.attributes.intent) {
+                            checkFunction(nodeT)
+                        }
+                    }
+                    break
+                }
+                if (node.textContent == '/' && key in negs) {
+                    node.textContent = key = negs[key]
                     nodeNewName = ''
-                } else if (nodeT.textContent + key in mappedPair) {
-                    nodeT.textContent = key = mappedPair[nodeT.textContent + key]
+                } else if (node.textContent + key in mappedPair) {
+                    node.textContent = key = mappedPair[node.textContent + key]
                     nodeNewName = ''
                 } else if (key in mappedSingle) {
                     key = mappedSingle[key]
-                }
+                } else if (key == ' ')
+                    key = '\u202F'          // Use NNBSP to maintain ' ' in mml
                 break
             case 'mi':
                 if (node.nodeName == 'mi') {
@@ -1272,6 +1303,10 @@ function autocomplete() {
                     e.key = ' '
                 if (e.key.length > 1)       // 'Shift', etc.
                     return
+                if (e.key == 'a' && e.ctrlKey) {
+                    sel = setSelection(sel, output.firstElementChild, 1)
+                    return
+                }
                 e.preventDefault();
 
                 if (name == '#text')
@@ -1281,24 +1316,23 @@ function autocomplete() {
                 if (!node.childElementCount && name != 'math')
                     nodeP = node.parentElement
 
-                if (nodeP.nodeName == 'mrow' && '+=-<> '.includes(e.key) &&
-                    !checkBrackets(nodeP)) {
+                if (nodeP.nodeName == 'mrow' && '+=-<> )'.includes(e.key) &&
+                    !checkBrackets(nodeP, e.key)) {
                     // Try building up nodeP
                     autoBuildUp = true
                     let uMath = dump(nodeP, true) // nodeP → UnicodeMath
+                    if (e.key == ')')
+                        uMath += ')'
                     var t = unicodemathml(uMath, true) // uMath → MathML
                     if (autoBuildUp) {      // Autobuildup succeeded
                         autoBuildUp = false
                         nodeP.innerHTML = t.mathml
-                        if (e.key == ' ') {
-                            // ' ' builds up UnicodeMath and isn't inserted. The
-                            // other operators are inserted
-                            nodeP.lastElementChild.setAttribute('selip', '1')
+                        node = nodeP
+                        atEnd = true
+                        if (e.key == ')') {
                             refreshDisplays()
                             return
                         }
-                        node = nodeP
-                        atEnd = true
                     }
                 }
                 let autocl = handleKeyboardInput(node, e.key)
