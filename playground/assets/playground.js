@@ -1008,20 +1008,22 @@ function autocomplete() {
             return autocl
         }
 
+        let nodeName = node.nodeName.toLowerCase()
+
         switch (nodeNewName) {
             case 'mn':
-                if (node.nodeName == 'mn') {
+                if (nodeName == 'mn') {
                     // What if IP isn't at end of node?
                     node.textContent += key
                     nodeNewName = ''  // No new node
                 }
                 break
             case 'mo':
-                if (node.nodeName == 'mi' && nodeP.nodeName == 'mrow') {
+                if (nodeName == 'mi' && nodeP.nodeName == 'mrow') {
                     checkFunction(nodeP)
                     break
                 }
-                if (node.nodeName == 'mrow' && node.lastElementChild) {
+                if (nodeName == 'mrow' && node.lastElementChild) {
                     if (node.lastElementChild.nodeName == 'mi') {
                         checkFunction(node)
                     } else if (node.lastElementChild.nodeName == 'mrow') {
@@ -1047,12 +1049,6 @@ function autocomplete() {
                 } else if (key == ' ')
                     key = '\u202F'          // Use NNBSP to maintain ' ' in mml
                 break
-            case 'mi':
-                if (node.nodeName == 'mi') {
-                    // TODO: handle editing inside <mi>, recognize
-                    // a sequence of <mi>'s as a function name
-                }
-                break;
         }
         speak(resolveSymbols(key))
         if (!nodeNewName) {
@@ -1213,6 +1209,7 @@ function autocomplete() {
 
         let cchCh
         let dir = ''
+        let i
         let intent = ''
         let sel = window.getSelection()
         let node = sel.anchorNode
@@ -1316,22 +1313,43 @@ function autocomplete() {
                 if (!node.childElementCount && name != 'math')
                     nodeP = node.parentElement
 
-                if (nodeP.nodeName == 'mrow' && '+=-<> )'.includes(e.key) &&
-                    !checkBrackets(nodeP, e.key)) {
-                    // Try building up nodeP
-                    autoBuildUp = true
-                    let uMath = dump(nodeP, true) // nodeP → UnicodeMath
-                    if (e.key == ')')
-                        uMath += ')'
-                    var t = unicodemathml(uMath, true) // uMath → MathML
-                    if (autoBuildUp) {      // Autobuildup succeeded
-                        autoBuildUp = false
-                        nodeP.innerHTML = t.mathml
-                        node = nodeP
-                        atEnd = true
-                        if (e.key == ')') {
-                            refreshDisplays()
-                            return
+                if (nodeP.nodeName == 'mrow' && '+=-<> )'.includes(e.key)) {
+                    let uMath = ''
+                    let [cParen, k] = checkBrackets(nodeP, e.key)
+                    if (!cParen || k != -1) {
+                        // Same count of open and close delimiters: try
+                        // to build up nodeP
+                        autoBuildUp = true
+                        let cNode = nodeP.childElementCount
+                        if (!cParen) {      // nodeP → UnicodeMath
+                            uMath = dump(nodeP, true)
+                            if (e.key == ')')
+                                uMath += ')'
+                        } else {            // Trailing children → UnicodeMath
+                            for (i = k + 1; i < cNode; i++) {
+                                let nodeC = nodeP.children[i];
+                                uMath += nodeC.textContent;
+                            }
+                        }
+                        let t = unicodemathml(uMath, true) // uMath → MathML
+                        if (autoBuildUp) {      // Autobuildup succeeded
+                            autoBuildUp = false
+                            if (!cParen) {
+                                nodeP.innerHTML = t.mathml
+                            } else {
+                                // Remove children[k + 1]...children[cNode - 1]
+                                for (i = cNode - 1; i > k; i--)
+                                    nodeP.children[i].remove()
+                                const parser = new DOMParser();
+                                let doc = parser.parseFromString(t.mathml, "application/xml");
+                                nodeP.appendChild(doc.firstElementChild)
+                            }
+                            node = nodeP
+                            atEnd = true
+                            if (e.key == ')') {
+                                refreshDisplays()
+                                return
+                            }
                         }
                     }
                 }

@@ -174,27 +174,54 @@ function isCloseDelimiter(op) {
     return ')]}⟩〗⌉⌋❳⟧⟩⟫⟭⟯⦄⦆⦈⦊⦌⦎⦐⦒⦔⦖⦘⧙⧛⧽'.includes(op)
 }
 
-function checkBrackets(node, ch) {
+function checkBrackets(node, ch) {          // ch is char being entered
     // Return count of open brackets - count of close brackets. The value 0
     // implies equal counts, but the code doesn't check for correct balance
-    // order
-    let cNode = node.children.length;
-    let cParen = ch == ')' ? -1 : 0
-
+    // order. Also return the node index of the final child that shouldn't be
+    // included in partial build up. Partial build up of trailing children
+    // may occur for a nonzero bracket count difference, e.g., √(𝑎²-𝑏²
+    let cNode = node.children.length
+    let cBracket = ch == ')' ? -1 : 0
+    let k = -1                              // Index of final child not in
+                                            //  partial build up
     if (node.nodeName != 'mrow' || !cNode)
         return 0
 
-    for (let i = 0; i < cNode; i++) {
+    for (let i = cNode - 1; i >= 0; i--) {
         let nodeC = node.children[i]
 
+        if (nodeC.childElementCount) {      // Built-up objects aren't included
+            if (k == -1)                    //  in partial build up
+                k = i
+        }
         if (nodeC.nodeName == 'mo') {
-            if (isOpenDelimiter(nodeC.textContent))
-                cParen++
-            else if (isCloseDelimiter(nodeC.textContent))
-                cParen--
+            if (isOpenDelimiter(nodeC.textContent)) {
+                cBracket++
+                if (k == -1)
+                    k = i
+            } else if (isCloseDelimiter(nodeC.textContent)) {
+                cBracket--
+                if (k == -1)
+                    k = i
+            }
         }
     }
-    return cParen
+    if (k == cNode - 1)
+        k = -1
+    return [cBracket, k]
+}
+
+function checkSpace(i, node, ret) {
+    // Return ' ' if node is an <mrow> with an ASCII-alphabetic first child
+    // preceded by an alphanumeric character. Else return ''. E.g., need a ' '
+    // between '𝑏' and 'sin' in '𝑎+𝑏 sin 𝜃'
+    if (i && node.nodeName == 'mrow' && node.firstElementChild &&
+        node.firstElementChild.nodeName == 'mi' &&
+        isAsciiAlphabetic(node.firstElementChild.textContent[0]) &&
+        isAlphanumeric(ret[ret.length - 1])) {
+        return ' '
+    }
+    return ''
 }
 
 function getMathMLDOM(mathML) {
@@ -4220,14 +4247,10 @@ function dump(value, noAddParens) {
             break;
     }
 
+    // Dump <mrow> children
     for (var i = 0; i < cNode; i++) {
         let node = value.children[i];
-        if (i && node.nodeName == 'mrow' && node.firstElementChild &&
-            node.firstElementChild.nodeName == 'mi' &&
-            isAsciiAlphabetic(node.firstElementChild.textContent[0]) &&
-            isAlphanumeric(ret[ret.length - 1])) {
-            ret += ' ';
-        }
+        ret += checkSpace(i, node, ret)
         ret += dump(node, false, i);
     }
 
@@ -4238,9 +4261,10 @@ function dump(value, noAddParens) {
         if (mrowIntent == ':cases')
             return 'Ⓒ' + ret.substring(2);
 
-        if (mrowIntent == ':fenced' && !value.lastElementChild.textContent)
+        if (mrowIntent == ':fenced' && value.childElementCount &&
+            !value.lastElementChild.textContent) {
             return !value.firstElementChild.textContent ? '〖' + ret + '〗' : ret + '┤';
-
+        }
         if (mrowIntent.startsWith('absolute-value') ||
             mrowIntent.startsWith('cardinality')) {
             let abs = mrowIntent[0] == 'a' ? '⒜' : 'ⓒ';
@@ -4253,6 +4277,7 @@ function dump(value, noAddParens) {
             return ret.substring(1, ret.length - 1);
         }
         if (mrowIntent == ':function' && value.previousElementSibling &&
+            value.firstElementChild &&      // (in case empty)
             value.firstElementChild.nodeName == 'mi' &&
             value.firstElementChild.textContent < '\u2100' &&
             value.previousElementSibling.nodeName == 'mi') {
