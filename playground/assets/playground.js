@@ -359,9 +359,8 @@ function hexToUnicode(input, offsetEnd, cchSel) {
     return [ch, offsetEnd - offsetStart]
 }
 
-function boldItalicToggle(key) {
+function boldItalicToggle(chars, key) {
     // Get current bold and italic states from first char in selection
-    var chars = getInputSelection();
     if (!chars)
         return;                             // Nothing selected
     var code = chars.codePointAt(0);
@@ -408,10 +407,7 @@ function boldItalicToggle(key) {
                 ? mathFonts[chFolded][font] : ch;
         }
     }
-    insertAtCursorPos(symbols);
-    input.selectionStart -= symbols.length;
-    input.focus();
-    draw();
+    return symbols
 }
 
 function isTrailSurrogate(code) { return code >= 0xDC00 && code <= 0xDFFF; }
@@ -970,8 +966,9 @@ function autocomplete() {
         }
         let nodeP = node.parentElement
         let autocl
+        let nodeName = node.nodeName.toLowerCase()
 
-        if (node.nodeName == 'mtext' && node.textContent[0] == '\\') {
+        if (nodeName == 'mtext' && node.textContent[0] == '\\') {
             // Collect control word; offer autocompletion menu
             closeAutocompleteList()
             if (key == ' ') {
@@ -1014,8 +1011,6 @@ function autocomplete() {
             speak(resolveSymbols(key))
             return autocl
         }
-
-        let nodeName = node.nodeName.toLowerCase()
 
         switch (nodeNewName) {
             case 'mn':
@@ -1111,7 +1106,7 @@ function autocomplete() {
             return ''
         if (isAsciiDigit(ch))
             return 'mn'
-        if (isAsciiAlphabetic(ch) || isGreek(ch))
+        if (isAsciiAlphabetic(ch) || isGreek(ch) || ch > '\u3017')
             return 'mi'
         if (ch == '\\')
             return 'mtext'
@@ -1321,16 +1316,56 @@ function autocomplete() {
                     sel = setSelection(sel, output.firstElementChild, -1)
                     return
                 }
-                if (e.key == 'x' && e.altKey) {
-                    e.preventDefault();
+                e.preventDefault();
+
+                if (e.key == 'x' && e.altKey) { // Alt+x: hex → Unicode
                     let nodeP = node.parentElement
-                    let str = nodeP.textContent
+                    if (nodeP.nodeName != 'mrow')
+                        return
+                    let cNode = nodeP.childElementCount
+                    let iEnd = -1           // Index of node in nodeP
+                    let iStart = 0          // Index of 1st node that might be part of hex
+                    let str = ''            // Collects hex string
+
+                    // Collect span of alphanumerics ending with node
+                    for (i = cNode - 1; i >= 0; i--) {
+                        let nodeC = nodeP.children[i]
+                        if (nodeC.nodeName != 'mi' && nodeC.nodeName != 'mn') {
+                            if (iEnd > 0) {     // Index of last node is defined
+                                iStart = i + 1  // Set index of first node
+                                break
+                            }
+                        } else {
+                            if (nodeC == node)
+                                iEnd = i        // Found node's index
+                            if (iEnd > 0)
+                                str = nodeC.textContent + str
+                        }
+                    }
                     let [ch, cchDel] = hexToUnicode(str, str.length, 0)
-                    // TODO: delete trailing nodes for cchDel characters
-                    nodeP.lastElementChild.innerHTML = ch
+                    let nodeNewName = getMmlTag(ch)
+                    let nodeNew = document.createElement(nodeNewName)
+                    nodeNew.innerHTML = ch
+                    nodeNew.setAttribute('selip', '1')
+                    nodeP.replaceChild(nodeNew, nodeP.children[iStart])
+                    for (i = iStart + 1; i <= iEnd; i++)
+                        nodeP.children[iStart + 1].remove()
+                    refreshDisplays()
                     return
                 }
-                e.preventDefault();
+                if (e.ctrlKey && (e.key == 'b' || e.key == 'i')) {
+                    // Toggle math bold/italic (Ctrl+b/Ctrl+i)
+                    if (sel.isCollapsed)
+                        return
+                    let chars = node.textContent;
+                    if (chars.length == 1) {
+                        // Upright letters should have 'mathvariant="normal"'
+                    }
+                    let symbols = boldItalicToggle(chars, e.key);
+                    node.textContent = symbols
+                    refreshDisplays()
+                    return
+                }
 
                 if (name == '#text')
                     node = node.parentElement
@@ -1619,9 +1654,14 @@ function autocomplete() {
                 input.value.substring(input.selectionEnd);
             input.selectionStart = input.selectionEnd = offsetStart + ch.length
         } else if (e.ctrlKey && (e.key == 'b' || e.key == 'i')) {
-            // Toggle math bold/italic (Alt+b/Alt+i)
+            // Toggle math bold/italic (Ctrl+b/Ctrl+i)
             e.preventDefault();
-            boldItalicToggle(e.key);
+            let chars = getInputSelection();
+            let symbols = boldItalicToggle(chars, e.key);
+            insertAtCursorPos(symbols);
+            input.selectionStart -= symbols.length;
+            input.focus();
+            draw();
         } else if (e.shiftKey && e.key == 'Enter') { // Shift+Enter
             //e.preventDefault();
             //insertAtCursorPos('\u200B');  // Want VT for math paragraph
