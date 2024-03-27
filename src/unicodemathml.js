@@ -174,14 +174,14 @@ function isCloseDelimiter(op) {
     return ')]}⟩〗⌉⌋❳⟧⟩⟫⟭⟯⦄⦆⦈⦊⦌⦎⦐⦒⦔⦖⦘⧙⧛⧽'.includes(op)
 }
 
-function checkBrackets(node, ch) {          // ch is char being entered
+function checkBrackets(node) {
     // Return count of open brackets - count of close brackets. The value 0
     // implies equal counts, but the code doesn't check for correct balance
     // order. Also return the node index of the final child that shouldn't be
     // included in partial build up. Partial build up of trailing children
     // may occur for a nonzero bracket count difference, e.g., √(𝑎²-𝑏²
     let cNode = node.children.length
-    let cBracket = ch == ')' ? -1 : 0
+    let cBracket = 0
     let k = -1                              // Index of final child not in
                                             //  partial build up
     if (node.nodeName != 'mrow' || !cNode)

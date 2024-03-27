@@ -12,22 +12,26 @@ var measurements_transform = document.getElementById("measurements_transform");
 var measurements_pretty = document.getElementById("measurements_pretty");
 
 var activeTab = "source";
+var atEnd = false;                          // True if at end of output object
 var hist = [];
-
 var prevInputValue = "";
-var atEnd = false;                          // True if at end of sel object
 
-function setSelection(sel, node, offset) {
+function setSelection(sel, node, offset, nodeFocus, offsetFocus) {
     if (!sel)
         sel = window.getSelection();
     if (!node)
         return sel;
 
     let range = new Range();
-    range.setStart(node, offset);
-    range.setEnd(node, offset);
+    if (offset == -1)
+        range.selectNode(node)
+    else {
+        range.setStart(node, offset);
+        range.setEnd(node, offset);
+    }
     sel.removeAllRanges();
     sel.addRange(range);
+    console.log("sel.anchorNode = " + sel.anchorNode.nodeName)
     return sel;
 }
 
@@ -52,9 +56,13 @@ var mappedSingle = {
     "\'": "\u2032"
 };
 
+////////////////////
+// DEMO FUNCTIONS //
+////////////////////
+
 var demoID = 0;
 var demoPause = false;
-var iExample = 0;       // Index of next Examples[] equation
+var iExample = 0;                           // Index of next Examples[] equation
 
 function startDemo() {
     if (demoID) {
@@ -67,24 +75,6 @@ function startDemo() {
     demoPause = false;                      // Not paused (pause by entering ' ')
     var demoEq = document.getElementById('demos');
     demoEq.style.backgroundColor = 'DodgerBlue'; // Show user demo mode is active
-}
-
-function mathSpeak() {
-    // Called if Speak button is clicked on
-    input.focus();
-    const event = new Event('keydown');
-    event.key = 's';
-    event.altKey = true;
-    input.dispatchEvent(event);
-}
-
-function mathBraille() {
-    // Called if Braille button is clicked on
-    input.focus();
-    const event = new Event('keydown');
-    event.key = 'b';
-    event.altKey = true;
-    input.dispatchEvent(event);
 }
 
 function endDemo() {
@@ -110,6 +100,24 @@ function prevEq() {
     if (iExample < 0)
         iExample = cExamples - 1;
     nextEq();
+}
+
+function mathSpeak() {
+    // Called if Speak button is clicked on
+    input.focus();
+    const event = new Event('keydown');
+    event.key = 's';
+    event.altKey = true;
+    input.dispatchEvent(event);
+}
+
+function mathBraille() {
+    // Called if Braille button is clicked on
+    input.focus();
+    const event = new Event('keydown');
+    event.key = 'b';
+    event.altKey = true;
+    input.dispatchEvent(event);
 }
 
 
@@ -292,29 +300,31 @@ function highlightJson(json) {
     });
 }
 
-///////////////////
-// INPUT EDITING //
-///////////////////
+///////////////////////////////
+// UNICODEMATH INPUT EDITING //
+///////////////////////////////
 
-function hexToUnicode(input) {
-    var cchSel = input.selectionEnd - input.selectionStart;
+function hexToUnicode(input, offsetEnd, cchSel) {
     if (cchSel > 10)
         return;
-    var cch = cchSel ? cchSel : 10;         // 10 is enough for 5 surrogate pairs
-    var n = GetCodePoint(input.selectionEnd, cch);
-    var ch = '';
+    let offsetStart = offsetEnd - cchSel;
+    let cch = cchSel ? cchSel : 10;         // 10 is enough for 5 surrogate pairs
+    let ch = '';
+    let [n, i] = GetCodePoint(input, offsetEnd, cch);
+    if (n)
+        offsetStart = i
 
     if (n < 0x20 || n > 0x10FFFF) {
         if (n || cchSel)
             return;
         // Convert ch to hex str. Sadly code.toString(16) only works correctly
         // for code <= 0xFFFF
-        var n = codeAt(input.value, input.selectionEnd - 1);
-        input.selectionStart--;
-        if (n <= 0xFFFF) {               // toString truncates larger values
+        n = codeAt(input, offsetEnd - 1);
+        offsetStart--;
+        if (n <= 0xFFFF) {                  // toString truncates larger values
             ch = n.toString(16);
         } else {
-            input.selectionStart--;
+            offsetStart--;
             for (var d = 1; d < n; d <<= 4)	// Get d = smallest power of 16 > n
                 ;
             if (n && d > n)
@@ -332,10 +342,10 @@ function hexToUnicode(input) {
     } else {
         if (n <= 0xFFFF) {
             ch = String.fromCharCode(n);
-            if (isTrailSurrogate(n) && input.selectionStart > 5) {
-                var chPrev = input.value[input.selectionStart - 1];
+            if (isTrailSurrogate(n) && offsetStart > 5) {
+                var chPrev = input[offsetStart - 1];
                 if (chPrev == ' ' || chPrev == ',') {
-                    var m = GetCodePoint(input.selectionStart - 1, 8);
+                    [m, i] = GetCodePoint(input, offsetStart - 1, 8);
                     if (isLeadSurrogate(m)) {
                         ch = String.fromCharCode(m) + ch;
                     }
@@ -346,8 +356,7 @@ function hexToUnicode(input) {
                  String.fromCharCode(0xDC00 + (n & 0x3FF));
         }
     }
-    input.value = input.value.substring(0, input.selectionStart) + ch +
-        input.value.substring(input.selectionEnd);
+    return [ch, offsetEnd - offsetStart]
 }
 
 function boldItalicToggle(key) {
@@ -408,8 +417,8 @@ function boldItalicToggle(key) {
 function isTrailSurrogate(code) { return code >= 0xDC00 && code <= 0xDFFF; }
 function isLeadSurrogate(code) { return code >= 0xD800 && code <= 0xDBFF; }
 
-function GetCodePoint(i, cch) {
-    // Code point for hex string of length cch in input.value ending at offset i
+function GetCodePoint(str, i, cch) {
+    // Code point for hex string of max length cch in str ending at offset i
     if (cch > i)
         cch = i;
     if (cch < 2)
@@ -421,13 +430,13 @@ function GetCodePoint(i, cch) {
     var n = 0;                              // Accumulates code point
 
     for (var j = 0; cch > 0; j += 4, cch--) {
-        code = input.value.codePointAt(i - 1);
+        code = str.codePointAt(i - 1);
         cchCh = 1;
         if (code < 0x0030)
             break;                          // Not a hexadigit
 
         if (isTrailSurrogate(code)) {
-            code = input.value.codePointAt(i - 2);
+            code = str.codePointAt(i - 2);
             if (code < 0x1D434 || code > 0x1D467)
                 break;                      // Surrogate pair isn't math italic
             code -= code >= 0x1D44E ? (0x1D44E - 0x0061) : (0x1D434 - 0x0061);
@@ -446,9 +455,7 @@ function GetCodePoint(i, cch) {
     }
     if (n < 16 && cchChPrev == 2)
         n = 0;                              // Set up converting single 𝑎...𝑓 to hex
-    if (n)
-        input.selectionStart = i;
-    return n;
+    return [n, i];
 }
 
 function closeAutocompleteList() {
@@ -1194,6 +1201,7 @@ function autocomplete() {
             refreshDisplays()
         let sel = window.getSelection()
         let node = sel.anchorNode
+        console.log('getSelection anchorNode = ' + node.nodeName)
 
         if (node.nodeName == 'DIV')
             return                          // </math>
@@ -1214,6 +1222,7 @@ function autocomplete() {
         let sel = window.getSelection()
         let node = sel.anchorNode
         let name = node.nodeName
+        let nodeP
         let offset = sel.anchorOffset
 
         if (sel.anchorNode.nodeName == 'DIV') {
@@ -1237,6 +1246,13 @@ function autocomplete() {
 
             case 'Delete':
                 e.preventDefault()
+                let range = sel.getRangeAt(0)
+                if (!range.collapsed) {
+                    range.commonAncestorContainer.remove()
+                    refreshDisplays()
+                    setSelection(sel, output.firstElementChild, 0)
+                    return
+                }
                 if (node.nodeName == '#text')
                     node = node.parentElement
                 while ((node.nodeName == 'mrow' || node.nodeName == 'math') &&
@@ -1245,7 +1261,7 @@ function autocomplete() {
                 }
                 if (isMathMLObject(node)) {
                     // Should select node first. If selected, remove...
-                    let nodeP = node.parentElement
+                    nodeP = node.parentElement
                     node.remove()
                     node = nodeP
                 } else if (offset < node.textContent.length) {
@@ -1277,7 +1293,7 @@ function autocomplete() {
                 }
                 if (isMathMLObject(node)) {
                     // Should select node first. If selected, remove...
-                    let nodeP = node.parentElement
+                    nodeP = node.parentElement
                     node.remove()
                     node = nodeP
                 } else if (sel.anchorOffset > 0) {
@@ -1301,7 +1317,17 @@ function autocomplete() {
                 if (e.key.length > 1)       // 'Shift', etc.
                     return
                 if (e.key == 'a' && e.ctrlKey) {
-                    sel = setSelection(sel, output.firstElementChild, 1)
+                    // Select math zone
+                    sel = setSelection(sel, output.firstElementChild, -1)
+                    return
+                }
+                if (e.key == 'x' && e.altKey) {
+                    e.preventDefault();
+                    let nodeP = node.parentElement
+                    let str = nodeP.textContent
+                    let [ch, cchDel] = hexToUnicode(str, str.length, 0)
+                    // TODO: delete trailing nodes for cchDel characters
+                    nodeP.lastElementChild.innerHTML = ch
                     return
                 }
                 e.preventDefault();
@@ -1315,29 +1341,28 @@ function autocomplete() {
 
                 if (nodeP.nodeName == 'mrow' && '+=-<> )'.includes(e.key)) {
                     let uMath = ''
-                    let [cParen, k] = checkBrackets(nodeP, e.key)
+                    let [cParen, k] = checkBrackets(nodeP)
                     if (!cParen || k != -1) {
-                        // Same count of open and close delimiters: try
-                        // to build up nodeP
                         autoBuildUp = true
                         let cNode = nodeP.childElementCount
-                        if (!cParen) {      // nodeP → UnicodeMath
+                        if (!cParen) {
+                            // Same count of open and close delimiters: try
+                            // to build up nodeP: nodeP → UnicodeMath
                             uMath = dump(nodeP, true)
-                            if (e.key == ')')
-                                uMath += ')'
-                        } else {            // Trailing children → UnicodeMath
-                            for (i = k + 1; i < cNode; i++) {
-                                let nodeC = nodeP.children[i];
-                                uMath += nodeC.textContent;
-                            }
+                        } else {
+                            // Differing count: try to build up nodeP trailing
+                            // mi, mo, mn, mtext children
+                            for (i = k + 1; i < cNode; i++)
+                                uMath += nodeP.children[i].textContent;
                         }
                         let t = unicodemathml(uMath, true) // uMath → MathML
-                        if (autoBuildUp) {      // Autobuildup succeeded
+                        if (autoBuildUp) {  // Autobuildup succeeded
                             autoBuildUp = false
-                            if (!cParen) {
+                            if (!cParen) {  // Full build up of nodeP
                                 nodeP.innerHTML = t.mathml
-                            } else {
+                            } else {        // Build up of trailing children 
                                 // Remove children[k + 1]...children[cNode - 1]
+                                // and append their built-up counterparts
                                 for (i = cNode - 1; i > k; i--)
                                     nodeP.children[i].remove()
                                 const parser = new DOMParser();
@@ -1346,10 +1371,6 @@ function autocomplete() {
                             }
                             node = nodeP
                             atEnd = true
-                            if (e.key == ')') {
-                                refreshDisplays()
-                                return
-                            }
                         }
                     }
                 }
@@ -1591,7 +1612,12 @@ function autocomplete() {
         // Target is input
         if (e.key == 'x' && e.altKey) { // Alt+x
             e.preventDefault();
-            hexToUnicode(input);
+            let cchSel = input.selectionEnd - input.selectionStart;
+            let [ch, cchDel] = hexToUnicode(input.value, input.selectionEnd, cchSel);
+            let offsetStart = input.selectionEnd - cchDel
+            input.value = input.value.substring(0, offsetStart) + ch +
+                input.value.substring(input.selectionEnd);
+            input.selectionStart = input.selectionEnd = offsetStart + ch.length
         } else if (e.ctrlKey && (e.key == 'b' || e.key == 'i')) {
             // Toggle math bold/italic (Alt+b/Alt+i)
             e.preventDefault();
