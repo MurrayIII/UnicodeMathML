@@ -971,7 +971,8 @@ function autocomplete() {
         if (nodeName == 'mtext' && node.textContent[0] == '\\') {
             // Collect control word; offer autocompletion menu
             closeAutocompleteList()
-            if (key == ' ') {
+
+            if (!isAsciiAlphabetic(key)) {
                 let symbol = resolveCW(node.textContent)
                 if (symbol[0] == '"')
                     return
@@ -1205,7 +1206,7 @@ function autocomplete() {
         speechSel(sel)
     })
 
-    output.addEventListener("keydown", function (e) {
+    output.addEventListener('keydown', function (e) {
         var x = document.getElementById(this.id + "autocomplete-list")
         if (handleAutocompleteKeys(x, e))
             return
@@ -1214,6 +1215,7 @@ function autocomplete() {
         let dir = ''
         let i
         let intent = ''
+        let key = e.key
         let sel = window.getSelection()
         let node = sel.anchorNode
         let name = node.nodeName
@@ -1229,7 +1231,7 @@ function autocomplete() {
             atEnd = true
         }
 
-        switch (e.key) {
+        switch (key) {
             case 'ArrowRight':
                 e.preventDefault()
                 dir = '→'
@@ -1307,25 +1309,33 @@ function autocomplete() {
                 return
 
             default:
-                if (e.key == 'Space')
-                    e.key = ' '
-                if (e.key.length > 1)       // 'Shift', etc.
+                if (key.length > 1)       // 'Shift', etc.
                     return
-                if (e.key == 'a' && e.ctrlKey) {
+                if (key == 'a' && e.ctrlKey) {
                     // Select math zone
                     sel = setSelection(sel, output.firstElementChild, -1)
                     return
                 }
                 e.preventDefault();
 
-                if (e.key == 'x' && e.altKey) { // Alt+x: hex → Unicode
+                if (key == 'x' && e.altKey) { // Alt+x: hex → Unicode
+                    if (node.nodeName == '#text')
+                        node = node.parentElement
                     let nodeP = node.parentElement
                     if (nodeP.nodeName != 'mrow')
                         return
+                    let cchSel = 0
                     let cNode = nodeP.childElementCount
                     let iEnd = -1           // Index of node in nodeP
                     let iStart = 0          // Index of 1st node that might be part of hex
+                    let rg = sel.getRangeAt(0)
                     let str = ''            // Collects hex string
+
+                    if (!sel.isCollapsed) {
+                        console.log("range = " + rg)
+                        str = rg + ''
+                        cchSel = str.length
+                    }
 
                     // Collect span of alphanumerics ending with node
                     for (i = cNode - 1; i >= 0; i--) {
@@ -1338,22 +1348,31 @@ function autocomplete() {
                         } else {
                             if (nodeC == node)
                                 iEnd = i        // Found node's index
-                            if (iEnd > 0)
+                            if (iEnd > 0 && !cchSel)
                                 str = nodeC.textContent + str
                         }
                     }
-                    let [ch, cchDel] = hexToUnicode(str, str.length, 0)
-                    let nodeNewName = getMmlTag(ch)
-                    let nodeNew = document.createElement(nodeNewName)
-                    nodeNew.innerHTML = ch
-                    nodeNew.setAttribute('selip', '1')
-                    nodeP.replaceChild(nodeNew, nodeP.children[iStart])
-                    for (i = iStart + 1; i <= iEnd; i++)
-                        nodeP.children[iStart + 1].remove()
-                    refreshDisplays()
-                    return
-                }
-                if (e.ctrlKey && (e.key == 'b' || e.key == 'i')) {
+                    let [ch, cchDel] = hexToUnicode(str, str.length, cchSel)
+
+                    for (i = iEnd; i >= iStart && cchDel > 0; i--) {
+                        let nodeC = nodeP.children[i]
+                        let cch = nodeC.textContent.length
+
+                        if (cch > cchDel) {
+                            nodeC.innerHTML = nodeC.innerHTML.substring(0, cch - cchDel)
+                            break;
+                        }
+                        cchDel -= cch
+                        if (nodeP.childElementCount > 1)
+                            nodeC.remove()
+                        else
+                            nodeC.innerHTML = ''
+                    }
+                    node = nodeP.children[i >= 0 ? i : 0]
+                    name = node.nodeName
+                    atEnd = true
+                    key = ch
+                } else if (e.ctrlKey && (key == 'b' || key == 'i')) {
                     // Toggle math bold/italic (Ctrl+b/Ctrl+i)
                     if (sel.isCollapsed)
                         return
@@ -1361,7 +1380,7 @@ function autocomplete() {
                     if (chars.length == 1) {
                         // Upright letters should have 'mathvariant="normal"'
                     }
-                    let symbols = boldItalicToggle(chars, e.key);
+                    let symbols = boldItalicToggle(chars, key);
                     node.textContent = symbols
                     refreshDisplays()
                     return
@@ -1374,7 +1393,7 @@ function autocomplete() {
                 if (!node.childElementCount && name != 'math')
                     nodeP = node.parentElement
 
-                if (nodeP.nodeName == 'mrow' && '+=-<> )'.includes(e.key)) {
+                if (nodeP.nodeName == 'mrow' && '+=-<> )'.includes(key)) {
                     let uMath = ''
                     let [cParen, k] = checkBrackets(nodeP)
                     if (!cParen || k != -1) {
@@ -1395,7 +1414,7 @@ function autocomplete() {
                             autoBuildUp = false
                             if (!cParen) {  // Full build up of nodeP
                                 nodeP.innerHTML = t.mathml
-                            } else {        // Build up of trailing children 
+                            } else {        // Build up of trailing children
                                 // Remove children[k + 1]...children[cNode - 1]
                                 // and append their built-up counterparts
                                 for (i = cNode - 1; i > k; i--)
@@ -1409,13 +1428,13 @@ function autocomplete() {
                         }
                     }
                 }
-                let autocl = handleKeyboardInput(node, e.key)
+                let autocl = handleKeyboardInput(node, key)
 
                 // If defined, append autocomplete list
                 if (autocl != undefined)
                     this.appendChild(autocl)
                 return                      // Ignore other input for now
-        }                                   // End of switch(e.key)
+        }                                   // End of switch(key)
 
         // Move selection forward in the MathML DOM and describe what's there
         if (node.nodeType == 1) {           // Starting at an element...
