@@ -637,14 +637,14 @@ function handleAutocompleteKeys(x, e) {
             e.preventDefault();
             currentFocus++;
             addActive(x);
-            break;
+            return true;
 
         case "ArrowUp":
             // Decrease currentFocus; highlight corresponding control-word
             e.preventDefault();
             currentFocus--;
             addActive(x);
-            break;
+            return true;
 
         case " ":
         case "Enter":
@@ -654,9 +654,9 @@ function handleAutocompleteKeys(x, e) {
             e.preventDefault();
             if (currentFocus >= 0 && x)
                 x[currentFocus].click();
-            break
+            return true;
     }
-    return true                         // Handled keydown
+    return false
 }
 
 function addActive(x) {
@@ -778,7 +778,7 @@ function autocomplete() {
             closeAutocompleteList();
         })
 
-        // Append div element as a child of the autocomplete container
+        // Append div element as a child of the input autocomplete container
         if (autocl)
             this.parentNode.appendChild(autocl);
     })
@@ -949,6 +949,7 @@ function autocomplete() {
 
     function handleKeyboardInput(node, key) {
         // Handle keyboard input into output window
+        closeAutocompleteList()
         let nodeNewName = getMmlTag(key)
 
         if (node.nodeName == 'math') {
@@ -964,23 +965,13 @@ function autocomplete() {
                 return
             }
         }
-        let nodeP = node.parentElement
         let autocl
         let nodeName = node.nodeName.toLowerCase()
+        let nodeP = node.parentElement
 
         if (nodeName == 'mtext' && node.textContent[0] == '\\') {
             // Collect control word; offer autocompletion menu
-            closeAutocompleteList()
-
-            if (!isAsciiAlphabetic(key)) {
-                let symbol = resolveCW(node.textContent)
-                if (symbol[0] == '"')
-                    return
-                let nodeNew = document.createElement('mi')
-                nodeNew.textContent = symbol
-                nodeNew.setAttribute('selip', '1')
-                nodeP.replaceChild(nodeNew, node)
-            } else {
+            if (isAsciiAlphabetic(key)) {
                 node.textContent += key   // Collect control word
                 if (node.textContent.length > 2) {
                     let cw = node.textContent.substring(1)
@@ -1005,12 +996,19 @@ function autocomplete() {
                         onac = true    // Suppress default speech, e.g., for 'mi'
                     })
                 }
+                nodeP.innerHTML = nodeP.innerHTML // Force redraw
+                refreshDisplays()
+                speak(resolveSymbols(key))
+                return autocl
             }
-            //node.setAttribute('selip', node.textContent.length)
-            nodeP.innerHTML = nodeP.innerHTML // Force redraw
-            refreshDisplays()
-            speak(resolveSymbols(key))
-            return autocl
+            let symbol = resolveCW(node.textContent)
+            if (symbol[0] == '"')
+                return
+            let nodeNew = document.createElement(getMmlTag(symbol))
+            nodeNew.textContent = symbol
+            nodeNew.setAttribute('selip', '1')
+            nodeP.replaceChild(nodeNew, node)
+            node = nodeNew
         }
 
         switch (nodeNewName) {
@@ -1078,10 +1076,14 @@ function autocomplete() {
             node.appendChild(nodeNew)
         } else if (nodeP.nodeName == 'mrow') {
             if (atEnd) {
-                if (node.nextElementSibling)
+                if (node.nextElementSibling) {
                     nodeP.insertBefore(nodeNew, node.nextElementSibling)
-                else
-                    nodeP.appendChild(nodeNew)
+                } else {
+                    if (!node.textContent)
+                        nodeP.replaceChild(nodeNew, node)
+                    else
+                        nodeP.appendChild(nodeNew)
+                }
             }
             else
                 nodeP.insertBefore(nodeNew, node)
@@ -1319,23 +1321,23 @@ function autocomplete() {
                 e.preventDefault();
 
                 if (key == 'x' && e.altKey) { // Alt+x: hex → Unicode
+                    let cchSel = 0          // Default degenerate selection
+                    let str = ''            // Collects hex string
+
+                    if (!sel.isCollapsed) { // Nondegenerate selection
+                        let rg = sel.getRangeAt(0)
+                        node = rg.endContainer
+                        str = rg + ''
+                        cchSel = str.length
+                    }
                     if (node.nodeName == '#text')
                         node = node.parentElement
                     let nodeP = node.parentElement
                     if (nodeP.nodeName != 'mrow')
                         return
-                    let cchSel = 0
                     let cNode = nodeP.childElementCount
                     let iEnd = -1           // Index of node in nodeP
                     let iStart = 0          // Index of 1st node that might be part of hex
-                    let rg = sel.getRangeAt(0)
-                    let str = ''            // Collects hex string
-
-                    if (!sel.isCollapsed) {
-                        console.log("range = " + rg)
-                        str = rg + ''
-                        cchSel = str.length
-                    }
 
                     // Collect span of alphanumerics ending with node
                     for (i = cNode - 1; i >= 0; i--) {
@@ -1354,19 +1356,22 @@ function autocomplete() {
                     }
                     let [ch, cchDel] = hexToUnicode(str, str.length, cchSel)
 
+                    // Remove cchDel codes along with emptied nodes
                     for (i = iEnd; i >= iStart && cchDel > 0; i--) {
                         let nodeC = nodeP.children[i]
                         let cch = nodeC.textContent.length
 
-                        if (cch > cchDel) {
+                        if (cch > cchDel) { // ∃ more codes than need deletion
                             nodeC.innerHTML = nodeC.innerHTML.substring(0, cch - cchDel)
                             break;
                         }
                         cchDel -= cch
-                        if (nodeP.childElementCount > 1)
-                            nodeC.remove()
-                        else
+                        if (nodeP.childElementCount == 1) {
+                            // Leave empty child as place holder for ch
                             nodeC.innerHTML = ''
+                        } else {
+                            nodeC.remove()
+                        }
                     }
                     node = nodeP.children[i >= 0 ? i : 0]
                     name = node.nodeName
@@ -1430,9 +1435,9 @@ function autocomplete() {
                 }
                 let autocl = handleKeyboardInput(node, key)
 
-                // If defined, append autocomplete list
+                // If defined, append autocomplete list to output autocomplete container
                 if (autocl != undefined)
-                    this.appendChild(autocl)
+                    this.parentNode.appendChild(autocl)
                 return                      // Ignore other input for now
         }                                   // End of switch(key)
 

@@ -241,7 +241,11 @@
                 <div id="speechDisplay"></div>
             </td>
             <td>
-                <div id="output" contentEditable='true'></div>
+                <form autocomplete="off" action="/action_page.php">
+                    <div class="autocomplete" style="width:100%;">
+                        <div id="output" contentEditable='true'></div>
+                    </div>
+                </form>
                 <div class="tabs">
                     <button class="tab" id="pegjs_ast">PEG.js AST <span id="measurements_parse"></span></button>
                     <button class="tab" id="preprocess_ast"><abbr title="Preprocessed">PP</abbr> AST <span id="measurements_preprocess"></span></button>
