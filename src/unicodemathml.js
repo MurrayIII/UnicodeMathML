@@ -137,6 +137,10 @@ function isBraille(ch) {
     return inRange('\u2800', ch, '\u28FF');
 }
 
+function isCloseDelimiter(op) {
+    return ')]}⟩〗⌉⌋❳⟧⟩⟫⟭⟯⦄⦆⦈⦊⦌⦎⦐⦒⦔⦖⦘⧙⧛⧽'.includes(op)
+}
+
 function isDoubleStruck(ch) {
     return inRange('\u2145', ch, '\u2149');
 }
@@ -145,21 +149,18 @@ function isGreek(ch) {
     return inRange('\u0391', ch, '\u03F5');
 }
 
-function isTranspose(value) {
-    return Array.isArray(value) &&
-        value[0].hasOwnProperty('atoms') &&
-        Array.isArray(value[0].atoms) &&
-        value[0].atoms[0].hasOwnProperty("chars") &&
-        value[0].atoms[0].chars == '⊺';
-}
-
 function isIntegral(op) {
     return inRange('∫', op, '∳') || op == '⨌';  // 222B..2233, 2A0C
+}
+
+function isLcGreek(ch) {
+    return inRange('\u03B1', ch, '\u03F5');
 }
 
 function isNary(op) {
     return '∑⅀⨊∏∐⨋∫∬∭⨌∮∯∰∱⨑∲∳⨍⨎⨏⨕⨖⨗⨘⨙⨚⨛⨜⨒⨓⨔⋀⋁⋂⋃⨃⨄⨅⨆⨀⨁⨂⨉⫿'.includes(op);
 }
+
 function isMathML(unicodemath) {
     return unicodemath.startsWith("<math") ||
            unicodemath.startsWith("<mml:math") ||
@@ -170,8 +171,12 @@ function isOpenDelimiter(op) {
     return '([{⟨〖⌈⌊❲⟦⟨⟪⟬⟮⦃⦅⦇⦉⦋⦍⦏⦑⦓⦕⦗⧘⧚⧼'.includes(op)
 }
 
-function isCloseDelimiter(op) {
-    return ')]}⟩〗⌉⌋❳⟧⟩⟫⟭⟯⦄⦆⦈⦊⦌⦎⦐⦒⦔⦖⦘⧙⧛⧽'.includes(op)
+function isTranspose(value) {
+    return Array.isArray(value) &&
+        value[0].hasOwnProperty('atoms') &&
+        Array.isArray(value[0].atoms) &&
+        value[0].atoms[0].hasOwnProperty("chars") &&
+        value[0].atoms[0].chars == '⊺';
 }
 
 function checkBrackets(node) {
@@ -3518,6 +3523,10 @@ function mtransform(dsty, puast) {
             // replace spaces with non-breaking spaces (else leading and
             // trailing spaces are hidden)
             var attrs = getAttrs(value, '');
+            if (value.length == 1 && (isAsciiAlphabetic(value) || isLcGreek(value))) {
+                attrs.mathvariant = 'normal'
+                return {mi: withAttrs(attrs, value)}
+            }
             return {mtext: withAttrs(attrs, value.split(" ").join("\xa0"))};
 
         case "sizeoverride":

@@ -1004,7 +1004,8 @@ function autocomplete() {
             let symbol = resolveCW(node.textContent)
             if (symbol[0] == '"')
                 return
-            let nodeNew = document.createElement(getMmlTag(symbol))
+            nodeName = getMmlTag(symbol)
+            let nodeNew = document.createElement(nodeName)
             nodeNew.textContent = symbol
             nodeNew.setAttribute('selip', '1')
             nodeP.replaceChild(nodeNew, node)
@@ -1381,12 +1382,24 @@ function autocomplete() {
                     // Toggle math bold/italic (Ctrl+b/Ctrl+i)
                     if (sel.isCollapsed)
                         return
+                    if (node.nodeName == '#text')
+                        node = node.parentElement
                     let chars = node.textContent;
-                    if (chars.length == 1) {
-                        // Upright letters should have 'mathvariant="normal"'
+
+                    if (chars.length == 1 && chars != 'ℎ') {
+                        // Single letters display in math italic unless
+                        // mathvariant = 'normal'
+                        if (node.attributes.mathvariant &&
+                            node.attributes.mathvariant.value == 'normal') {
+                            node.removeAttribute('mathvariant')
+                        } else {
+                            chars = italicizeCharacter(chars)
+                        }
                     }
-                    let symbols = boldItalicToggle(chars, key);
-                    node.textContent = symbols
+                    chars = boldItalicToggle(chars, key)
+                    node.textContent = chars
+                    if (chars.length == 1 && chars != 'ℎ' && node.nodeName == 'mi')
+                        node.setAttribute('mathvariant', 'normal')
                     refreshDisplays()
                     return
                 }
@@ -1398,7 +1411,9 @@ function autocomplete() {
                 if (!node.childElementCount && name != 'math')
                     nodeP = node.parentElement
 
-                if (nodeP.nodeName == 'mrow' && '+=-<> )'.includes(key)) {
+                if (nodeP.nodeName == 'mrow' && '+=-<> )'.includes(key) &&
+                    (node.nodeName != 'mtext' || node.textContent[0] != '\\')) {
+                    // Build up <mrow> or part of it?
                     let uMath = ''
                     let [cParen, k] = checkBrackets(nodeP)
                     if (!cParen || k != -1) {
@@ -1681,9 +1696,11 @@ function autocomplete() {
             // Toggle math bold/italic (Ctrl+b/Ctrl+i)
             e.preventDefault();
             let chars = getInputSelection();
-            let symbols = boldItalicToggle(chars, e.key);
-            insertAtCursorPos(symbols);
-            input.selectionStart -= symbols.length;
+            chars = boldItalicToggle(chars, e.key);
+            if (chars.length == 1 && (isAsciiAlphabetic(chars) || isLcGreek(chars)))
+                chars = '"' + chars + '"'
+            insertAtCursorPos(chars);
+            input.selectionStart -= chars.length;
             input.focus();
             draw();
         } else if (e.shiftKey && e.key == 'Enter') { // Shift+Enter
