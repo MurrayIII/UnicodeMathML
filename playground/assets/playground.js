@@ -120,6 +120,17 @@ function mathBraille() {
     input.dispatchEvent(event);
 }
 
+function speak(s) {
+    console.log(s)
+    s = symbolSpeech(s)
+    let utterance = new SpeechSynthesisUtterance(s)
+    if (voiceZira)
+        utterance.voice = voiceZira
+    if (speechSynthesis.pending)        // Inter-utterance pause is too long
+        speechSynthesis.cancel()
+    speechSynthesis.speak(utterance)
+}
+
 
 // escape mathml tags and entities, via https://stackoverflow.com/a/13538245
 function escapeMathMLSpecialChars(str) {
@@ -300,10 +311,6 @@ function highlightJson(json) {
     });
 }
 
-///////////////////////////////
-// UNICODEMATH INPUT EDITING //
-///////////////////////////////
-
 function hexToUnicode(input, offsetEnd, cchSel) {
     if (cchSel > 10)
         return;
@@ -410,9 +417,6 @@ function boldItalicToggle(chars, key) {
     return symbols
 }
 
-function isTrailSurrogate(code) { return code >= 0xDC00 && code <= 0xDFFF; }
-function isLeadSurrogate(code) { return code >= 0xD800 && code <= 0xDBFF; }
-
 function GetCodePoint(str, i, cch) {
     // Code point for hex string of max length cch in str ending at offset i
     if (cch > i)
@@ -454,17 +458,6 @@ function GetCodePoint(str, i, cch) {
     return [n, i];
 }
 
-function closeAutocompleteList() {
-    var x = document.getElementsByClassName("autocomplete-items");
-    if (x == undefined) return;
-
-    var cItem = x.length;
-
-    for (var i = 0; i < cItem; i++) {
-        x[i].parentNode.removeChild(x[i]);
-    }
-}
-
 function closeFormatModeList() {
     var x = document.getElementById("formatmode-list");
 
@@ -504,6 +497,10 @@ function getSubSupDigit(str, i, delim) {
 
     return (op == '^') ? digitSuperscripts[ch] : digitSubscripts[ch];
 }
+
+///////////////////////////////
+// UNICODEMATH INPUT EDITING //
+///////////////////////////////
 
 function opAutocorrect(ip, delim) {
     // Perform operator autocorrections like '+-' → '±' and '/=' → ≠
@@ -576,108 +573,122 @@ function opAutocorrect(ip, delim) {
     }
     return false;
 }
+input.addEventListener("keydown", function (e) {
+    var x = document.getElementById(this.id + "autocomplete-list")
+    if (handleAutocompleteKeys(x, e))
+        return
 
-// Symbols whose autocomplete options should be selected by default
-var commonSymbols = "αβδζθλχϕϵ⁡←√∞⒨■"; // 03B1 03B2 03B4 03B6 03B8 03BB 03C7 03D5 03F5 2061 2190 221A 221E 24A8 25A0
-var currentFocus = -1;
-
-function createAutoCompleteMenu(cw, id, onAutoCompleteClick) {
-    // Create an autocomplete menu of control-words that partially match cw.
-    // Called for both input-window and output-window editing
-    let matches = getPartialMatches(cw);
-    if (!matches.length)
-        return;
-
-    // Create a <div> element to contain matching control words
-    currentFocus = -1;
-    let autocl = document.createElement("div");
-    autocl.setAttribute("id", id + "autocomplete-list");
-    autocl.setAttribute("class", "autocomplete-items");
-
-    // Create a div element for each matching control word
-    for (let j = 0; j < matches.length; j++) {
-        let b = document.createElement("div");
-        let cwOption = matches[j];
-
-        // Bold the matching letters and insert an input field to hold
-        // the current control word and symbol
-        b.innerHTML = "<strong>" + cwOption.substring(0, cw.length) + "</strong>";
-        b.innerHTML += matches[j].substring(cw.length);
-        b.innerHTML += "<input type='hidden' value='" + cwOption + "'>";
-
-        if (commonSymbols.includes(cwOption[cwOption.length - 1])) {
-            // Activate option for most common symbol, e.g., for '\be'
-            // highlight '\beta β'
-            currentFocus = j;
-            b.classList.add("autocomplete-active");
+    // Target is input
+    if (e.key == 'x' && e.altKey) { // Alt+x
+        e.preventDefault();
+        let cchSel = input.selectionEnd - input.selectionStart;
+        let [ch, cchDel] = hexToUnicode(input.value, input.selectionEnd, cchSel);
+        let offsetStart = input.selectionEnd - cchDel
+        input.value = input.value.substring(0, offsetStart) + ch +
+            input.value.substring(input.selectionEnd);
+        input.selectionStart = input.selectionEnd = offsetStart + ch.length
+    } else if (e.ctrlKey && (e.key == 'b' || e.key == 'i')) {
+        // Toggle math bold/italic (Ctrl+b/Ctrl+i)
+        e.preventDefault();
+        let chars = getInputSelection();
+        chars = boldItalicToggle(chars, e.key);
+        if (chars.length == 1 && (isAsciiAlphabetic(chars) || isLcGreek(chars)))
+            chars = '"' + chars + '"'
+        insertAtCursorPos(chars);
+        input.selectionStart -= chars.length;
+        input.focus();
+        draw();
+    } else if (e.shiftKey && e.key == 'Enter') { // Shift+Enter
+        //e.preventDefault();
+        //insertAtCursorPos('\u200B');  // Want VT for math paragraph
+    } else if (e.altKey && e.key == 'm') { // Alt+m
+        // Toggle Unicode and MathML in input
+        e.preventDefault();
+        input.value = isMathML(input.value)
+            ? MathMLtoUnicodeMath(input.value)
+            : document.getElementById('output_source').innerText;
+        draw();
+    } else if (e.altKey && e.key == 'b') { // Alt+b
+        // Braille MathML
+        e.preventDefault();
+        let mathML = isMathML(input.value)
+            ? input.value
+            : document.getElementById('output_source').innerText;
+        let braille = MathMLtoBraille(mathML);
+        console.log('Math braille = ' + braille);
+        speechDisplay.innerText += '\n' + braille;
+    } else if (e.altKey && e.key == 's') { // Alt+s
+        // Speak MathML
+        e.preventDefault();
+        if (speechSynthesis.speaking) {
+            speechSynthesis.cancel();
+        } else {
+            let mathML = isMathML(input.value)
+                ? input.value
+                : document.getElementById('output_source').innerText;
+            let speech = MathMLtoSpeech(mathML);
+            console.log('Math speech = ' + speech);
+            speechDisplay.innerText = '\n' + speech;
+            let utterance = new SpeechSynthesisUtterance(speech);
+            if (voiceZira)
+                utterance.voice = voiceZira;
+            speechSynthesis.speak(utterance);
         }
-        // Add click function for user click on a control word
-        b.addEventListener("click", onAutoCompleteClick);
-        autocl.appendChild(b);
+    } else if (e.altKey && e.key == 'Enter') { // Alt+Enter
+        // Enter Examples[iExample]
+        x = document.getElementById('Examples').childNodes[0];
+        input.value = x.childNodes[iExample].innerText;
+        var cExamples = x.childNodes.length;
+
+        iExample++;                 // Increment for next time
+        if (iExample > cExamples - 1)
+            iExample = 0;
     }
-    if (currentFocus == -1) {
-        // No common control-word option identified: highlight first option
-        currentFocus = 0;
-        autocl.firstChild.classList.add("autocomplete-active");
+    if (demoID) {
+        var demoEq = document.getElementById('demos');
+        switch (e.key) {
+            case 'Escape':
+                // Turn off demo mode
+                endDemo();
+                return;
+            case ' ':
+                // Toggle pause
+                e.preventDefault();
+                if (demoPause) {
+                    demoID = 0;         // Needed to start (instead of end)
+                    startDemo();
+                } else {
+                    demoPause = true;
+                    clearInterval(demoID);
+                    demoEq.style.backgroundColor = 'green';
+                }
+                return;
+            case 'ArrowRight':
+                nextEq();
+                return;
+            case 'ArrowLeft':
+                prevEq();
+                return;
+        }
     }
-    return autocl
-}
+});
 
-function handleAutocompleteKeys(x, e) {
-    // Callback to handle autocomplete drop-down input. Called for both
-    // input-window and output-window editing
-    if (!x)                             // Empty autocomplete list
-        return false;                   // Signal didn't handle keydown
-
-    x = x.getElementsByTagName("div");  // x = autocomplete entries
-
-    switch (e.key) {
-        case "ArrowDown":
-            // Increase currentFocus; highlight corresponding control-word
-            e.preventDefault();
-            currentFocus++;
-            addActive(x);
-            return true;
-
-        case "ArrowUp":
-            // Decrease currentFocus; highlight corresponding control-word
-            e.preventDefault();
-            currentFocus--;
-            addActive(x);
-            return true;
-
-        case " ":
-        case "Enter":
-        case "Tab":
-            // Prevent form from being submitted; simulate a click on the
-            // "active" control-word option
-            e.preventDefault();
-            if (currentFocus >= 0 && x)
-                x[currentFocus].click();
-            return true;
+// insert one or multiple characters at the current cursor position of
+// the input field or, if there is no cursor, append them to its value,
+// via https://stackoverflow.com/a/11077016
+function insertAtCursorPos(symbols) {
+    if (input.selectionStart || input.selectionStart == '0') {
+        var startPos = input.selectionStart;
+        var endPos = input.selectionEnd;
+        input.value = input.value.substring(0, startPos)
+            + symbols
+            + input.value.substring(endPos, input.value.length);
+        input.selectionEnd = input.selectionStart = startPos + symbols.length;
+    } else {
+        input.value += symbols;
     }
-    return false
-}
-
-function addActive(x) {
-    if (!x) return false;
-
-    // Classify an option as "active". First, remove "autocomplete-active"
-    // class from all options, and ensure the currentFocus is valid
-    removeActive(x);
-    if (currentFocus >= x.length) currentFocus = 0;
-    if (currentFocus < 0) currentFocus = (x.length - 1);
-
-    // Add class "autocomplete-active" to x[currentFocus]
-    console.log("x[" + currentFocus + "] = " + x[currentFocus].innerText);
-    x[currentFocus].classList.add("autocomplete-active");
-}
-
-function removeActive(x) {
-    // Remove "autocomplete-active" class from all autocomplete options
-    for (var i = 0; i < x.length; i++) {
-        x[i].classList.remove("autocomplete-active");
-    }
+    input.focus();
+    draw();
 }
 
 function autocomplete() {
@@ -782,710 +793,847 @@ function autocomplete() {
         if (autocl)
             this.parentNode.appendChild(autocl);
     })
+}
 
-    function speak(s) {
-        console.log(s)
-        s = symbolSpeech(s)
-        let utterance = new SpeechSynthesisUtterance(s)
-        if (voiceZira)
-            utterance.voice = voiceZira
-        if (speechSynthesis.pending)        // Inter-utterance pause is too long
-            speechSynthesis.cancel()
-        speechSynthesis.speak(utterance)
+
+////////////////////////////
+// AUTOCOMPLETE FUNCTIONS //
+////////////////////////////
+
+// Symbols whose autocomplete options should be selected by default
+var commonSymbols = "αβδζθλχϕϵ⁡←√∞⒨■"; // 03B1 03B2 03B4 03B6 03B8 03BB 03C7 03D5 03F5 2061 2190 221A 221E 24A8 25A0
+var currentFocus = -1;
+
+function closeAutocompleteList() {
+    var x = document.getElementsByClassName("autocomplete-items");
+    if (x == undefined) return;
+
+    var cItem = x.length;
+
+    for (var i = 0; i < cItem; i++) {
+        x[i].parentNode.removeChild(x[i]);
     }
+}
 
-    ///////////////////////////////////
-    // OUTPUT EDITING AND NAVIGATION //
-    ///////////////////////////////////
+function createAutoCompleteMenu(cw, id, onAutoCompleteClick) {
+    // Create an autocomplete menu of control-words that partially match cw.
+    // Called for both input-window and output-window editing
+    let matches = getPartialMatches(cw);
+    if (!matches.length)
+        return;
 
-    function speechSel(sel) {
-        let node = sel.anchorNode;
+    // Create a <div> element to contain matching control words
+    currentFocus = -1;
+    let autocl = document.createElement("div");
+    autocl.setAttribute("id", id + "autocomplete-list");
+    autocl.setAttribute("class", "autocomplete-items");
 
-        if (node.nodeType != 3) {
-            let name = node.nodeName
-            if (names[name])
-                name = names[name];
-            speak(name)
-            return
+    // Create a div element for each matching control word
+    for (let j = 0; j < matches.length; j++) {
+        let b = document.createElement("div");
+        let cwOption = matches[j];
+
+        // Bold the matching letters and insert an input field to hold
+        // the current control word and symbol
+        b.innerHTML = "<strong>" + cwOption.substring(0, cw.length) + "</strong>";
+        b.innerHTML += matches[j].substring(cw.length);
+        b.innerHTML += "<input type='hidden' value='" + cwOption + "'>";
+
+        if (commonSymbols.includes(cwOption[cwOption.length - 1])) {
+            // Activate option for most common symbol, e.g., for '\be'
+            // highlight '\beta β'
+            currentFocus = j;
+            b.classList.add("autocomplete-active");
         }
-        if (node.length == sel.anchorOffset) {
-            handleEndOfTextNode(node.parentElement)
-            return
-        }
-
-        let ch = node.data;
-        let intent = getIntent(node.parentElement);
-        if (isDoubleStruck(intent))
-            speak(intent)
-        else if (ch[0] >= '\uD835' || sel.anchorNode.length == 1)
-            speak(ch)
-        else
-            speak(ch[sel.anchorOffset])
+        // Add click function for user click on a control word
+        b.addEventListener("click", onAutoCompleteClick);
+        autocl.appendChild(b);
     }
-
-    function checkTable(node) {
-        let unit = 'row'
-        let intent = getIntent(node.parentElement);
-        if (intent == ':equations') {
-            intent = getIntent(node.parentElement.parentElement)
-            unit = intent == ':cases' ? 'case' : 'equation';
-        }
-        speak('next ' + unit)
-        return node.firstElementChild;
+    if (currentFocus == -1) {
+        // No common control-word option identified: highlight first option
+        currentFocus = 0;
+        autocl.firstChild.classList.add("autocomplete-active");
     }
+    return autocl
+}
 
-    function getNaryOp(node) {
-        // If the first child of mrow is a msubsup or munderover with an N-ary
-        // op for its first child, return the N-ary op; else return ''
-        if (node.nodeName != 'mrow')
-            return '';
-        node = node.firstElementChild;
-        if (node.nodeName != 'msubsup' && node.nodeName != 'munderover')
-            return '';
-        node = node.firstElementChild;
-        if (node.nodeName != 'mo')
-            return '';
-        let ch = node.textContent;
-        return isNary(ch) ? ch : ''
+function handleAutocompleteKeys(x, e) {
+    // Callback to handle autocomplete drop-down input. Called for both
+    // input-window and output-window editing
+    if (!x)                             // Empty autocomplete list
+        return false;                   // Signal didn't handle keydown
+
+    x = x.getElementsByTagName("div");  // x = autocomplete entries
+
+    switch (e.key) {
+        case "ArrowDown":
+            // Increase currentFocus; highlight corresponding control-word
+            e.preventDefault();
+            currentFocus++;
+            addActive(x);
+            return true;
+
+        case "ArrowUp":
+            // Decrease currentFocus; highlight corresponding control-word
+            e.preventDefault();
+            currentFocus--;
+            addActive(x);
+            return true;
+
+        case " ":
+        case "Enter":
+        case "Tab":
+            // Prevent form from being submitted; simulate a click on the
+            // "active" control-word option
+            e.preventDefault();
+            if (currentFocus >= 0 && x)
+                x[currentFocus].click();
+            return true;
     }
+    return false
+}
 
-    function getIntent(node) {
-        return node.attributes.intent ? node.attributes.intent.value : '';
+function addActive(x) {
+    if (!x) return false;
+
+    // Classify an option as "active". First, remove "autocomplete-active"
+    // class from all options, and ensure the currentFocus is valid
+    removeActive(x);
+    if (currentFocus >= x.length) currentFocus = 0;
+    if (currentFocus < 0) currentFocus = (x.length - 1);
+
+    // Add class "autocomplete-active" to x[currentFocus]
+    console.log("x[" + currentFocus + "] = " + x[currentFocus].innerText);
+    x[currentFocus].classList.add("autocomplete-active");
+}
+
+function removeActive(x) {
+    // Remove "autocomplete-active" class from all autocomplete options
+    for (var i = 0; i < x.length; i++) {
+        x[i].classList.remove("autocomplete-active");
     }
+}
 
-    function checkSimpleSup(node) {
-        if (node.nodeName == 'msup' || node.nodeName == 'msqrt') {
-            let s = speech(node)
-            if (s.length <= 3) {
-                speak(resolveSymbols(s))
-                return true
-            }
-        }
-        return false
-    }
+///////////////////////////////////
+// OUTPUT EDITING AND NAVIGATION //
+///////////////////////////////////
 
-    const names = {
-        'msup': 'superscript', 'msub': 'subscript', 'msubsup': 'subsoup',
-        'munder': 'modify below', 'mover': 'modify above', 'munderover': 'below above',
-        'mfrac': 'fraction', 'msqrt': 'square root',
-    }
+function speechSel(sel) {
+    let node = sel.anchorNode;
 
-    function refreshDisplays() {
-        // Update MathML, UnicodeMath, and code-point displays; restore selection from selip
-        output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
-        input.value = MathMLtoUnicodeMath(output.innerHTML)
-        codepoints.innerHTML = getCodePoints()
-
-        var walker = document.createTreeWalker(output, NodeFilter.SHOW_ELEMENT, null, false)
-        while (walker.nextNode()) {
-            // Restore selection; previous code has to set attribute 'selip'
-            if (walker.currentNode.attributes.selip) {
-                let offset = walker.currentNode.attributes.selip.nodeValue;
-                if (offset == walker.currentNode.textContent.length) {
-                    atEnd = true
-                }
-                setSelection(null, walker.currentNode, offset)
-                return
-            }
-        }
-    }
-
-    function checkFunction(node) {
-        let cNode = node.childElementCount
-        let i = cNode - 1
-        let fn = ''
-
-        for (; i >= 0 && node.children[i].nodeName == 'mi'; i--) {
-            fn = node.children[i].textContent + fn
-        }
-        fn = foldMathItalics(fn)
-        if (!isFunctionName(fn))
-            return
-        node.children[i + 1].textContent = fn
-        i += 2
-        for (cNode = cNode - i; cNode > 0; cNode--)
-            node.children[i].remove()       // Remove trailing <mi>'s
-    }
-
-    function removeSelipAttribute(node) {
-        let walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, null, false)
-        while (walker.nextNode()) {         // Remove current selip attribute
-            if (walker.currentNode.attributes.selip) {
-                walker.currentNode.removeAttribute('selip');
-                return true
-            }
-        }
-        return false
-    }
-
-    function handleEndOfTextNode(node) {
-        let name = node.parentElement.nodeName
-        let nameT = ''
-
-        if (name == 'mrow') {
-            let intent = getIntent(node);
-            node = node.parentElement;
-            name = node.parentElement.nodeName
-            if (intent == ':function')
-                name = 'function';
-            else if (intent.indexOf('integral') != -1)
-                name = 'integrand';
-            else
-                nameT = getArgName(node)
-        } else {
-            nameT = getArgName(node)
-        }
-        if (nameT)
-            name = nameT
+    if (node.nodeType != 3) {
+        let name = node.nodeName
         if (names[name])
             name = names[name];
-
-        if (name != 'mrow') {
-            speak('end of ' + name);
-            atEnd = true;
-        }
-        return node
+        speak(name)
+        return
+    }
+    if (node.length == sel.anchorOffset) {
+        handleEndOfTextNode(node.parentElement)
+        return
     }
 
-    function handleKeyboardInput(node, key) {
-        // Handle keyboard input into output window
-        closeAutocompleteList()
-        let nodeNewName = getMmlTag(key)
+    let ch = node.data;
+    let intent = getIntent(node.parentElement);
+    if (isDoubleStruck(intent))
+        speak(intent)
+    else if (ch[0] >= '\uD835' || sel.anchorNode.length == 1)
+        speak(ch)
+    else
+        speak(ch[sel.anchorOffset])
+}
 
-        if (node.nodeName == 'math') {
-            console.log('Input at end of math zone')
-            if (node.lastElementChild)
-                node = node.lastElementChild
-            else {
-                let nodeNew = document.createElement(nodeNewName)
-                nodeNew.textContent = key
-                nodeNew.setAttribute('selip', '1')
-                node.appendChild(nodeNew)
-                refreshDisplays()
-                return
+function checkTable(node) {
+    let unit = 'row'
+    let intent = getIntent(node.parentElement);
+    if (intent == ':equations') {
+        intent = getIntent(node.parentElement.parentElement)
+        unit = intent == ':cases' ? 'case' : 'equation';
+    }
+    speak('next ' + unit)
+    return node.firstElementChild;
+}
+
+function getNaryOp(node) {
+    // If the first child of mrow is a msubsup or munderover with an N-ary
+    // op for its first child, return the N-ary op; else return ''
+    if (node.nodeName != 'mrow')
+        return '';
+    node = node.firstElementChild;
+    if (node.nodeName != 'msubsup' && node.nodeName != 'munderover')
+        return '';
+    node = node.firstElementChild;
+    if (node.nodeName != 'mo')
+        return '';
+    let ch = node.textContent;
+    return isNary(ch) ? ch : ''
+}
+
+function getIntent(node) {
+    return node.attributes.intent ? node.attributes.intent.value : '';
+}
+
+function checkSimpleSup(node) {
+    if (node.nodeName == 'msup' || node.nodeName == 'msqrt') {
+        let s = speech(node)
+        if (s.length <= 3) {
+            speak(resolveSymbols(s))
+            return true
+        }
+    }
+    return false
+}
+
+const names = {
+    'msup': 'superscript', 'msub': 'subscript', 'msubsup': 'subsoup',
+    'munder': 'modify below', 'mover': 'modify above', 'munderover': 'below above',
+    'mfrac': 'fraction', 'msqrt': 'square root',
+}
+
+function refreshDisplays() {
+    // Update MathML, UnicodeMath, and code-point displays; restore selection from selip
+    output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
+    input.value = MathMLtoUnicodeMath(output.innerHTML)
+    codepoints.innerHTML = getCodePoints()
+
+    var walker = document.createTreeWalker(output, NodeFilter.SHOW_ELEMENT, null, false)
+    while (walker.nextNode()) {
+        // Restore selection; previous code has to set attribute 'selip'
+        if (walker.currentNode.attributes.selip) {
+            let offset = walker.currentNode.attributes.selip.nodeValue;
+            if (offset == walker.currentNode.textContent.length) {
+                atEnd = true
             }
-        }
-        let autocl
-        let nodeName = node.nodeName.toLowerCase()
-        let nodeP = node.parentElement
-
-        if (nodeName == 'mtext' && node.textContent[0] == '\\') {
-            // Collect control word; offer autocompletion menu
-            if (isAsciiAlphabetic(key)) {
-                node.textContent += key   // Collect control word
-                if (node.textContent.length > 2) {
-                    let cw = node.textContent.substring(1)
-                    autocl = createAutoCompleteMenu(cw, 'output', e => {
-                        // User clicked matching control word: insert its symbol
-                        let val = e.currentTarget.innerText
-                        let symbol = val[val.length - 1]
-                        let nodeNew = document.createElement(getMmlTag(symbol))
-                        nodeNew.textContent = symbol
-                        nodeNew.setAttribute('selip', '1')
-
-                        // node is no longer a child of nodeP; find it
-                        let walker = document.createTreeWalker(nodeP,
-                            NodeFilter.SHOW_ELEMENT, null, false)
-                        while (walker.nextNode() && !walker.currentNode.attributes.selip)
-                            ;
-                        nodeP.replaceChild(nodeNew, walker.currentNode)
-                        closeAutocompleteList()
-                        nodeP.innerHTML = nodeP.innerHTML // Force redraw
-                        refreshDisplays()
-                        speak(resolveSymbols(symbol))
-                        onac = true    // Suppress default speech, e.g., for 'mi'
-                    })
-                }
-                nodeP.innerHTML = nodeP.innerHTML // Force redraw
-                refreshDisplays()
-                speak(resolveSymbols(key))
-                return autocl
-            }
-            let symbol = resolveCW(node.textContent)
-            if (symbol[0] == '"')
-                return
-            nodeName = getMmlTag(symbol)
-            let nodeNew = document.createElement(nodeName)
-            nodeNew.textContent = symbol
-            nodeNew.setAttribute('selip', '1')
-            nodeP.replaceChild(nodeNew, node)
-            node = nodeNew
-        }
-
-        switch (nodeNewName) {
-            case 'mn':
-                if (nodeName == 'mn') {
-                    // What if IP isn't at end of node?
-                    node.textContent += key
-                    nodeNewName = ''  // No new node
-                }
-                break
-            case 'mo':
-                if (nodeName == 'mi' && nodeP.nodeName == 'mrow') {
-                    checkFunction(nodeP)
-                    break
-                }
-                if (nodeName == 'mrow' && node.lastElementChild) {
-                    if (node.lastElementChild.nodeName == 'mi') {
-                        checkFunction(node)
-                    } else if (node.lastElementChild.nodeName == 'mrow') {
-                        let nodeT = node.lastElementChild
-                        if (nodeT.nodeName == 'mrow' && nodeT.lastElementChild &&
-                            nodeT.lastElementChild.nodeName == 'mrow') {
-                            nodeT = nodeT.lastElementChild
-                        }
-                        if (!nodeT.attributes.intent) {
-                            checkFunction(nodeT)
-                        }
-                    }
-                    break
-                }
-                if (node.textContent == '/' && key in negs) {
-                    node.textContent = key = negs[key]
-                    nodeNewName = ''
-                } else if (node.textContent + key in mappedPair) {
-                    node.textContent = key = mappedPair[node.textContent + key]
-                    nodeNewName = ''
-                } else if (key in mappedSingle) {
-                    key = mappedSingle[key]
-                } else if (key == ' ')
-                    key = '\u202F'          // Use NNBSP to maintain ' ' in mml
-                break
-        }
-        speak(resolveSymbols(key))
-        if (!nodeNewName) {
-            // node textContent modified; no new node
-            node.setAttribute('selip', '1')
-            nodeP.innerHTML = nodeP.innerHTML // Force redraw
-            refreshDisplays();
+            setSelection(null, walker.currentNode, offset)
             return
         }
-        let nodeNew = document.createElement(nodeNewName)
-        removeSelipAttribute(nodeP)
-        nodeNew.textContent = key
-        nodeNew.setAttribute('selip', '1')
+    }
+}
 
-        if (node.textContent == '⬚') {
-            // Replace empty arg place holder symbol with key
-            if (nodeNewName == node.nodeName) {
-                node.textContent = key
-                node.setAttribute('selip', '1')
-            } else {
-                nodeP.replaceChild(nodeNew, node)
-            }
-        } else if (node.nodeName == 'mrow' && atEnd) {
-            node.appendChild(nodeNew)
-        } else if (nodeP.nodeName == 'mrow') {
-            if (atEnd) {
-                if (node.nextElementSibling) {
-                    nodeP.insertBefore(nodeNew, node.nextElementSibling)
-                } else {
-                    if (!node.textContent)
-                        nodeP.replaceChild(nodeNew, node)
-                    else
-                        nodeP.appendChild(nodeNew)
-                }
-            }
-            else
-                nodeP.insertBefore(nodeNew, node)
-        } else {
-            let nodeMrow = document.createElement('mrow')
-            nodeP.insertBefore(nodeMrow, node)
-            if (atEnd) {
-                nodeMrow.appendChild(node)
-                nodeMrow.appendChild(nodeNew)
-            } else {
-                nodeMrow.appendChild(nodeNew)
-                nodeMrow.appendChild(node)
-            }
-            atEnd = false;
+function checkFunction(node) {
+    let cNode = node.childElementCount
+    let i = cNode - 1
+    let fn = ''
+
+    for (; i >= 0 && node.children[i].nodeName == 'mi'; i--) {
+        fn = node.children[i].textContent + fn
+    }
+    fn = foldMathItalics(fn)
+    if (!isFunctionName(fn))
+        return
+    node.children[i + 1].textContent = fn
+    i += 2
+    for (cNode = cNode - i; cNode > 0; cNode--)
+        node.children[i].remove()           // Remove trailing <mi>'s
+}
+
+function removeSelipAttribute(node) {
+    let walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, null, false)
+    while (walker.nextNode()) {             // Remove current selip attribute
+        if (walker.currentNode.attributes.selip) {
+            walker.currentNode.removeAttribute('selip');
+            return true
         }
-        nodeP.innerHTML = nodeP.innerHTML   // Force redraw
-        refreshDisplays();
-        return autocl
     }
+    return false
+}
 
-    function getMmlTag(ch) {
-        if (ch < ' ')
-            return ''
-        if (isAsciiDigit(ch))
-            return 'mn'
-        if (isAsciiAlphabetic(ch) || isGreek(ch) || ch > '\u3017')
-            return 'mi'
-        if (ch == '\\')
-            return 'mtext'
-        return 'mo'
+function handleEndOfTextNode(node) {
+    let name = node.parentElement.nodeName
+    let nameT = ''
+
+    if (name == 'mrow') {
+        let intent = getIntent(node);
+        node = node.parentElement;
+        name = node.parentElement.nodeName
+        if (intent == ':function')
+            name = 'function';
+        else if (intent.indexOf('integral') != -1)
+            name = 'integrand';
+        else
+            nameT = getArgName(node)
+    } else {
+        nameT = getArgName(node)
     }
+    if (nameT)
+        name = nameT
+    if (names[name])
+        name = names[name];
 
-    function checkEmpty(node) {
-        // If a deletion empties the active node, remove the node unless it's
-        // required, e.g., for numerator, denominator, subscript, etc. For the
-        // latter, insert the empty argument place holder '⬚'. Set the 'selip'
-        // attribute for the node at the desired selection IP
+    if (name != 'mrow') {
+        speak('end of ' + name);
+        atEnd = true;
+    }
+    return node
+}
 
-        removeSelipAttribute(output.firstElementChild)
-        if (!node.textContent) {
-            if (!isMathMLObject(node.parentElement)) {
-                let nodeT = node.parentElement
-                if (node.nextElementSibling)
-                    nodeT = node.nextElementSibling
-                else if (node.previousElementSibling)
-                    nodeT = node.previousElementSibling
-                node.remove()
-                if (nodeT.nodeName != 'math')
-                    nodeT.setAttribute('selip', nodeT.textContent ? '1' : '0')
-                setSelection(null, nodeT, 0)
-                atEnd = true
-            } else {
-                node.textContent = '⬚'
-                node.setAttribute('selip', '0')
+function handleKeyboardInput(node, key) {
+    // Handle keyboard input into output window
+    closeAutocompleteList()
+    let nodeNewName = getMmlTag(key)
+
+    if (node.nodeName == 'math') {
+        console.log('Input at end of math zone')
+        if (node.lastElementChild)
+            node = node.lastElementChild
+        else {
+            let nodeNew = document.createElement(nodeNewName)
+            nodeNew.textContent = key
+            nodeNew.setAttribute('selip', '1')
+            node.appendChild(nodeNew)
+            refreshDisplays()
+            return
+        }
+    }
+    let autocl
+    let nodeName = node.nodeName.toLowerCase()
+    let nodeP = node.parentElement
+
+    if (nodeName == 'mtext' && node.textContent[0] == '\\') {
+        // Collect control word; offer autocompletion menu
+        if (isAsciiAlphabetic(key)) {
+            node.textContent += key         // Collect control word
+            if (node.textContent.length > 2) {
+                let cw = node.textContent.substring(1)
+                autocl = createAutoCompleteMenu(cw, 'output', e => {
+                    // User clicked matching control word: insert its symbol
+                    let val = e.currentTarget.innerText
+                    let symbol = val[val.length - 1]
+                    let nodeNew = document.createElement(getMmlTag(symbol))
+                    nodeNew.textContent = symbol
+                    nodeNew.setAttribute('selip', '1')
+
+                    // node is no longer a child of nodeP; find it
+                    let walker = document.createTreeWalker(nodeP,
+                        NodeFilter.SHOW_ELEMENT, null, false)
+                    while (walker.nextNode() && !walker.currentNode.attributes.selip)
+                        ;
+                    nodeP.replaceChild(nodeNew, walker.currentNode)
+                    closeAutocompleteList()
+                    nodeP.innerHTML = nodeP.innerHTML // Force redraw
+                    refreshDisplays()
+                    speak(resolveSymbols(symbol))
+                    onac = true    // Suppress default speech, e.g., for 'mi'
+                })
             }
+            nodeP.innerHTML = nodeP.innerHTML // Force redraw
+            refreshDisplays()
+            speak(resolveSymbols(key))
+            return autocl
+        }
+        let symbol = resolveCW(node.textContent)
+        if (symbol[0] == '"')
+            return
+        nodeName = getMmlTag(symbol)
+        let nodeNew = document.createElement(nodeName)
+        nodeNew.textContent = symbol
+        nodeNew.setAttribute('selip', '1')
+        nodeP.replaceChild(nodeNew, node)
+        node = nodeNew
+    }
+
+    switch (nodeNewName) {
+        case 'mn':
+            if (nodeName == 'mn') {
+                // What if IP isn't at end of node?
+                node.textContent += key
+                nodeNewName = ''            // No new node
+            }
+            break
+        case 'mo':
+            if (nodeName == 'mi' && nodeP.nodeName == 'mrow') {
+                checkFunction(nodeP)
+                break
+            }
+            if (nodeName == 'mrow' && node.lastElementChild) {
+                if (node.lastElementChild.nodeName == 'mi') {
+                    checkFunction(node)
+                } else if (node.lastElementChild.nodeName == 'mrow') {
+                    let nodeT = node.lastElementChild
+                    if (nodeT.nodeName == 'mrow' && nodeT.lastElementChild &&
+                        nodeT.lastElementChild.nodeName == 'mrow') {
+                        nodeT = nodeT.lastElementChild
+                    }
+                    if (!nodeT.attributes.intent) {
+                        checkFunction(nodeT)
+                    }
+                }
+                break
+            }
+            if (node.textContent == '/' && key in negs) {
+                node.textContent = key = negs[key]
+                nodeNewName = ''
+            } else if (node.textContent + key in mappedPair) {
+                node.textContent = key = mappedPair[node.textContent + key]
+                nodeNewName = ''
+            } else if (key in mappedSingle) {
+                key = mappedSingle[key]
+            } else if (key == ' ')
+                key = '\u202F'          // Use NNBSP to maintain ' ' in mml
+            break
+    }
+    speak(resolveSymbols(key))
+    if (!nodeNewName) {
+        // node textContent modified; no new node
+        node.setAttribute('selip', '1')
+        nodeP.innerHTML = nodeP.innerHTML // Force redraw
+        refreshDisplays();
+        return
+    }
+    let nodeNew = document.createElement(nodeNewName)
+    removeSelipAttribute(nodeP)
+    nodeNew.textContent = key
+    nodeNew.setAttribute('selip', '1')
+
+    if (node.textContent == '⬚') {
+        // Replace empty arg place holder symbol with key
+        if (nodeNewName == node.nodeName) {
+            node.textContent = key
+            node.setAttribute('selip', '1')
         } else {
+            nodeP.replaceChild(nodeNew, node)
+        }
+    } else if (node.nodeName == 'mrow' && atEnd) {
+        node.appendChild(nodeNew)
+    } else if (nodeP.nodeName == 'mrow') {
+        if (atEnd) {
+            if (node.nextElementSibling) {
+                nodeP.insertBefore(nodeNew, node.nextElementSibling)
+            } else {
+                if (!node.textContent)
+                    nodeP.replaceChild(nodeNew, node)
+                else
+                    nodeP.appendChild(nodeNew)
+            }
+        }
+        else
+            nodeP.insertBefore(nodeNew, node)
+    } else {
+        let nodeMrow = document.createElement('mrow')
+        nodeP.insertBefore(nodeMrow, node)
+        if (atEnd) {
+            nodeMrow.appendChild(node)
+            nodeMrow.appendChild(nodeNew)
+        } else {
+            nodeMrow.appendChild(nodeNew)
+            nodeMrow.appendChild(node)
+        }
+        atEnd = false;
+    }
+    nodeP.innerHTML = nodeP.innerHTML   // Force redraw
+    refreshDisplays();
+    return autocl
+}
+
+function getMmlTag(ch) {
+    if (ch < ' ')
+        return ''
+    if (isAsciiDigit(ch))
+        return 'mn'
+    if (isAsciiAlphabetic(ch) || isGreek(ch) || ch > '\u3017')
+        return 'mi'
+    if (ch == '\\')
+        return 'mtext'
+    return 'mo'
+}
+
+function checkEmpty(node) {
+    // If a deletion empties the active node, remove the node unless it's
+    // required, e.g., for numerator, denominator, subscript, etc. For the
+    // latter, insert the empty argument place holder '⬚'. Set the 'selip'
+    // attribute for the node at the desired selection IP
+
+    removeSelipAttribute(output.firstElementChild)
+    if (!node.textContent) {
+        if (!isMathMLObject(node.parentElement)) {
+            let nodeT = node.parentElement
+            if (node.nextElementSibling)
+                nodeT = node.nextElementSibling
+            else if (node.previousElementSibling)
+                nodeT = node.previousElementSibling
+            node.remove()
+            if (nodeT.nodeName != 'math')
+                nodeT.setAttribute('selip', nodeT.textContent ? '1' : '0')
+            setSelection(null, nodeT, 0)
+            atEnd = true
+        } else {
+            node.textContent = '⬚'
             node.setAttribute('selip', '0')
         }
-        refreshDisplays()
+    } else {
+        node.setAttribute('selip', '0')
     }
+    refreshDisplays()
+}
 
-    function getArgName(node) {
-        let attrs
-        let name = node.parentElement.nodeName
+function checkFormulaAutoBuildUp(node, nodeP, key) {
+    // Return true if formula auto build up succeeds
+    if (nodeP.nodeName != 'mrow' ||
+        node.nodeName == 'mtext' && node.textContent[0] == '\\')
+        return false
 
-        switch (name) {
-            case 'msubsup':
-            case 'munderover':
-                if (!node.previousElementSibling)
-                    name = 'base';
-                else if (node.nextElementSibling)
-                    name = isNary(node.previousElementSibling.textContent) ? 'lowwer limit' : 'subscript';
-                else
-                    name = isNary(node.parentElement.firstElementChild.textContent) ? 'upper limit' : 'superscript';
-                break;
-            case 'mfrac':
-                name = node.nextElementSibling ? 'numerator' : 'denominator'
-                break;
-            case 'mroot':
-                name = node.nextElementSibling ? 'radicand' : 'index'
-                break;
-            case 'msub':
-            case 'msup':
-                name = node.nextElementSibling ? 'base'
-                    : name == 'msub' ? 'subscript' : 'superscript'
-                break;
-            case 'mover':
-            case 'munder':
-                name = node.nextElementSibling ? 'base'
-                    : name == 'munder' ? 'below' : 'above'
-                break;
-            case 'menclose':
-                if (node.parentElement.attributes.notation)
-                    return node.parentElement.attributes.notation.nodeValue
-            case 'msqrt':
-                name = names[name]
-                break;
-
-            default:
-                name = ''
-        }
-        return name
-    }
-
-    var onac = false                        // true immediately after autocomplete click
-
-    output.addEventListener("click", function () {
-        if (onac) {                         // Ignore click that follows autocomplete click
-            onac = false
-            return
-        }
-        if (removeSelipAttribute(output))
-            refreshDisplays()
-        let sel = window.getSelection()
-        let node = sel.anchorNode
-        console.log('getSelection anchorNode = ' + node.nodeName)
-
-        if (node.nodeName == 'DIV')
-            return                          // </math>
-        atEnd = node.length == sel.anchorOffset
-        checkSimpleSup(node.parentElement.parentElement)
-        speechSel(sel)
-    })
-
-    output.addEventListener('keydown', function (e) {
-        var x = document.getElementById(this.id + "autocomplete-list")
-        if (handleAutocompleteKeys(x, e))
-            return
-
-        let cchCh
-        let dir = ''
+    if ('+=-<> )'.includes(key) || key == '/' && node.textContent != ')') {
+        // Try to build up <mrow> or trailing part of it
         let i
-        let intent = ''
-        let key = e.key
-        let sel = window.getSelection()
-        let node = sel.anchorNode
-        let name = node.nodeName
-        let nodeP
-        let offset = sel.anchorOffset
-
-        if (sel.anchorNode.nodeName == 'DIV') {
-            // No MathML in output display; insert a math zone
-            node.innerHTML = `<math display="block"></math>`
-            node = node.firstElementChild
-            name = 'math'
-            sel = setSelection(sel, node, 0)
-            atEnd = true
+        let uMath = ''
+        let [cParen, k] = checkBrackets(nodeP)
+        if (!cParen || k != -1) {
+            autoBuildUp = true
+            let cNode = nodeP.childElementCount
+            if (!cParen) {
+                // Same count of open and close delimiters: try to build
+                // up nodeP: nodeP → UnicodeMath
+                uMath = dump(nodeP, true)
+            } else {
+                // Differing count: try to build up nodeP trailing mi, mo,
+                // mn, mtext children
+                for (i = k + 1; i < cNode; i++)
+                    uMath += nodeP.children[i].textContent;
+            }
+            let t = unicodemathml(uMath, true) // uMath → MathML
+            if (autoBuildUp) {          // Autobuildup succeeded
+                autoBuildUp = false
+                if (!cParen) {          // Full build up of nodeP
+                    nodeP.innerHTML = t.mathml
+                } else {                // Build up of trailing children
+                    // Remove children[k + 1]...children[cNode - 1] and
+                    // append their built-up counterparts
+                    for (i = cNode - 1; i > k; i--)
+                        nodeP.children[i].remove()
+                    const parser = new DOMParser();
+                    let doc = parser.parseFromString(t.mathml, "application/xml");
+                    nodeP.appendChild(doc.firstElementChild)
+                }
+                return true
+            }
         }
+    }
+    return false
+}
+function getArgName(node) {
+    let attrs
+    let name = node.parentElement.nodeName
 
-        switch (key) {
-            case 'ArrowRight':
-                e.preventDefault()
-                dir = '→'
-                break;
+    switch (name) {
+        case 'msubsup':
+        case 'munderover':
+            if (!node.previousElementSibling)
+                name = 'base';
+            else if (node.nextElementSibling)
+                name = isNary(node.previousElementSibling.textContent) ? 'lowwer limit' : 'subscript';
+            else
+                name = isNary(node.parentElement.firstElementChild.textContent) ? 'upper limit' : 'superscript';
+            break;
+        case 'mfrac':
+            name = node.nextElementSibling ? 'numerator' : 'denominator'
+            break;
+        case 'mroot':
+            name = node.nextElementSibling ? 'radicand' : 'index'
+            break;
+        case 'msub':
+        case 'msup':
+            name = node.nextElementSibling ? 'base'
+                : name == 'msub' ? 'subscript' : 'superscript'
+            break;
+        case 'mover':
+        case 'munder':
+            name = node.nextElementSibling ? 'base'
+                : name == 'munder' ? 'below' : 'above'
+            break;
+        case 'menclose':
+            if (node.parentElement.attributes.notation)
+                return node.parentElement.attributes.notation.nodeValue
+        case 'msqrt':
+            name = names[name]
+            break;
 
-            case 'ArrowLeft':
-                dir = '←'
-                return;                     // Do default for now
+        default:
+            name = ''
+    }
+    return name
+}
 
-            case 'Delete':
-                e.preventDefault()
-                let range = sel.getRangeAt(0)
-                if (!range.collapsed) {
-                    range.commonAncestorContainer.remove()
-                    refreshDisplays()
-                    setSelection(sel, output.firstElementChild, 0)
-                    return
+var onac = false                        // true immediately after autocomplete click
+
+output.addEventListener("click", function () {
+    if (onac) {                         // Ignore click that follows autocomplete click
+        onac = false
+        return
+    }
+    if (removeSelipAttribute(output))
+        refreshDisplays()
+    let sel = window.getSelection()
+    let node = sel.anchorNode
+    console.log('getSelection anchorNode = ' + node.nodeName)
+
+    if (node.nodeName == 'DIV')
+        return                          // </math>
+    atEnd = node.length == sel.anchorOffset
+    checkSimpleSup(node.parentElement.parentElement)
+    speechSel(sel)
+})
+
+output.addEventListener('keydown', function (e) {
+    var x = document.getElementById(this.id + "autocomplete-list")
+    if (handleAutocompleteKeys(x, e))
+        return
+
+    let cchCh
+    let dir = ''
+    let i
+    let intent = ''
+    let key = e.key
+    let sel = window.getSelection()
+    let node = sel.anchorNode
+    let name = node.nodeName
+    let nodeP
+    let offset = sel.anchorOffset
+
+    if (sel.anchorNode.nodeName == 'DIV') {
+        // No MathML in output display; insert a math zone
+        node.innerHTML = `<math display="block"></math>`
+        node = node.firstElementChild
+        name = 'math'
+        sel = setSelection(sel, node, 0)
+        atEnd = true
+    }
+
+    switch (key) {
+        case 'ArrowRight':
+            e.preventDefault()
+            dir = '→'
+            break;
+
+        case 'ArrowLeft':
+            dir = '←'
+            return;                     // Do default for now
+
+        case 'Delete':
+            e.preventDefault()
+            let range = sel.getRangeAt(0)
+            if (!range.collapsed) {
+                range.commonAncestorContainer.remove()
+                refreshDisplays()
+                setSelection(sel, output.firstElementChild, 0)
+                return
+            }
+            if (node.nodeName == '#text')
+                node = node.parentElement
+            while ((node.nodeName == 'mrow' || node.nodeName == 'math') &&
+                node.firstElementChild) {
+                node = node.firstElementChild
+            }
+            if (isMathMLObject(node)) {
+                // Should select node first. If selected, remove...
+                nodeP = node.parentElement
+                node.remove()
+                node = nodeP
+            } else if (offset < node.textContent.length) {
+                cchCh = 1
+                let code = node.textContent.codePointAt(offset)
+                if (isTrailSurrogate(code)) {
+                    cchCh = 2
+                    offset--
+                } else if (code > 0xFFFF) {
+                    cchCh = 2
+                }
+                node.textContent = node.textContent.substring(0, offset)
+                    + node.textContent.substring(offset + cchCh)
+            } else if (node.nextElementSibling) {
+                node = node.nextElementSibling
+                cchCh = getCch(node.textContent, 0)
+                node.textContent = node.textContent.substring(cchCh)
+            }
+            checkEmpty(node)
+            return
+
+        case 'Backspace':
+            e.preventDefault()
+            if (node.nodeName == '#text')
+                node = node.parentElement
+            while ((node.nodeName == 'mrow' || node.nodeName == 'math') &&
+                node.lastElementChild) {
+                node = node.lastElementChild
+            }
+            if (isMathMLObject(node)) {
+                // Should select node first. If selected, remove...
+                nodeP = node.parentElement
+                node.remove()
+                node = nodeP
+            } else if (sel.anchorOffset > 0) {
+                cchCh = getCch(node.textContent, offset - 1)
+                if (offset < cchCh)
+                    offset = cchCh
+                node.textContent = node.textContent.substring(0, offset - cchCh) +
+                    node.textContent.substring(offset)
+            } else if (node.previousSibling) {
+                node = node.previousSibling
+                cchCh = getCch(node.textContent, node.textContent.length - 1)
+                node.textContent = node.textContent.substring(0,
+                    node.textContent.length - cchCh)
+            }
+            checkEmpty(node)
+            return
+
+        default:
+            if (key.length > 1)       // 'Shift', etc.
+                return
+            if (key == 'a' && e.ctrlKey) {
+                // Select math zone
+                sel = setSelection(sel, output.firstElementChild, -1)
+                return
+            }
+            e.preventDefault();
+
+            if (key == 'x' && e.altKey) { // Alt+x: hex → Unicode
+                let cchSel = 0          // Default degenerate selection
+                let str = ''            // Collects hex string
+
+                if (!sel.isCollapsed) { // Nondegenerate selection
+                    let rg = sel.getRangeAt(0)
+                    node = rg.endContainer
+                    str = rg + ''
+                    cchSel = str.length
                 }
                 if (node.nodeName == '#text')
                     node = node.parentElement
-                while ((node.nodeName == 'mrow' || node.nodeName == 'math') &&
-                    node.firstElementChild) {
-                    node = node.firstElementChild
-                }
-                if (isMathMLObject(node)) {
-                    // Should select node first. If selected, remove...
-                    nodeP = node.parentElement
-                    node.remove()
-                    node = nodeP
-                } else if (offset < node.textContent.length) {
-                    cchCh = 1
-                    let code = node.textContent.codePointAt(offset)
-                    if (isTrailSurrogate(code)) {
-                        cchCh = 2
-                        offset--
-                    } else if (code > 0xFFFF) {
-                        cchCh = 2
-                    }
-                    node.textContent = node.textContent.substring(0, offset)
-                        + node.textContent.substring(offset + cchCh)
-                } else if (node.nextElementSibling) {
-                    node = node.nextElementSibling
-                    cchCh = getCch(node.textContent, 0)
-                    node.textContent = node.textContent.substring(cchCh)
-                }
-                checkEmpty(node)
-                return
+                let nodeP = node.parentElement
+                if (nodeP.nodeName != 'mrow')
+                    return
+                let cNode = nodeP.childElementCount
+                let iEnd = -1           // Index of node in nodeP
+                let iStart = 0          // Index of 1st node that might be part of hex
 
-            case 'Backspace':
-                e.preventDefault()
+                // Collect span of alphanumerics ending with node
+                for (i = cNode - 1; i >= 0; i--) {
+                    let nodeC = nodeP.children[i]
+                    if (nodeC.nodeName != 'mi' && nodeC.nodeName != 'mn') {
+                        if (iEnd > 0) {     // Index of last node is defined
+                            iStart = i + 1  // Set index of first node
+                            break
+                        }
+                    } else {
+                        if (nodeC == node)
+                            iEnd = i        // Found node's index
+                        if (iEnd > 0 && !cchSel)
+                            str = nodeC.textContent + str
+                    }
+                }
+                let [ch, cchDel] = hexToUnicode(str, str.length, cchSel)
+
+                // Remove cchDel codes along with emptied nodes
+                for (i = iEnd; i >= iStart && cchDel > 0; i--) {
+                    let nodeC = nodeP.children[i]
+                    let cch = nodeC.textContent.length
+
+                    if (cch > cchDel) { // ∃ more codes than need deletion
+                        nodeC.innerHTML = nodeC.innerHTML.substring(0, cch - cchDel)
+                        break;
+                    }
+                    cchDel -= cch
+                    if (nodeP.childElementCount == 1) {
+                        // Leave empty child as place holder for ch
+                        nodeC.innerHTML = ''
+                    } else {
+                        nodeC.remove()
+                    }
+                }
+                node = nodeP.children[i >= 0 ? i : 0]
+                name = node.nodeName
+                atEnd = true
+                key = ch
+            } else if (e.ctrlKey && (key == 'b' || key == 'i')) {
+                // Toggle math bold/italic (Ctrl+b/Ctrl+i)
+                if (sel.isCollapsed)
+                    return
                 if (node.nodeName == '#text')
                     node = node.parentElement
-                while ((node.nodeName == 'mrow' || node.nodeName == 'math') &&
-                    node.lastElementChild) {
-                    node = node.lastElementChild
+                let chars = node.textContent;
+
+                if (chars.length == 1 && chars != 'ℎ') {
+                    // Single letters display in math italic unless
+                    // mathvariant = 'normal'
+                    if (node.attributes.mathvariant &&
+                        node.attributes.mathvariant.value == 'normal') {
+                        node.removeAttribute('mathvariant')
+                    } else {
+                        chars = italicizeCharacter(chars)
+                    }
                 }
-                if (isMathMLObject(node)) {
-                    // Should select node first. If selected, remove...
-                    nodeP = node.parentElement
-                    node.remove()
-                    node = nodeP
-                } else if (sel.anchorOffset > 0) {
-                    cchCh = getCch(node.textContent, offset - 1)
-                    if (offset < cchCh)
-                        offset = cchCh
-                    node.textContent = node.textContent.substring(0, offset - cchCh) +
-                        node.textContent.substring(offset)
-                } else if (node.previousSibling) {
-                    node = node.previousSibling
-                    cchCh = getCch(node.textContent, node.textContent.length - 1)
-                    node.textContent = node.textContent.substring(0,
-                        node.textContent.length - cchCh)
-                }
-                checkEmpty(node)
+                chars = boldItalicToggle(chars, key)
+                node.textContent = chars
+                if (chars.length == 1 && chars != 'ℎ' && node.nodeName == 'mi')
+                    node.setAttribute('mathvariant', 'normal')
+                refreshDisplays()
                 return
+            }
 
-            default:
-                if (key.length > 1)       // 'Shift', etc.
-                    return
-                if (key == 'a' && e.ctrlKey) {
-                    // Select math zone
-                    sel = setSelection(sel, output.firstElementChild, -1)
-                    return
-                }
-                e.preventDefault();
+            if (name == '#text')
+                node = node.parentElement
 
-                if (key == 'x' && e.altKey) { // Alt+x: hex → Unicode
-                    let cchSel = 0          // Default degenerate selection
-                    let str = ''            // Collects hex string
+            let nodeP = node
+            if (!node.childElementCount && name != 'math')
+                nodeP = node.parentElement
 
-                    if (!sel.isCollapsed) { // Nondegenerate selection
-                        let rg = sel.getRangeAt(0)
-                        node = rg.endContainer
-                        str = rg + ''
-                        cchSel = str.length
-                    }
-                    if (node.nodeName == '#text')
-                        node = node.parentElement
-                    let nodeP = node.parentElement
-                    if (nodeP.nodeName != 'mrow')
-                        return
-                    let cNode = nodeP.childElementCount
-                    let iEnd = -1           // Index of node in nodeP
-                    let iStart = 0          // Index of 1st node that might be part of hex
+            if (checkFormulaAutoBuildUp(node, nodeP, key)) {
+                node = nodeP
+                atEnd = true
+            }
+            let autocl = handleKeyboardInput(node, key)
 
-                    // Collect span of alphanumerics ending with node
-                    for (i = cNode - 1; i >= 0; i--) {
-                        let nodeC = nodeP.children[i]
-                        if (nodeC.nodeName != 'mi' && nodeC.nodeName != 'mn') {
-                            if (iEnd > 0) {     // Index of last node is defined
-                                iStart = i + 1  // Set index of first node
-                                break
-                            }
-                        } else {
-                            if (nodeC == node)
-                                iEnd = i        // Found node's index
-                            if (iEnd > 0 && !cchSel)
-                                str = nodeC.textContent + str
-                        }
-                    }
-                    let [ch, cchDel] = hexToUnicode(str, str.length, cchSel)
+            // If defined, append autocomplete list to output autocomplete container
+            if (autocl != undefined)
+                this.parentNode.appendChild(autocl)
+            return                      // Ignore other input for now
+    }                                   // End of switch(key)
 
-                    // Remove cchDel codes along with emptied nodes
-                    for (i = iEnd; i >= iStart && cchDel > 0; i--) {
-                        let nodeC = nodeP.children[i]
-                        let cch = nodeC.textContent.length
+    // Move selection forward in the MathML DOM and describe what's there
+    if (node.nodeType == 1) {           // Starting at an element...
+        if (node.nodeName == 'math')
+            return
+        if (!node.childElementCount) {  // mi, mo, mn, or mtext
+            // Move to start of next element in tree
+            if (!node.nextElementSibling && node.parentElement)
+                node = node.parentElement;
 
-                        if (cch > cchDel) { // ∃ more codes than need deletion
-                            nodeC.innerHTML = nodeC.innerHTML.substring(0, cch - cchDel)
-                            break;
-                        }
-                        cchDel -= cch
-                        if (nodeP.childElementCount == 1) {
-                            // Leave empty child as place holder for ch
-                            nodeC.innerHTML = ''
-                        } else {
-                            nodeC.remove()
-                        }
-                    }
-                    node = nodeP.children[i >= 0 ? i : 0]
-                    name = node.nodeName
-                    atEnd = true
-                    key = ch
-                } else if (e.ctrlKey && (key == 'b' || key == 'i')) {
-                    // Toggle math bold/italic (Ctrl+b/Ctrl+i)
-                    if (sel.isCollapsed)
-                        return
-                    if (node.nodeName == '#text')
-                        node = node.parentElement
-                    let chars = node.textContent;
-
-                    if (chars.length == 1 && chars != 'ℎ') {
-                        // Single letters display in math italic unless
-                        // mathvariant = 'normal'
-                        if (node.attributes.mathvariant &&
-                            node.attributes.mathvariant.value == 'normal') {
-                            node.removeAttribute('mathvariant')
-                        } else {
-                            chars = italicizeCharacter(chars)
-                        }
-                    }
-                    chars = boldItalicToggle(chars, key)
-                    node.textContent = chars
-                    if (chars.length == 1 && chars != 'ℎ' && node.nodeName == 'mi')
-                        node.setAttribute('mathvariant', 'normal')
-                    refreshDisplays()
-                    return
-                }
-
-                if (name == '#text')
-                    node = node.parentElement
-
-                let nodeP = node
-                if (!node.childElementCount && name != 'math')
-                    nodeP = node.parentElement
-
-                if (nodeP.nodeName == 'mrow' && '+=-<> )'.includes(key) &&
-                    (node.nodeName != 'mtext' || node.textContent[0] != '\\')) {
-                    // Build up <mrow> or part of it?
-                    let uMath = ''
-                    let [cParen, k] = checkBrackets(nodeP)
-                    if (!cParen || k != -1) {
-                        autoBuildUp = true
-                        let cNode = nodeP.childElementCount
-                        if (!cParen) {
-                            // Same count of open and close delimiters: try
-                            // to build up nodeP: nodeP → UnicodeMath
-                            uMath = dump(nodeP, true)
-                        } else {
-                            // Differing count: try to build up nodeP trailing
-                            // mi, mo, mn, mtext children
-                            for (i = k + 1; i < cNode; i++)
-                                uMath += nodeP.children[i].textContent;
-                        }
-                        let t = unicodemathml(uMath, true) // uMath → MathML
-                        if (autoBuildUp) {  // Autobuildup succeeded
-                            autoBuildUp = false
-                            if (!cParen) {  // Full build up of nodeP
-                                nodeP.innerHTML = t.mathml
-                            } else {        // Build up of trailing children
-                                // Remove children[k + 1]...children[cNode - 1]
-                                // and append their built-up counterparts
-                                for (i = cNode - 1; i > k; i--)
-                                    nodeP.children[i].remove()
-                                const parser = new DOMParser();
-                                let doc = parser.parseFromString(t.mathml, "application/xml");
-                                nodeP.appendChild(doc.firstElementChild)
-                            }
-                            node = nodeP
-                            atEnd = true
-                        }
-                    }
-                }
-                let autocl = handleKeyboardInput(node, key)
-
-                // If defined, append autocomplete list to output autocomplete container
-                if (autocl != undefined)
-                    this.parentNode.appendChild(autocl)
-                return                      // Ignore other input for now
-        }                                   // End of switch(key)
-
-        // Move selection forward in the MathML DOM and describe what's there
-        if (node.nodeType == 1) {           // Starting at an element...
-            if (node.nodeName == 'math')
-                return
-            if (!node.childElementCount) {  // mi, mo, mn, or mtext
-                // Move to start of next element in tree
-                if (!node.nextElementSibling && node.parentElement)
-                    node = node.parentElement;
-
-                while (!node.nextElementSibling && node.parentElement) {
-                    node = node.parentElement;
-                    name = node.nodeName;
-                    if (name != 'mrow') {
-                        if (names[name])
-                            name = names[name]
-                        speak('end ' + name);
-                        setSelection(sel, node, 0)
-                        return;
-                    }
-                }
-                if (!node.nextElementSibling)
+            while (!node.nextElementSibling && node.parentElement) {
+                node = node.parentElement;
+                name = node.nodeName;
+                if (name != 'mrow') {
+                    if (names[name])
+                        name = names[name]
+                    speak('end ' + name);
+                    setSelection(sel, node, 0)
                     return;
+                }
+            }
+            if (!node.nextElementSibling)
+                return;
+            atEnd = false;
+            node = node.nextElementSibling;
+            if (node.nodeName == 'mrow') {
+                let ch = getNaryOp(node);
+                if (ch) {
+                    node = node.firstElementChild;
+                } else {
+                    intent = getIntent(node);
+                    if (intent == ':function')
+                        speak(getSpeech(node))
+                }
+                node = node.firstElementChild;
+            } else if (node.nodeName == 'mtr') {
+                node = checkTable(node)
+            }
+        } else if (atEnd) {             // At end of element
+            if (node.nextElementSibling) {
                 atEnd = false;
-                node = node.nextElementSibling;
+                node = node.nextElementSibling
                 if (node.nodeName == 'mrow') {
                     let ch = getNaryOp(node);
                     if (ch) {
                         node = node.firstElementChild;
                     } else {
-                        intent = getIntent(node);
+                        let intent = getIntent(node);
                         if (intent == ':function')
                             speak(getSpeech(node))
                     }
@@ -1493,291 +1641,173 @@ function autocomplete() {
                 } else if (node.nodeName == 'mtr') {
                     node = checkTable(node)
                 }
-            } else if (atEnd) {             // At end of element
-                if (node.nextElementSibling) {
-                    atEnd = false;
-                    node = node.nextElementSibling
-                    if (node.nodeName == 'mrow') {
-                        let ch = getNaryOp(node);
-                        if (ch) {
-                            node = node.firstElementChild;
-                        } else {
-                            let intent = getIntent(node);
-                            if (intent == ':function')
-                                speak(getSpeech(node))
-                        }
-                        node = node.firstElementChild;
-                    } else if (node.nodeName == 'mtr') {
-                        node = checkTable(node)
-                    }
-                } else {
-                    node = node.parentElement;
-                }
             } else {
-                // Element with element children: move down to first child
-                if (!node.childNodes.length)  // 'malignmark' or 'maligngroup'
-                    node = node.nextElementSibling;
+                node = node.parentElement;
+            }
+        } else {
+            // Element with element children: move down to first child
+            if (!node.childNodes.length)  // 'malignmark' or 'maligngroup'
+                node = node.nextElementSibling;
+            node = node.firstElementChild;
+            if (!node.childNodes.length)  // 'malignmark' or 'maligngroup'
+                node = node.nextElementSibling;
+            if (node.nodeName == 'mrow')
                 node = node.firstElementChild;
-                if (!node.childNodes.length)  // 'malignmark' or 'maligngroup'
-                    node = node.nextElementSibling;
-                if (node.nodeName == 'mrow')
-                    node = node.firstElementChild;
-            }
+        }
+        name = node.nodeName;
+        if (node.nodeType == 3 || !node.childElementCount && node.childNodes.length) {
+            node = node.firstChild;
             name = node.nodeName;
-            if (node.nodeType == 3 || !node.childElementCount && node.childNodes.length) {
-                node = node.firstChild;
-                name = node.nodeName;
+        }
+        sel = setSelection(sel, node, 0)
+        if (!atEnd && checkSimpleSup(node)) // E.g., say "b squared" if at 𝑏²
+            return;
+        let fixedNumberArgs = false
+        if (names[name]) {
+            fixedNumberArgs = true
+            name = names[name]
+        }
+        if (atEnd) {
+            if (name == 'mrow') {
+                if (node.attributes.arg && node.attributes.arg.nodeValue == 'naryand')
+                    node = node.parentElement
+                let ch = getNaryOp(node)
+                name = ch ? symbolSpeech(ch) : getArgName(node)
+            } else if (fixedNumberArgs && node.nextElementSibling) {
+                atEnd = false
+                node = node.nextElementSibling
+                if (node.nodeName == 'mrow')
+                    node = node.firstElementChild
+                if (!node.childElementCount)
+                    name = node.firstChild.textContent
+                else {
+                    name = node.nodeName
+                    if (names[name])
+                        name = names[name];
+                }
+                speak(name)
+                setSelection(sel, node, 0);
+                return
             }
-            sel = setSelection(sel, node, 0)
-            if (!atEnd && checkSimpleSup(node)) // E.g., say "b squared" if at 𝑏²
-                return;
-            let fixedNumberArgs = false
-            if (names[name]) {
-                fixedNumberArgs = true
-                name = names[name]
+            name = 'finish ' + name
+        }
+        if (name == '#text')
+            speechSel(sel)
+        else if (name != 'mtd')
+            speak(name)
+        return
+    }
+    if (node.nodeType != 3)
+        return
+
+    // Text node: child of <mi>, <mo>, <mn>, or <mtext>
+    if (offset < sel.anchorNode.length) {
+        // Move through, e.g., for 'sin'
+        let code = node.data.codePointAt(offset);
+        offset += code > 0xFFFF ? 2 : 1;
+        if (offset < sel.anchorNode.length) {
+            sel = setSelection(sel, node, offset);
+            speechSel(sel)
+            return                      // Not at end yet
+        }
+    }
+
+    // At end of text node: move up to <mi>, <mo>, <mn>, <mtext>.
+    // Then move to next sibling if in same <mrow>
+    node = sel.anchorNode.parentElement;
+    name = node.parentElement.nodeName
+
+    if (name != 'mrow') {
+        node = handleEndOfTextNode(node)
+        setSelection(sel, node, 0);
+        return
+    }
+    atEnd = false;
+    if (node.nextElementSibling) {
+        node = node.nextElementSibling;
+        intent = getIntent(node);
+        if (node.nodeName == 'mo') {
+            if (node.textContent == '\u2061')
+                node = node.nextElementSibling;
+        } else if (node.nodeName == 'mtable') {
+            name = 'row';
+            if (intent == ':equations')
+                name = 'equation';
+            intent = getIntent(node.parentElement)
+            if (intent == ':cases')
+                name = 'case'
+            speak(name + '1');
+            setSelection(sel, node.firstElementChild, 0);
+            return;
+        } else if (node.nodeName == 'mrow') {
+            let ch = getNaryOp(node);
+            if (ch) {
+                node = node.firstElementChild;
+            } else {
+                if (intent == ':function')
+                    speak(getSpeech(node));
+                else if (intent == ':cases')
+                    speak('cases');
             }
-            if (atEnd) {
-                if (name == 'mrow') {
-                    if (node.attributes.arg && node.attributes.arg.nodeValue == 'naryand')
-                        node = node.parentElement
-                    let ch = getNaryOp(node)
-                    name = ch ? symbolSpeech(ch) : getArgName(node)
-                } else if (fixedNumberArgs && node.nextElementSibling) {
-                    atEnd = false
-                    node = node.nextElementSibling
-                    if (node.nodeName == 'mrow')
-                        node = node.firstElementChild
-                    if (!node.childElementCount)
-                        name = node.firstChild.textContent
-                    else {
-                        name = node.nodeName
-                        if (names[name])
-                            name = names[name];
-                    }
-                    speak(name)
+            node = node.firstElementChild
+        }
+        if (node.nodeType == 3 || !node.childElementCount) {
+            node = node.firstChild
+            let cch = getCch(node.textContent, 0)
+            name = resolveSymbols(node.textContent.substring(0, cch))
+        } else {
+            name = node.nodeName
+            if (name == 'menclose') {
+                name = 'box'
+                if (node.attributes.notation)
+                    name = node.attributes.notation.nodeValue
+            } else if (names[name])
+                name = names[name];
+        }
+    } else {                        // No next sibling
+        node = node.parentElement;  // Up to <mrow>
+        atEnd = true;               // At end of <mrow>
+        name = getArgName(node)
+
+        if (!name) {
+            if (node.parentElement.nodeName == 'mtd') {
+                if (node.nextElementSibling) {
+                    node = node.nextElementSibling;
+                    if (!node.childElementCount)    // 'malignmark' or 'maligngroup'
+                        node = node.nextElementSibling;
+                    node = node.firstElementChild
+                    atEnd = false;
+                    if (!node.childElementCount && node.childNodes.length)
+                        node = node.firstChild;
                     setSelection(sel, node, 0);
+                    speechSel(sel)
                     return
                 }
-                name = 'finish ' + name
-            }
-            if (name == '#text')
-                speechSel(sel)
-            else if (name != 'mtd')
-                speak(name)
-            return
-        }
-        if (node.nodeType != 3)
-            return
-
-        // Text node: child of <mi>, <mo>, <mn>, or <mtext>
-        if (offset < sel.anchorNode.length) {
-            // Move through, e.g., for 'sin'
-            let code = node.data.codePointAt(offset);
-            offset += code > 0xFFFF ? 2 : 1;
-            if (offset < sel.anchorNode.length) {
-                sel = setSelection(sel, node, offset);
-                speechSel(sel)
-                return                      // Not at end yet
-            }
-        }
-
-        // At end of text node: move up to <mi>, <mo>, <mn>, <mtext>.
-        // Then move to next sibling if in same <mrow>
-        node = sel.anchorNode.parentElement;
-        name = node.parentElement.nodeName
-
-        if (name != 'mrow') {
-            node = handleEndOfTextNode(node)
-            setSelection(sel, node, 0);
-            return
-        }
-        atEnd = false;
-        if (node.nextElementSibling) {
-            node = node.nextElementSibling;
-            intent = getIntent(node);
-            if (node.nodeName == 'mo') {
-                if (node.textContent == '\u2061')
+                node = node.parentElement;
+                name = node.nodeName;
+            } else if (node.parentElement.nodeName == 'mrow') {
+                if (node.nextElementSibling) {
                     node = node.nextElementSibling;
-            } else if (node.nodeName == 'mtable') {
-                name = 'row';
-                if (intent == ':equations')
-                    name = 'equation';
-                intent = getIntent(node.parentElement)
-                if (intent == ':cases')
-                    name = 'case'
-                speak(name + '1');
-                setSelection(sel, node.firstElementChild, 0);
-                return;
-            } else if (node.nodeName == 'mrow') {
-                let ch = getNaryOp(node);
-                if (ch) {
-                    node = node.firstElementChild;
-                } else {
-                    if (intent == ':function')
-                        speak(getSpeech(node));
-                    else if (intent == ':cases')
-                        speak('cases');
-                }
-                node = node.firstElementChild
-            }
-            if (node.nodeType == 3 || !node.childElementCount) {
-                node = node.firstChild
-                let cch = getCch(node.textContent, 0)
-                name = resolveSymbols(node.textContent.substring(0, cch))
-            } else {
-                name = node.nodeName
-                if (name == 'menclose') {
-                    name = 'box'
-                    if (node.attributes.notation)
-                        name = node.attributes.notation.nodeValue
-                } else if (names[name])
-                    name = names[name];
-            }
-        } else {                        // No next sibling
-            node = node.parentElement;  // Up to <mrow>
-            atEnd = true;               // At end of <mrow>
-            name = getArgName(node)
-
-            if (!name) {
-                if (node.parentElement.nodeName == 'mtd') {
-                    if (node.nextElementSibling) {
-                        node = node.nextElementSibling;
-                        if (!node.childElementCount)    // 'malignmark' or 'maligngroup'
-                            node = node.nextElementSibling;
-                        node = node.firstElementChild
-                        atEnd = false;
-                        if (!node.childElementCount && node.childNodes.length)
-                            node = node.firstChild;
+                    name = node.nodeName
+                    atEnd = false;
+                    if (!node.childElementCount) {
+                        node = node.firstChild;
                         setSelection(sel, node, 0);
                         speechSel(sel)
-                        return
+                        return;
                     }
-                    node = node.parentElement;
-                    name = node.nodeName;
-                } else if (node.parentElement.nodeName == 'mrow') {
-                    if (node.nextElementSibling) {
-                        node = node.nextElementSibling;
-                        name = node.nodeName
-                        atEnd = false;
-                        if (!node.childElementCount) {
-                            node = node.firstChild;
-                            setSelection(sel, node, 0);
-                            speechSel(sel)
-                            return;
-                        }
-                    } else if (node.attributes.intent)
-                        name = node.attributes.intent.value
-                }
+                } else if (node.attributes.intent)
+                    name = node.attributes.intent.value
             }
         }
-        sel = setSelection(sel, node, atEnd ? 1 : 0);
-        if (checkSimpleSup(node))
-            return;
-        if (!name)
-            name = node.nodeName
-        speak(atEnd ? 'at end ' + name : name)
-    });
-
-    input.addEventListener("keydown", function (e) {
-        var x = document.getElementById(this.id + "autocomplete-list")
-        if (handleAutocompleteKeys(x, e))
-            return
-
-        // Target is input
-        if (e.key == 'x' && e.altKey) { // Alt+x
-            e.preventDefault();
-            let cchSel = input.selectionEnd - input.selectionStart;
-            let [ch, cchDel] = hexToUnicode(input.value, input.selectionEnd, cchSel);
-            let offsetStart = input.selectionEnd - cchDel
-            input.value = input.value.substring(0, offsetStart) + ch +
-                input.value.substring(input.selectionEnd);
-            input.selectionStart = input.selectionEnd = offsetStart + ch.length
-        } else if (e.ctrlKey && (e.key == 'b' || e.key == 'i')) {
-            // Toggle math bold/italic (Ctrl+b/Ctrl+i)
-            e.preventDefault();
-            let chars = getInputSelection();
-            chars = boldItalicToggle(chars, e.key);
-            if (chars.length == 1 && (isAsciiAlphabetic(chars) || isLcGreek(chars)))
-                chars = '"' + chars + '"'
-            insertAtCursorPos(chars);
-            input.selectionStart -= chars.length;
-            input.focus();
-            draw();
-        } else if (e.shiftKey && e.key == 'Enter') { // Shift+Enter
-            //e.preventDefault();
-            //insertAtCursorPos('\u200B');  // Want VT for math paragraph
-        } else if (e.altKey && e.key == 'm') { // Alt+m
-            // Toggle Unicode and MathML in input
-            e.preventDefault();
-            input.value = isMathML(input.value)
-                ? MathMLtoUnicodeMath(input.value)
-                : document.getElementById('output_source').innerText;
-            draw();
-        } else if (e.altKey && e.key == 'b') { // Alt+b
-            // Braille MathML
-            e.preventDefault();
-            let mathML = isMathML(input.value)
-                ? input.value
-                : document.getElementById('output_source').innerText;
-            let braille = MathMLtoBraille(mathML);
-            console.log('Math braille = ' + braille);
-            speechDisplay.innerText += '\n' + braille;
-        } else if (e.altKey && e.key == 's') { // Alt+s
-            // Speak MathML
-            e.preventDefault();
-            if (speechSynthesis.speaking) {
-                speechSynthesis.cancel();
-            } else {
-                let mathML = isMathML(input.value)
-                    ? input.value
-                    : document.getElementById('output_source').innerText;
-                let speech = MathMLtoSpeech(mathML);
-                console.log('Math speech = ' + speech);
-                speechDisplay.innerText = '\n' + speech;
-                let utterance = new SpeechSynthesisUtterance(speech);
-                if (voiceZira)
-                    utterance.voice = voiceZira;
-                speechSynthesis.speak(utterance);
-            }
-        } else if (e.altKey && e.key == 'Enter') { // Alt+Enter
-            // Enter Examples[iExample]
-            x = document.getElementById('Examples').childNodes[0];
-            input.value = x.childNodes[iExample].innerText;
-            var cExamples = x.childNodes.length;
-
-            iExample++;                 // Increment for next time
-            if (iExample > cExamples - 1)
-                iExample = 0;
-        }
-        if (demoID) {
-            var demoEq = document.getElementById('demos');
-            switch (e.key) {
-                case 'Escape':
-                    // Turn off demo mode
-                    endDemo();
-                    return;
-                case ' ':
-                    // Toggle pause
-                    e.preventDefault();
-                    if (demoPause) {
-                        demoID = 0;         // Needed to start (instead of end)
-                        startDemo();
-                    } else {
-                        demoPause = true;
-                        clearInterval(demoID);
-                        demoEq.style.backgroundColor = 'green';
-                    }
-                    return;
-                case 'ArrowRight':
-                    nextEq();
-                    return;
-                case 'ArrowLeft':
-                    prevEq();
-                    return;
-            }
-        }
-    });
-}
+    }
+    sel = setSelection(sel, node, atEnd ? 1 : 0);
+    if (checkSimpleSup(node))
+        return;
+    if (!name)
+        name = node.nodeName
+    speak(atEnd ? 'at end ' + name : name)
+});
 
 function checkResize() {
     let h = document.getElementsByTagName('h1');
@@ -2137,24 +2167,6 @@ $('button.tab').click(function () {
     setActiveTab(this.id);
 });
 
-// insert one or multiple characters at the current cursor position of
-// the input field or, if there is no cursor, append them to its value,
-// via https://stackoverflow.com/a/11077016
-function insertAtCursorPos(symbols) {
-    if (input.selectionStart || input.selectionStart == '0') {
-        var startPos = input.selectionStart;
-        var endPos = input.selectionEnd;
-        input.value = input.value.substring(0, startPos)
-            + symbols
-            + input.value.substring(endPos, input.value.length);
-        input.selectionEnd = input.selectionStart = startPos + symbols.length;
-    } else {
-        input.value += symbols;
-    }
-    input.focus();
-    draw();
-}
-
 // because the history is updated after page load, which kills any
 // previously defined event handlers, we can't simply do
 // "$('.button').click(...)"
@@ -2417,10 +2429,6 @@ try {
     initDictation();
 }
 catch {}
-
-function isLcAscii(ch) { return /[a-z]/.test(ch); }
-
-function isUcAscii(ch) { return /[A-Z]/.test(ch); }
 
 function initDictation() {
     const SpeechRecognition = window.SpeechRecognition ||
