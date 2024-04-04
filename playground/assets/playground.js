@@ -801,7 +801,7 @@ function autocomplete() {
 ////////////////////////////
 
 // Symbols whose autocomplete options should be selected by default
-var commonSymbols = "αβδζθλχϕϵ⁡←√∞⒨■"; // 03B1 03B2 03B4 03B6 03B8 03BB 03C7 03D5 03F5 2061 2190 221A 221E 24A8 25A0
+var commonSymbols = "αβδζθλχϕϵ⁡←∂√∞⒨■"; // 03B1 03B2 03B4 03B6 03B8 03BB 03C7 03D5 03F5 2061 2190 2202 221A 221E 24A8 25A0
 var currentFocus = -1;
 
 function closeAutocompleteList() {
@@ -1067,9 +1067,13 @@ function handleEndOfTextNode(node) {
     return node
 }
 
-function handleKeyboardInput(node, key) {
+function handleKeyboardInput(node, key, sel) {
     // Handle keyboard input into output window
     closeAutocompleteList()
+    if (deleteSelection(sel)) {
+        sel = window.getSelection()
+        node = sel.anchorNode
+    }
     let nodeNewName = getMmlTag(key)
 
     if (node.nodeName == 'math') {
@@ -1237,6 +1241,84 @@ function getMmlTag(ch) {
     return 'mo'
 }
 
+function deleteSelection(sel) {
+    if (sel.isCollapsed)
+        return false
+
+    let range = sel.getRangeAt(0)
+    let nodeEnd = range.endContainer
+    let nodeStart = range.startContainer
+
+    if (nodeEnd === nodeStart && nodeEnd.nodeName == '#text') {
+        nodeStart.textContent = nodeStart.textContent.substring(0, range.startOffset) +
+            nodeStart.textContent.substring(range.endOffset)
+        setSelection(sel, nodeStart, range.startOffset)
+        checkEmpty(nodeStart)
+        refreshDisplays()
+        return true
+    }
+    let nodeP = range.commonAncestorContainer
+    if (nodeEnd.nodeName == '#text')
+        nodeEnd = nodeEnd.parentElement
+
+    if (!range.endOffset) {
+        while (nodeEnd.parentElement !== nodeP)
+            nodeEnd = nodeEnd.parentElement
+    }
+    if (nodeStart.nodeName == '#text')
+        nodeStart = nodeStart.parentElement
+
+    if (nodeEnd.parentElement === nodeStart) {
+        nodeStart.innerHTML = ''
+    } else if (nodeEnd.parentElement === nodeP && isMathMLObject(nodeP)) {
+        nodeP.innerHTML = ''
+        checkEmpty(nodeP)
+        refreshDisplays()
+        return true
+    }
+    let reachedNodeStart = false
+    let walker = document.createTreeWalker(nodeP, NodeFilter.SHOW_ELEMENT, null)
+    let nodeNext
+    let node = walker.currentNode
+    if (node.nodeName == 'mrow')
+        node = walker.nextNode()
+    let nodeIP = nodeStart.previousElementSibling
+    atEnd = true
+    if (nodeIP == undefined) {
+        nodeIP = nodeEnd.nextElementSibling
+        atEnd = false
+    }
+    if (nodeIP == undefined)
+        nodeIP = nodeP
+
+    let done = false
+
+    for (; node != undefined && !done; node = nodeNext) {
+        nodeNext = walker.nextNode()
+        if (node === nodeStart)
+            reachedNodeStart = true
+        if (!reachedNodeStart)
+            continue
+        done = !range.endOffset && nodeEnd === nodeNext ||
+                range.endOffset && nodeEnd === node
+        if (node.childElementCount) {
+            node = node.parentElement
+            if (node.nextElementSibling)
+                nodeNext = node.nextElementSibling
+            node.remove()
+        } else if (node.parentElement && !isMathMLObject(node.parentElement)) {
+            node.remove()
+        } else {
+            let nodeNew = document.createElement('mi')
+            nodeNew.textContent = '⬚'
+            node.parentElement.replaceChild(nodeNew, node)
+        }
+    }
+    checkEmpty(nodeIP)
+    refreshDisplays()
+    return true
+}
+
 function checkEmpty(node) {
     // If a deletion empties the active node, remove the node unless it's
     // required, e.g., for numerator, denominator, subscript, etc. For the
@@ -1261,7 +1343,9 @@ function checkEmpty(node) {
             node.setAttribute('selip', '0')
         }
     } else {
-        node.setAttribute('selip', '0')
+        if (node.nodeName == '#text')
+            node = node.parentElement
+        node.setAttribute('selip', atEnd ? '1' : '0')
     }
     refreshDisplays()
 }
@@ -1276,8 +1360,8 @@ function checkFormulaAutoBuildUp(node, nodeP, key) {
         // Try to build up <mrow> or trailing part of it
         let i
         let uMath = ''
-        let [cParen, k] = checkBrackets(nodeP)
-        if (!cParen || k != -1) {
+        let [cParen, k, opBuildUp] = checkBrackets(nodeP)
+        if (opBuildUp && (!cParen || k != -1)) {
             autoBuildUp = true
             let cNode = nodeP.childElementCount
             if (!cParen) {
@@ -1410,13 +1494,8 @@ output.addEventListener('keydown', function (e) {
 
         case 'Delete':
             e.preventDefault()
-            let range = sel.getRangeAt(0)
-            if (!range.collapsed) {
-                range.commonAncestorContainer.remove()
-                refreshDisplays()
-                setSelection(sel, output.firstElementChild, 0)
+            if (deleteSelection(sel))
                 return
-            }
             if (node.nodeName == '#text')
                 node = node.parentElement
             while ((node.nodeName == 'mrow' || node.nodeName == 'math') &&
@@ -1425,7 +1504,7 @@ output.addEventListener('keydown', function (e) {
             }
             if (isMathMLObject(node)) {
                 // Should select node first. If selected, remove...
-                nodeP = node.parentElement
+                let nodeP = node.parentElement
                 node.remove()
                 node = nodeP
             } else if (offset < node.textContent.length) {
@@ -1449,6 +1528,8 @@ output.addEventListener('keydown', function (e) {
 
         case 'Backspace':
             e.preventDefault()
+            if (deleteSelection(sel))
+                return
             if (node.nodeName == '#text')
                 node = node.parentElement
             while ((node.nodeName == 'mrow' || node.nodeName == 'math') &&
@@ -1579,7 +1660,7 @@ output.addEventListener('keydown', function (e) {
                 node = nodeP
                 atEnd = true
             }
-            let autocl = handleKeyboardInput(node, key)
+            let autocl = handleKeyboardInput(node, key, sel)
 
             // If defined, append autocomplete list to output autocomplete container
             if (autocl != undefined)
@@ -1812,6 +1893,8 @@ output.addEventListener('keydown', function (e) {
 function checkResize() {
     let h = document.getElementsByTagName('h1');
     let heading = document.getElementById("heading");
+    if (heading == undefined)
+        return                              // (for tests)
 
     if (window.innerWidth < 768) {
         heading.innerHTML = 'UnicodeMathML<br><br>';

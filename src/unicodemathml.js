@@ -1,4 +1,4 @@
-var autoBuildUp = false;
+var autoBuildUp = false;                    // (could be a unicodemathml() arg)
 
 const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
 const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
@@ -125,9 +125,9 @@ function isAlphanumeric(ch) {
     return /[\w]/.test(ch) || ch >= '\u3018' || isGreek(ch) || isDoubleStruck(ch);
 }
 
-function isAsciiAlphanumeric(ch) { return /[\w]/.test(ch); }
-
 function isAsciiAlphabetic(ch) { return /[A-Za-z]/.test(ch); }
+
+function isAsciiAlphanumeric(ch) { return /[\w]/.test(ch); }
 
 function isAsciiDigit(ch) {
     return inRange('0', ch, '9');
@@ -153,13 +153,13 @@ function isIntegral(op) {
     return inRange('∫', op, '∳') || op == '⨌';  // 222B..2233, 2A0C
 }
 
+function isLcAscii(ch) { return /[a-z]/.test(ch); }
+
 function isLcGreek(ch) {
     return inRange('\u03B1', ch, '\u03F5');
 }
 
-function isNary(op) {
-    return '∑⅀⨊∏∐⨋∫∬∭⨌∮∯∰∱⨑∲∳⨍⨎⨏⨕⨖⨗⨘⨙⨚⨛⨜⨒⨓⨔⋀⋁⋂⋃⨃⨄⨅⨆⨀⨁⨂⨉⫿'.includes(op);
-}
+function isLeadSurrogate(code) { return code >= 0xD800 && code <= 0xDBFF; }
 
 function isMathML(unicodemath) {
     return unicodemath.startsWith("<math") ||
@@ -167,9 +167,15 @@ function isMathML(unicodemath) {
            unicodemath.startsWith("<m:math");
 }
 
+function isNary(op) {
+    return '∑⅀⨊∏∐⨋∫∬∭⨌∮∯∰∱⨑∲∳⨍⨎⨏⨕⨖⨗⨘⨙⨚⨛⨜⨒⨓⨔⋀⋁⋂⋃⨃⨄⨅⨆⨀⨁⨂⨉⫿'.includes(op);
+}
+
 function isOpenDelimiter(op) {
     return '([{⟨〖⌈⌊❲⟦⟨⟪⟬⟮⦃⦅⦇⦉⦋⦍⦏⦑⦓⦕⦗⧘⧚⧼'.includes(op)
 }
+
+function isTrailSurrogate(code) { return code >= 0xDC00 && code <= 0xDFFF; }
 
 function isTranspose(value) {
     return Array.isArray(value) &&
@@ -179,6 +185,8 @@ function isTranspose(value) {
         value[0].atoms[0].chars == '⊺';
 }
 
+function isUcAscii(ch) { return /[A-Z]/.test(ch); }
+
 function checkBrackets(node) {
     // Return count of open brackets - count of close brackets. The value 0
     // implies equal counts, but the code doesn't check for correct balance
@@ -187,6 +195,7 @@ function checkBrackets(node) {
     // may occur for a nonzero bracket count difference, e.g., √(𝑎²-𝑏²
     let cNode = node.children.length
     let cBracket = 0
+    let opBuildUp = false
     let k = -1                              // Index of final child not in
                                             //  partial build up
     if (node.nodeName != 'mrow' || !cNode)
@@ -204,16 +213,20 @@ function checkBrackets(node) {
                 cBracket++
                 if (k == -1)
                     k = i
-            } else if (isCloseDelimiter(nodeC.textContent)) {
+                opBuildUp = true
+           } else if (isCloseDelimiter(nodeC.textContent)) {
                 cBracket--
                 if (k == -1)
                     k = i
+                opBuildUp = true
+            } else if ('_^/'.includes(nodeC.textContent)) {
+                opBuildUp = true
             }
         }
     }
     if (k == cNode - 1)
         k = -1
-    return [cBracket, k]
+    return [cBracket, k, opBuildUp]
 }
 
 function checkSpace(i, node, ret) {
@@ -385,10 +398,10 @@ function isMathMLObject(value) {
     const objs = ['mfrac', 'msqrt', 'mroot', 'menclose', 'msup', 'msub',
         'munderover', 'msubsup', 'mover', 'munder', 'mpadded', 'mphantom']
 
-    if (value.nodeName == 'mrow' && value.children.length == 1)
+    if (value.nodeName == 'mrow' && value.childElementCount == 1)
         value = value.parentElement
 
-    return objs.includes(value.nodeName)
+    return value ? objs.includes(value.nodeName) : false
 }
 
 function hasSingleMrow(value) {
