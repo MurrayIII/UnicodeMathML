@@ -993,10 +993,13 @@ const names = {
 function refreshDisplays() {
     // Update MathML, UnicodeMath, and code-point displays; restore selection from selip
     output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
-    input.value = MathMLtoUnicodeMath(output.innerHTML)
+    input.value = getUnicodeMath(output.firstElementChild)
     codepoints.innerHTML = getCodePoints()
 
-    var walker = document.createTreeWalker(output, NodeFilter.SHOW_ELEMENT, null, false)
+    if (!output.firstElementChild)
+        return
+    let walker = document.createTreeWalker(output.firstElementChild, NodeFilter.SHOW_ELEMENT, null)
+
     while (walker.nextNode()) {
         // Restore selection; previous code has to set attribute 'selip'
         if (walker.currentNode.attributes.selip) {
@@ -1004,6 +1007,9 @@ function refreshDisplays() {
             if (offset == walker.currentNode.textContent.length) {
                 atEnd = true
             }
+            if (walker.currentNode.innerHTML == '⬚')
+                offset = -1
+
             setSelection(null, walker.currentNode, offset)
             return
         }
@@ -1083,7 +1089,7 @@ function handleKeyboardInput(node, key, sel) {
         else {
             let nodeNew = document.createElement(nodeNewName)
             nodeNew.textContent = key
-            nodeNew.setAttribute('selip', '1')
+            setSelipAttribute(nodeNew, '1')
             node.appendChild(nodeNew)
             refreshDisplays()
             return
@@ -1105,7 +1111,7 @@ function handleKeyboardInput(node, key, sel) {
                     let symbol = val[val.length - 1]
                     let nodeNew = document.createElement(getMmlTag(symbol))
                     nodeNew.textContent = symbol
-                    nodeNew.setAttribute('selip', '1')
+                    setSelipAttribute(nodeNew, '1')
 
                     // node is no longer a child of nodeP; find it
                     let walker = document.createTreeWalker(nodeP,
@@ -1131,7 +1137,7 @@ function handleKeyboardInput(node, key, sel) {
         nodeName = getMmlTag(symbol)
         let nodeNew = document.createElement(nodeName)
         nodeNew.textContent = symbol
-        nodeNew.setAttribute('selip', '1')
+        setSelipAttribute(nodeNew, '1')
         nodeP.replaceChild(nodeNew, node)
         node = nodeNew
     }
@@ -1179,7 +1185,7 @@ function handleKeyboardInput(node, key, sel) {
     speak(resolveSymbols(key))
     if (!nodeNewName) {
         // node textContent modified; no new node
-        node.setAttribute('selip', '1')
+        setSelipAttribute(node, '1')
         nodeP.innerHTML = nodeP.innerHTML // Force redraw
         refreshDisplays();
         return
@@ -1187,13 +1193,13 @@ function handleKeyboardInput(node, key, sel) {
     let nodeNew = document.createElement(nodeNewName)
     removeSelipAttribute(nodeP)
     nodeNew.textContent = key
-    nodeNew.setAttribute('selip', '1')
+    setSelipAttribute(nodeNew, '1')
 
     if (node.textContent == '⬚') {
         // Replace empty arg place holder symbol with key
         if (nodeNewName == node.nodeName) {
             node.textContent = key
-            node.setAttribute('selip', '1')
+            setSelipAttribute(node, '1')
         } else {
             nodeP.replaceChild(nodeNew, node)
         }
@@ -1241,82 +1247,145 @@ function getMmlTag(ch) {
     return 'mo'
 }
 
+// onselectionchange version
+document.onselectionchange = () => {
+    checkMathSelection()
+}
+
+function checkMathSelection() {
+    // Ensure selection is valid for math, e.g., select whole math object if
+    // selection boundary points are in different children
+    let sel = window.getSelection()
+    if (sel.isCollapsed)
+        return sel                          // All insertion points are valid
+
+    let range = document.createRange()
+    range.selectNode(sel.anchorNode)
+    let rel = range.comparePoint(sel.focusNode, sel.focusOffset)
+    range = sel.getRangeAt(0)
+
+    let nodeS = range.startContainer
+    let nodeE = range.endContainer
+
+    if (nodeS === nodeE) {
+        if (nodeS.nodeName == '#text') {
+            // In a text node and in <mi>, <mn>, <mo>, and <mtext>, all offset
+            // combinations are valid
+            return sel
+        }
+        if (isMathMLObject(nodeS)) {
+            // Selecting a single child is valid. Selecting more than one child
+            // selects the whole object
+            if (range.endOffset - range.startOffset <= 1)
+                return sel
+        }
+    }
+
+    let nodeA = range.commonAncestorContainer
+
+    if (nodeS.nodeName == '#text')
+        nodeS = nodeS.parentElement
+    if (nodeE.nodeName == '#text')
+        nodeE = nodeE.parentElement
+
+    if (isMathMLObject(nodeA) && nodeA !== nodeS) {
+        sel.setBaseAndExtent(nodeA, 0, nodeA, nodeA.childElementCount)
+    }
+
+    console.log(
+        "nodeA.nodeName = " + nodeA.nodeName + ' rel = ' + rel + '\n' +
+        "nodeS = " + nodeS.nodeName + ', ' + dump(nodeS) + ', ' + range.startOffset + '\n' +
+        'nodeE = ' + nodeE.nodeName + ', ' + dump(nodeE) + ', ' + range.endOffset)
+
+}
+
 function deleteSelection(sel) {
     if (sel.isCollapsed)
-        return false
+        return false                        // Nothing selected
 
     let range = sel.getRangeAt(0)
     let nodeEnd = range.endContainer
     let nodeStart = range.startContainer
+    let nodeA = range.commonAncestorContainer
+    removeSelipAttribute(nodeA)
 
+    // Handle single-node-deletion cases first
     if (nodeEnd === nodeStart && nodeEnd.nodeName == '#text') {
-        nodeStart.textContent = nodeStart.textContent.substring(0, range.startOffset) +
-            nodeStart.textContent.substring(range.endOffset)
-        setSelection(sel, nodeStart, range.startOffset)
+        sel.deleteFromDocument()
+        nodeStart = nodeStart.parentElement
+        if (nodeStart.textContent) {
+            // Need to handle startOffset > 1
+            setSelection(sel, nodeStart, range.startOffset ? '1' : '0')
+            setSelipAttribute(nodeStart, range.startOffset ? '1' : '0')
+            refreshDisplays()
+            return true
+        }
         checkEmpty(nodeStart)
-        refreshDisplays()
         return true
     }
-    let nodeP = range.commonAncestorContainer
-    if (nodeEnd.nodeName == '#text')
+    if (!range.endOffset) {
+        while (nodeEnd.parentElement !== nodeA)
+            nodeEnd = nodeEnd.parentElement
+    } else if (nodeEnd.nodeName == '#text')
         nodeEnd = nodeEnd.parentElement
 
-    if (!range.endOffset) {
-        while (nodeEnd.parentElement !== nodeP)
-            nodeEnd = nodeEnd.parentElement
-    }
     if (nodeStart.nodeName == '#text')
         nodeStart = nodeStart.parentElement
 
-    if (nodeEnd.parentElement === nodeStart) {
-        nodeStart.innerHTML = ''
-    } else if (nodeEnd.parentElement === nodeP && isMathMLObject(nodeP)) {
-        nodeP.innerHTML = ''
-        checkEmpty(nodeP)
+    if (nodeEnd === nodeStart) {
+        if (isMathMLObject(nodeStart)) {
+            nodeStart.remove()
+            checkEmpty(nodeA)
+            return true
+        }
+    } else if (isMathMLObject(nodeA)) {
+        nodeA.remove()
         refreshDisplays()
         return true
     }
-    let reachedNodeStart = false
-    let walker = document.createTreeWalker(nodeP, NodeFilter.SHOW_ELEMENT, null)
-    let nodeNext
-    let node = walker.currentNode
-    if (node.nodeName == 'mrow')
-        node = walker.nextNode()
-    let nodeIP = nodeStart.previousElementSibling
-    atEnd = true
-    if (nodeIP == undefined) {
-        nodeIP = nodeEnd.nextElementSibling
-        atEnd = false
-    }
-    if (nodeIP == undefined)
-        nodeIP = nodeP
 
+    // Handle multinode deletions. Find nodeStart as a child of nodeA and then
+    // remove nodeStart along with nodes up to or including nodeEnd (depending
+    // on range.endOffset). Define nodeNext before deleting node (alternatively
+    // could go backward from nodeEnd).
     let done = false
+    let nodeNext
+    let reachedNodeStart = false
+    let walker = document.createTreeWalker(nodeA, NodeFilter.SHOW_ELEMENT, null)
 
-    for (; node != undefined && !done; node = nodeNext) {
-        nodeNext = walker.nextNode()
+    for (let node = walker.nextNode(); node && !done; node = nodeNext) {
         if (node === nodeStart)
             reachedNodeStart = true
-        if (!reachedNodeStart)
+        if (!reachedNodeStart) {
+            nodeNext = walker.nextNode()
             continue
-        done = !range.endOffset && nodeEnd === nodeNext ||
-                range.endOffset && nodeEnd === node
-        if (node.childElementCount) {
-            node = node.parentElement
-            if (node.nextElementSibling)
-                nodeNext = node.nextElementSibling
-            node.remove()
-        } else if (node.parentElement && !isMathMLObject(node.parentElement)) {
-            node.remove()
-        } else {
-            let nodeNew = document.createElement('mi')
-            nodeNew.textContent = '⬚'
-            node.parentElement.replaceChild(nodeNew, node)
         }
+        if (node.childElementCount) {
+            if (!isMathMLObject(node))  // What about <mrow>?
+                node = node.parentElement
+        } else if (isMathMLObject(node.parentElement)) {
+            node = node.parentElement
+            if (isMathMLObject(node.parentElement)) {
+                // isMathMLObject() returns true for an <mrow> with 1 child
+                // if the parent of the <mrow> is a MathML object
+                nodeNext = node.nextElementSibling
+                node.outerHTML = `<mo>⬚</mo>`
+                continue
+            }
+        }
+        done = range.endOffset && nodeEnd === node ||
+              !range.endOffset && nodeEnd === nodeNext
+        nodeNext = node.nextElementSibling
+        node.remove()
     }
-    checkEmpty(nodeIP)
-    refreshDisplays()
+    checkEmpty(nodeA)
     return true
+}
+
+function setSelipAttribute(node, value) {
+    if (!node || node.nodeName == 'math')
+        return
+    node.setAttribute('selip', value)
 }
 
 function checkEmpty(node) {
@@ -1334,19 +1403,24 @@ function checkEmpty(node) {
             else if (node.previousElementSibling)
                 nodeT = node.previousElementSibling
             node.remove()
-            if (nodeT.nodeName != 'math')
-                nodeT.setAttribute('selip', nodeT.textContent ? '1' : '0')
-            setSelection(null, nodeT, 0)
-            atEnd = true
+            if (!nodeT.textContent && nodeT.nodeName == 'mrow' && !isMathMLObject(nodeT.parentElement)) {
+                nodeT.remove()
+            } else {
+                setSelipAttribute(nodeT, nodeT.textContent ? '1' : '0')
+                setSelection(null, nodeT, 0)
+                atEnd = true
+            }
         } else {
             node.textContent = '⬚'
-            node.setAttribute('selip', '0')
+            setSelipAttribute(node, '0')
         }
     } else {
         if (node.nodeName == '#text')
             node = node.parentElement
-        node.setAttribute('selip', atEnd ? '1' : '0')
+        setSelipAttribute(node, atEnd ? '1' : '0')
     }
+    if (output.firstElementChild && !output.firstElementChild.childElementCount)
+        output.firstElementChild.innerHTML = `<mo selip="1">⬚</mo>`
     refreshDisplays()
 }
 
@@ -1367,7 +1441,7 @@ function checkFormulaAutoBuildUp(node, nodeP, key) {
             if (!cParen) {
                 // Same count of open and close delimiters: try to build
                 // up nodeP: nodeP → UnicodeMath
-                uMath = dump(nodeP, true)
+                uMath = getUnicodeMath(nodeP)
             } else {
                 // Differing count: try to build up nodeP trailing mi, mo,
                 // mn, mtext children
@@ -1453,6 +1527,8 @@ output.addEventListener("click", function () {
     if (node.nodeName == 'DIV')
         return                          // </math>
     atEnd = node.length == sel.anchorOffset
+    if (sel.isCollapsed && node.nodeName == '#text' && node.textContent == '⬚')
+        setSelection(sel, node, -1)
     checkSimpleSup(node.parentElement.parentElement)
     speechSel(sel)
 })
@@ -1468,6 +1544,12 @@ output.addEventListener('keydown', function (e) {
     let intent = ''
     let key = e.key
     let sel = window.getSelection()
+
+    let range = document.createRange()
+    range.selectNode(sel.anchorNode)
+    let rel = range.comparePoint(sel.focusNode, sel.focusOffset)
+    console.log("rel = " + rel)
+
     let node = sel.anchorNode
     let name = node.nodeName
     let nodeP
@@ -1659,6 +1741,11 @@ output.addEventListener('keydown', function (e) {
             if (checkFormulaAutoBuildUp(node, nodeP, key)) {
                 node = nodeP
                 atEnd = true
+                if (key == ' ') {
+                    nodeP.innerHTML = nodeP.innerHTML   // Force redraw
+                    refreshDisplays();
+                    return
+                }
             }
             let autocl = handleKeyboardInput(node, key, sel)
 
@@ -1833,7 +1920,8 @@ output.addEventListener('keydown', function (e) {
             node = node.firstElementChild
         }
         if (node.nodeType == 3 || !node.childElementCount) {
-            node = node.firstChild
+            if (this.nodeName != '#text')
+                node = node.firstChild
             let cch = getCch(node.textContent, 0)
             name = resolveSymbols(node.textContent.substring(0, cch))
         } else {

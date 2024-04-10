@@ -396,7 +396,8 @@ function processPrimes(primes) {
 function isMathMLObject(value) {
     // Return true iff objs includes value.nodeName
     const objs = ['mfrac', 'msqrt', 'mroot', 'menclose', 'msup', 'msub',
-        'munderover', 'msubsup', 'mover', 'munder', 'mpadded', 'mphantom']
+        'munderover', 'msubsup', 'mover', 'munder', 'mpadded', 'mphantom',
+        'multiscripts']
 
     if (value.nodeName == 'mrow' && value.childElementCount == 1)
         value = value.parentElement
@@ -4322,6 +4323,10 @@ function dump(value, noAddParens) {
 
 function MathMLtoUnicodeMath(mathML) {
     const doc = getMathMLDOM(mathML);
+    return getUnicodeMath(doc)
+}
+
+function getUnicodeMath(doc) {
     let unicodeMath = dump(doc);
 
     // Remove some unnecessary spaces
@@ -4844,5 +4849,6 @@ root.negs = negs;
 root.resolveCW = resolveCW;
 root.unicodemathml = unicodemathml;
 root.unicodemathtex = unicodemathtex;
+root.getUnicodeMath = getUnicodeMath
 
 })(this);
