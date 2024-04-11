@@ -1111,7 +1111,7 @@ function speech(value, noAddParens) {
 	}
 	if (cNode > 1 && value.nodeName != 'math' && !noAddParens &&
 		(!mrowIntent || mrowIntent != ':fenced') &&
-		isMathMLObject(value.parentElement) && needParens(ret)) {
+		isMathMLObject(value.parentElement, true) && needParens(ret)) {
 			ret = '(' + ret + ')';
 	}
 	return ret;

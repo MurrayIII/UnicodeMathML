@@ -1376,6 +1376,8 @@ function deleteSelection(sel) {
         done = range.endOffset && nodeEnd === node ||
               !range.endOffset && nodeEnd === nodeNext
         nodeNext = node.nextElementSibling
+        if (!nodeNext)
+            nodeNext = node.parentElement.nextElementSibling
         node.remove()
     }
     checkEmpty(nodeA)
