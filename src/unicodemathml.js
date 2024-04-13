@@ -219,7 +219,7 @@ function checkBrackets(node) {
                 if (k == -1)
                     k = i
                 opBuildUp = true
-            } else if ('_^/'.includes(nodeC.textContent)) {
+            } else if ('_^/√'.includes(nodeC.textContent)) {
                 opBuildUp = true
             }
         }
@@ -393,15 +393,23 @@ function processPrimes(primes) {
     }
 }
 
-function isMathMLObject(value) {
+function isMathMLObject(value, ignoreIntent) {
     // Return true iff objs includes value.nodeName
     const objs = ['mfrac', 'msqrt', 'mroot', 'menclose', 'msup', 'msub',
         'munderover', 'msubsup', 'mover', 'munder', 'mpadded', 'mphantom',
         'multiscripts']
 
-    if (value.nodeName == 'mrow' && value.childElementCount == 1)
-        value = value.parentElement
-
+    if (value.nodeName == 'mrow') {
+        if (!ignoreIntent && value.attributes.intent) {
+            // Conversions to speech, braille, and UnicodeMath ignore
+            // parenthesizing due to <mrow> intent values
+            let intent = value.attributes.intent.value
+            if (intent == ':function' || intent == ':fenced' || intent.startsWith(':integral'))
+                return true
+        }
+        if (value.childElementCount == 1)
+            value = value.parentElement
+    }
     return value ? objs.includes(value.nodeName) : false
 }
 
@@ -4315,7 +4323,7 @@ function dump(value, noAddParens) {
 
     if (cNode > 1 && value.nodeName != 'math' && !noAddParens &&
         (!mrowIntent || mrowIntent != ':fenced') &&
-        isMathMLObject(value.parentElement) && needParens(ret)) {
+        isMathMLObject(value.parentElement, true) && needParens(ret)) {
         ret = '(' + ret + ')';
     }
     return ret;

@@ -23,9 +23,9 @@ function setSelection(sel, node, offset, nodeFocus, offsetFocus) {
         return sel;
 
     let range = new Range();
-    if (offset == -1)
-        range.selectNode(node)
-    else {
+    if (offset == -1) {
+        range.selectNodeContents(node)
+    } else {
         range.setStart(node, offset);
         range.setEnd(node, offset);
     }
@@ -1271,11 +1271,13 @@ function checkMathSelection() {
         if (nodeS.nodeName == '#text') {
             // In a text node and in <mi>, <mn>, <mo>, and <mtext>, all offset
             // combinations are valid
+            console.log('nodeS===nodeE = #text = ' + nodeS.textContent)
             return sel
         }
         if (isMathMLObject(nodeS)) {
             // Selecting a single child is valid. Selecting more than one child
             // selects the whole object
+            console.log('nodeS = ' + nodeS.nodeName + ', ' + range.startOffset + ', ' + range.endOffset)
             if (range.endOffset - range.startOffset <= 1)
                 return sel
         }
@@ -1289,6 +1291,7 @@ function checkMathSelection() {
         nodeE = nodeE.parentElement
 
     if (isMathMLObject(nodeA) && nodeA !== nodeS) {
+        console.log('sel base&extent = ' + nodeA.nodeName + ', 0 ' + nodeA.childElementCount)
         sel.setBaseAndExtent(nodeA, 0, nodeA, nodeA.childElementCount)
     }
 
@@ -1311,6 +1314,8 @@ function deleteSelection(sel) {
 
     // Handle single-node-deletion cases first
     if (nodeEnd === nodeStart && nodeEnd.nodeName == '#text') {
+        if (nodeStart.textContent == '⬚')
+            return
         sel.deleteFromDocument()
         nodeStart = nodeStart.parentElement
         if (nodeStart.textContent) {
@@ -1369,15 +1374,24 @@ function deleteSelection(sel) {
                 // isMathMLObject() returns true for an <mrow> with 1 child
                 // if the parent of the <mrow> is a MathML object
                 nodeNext = node.nextElementSibling
-                node.outerHTML = `<mo>⬚</mo>`
+                node.outerHTML = `<mi>⬚</mi>`
                 continue
             }
         }
         done = range.endOffset && nodeEnd === node ||
               !range.endOffset && nodeEnd === nodeNext
         nodeNext = node.nextElementSibling
-        if (!nodeNext)
+        if (!nodeNext) {
             nodeNext = node.parentElement.nextElementSibling
+            if (nodeNext) {
+                // Don't delete past nodeEnd
+                let range = document.createRange()
+                range.selectNode(nodeNext)
+                let rel = range.comparePoint(nodeEnd, 0)
+                if (rel <= 0)
+                    done = true     // nodeEnd is before or same as nodeNext
+            }
+        }
         node.remove()
     }
     checkEmpty(nodeA)
@@ -1413,7 +1427,10 @@ function checkEmpty(node) {
                 atEnd = true
             }
         } else {
-            node.textContent = '⬚'
+            if (node.nodeName == 'mrow')
+                node.outerHTML = `<mi>⬚</mi>`
+            else
+                node.textContent = '⬚'
             setSelipAttribute(node, '0')
         }
     } else {
@@ -1422,7 +1439,7 @@ function checkEmpty(node) {
         setSelipAttribute(node, atEnd ? '1' : '0')
     }
     if (output.firstElementChild && !output.firstElementChild.childElementCount)
-        output.firstElementChild.innerHTML = `<mo selip="1">⬚</mo>`
+        output.firstElementChild.innerHTML = `<mi selip="1">⬚</mi>`
     refreshDisplays()
 }
 
@@ -1554,7 +1571,6 @@ output.addEventListener('keydown', function (e) {
 
     let node = sel.anchorNode
     let name = node.nodeName
-    let nodeP
     let offset = sel.anchorOffset
 
     if (sel.anchorNode.nodeName == 'DIV') {
@@ -1622,7 +1638,7 @@ output.addEventListener('keydown', function (e) {
             }
             if (isMathMLObject(node)) {
                 // Should select node first. If selected, remove...
-                nodeP = node.parentElement
+                let nodeP = node.parentElement
                 node.remove()
                 node = nodeP
             } else if (sel.anchorOffset > 0) {
