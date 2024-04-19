@@ -1034,11 +1034,12 @@ function checkFunction(node) {
     }
     fn = foldMathItalics(fn)
     if (!isFunctionName(fn))
-        return
+        return false
     node.children[i + 1].textContent = fn
     i += 2
     for (cNode = cNode - i; cNode > 0; cNode--)
         node.children[i].remove()           // Remove trailing <mi>'s
+    return true
 }
 
 function removeSelipAttribute(node) {
@@ -1130,6 +1131,7 @@ function handleKeyboardInput(node, key, sel) {
     }
 
     let offset = sel.anchorOffset
+    let isFunction
 
     switch (nodeNewName) {
         case 'mi':
@@ -1151,22 +1153,23 @@ function handleKeyboardInput(node, key, sel) {
             break
         case 'mo':
             if (nodeName == 'mi' && nodeP.nodeName == 'mrow') {
-                checkFunction(nodeP)
-                break
-            }
-            if (nodeName == 'mrow' && node.lastElementChild) {
+                isFunction = checkFunction(nodeP)
+            } else if (nodeName == 'mrow' && node.lastElementChild) {
                 if (node.lastElementChild.nodeName == 'mi') {
-                    checkFunction(node)
+                    isFunction = checkFunction(node)
                 } else if (node.lastElementChild.nodeName == 'mrow') {
                     let nodeT = node.lastElementChild
                     if (nodeT.nodeName == 'mrow' && nodeT.lastElementChild &&
                         nodeT.lastElementChild.nodeName == 'mrow') {
                         nodeT = nodeT.lastElementChild
                     }
-                    if (!nodeT.attributes.intent) {
-                        checkFunction(nodeT)
-                    }
+                    if (!nodeT.attributes.intent)
+                        isFunction = checkFunction(nodeT)
                 }
+            }
+            if (isFunction != undefined) {
+                if (key == ' ' && isFunction)
+                    key = '\u2061'
                 break
             }
             if (node.textContent == '/' && key in negs) {
@@ -1246,7 +1249,6 @@ function getMmlTag(ch) {
     return 'mo'
 }
 
-// onselectionchange version
 document.onselectionchange = () => {
     checkMathSelection()
 }
@@ -1277,8 +1279,8 @@ function checkMathSelection() {
             // Selecting a single child is valid. Selecting more than one child
             // selects the whole object
             console.log('nodeS = ' + nodeS.nodeName + ', ' + range.startOffset + ', ' + range.endOffset)
-            if (range.endOffset - range.startOffset <= 1)
-                return sel
+            return range.endOffset - range.startOffset <= 1
+                ? sel : setSelection(sel, nodeS, SELECTNODE)
         }
     }
 
@@ -1433,6 +1435,11 @@ function checkAutocomplete(node) {
         let val = e.currentTarget.innerText
         let symbol = val[val.length - 1]
         let nodeNew = document.createElement(getMmlTag(symbol))
+        if (isDoubleStruck(symbol)) {
+            let ch = doublestruckChar(symbol)
+            nodeNew.setAttribute('intent', symbol)
+            symbol = ch
+        }
         nodeNew.textContent = symbol
         setSelipAttribute(nodeNew, '1')
 
@@ -1481,10 +1488,13 @@ function checkEmpty(node, offset) {
                 atEnd = true
             }
         } else {
-            if (node.nodeName == 'mrow')    // Argument consists of empty <mrow>
+            if (node.nodeName == 'mrow') {   // Argument consists of empty <mrow>
                 node.outerHTML = `<mi>⬚</mi>`
-            else
+            } else {
                 node.textContent = '⬚'
+                if(node.nodeName == 'mi')
+                    node.removeAttribute('intent')
+            }
             setSelipAttribute(node, '0')
         }
     } else {

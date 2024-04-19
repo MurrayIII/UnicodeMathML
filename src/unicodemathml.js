@@ -219,7 +219,7 @@ function checkBrackets(node) {
                 if (k == -1)
                     k = i
                 opBuildUp = true
-            } else if ('_^/√'.includes(nodeC.textContent)) {
+            } else if ('_^/√\u2061'.includes(nodeC.textContent)) {
                 opBuildUp = true
             }
         }
@@ -3640,7 +3640,7 @@ function mtransform(dsty, puast) {
                         for (let j = 0; j < cch; j += cchCh) {
                             cchCh = (cch >= 2 && str.codePointAt(j) > 0xFFFF) ? 2 : 1;
 
-                            if (str[j] >= 'ⅅ' && str[j] <= 'ⅉ') {
+                            if (isDoubleStruck(str[j])) {
                                 if (j && str[j] == 'ⅆ' && str[j - 1] != '\u2009') {
                                     mis.push({mi: noAttr('\u2009')});
                                 }
@@ -4843,6 +4843,7 @@ function unicodemathtex(unicodemath, displaystyle = false) {
     }
 }
 
+root.doublestruckChar = doublestruckChar
 root.dump = dump
 root.foldMathItalic = foldMathItalic;
 root.foldMathItalics = foldMathItalics;
