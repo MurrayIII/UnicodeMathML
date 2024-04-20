@@ -16,6 +16,7 @@ var atEnd = false;                          // True if at end of output object
 var hist = [];
 var prevInputValue = "";
 const SELECTNODE = -1024
+var inputUndoStack = ['']
 
 function setSelection(sel, node, offset, nodeFocus, offsetFocus) {
     if (!sel)
@@ -606,6 +607,19 @@ input.addEventListener("keydown", function (e) {
         input.selectionStart -= chars.length;
         input.focus();
         draw();
+    } else if (e.ctrlKey && e.key == 'z') { // Ctrl+z
+        e.preventDefault();
+        if (!inputUndoStack.length)
+            return
+        if (input.value == inputUndoStack[inputUndoStack.length - 1]) {
+            inputUndoStack.pop()
+            if (!inputUndoStack.length)
+                return
+        }
+        input.value = inputUndoStack.pop()
+        input.focus()
+        draw(true)
+        return
     } else if (e.shiftKey && e.key == 'Enter') { // Shift+Enter
         //e.preventDefault();
         //insertAtCursorPos('\u200B');  // Want VT for math paragraph
@@ -2230,7 +2244,7 @@ function getCodePoints() {
 }
 
 // compile and draw mathml code from input field
-async function draw() {
+async function draw(undo) {
 
     // if required, wait for the parser to be generated, via
     // https://stackoverflow.com/a/39914235
@@ -2272,6 +2286,7 @@ async function draw() {
         window.localStorage.setItem('unicodemath', "");
         closeAutocompleteList();
         prevInputValue = "";
+        inputUndoStack = ['']
         return;
     }
 
@@ -2286,6 +2301,8 @@ async function draw() {
     }
     // update local storage
     window.localStorage.setItem('unicodemath', input.value.replace(/\n\r?/g, 'LINEBREAK'));
+    if (undo == undefined && input.value != inputUndoStack[inputUndoStack.length - 1])
+        inputUndoStack.push(input.value)
 
     // get input(s) – depending on the ummlConfig.splitInput option, either...
     var inp;
