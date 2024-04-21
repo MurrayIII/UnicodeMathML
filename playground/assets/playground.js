@@ -17,6 +17,11 @@ var hist = [];
 var prevInputValue = "";
 const SELECTNODE = -1024
 var inputUndoStack = ['']
+var outputUndoStack = ['']
+
+function stackTop(arr) {
+    return arr.length ? arr[arr.length - 1] : ''
+}
 
 function setSelection(sel, node, offset, nodeFocus, offsetFocus) {
     if (!sel)
@@ -616,7 +621,8 @@ input.addEventListener("keydown", function (e) {
             if (!inputUndoStack.length)
                 return
         }
-        input.value = inputUndoStack.pop()
+        let undoTop = inputUndoStack.pop()
+        input.value = undoTop
         input.focus()
         draw(true)
         return
@@ -1016,26 +1022,30 @@ function refreshDisplays() {
     // Update MathML, UnicodeMath, and code-point displays; restore selection from selip
     output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
     input.value = getUnicodeMath(output.firstElementChild)
+    let undoTop = stackTop(outputUndoStack)
+    if (input.value != undoTop)
+        outputUndoStack.push(input.value)
     codepoints.innerHTML = getCodePoints()
 
     if (!output.firstElementChild)
         return
-    let walker = document.createTreeWalker(output.firstElementChild, NodeFilter.SHOW_ELEMENT, null)
+    let node = output.firstElementChild
+    let offset = 1
+    let walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, null)
 
     while (walker.nextNode()) {
         // Restore selection; previous code has to set attribute 'selip'
         if (walker.currentNode.attributes.selip) {
-            let offset = walker.currentNode.attributes.selip.nodeValue;
-            if (offset == walker.currentNode.textContent.length) {
+            node = walker.currentNode
+            offset = node.attributes.selip.nodeValue;
+            if (offset == node.textContent.length)
                 atEnd = true
-            }
-            if (walker.currentNode.innerHTML == '⬚')
-                offset = SELECTNODE
-
-            setSelection(null, walker.currentNode, offset)
-            return
+            break
         }
     }
+    if (node.textContent == '⬚')
+        offset = SELECTNODE
+    setSelection(null, node, offset)
 }
 
 function checkFunction(node) {
@@ -1915,7 +1925,7 @@ output.addEventListener('keydown', function (e) {
                 return
 
             if (node.nodeName == 'math')
-                node = node.children[offset]
+                return
 
             if (isMathMLObject(node)) {
                 setSelection(sel, node, SELECTNODE)
@@ -2081,8 +2091,20 @@ output.addEventListener('keydown', function (e) {
                     node.setAttribute('mathvariant', 'normal')
                 refreshDisplays()
                 return
+            } else if (e.ctrlKey && e.key == 'z') { // Ctrl+z
+                if (!outputUndoStack.length)
+                    return
+                let undoTop = stackTop(outputUndoStack)
+                if (input.value == undoTop)
+                    outputUndoStack.pop()
+                let uMath = outputUndoStack.pop()
+                if (!uMath)
+                    uMath = '⬚'
+                let t = unicodemathml(uMath, true) // uMath → MathML
+                output.innerHTML = t.mathml
+                refreshDisplays()
+                return
             }
-
             if (name == '#text')
                 node = node.parentElement
 
@@ -2301,8 +2323,14 @@ async function draw(undo) {
     }
     // update local storage
     window.localStorage.setItem('unicodemath', input.value.replace(/\n\r?/g, 'LINEBREAK'));
-    if (undo == undefined && input.value != inputUndoStack[inputUndoStack.length - 1])
-        inputUndoStack.push(input.value)
+
+    if (undo == undefined) {
+        let undoTop = stackTop(inputUndoStack)
+
+        if (input.value != undoTop) {
+            inputUndoStack.push(input.value)
+        }
+    }
 
     // get input(s) – depending on the ummlConfig.splitInput option, either...
     var inp;
