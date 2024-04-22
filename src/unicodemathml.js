@@ -400,10 +400,10 @@ function isMathMLObject(value, ignoreIntent) {
         'multiscripts']
 
     if (value.nodeName == 'mrow') {
-        if (!ignoreIntent && value.attributes.intent) {
+        if (!ignoreIntent && value.hasAttribute('intent')) {
             // Conversions to speech, braille, and UnicodeMath ignore
             // parenthesizing due to <mrow> intent values
-            let intent = value.attributes.intent.value
+            let intent = value.getAttribute('intent')
             if (intent == ':function' || intent == ':fenced' || intent.startsWith(':integral'))
                 return true
         }
@@ -1189,7 +1189,7 @@ function getPartialMatches(cw) {
     return matches;
 }
 
-var negs = {
+const negs = {
     '<': '≮',   // /<
     '=': '≠',   // /=
     '>': '≯',   // />
@@ -1221,7 +1221,7 @@ var negs = {
 
 // math font conversion
 // should match mathFonts variable in playground.js
-var mathFonts = {
+const mathFonts = {
 
     // courtesy of https://en.wikipedia.org/wiki/Mathematical_Alphanumeric_Symbols and
     // sublime text's multiple cursors. The math style names are the unicode-math style names
@@ -3982,16 +3982,19 @@ function isDigitArg(node) {
 function dump(value, noAddParens) {
 	// Function called recursively to convert MathML to UnicodeMath
     let cNode = value.children.length;
+    let intent
     let ret = '';
+    let selip = value.getAttribute('selip')
+    if (selip)
+        console.log('selip = ' + selip + ' element = ' + value.nodeName)
 
     switch (value.nodeName) {
         case 'mtable':
             var symbol = '■';
-            if (value.attributes.hasOwnProperty('intent') &&
-                value.attributes.intent.value == ':equations') {
+            if (value.getAttribute('intent') == ':equations') {
                 symbol = '█';
-            } else if (value.parentElement.attributes.hasOwnProperty('intent')) {
-                let intent = value.parentElement.attributes.intent.nodeValue;
+            } else if (value.parentElement.hasAttribute('intent')) {
+                intent = value.parentElement.getAttribute('intent');
 
                 for (const [key, val] of Object.entries(matrixIntents)) {
                     if (val == intent) {
@@ -4021,13 +4024,13 @@ function dump(value, noAddParens) {
             return '&';
 
         case 'menclose':
-            if (value.attributes.hasOwnProperty('notation')) {
+            let notation = value.getAttribute('notation')
+            if (notation) {
                 for (const [key, val] of Object.entries(symbolClasses)) {
-                    if (val == value.attributes.notation.nodeValue)
+                    if (val == notation)
                         return unary(value, key);
                 }
                 let mask = 0;
-                let notation = value.attributes.notation.nodeValue;
 
                 while (notation) {
                     let attr = notation.match(/[a-z]+/)[0];
@@ -4051,11 +4054,11 @@ function dump(value, noAddParens) {
             var op = '';
             var mask = 0;                   // Compute phantom mask
 
-            if (value.attributes.width && value.attributes.width.nodeValue == '0')
+            if (value.getAttribute('width') === '0')
                 mask = 2;                   // fPhantomZeroWidth
-            if (value.attributes.height && value.attributes.height.nodeValue == '0')
+            if (value.getAttribute('height') === '0')
                 mask |= 4;                  // fPhantomZeroAscent
-            if (value.attributes.depth && value.attributes.depth.nodeValue == '0')
+            if (value.getAttribute('depth') === '0')
                 mask |= 8;                  // fPhantomZeroDescent
 
             if (value.firstElementChild.nodeName == 'mphantom') { // No display
@@ -4075,10 +4078,12 @@ function dump(value, noAddParens) {
 
         case 'mstyle':
             ret = dump(value.firstElementChild);
-            if (value.attributes.hasOwnProperty('mathcolor'))
-                ret = '✎(' + value.attributes.mathcolor.value + '&' + ret + ')';
-            if (value.attributes.hasOwnProperty('mathbackground'))
-                ret = '☁(' + value.attributes.mathbackground.value + '&' + ret + ')';
+            val = value.getAttribute('mathcolor')
+            if(val)
+                ret = '✎(' + val + '&' + ret + ')';
+            val = value.getAttribute('mathbackground')
+            if (val)
+                ret = '☁(' + val + '&' + ret + ')';
             return ret;
 
         case 'msqrt':
@@ -4090,20 +4095,17 @@ function dump(value, noAddParens) {
 
         case 'mfrac':
             var op = '/';
-            if (value.attributes.hasOwnProperty('displaystyle') &&
-                value.attributes.displaystyle.nodeValue == 'false') {
+            val = value.getAttribute('displaystyle')
+            if (val === 'false')
                 op = '⊘';
-            }
-            if (value.attributes.hasOwnProperty('linethickness')) {
-                var val = value.attributes.linethickness.nodeValue;
-                if (val == '0' || val == '0.0pt') {
-                    op = '¦';
-                    if (value.parentElement.attributes.hasOwnProperty('intent') &&
-                        value.parentElement.attributes.intent.nodeValue.startsWith('binomial-coefficient') ||
-                        value.parentElement.firstElementChild.attributes.title &&
-                        value.parentElement.firstElementChild.attributes.title.nodeValue == 'binomial coefficient')
-                        op = '⒞';
-                }
+            val = value.getAttribute('linethickness')
+            if (val == '0' || val == '0.0pt') {
+                op = '¦';
+                if (value.parentElement.hasAttribute('intent') &&
+                    value.parentElement.getAttribute('intent').startsWith('binomial-coefficient') ||
+                    value.parentElement.firstElementChild.hasAttribute('title') &&
+                    value.parentElement.firstElementChild.getAttribute('title') == 'binomial coefficient')
+                    op = '⒞';
             }
             ret = binary(value, op);
             if (value.previousElementSibling && value.previousElementSibling.nodeName != 'mo') {
@@ -4122,8 +4124,7 @@ function dump(value, noAddParens) {
             ret = binary(value, op);
 
             // Check for intent='transpose'
-            if (value.lastElementChild.attributes.hasOwnProperty('intent') &&
-                value.lastElementChild.attributes.intent.nodeValue == 'transpose') {
+            if (value.lastElementChild.getAttribute('intent') == 'transpose') {
                 let cRet = ret.length;
                 let code = codeAt(ret, cRet - 2);
                 if (code != 0x22BA) {       // '⊺'
@@ -4138,14 +4139,14 @@ function dump(value, noAddParens) {
             if (overBrackets.includes(value.lastElementChild.textContent))
                 return dump(value.lastElementChild) + dump(value.firstElementChild);
 
-            op = value.attributes.hasOwnProperty('accent') ? '' : '┴';
+            op = value.hasAttribute('accent') ? '' : '┴';
             return binary(value, op);
 
         case 'munder':
             if (underBrackets.includes(value.lastElementChild.textContent))
                 return dump(value.lastElementChild) + dump(value.firstElementChild);
 
-            op = value.attributes.hasOwnProperty('accentunder') ? '' : '┬';
+            op = value.hasAttribute('accentunder') ? '' : '┬';
             if (value.firstElementChild.innerHTML == 'lim')
                 op = '_';
             return binary(value, op);
@@ -4158,10 +4159,10 @@ function dump(value, noAddParens) {
             return binary(value, '_');
 
         case 'munderover':
-            if (!value.parentElement.attributes.hasOwnProperty('intent') ||
-                !value.parentElement.attributes.intent.nodeValue.startsWith(':sum')) {
+            intent = value.parentElement.getAttribute('intent')
+            if (!intent || !intent.startsWith(':sum'))
                 return ternary(value, '┬', '┴');
-            }                               // Fall through to msubsup
+                                            // Fall through to msubsup
         case 'msubsup':
             if (isDigitArg(value)) {
                 ret = dump(value.firstElementChild) +
@@ -4190,10 +4191,11 @@ function dump(value, noAddParens) {
             return ret;
 
         case 'mfenced':
-            var opOpen = value.attributes.hasOwnProperty('open') ? value.attributes.open : '(';
-            var opClose = value.attributes.hasOwnProperty('close') ? value.attributes.close : ')';
-            var opSeparators = value.attributes.hasOwnProperty('separators') ? value.attributes.separators : ',';
-            var cSep = opSeparators.length;
+            let opOpen = value.hasAttribute('open') ? value.getAttribute('open') : '(';
+            let opClose = value.hasAttribute('close') ? value.getAttribute('close') : ')';
+            let opSeparators = value.hasAttribute('separators')
+                ? value.getAttribute('separators') : ',';
+            let cSep = opSeparators.length;
 
             ret = opOpen;
             for (let i = 0; i < cNode; i++) {
@@ -4221,10 +4223,10 @@ function dump(value, noAddParens) {
                     ret = '0' + ret;
                 return String.fromCodePoint(ret);
             }
-            if (value.attributes.title) {
+            if (value.hasAttribute('title')) {
                 // The DLMF title attribute implies the following intents
                 // (see also for 'mi')
-                switch (value.attributes.title.textContent) {
+                switch (value.getAttribute('title')) {
                     case 'differential':
                     case 'derivative':
                         return 'ⅆ';
@@ -4235,23 +4237,23 @@ function dump(value, noAddParens) {
             return val;
 
         case 'mi':
-            if (value.attributes.hasOwnProperty('intent')) {
-                let ch = value.attributes.intent.nodeValue;
-                if (isDoubleStruck(ch))
-                    return ch;
-            }
+            intent = value.getAttribute('intent')
+            if (isDoubleStruck(intent))
+                return intent;
+
             if (value.innerHTML.length == 1) {
                 let c = value.innerHTML;
-                if (!value.attributes.hasOwnProperty('mathvariant'))
+                if (!value.hasAttribute('mathvariant'))
                     return italicizeCharacter(c);
 
-                var mathstyle = mathvariants[value.attributes.mathvariant.nodeValue];
+                var mathstyle = mathvariants[value.getAttribute('mathvariant')];
                 if (c in mathFonts && mathstyle in mathFonts[c] && (c < 'Α' || c > 'Ω' && c != '∇'))
                     return mathFonts[c][mathstyle];
+
                 if (mathstyle == 'mup') {
-                    if (value.attributes.title) {
+                    if (value.hasAttribute('title')) {
                         // Differential d (ⅆ) appears in 'mo'
-                        switch (value.attributes.title.textContent) {
+                        switch (value.getAttribute('title')) {
                             case 'base of natural logarithm':
                                 return 'ⅇ';
                             case 'imaginary unit':
@@ -4269,9 +4271,10 @@ function dump(value, noAddParens) {
             return '"' + value.textContent + '"';
 
         case 'mspace':
-            if (value.attributes.hasOwnProperty('width')) {
+            let width = value.getAttribute('width')
+            if (width) {
                 for (let i = 0; i < spaceWidths.length; i++) {
-                    if (value.attributes.width.nodeValue == spaceWidths[i])
+                    if (width == spaceWidths[i])
                         return uniSpaces[i];
                 }
             }
@@ -4285,8 +4288,8 @@ function dump(value, noAddParens) {
         ret += dump(node, false, i);
     }
 
-    let mrowIntent = value.nodeName == 'mrow' && value.attributes.hasOwnProperty('intent')
-        ? value.attributes.intent.nodeValue : '';
+    let mrowIntent = value.nodeName == 'mrow' && value.hasAttribute('intent')
+        ? value.getAttribute('intent') : '';
 
     if (mrowIntent) {
         if (mrowIntent == ':cases')
@@ -4331,7 +4334,7 @@ function dump(value, noAddParens) {
 
 function MathMLtoUnicodeMath(mathML) {
     const doc = getMathMLDOM(mathML);
-    return getUnicodeMath(doc)
+    return getUnicodeMath(doc.firstElementChild)
 }
 
 function getUnicodeMath(doc) {

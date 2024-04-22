@@ -977,10 +977,11 @@ function speech(value, noAddParens) {
 			return ret;
 
 		case 'mfenced':
-			var opOpen = value.attributes.hasOwnProperty('open') ? value.attributes.open : '(';
-			var opClose = value.attributes.hasOwnProperty('close') ? value.attributes.close : ')';
-			var opSeparators = value.attributes.hasOwnProperty('separators') ? value.attributes.separators : ',';
-			var cSep = opSeparators.length;
+			let opOpen = value.hasAttribute('open') ? value.getAttribute('open') : '(';
+			let opClose = value.hasAttribute('close') ? value.getAttribute('close') : ')';
+			let opSeparators = value.hasAttribute('separators')
+				? value.getAttribute('separators') : ',';
+			let cSep = opSeparators.length;
 
 			ret = opOpen;
 			for (let i = 0; i < cNode; i++) {

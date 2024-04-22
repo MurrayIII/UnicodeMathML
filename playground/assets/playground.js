@@ -18,6 +18,8 @@ var prevInputValue = "";
 const SELECTNODE = -1024
 var inputUndoStack = ['']
 var outputUndoStack = ['']
+var selectionStart
+var selectionEnd
 
 function stackTop(arr) {
     return arr.length ? arr[arr.length - 1] : ''
@@ -592,8 +594,13 @@ input.addEventListener("keydown", function (e) {
     if (handleAutocompleteKeys(x, e))
         return
 
-    // Target is input
-    if (e.key == 'x' && e.altKey) { // Alt+x
+    // Target is input. For undo, save the selection before it changes
+    if (inputUndoStack.length) {
+        let undoTop = stackTop(inputUndoStack)
+        undoTop.selEnd = input.selectionEnd
+        undoTop.selStart = input.selectionStart
+    }
+    if (e.key == 'x' && e.altKey) {         // Alt+x
         e.preventDefault();
         let cchSel = input.selectionEnd - input.selectionStart;
         let [ch, cchDel] = hexToUnicode(input.value, input.selectionEnd, cchSel);
@@ -616,13 +623,17 @@ input.addEventListener("keydown", function (e) {
         e.preventDefault();
         if (!inputUndoStack.length)
             return
-        if (input.value == inputUndoStack[inputUndoStack.length - 1]) {
-            inputUndoStack.pop()
+        let undoTop = inputUndoStack.pop()
+        if (input.value == undoTop.uMath) {
             if (!inputUndoStack.length)
                 return
+            undoTop = inputUndoStack.pop()
         }
-        let undoTop = inputUndoStack.pop()
-        input.value = undoTop
+        input.value = undoTop.uMath
+        if (undoTop.selStart != undefined) {
+            input.selectionStart = undoTop.selStart
+            input.selectionEnd = undoTop.selEnd
+        }
         input.focus()
         draw(true)
         return
@@ -2308,7 +2319,7 @@ async function draw(undo) {
         window.localStorage.setItem('unicodemath', "");
         closeAutocompleteList();
         prevInputValue = "";
-        inputUndoStack = ['']
+        inputUndoStack = [{uMath: ''}]
         return;
     }
 
@@ -2326,9 +2337,10 @@ async function draw(undo) {
 
     if (undo == undefined) {
         let undoTop = stackTop(inputUndoStack)
-
-        if (input.value != undoTop) {
-            inputUndoStack.push(input.value)
+        if (input.value != undoTop.uMath) {
+            let undoNext = {uMath: input.value, selStart: selectionStart,
+                            selEnd: selectionEnd}
+            inputUndoStack.push(undoNext)
         }
     }
 
