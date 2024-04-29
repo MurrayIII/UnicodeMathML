@@ -16,8 +16,8 @@ var atEnd = false;                          // True if at end of output object
 var hist = [];
 var prevInputValue = "";
 const SELECTNODE = -1024
-var inputUndoStack = ['']
-var outputUndoStack = ['']
+var inputUndoStack = [{uMath: ''}]
+var outputUndoStack = [{uMath: ''}]
 var selectionStart
 var selectionEnd
 
@@ -329,7 +329,7 @@ function highlightJson(json) {
 
 function hexToUnicode(input, offsetEnd, cchSel) {
     if (cchSel > 10)
-        return;
+        return [0, 0];
     let offsetStart = offsetEnd - cchSel;
     let cch = cchSel ? cchSel : 10;         // 10 is enough for 5 surrogate pairs
     let ch = '';
@@ -339,7 +339,7 @@ function hexToUnicode(input, offsetEnd, cchSel) {
 
     if (n < 0x20 || n > 0x10FFFF) {
         if (n || cchSel)
-            return;
+            return [0, 0];
         // Convert ch to hex str. Sadly code.toString(16) only works correctly
         // for code <= 0xFFFF
         n = codeAt(input, offsetEnd - 1);
@@ -462,6 +462,8 @@ function GetCodePoint(str, i, cch) {
         code |= 0x0020;                     // Convert to lower case (if ASCII uc letter)
         if (code >= 0x0061)                 // Map lower-case ASCII letter
             code -= 0x0061 - 0x003A;        //  to hex digit
+        else if (code >= 0x003A)
+            break;                          // Not a hexadigit
         code -= 0x0030;                     // Convert hex digit to binary number
         if (code > 15)
             break;                          // Not a hexadigit
@@ -1032,10 +1034,12 @@ const names = {
 function refreshDisplays() {
     // Update MathML, UnicodeMath, and code-point displays; restore selection from selip
     output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
-    input.value = getUnicodeMath(output.firstElementChild)
+    let uMath = getUnicodeMath(output.firstElementChild, true)
     let undoTop = stackTop(outputUndoStack)
-    if (input.value != undoTop)
-        outputUndoStack.push(input.value)
+    if (uMath != undoTop)
+        outputUndoStack.push(uMath)
+
+    input.innerHTML = discardSelInfo(uMath)
     codepoints.innerHTML = getCodePoints()
 
     if (!output.firstElementChild)
@@ -1380,6 +1384,12 @@ function deleteSelection(sel) {
             checkEmpty(nodeA)
             return true
         }
+        if (nodeStart.nodeName == 'math') {
+            nodeStart.innerHTML = `<mi>⬚</mi>`
+            outputUndoStack = ['']
+            refreshDisplays()
+            return true
+        }
     } else if (isMathMLObject(nodeA)) {
         nodeA.remove()
         refreshDisplays()
@@ -1540,7 +1550,7 @@ function checkEmpty(node, offset) {
         setSelipAttribute(node, offset)
     }
     if (output.firstElementChild && !output.firstElementChild.childElementCount)
-        output.firstElementChild.innerHTML = `<mi selip="1">⬚</mi>`
+        output.firstElementChild.innerHTML = `<mi>⬚</mi>`
     refreshDisplays()
 }
 
@@ -1552,7 +1562,6 @@ function checkFormulaAutoBuildUp(node, nodeP, key) {
 
     if ('+=-<> )'.includes(key) || key == '/' && node.textContent != ')') {
         // Try to build up <mrow> or trailing part of it
-        let i
         let uMath = ''
         let [cParen, k, opBuildUp] = checkBrackets(nodeP)
         if (opBuildUp && (!cParen || k != -1)) {
@@ -1565,7 +1574,7 @@ function checkFormulaAutoBuildUp(node, nodeP, key) {
             } else {
                 // Differing count: try to build up nodeP trailing mi, mo,
                 // mn, mtext children
-                for (i = k + 1; i < cNode; i++)
+                for (let i = k + 1; i < cNode; i++)
                     uMath += nodeP.children[i].textContent;
             }
             let t = unicodemathml(uMath, true) // uMath → MathML
@@ -2012,20 +2021,20 @@ output.addEventListener('keydown', function (e) {
             return
 
         default:
-            if (key.length > 1)       // 'Shift', etc.
+            if (key.length > 1)             // 'Shift', etc.
                 return
-            if (key == 'a' && e.ctrlKey) {
+
+            e.preventDefault();
+            if (key == 'a' && e.ctrlKey) {  // Ctrl+a
                 // Select math zone
                 sel = setSelection(sel, output.firstElementChild, SELECTNODE)
                 return
             }
-            e.preventDefault();
+            if (key == 'x' && e.altKey) {   // Alt+x: hex → Unicode
+                let cchSel = 0              // Default degenerate selection
+                let str = ''                // Collects hex string
 
-            if (key == 'x' && e.altKey) { // Alt+x: hex → Unicode
-                let cchSel = 0          // Default degenerate selection
-                let str = ''            // Collects hex string
-
-                if (!sel.isCollapsed) { // Nondegenerate selection
+                if (!sel.isCollapsed) {     // Nondegenerate selection
                     let rg = sel.getRangeAt(0)
                     node = rg.endContainer
                     str = rg + ''
@@ -2037,8 +2046,8 @@ output.addEventListener('keydown', function (e) {
                 if (nodeP.nodeName != 'mrow')
                     return
                 let cNode = nodeP.childElementCount
-                let iEnd = -1           // Index of node in nodeP
-                let iStart = 0          // Index of 1st node that might be part of hex
+                let iEnd = -1               // Index of node in nodeP
+                let iStart = 0              // Index of 1st node that might be part of hex
 
                 // Collect span of alphanumerics ending with node
                 for (i = cNode - 1; i >= 0; i--) {
@@ -2106,7 +2115,7 @@ output.addEventListener('keydown', function (e) {
                 if (!outputUndoStack.length)
                     return
                 let undoTop = stackTop(outputUndoStack)
-                if (input.value == undoTop)
+                if (input.value == discardSelInfo(undoTop))
                     outputUndoStack.pop()
                 let uMath = outputUndoStack.pop()
                 if (!uMath)

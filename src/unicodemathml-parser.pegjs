@@ -1010,6 +1010,9 @@ arg =
     / "ⓐ(" a:αASCII+ __? c:exp ")" {
         return {intend: {op: "ⓐ", intent: {text: a.join('')}, content: c}};
     }
+    / "Ⓕ" n:nn {
+        return {intend: {op: "Ⓕ", intent: {text: n}, content: n}};
+    }
 
 // ❹ highest-precendence constructs (and brackets/grouping, which is high-
 //    precedence with regard to what's outside the brackets, but low-precedence

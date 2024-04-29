@@ -242,6 +242,15 @@ function checkSpace(i, node, ret) {
     return ''
 }
 
+function discardSelInfo(uMath) {
+    let i = uMath.indexOf('Ⓕ');
+    if (i != -1) {
+        uMath = uMath.substring(0, i) + uMath.substring(i + 2)
+        console.log("ip = " + i)
+    }
+    return uMath
+}
+
 function getMathMLDOM(mathML) {
     // Convert MathML to UnicodeMath
     if (mathML.startsWith('<mml:math') || mathML.startsWith('<m:math'))
@@ -2335,6 +2344,7 @@ function preprocess(dsty, uast, index, arr) {
     if (!intent)
         intent = uast.intent;
     dsty.intent = dsty.arg = '';
+    let selip = ''
 
     switch (key) {
         case "unicodemath":
@@ -2524,7 +2534,7 @@ function preprocess(dsty, uast, index, arr) {
                 // Check for Leibniz derivatives
                 var [chDifferential0, order0, arg0] = getDifferentialInfo(value.of, 0); // Numerator
 
-                if (chDifferential0) { // Might be a derivative
+                if (chDifferential0) {      // Might be a derivative
                     var [chDifferential1, order1, wrt] = getDifferentialInfo(value.of, 1); // Denominator
 
                     if (chDifferential0 == chDifferential1 && order0 == order1) {
@@ -2855,7 +2865,12 @@ function preprocess(dsty, uast, index, arr) {
                 }
                 return c;
             }
-            if (value.op == 'ⓘ') {
+            if (value.op == 'Ⓕ') {
+                let selip = value.intent.text
+                if (inRange('\uFF10', selip, '\uFF19'))
+                    selip = '-' + String.fromCharCode(selip.codePointAt(0) - 0xFEE0)
+                return {intend: selip}
+            } else if (value.op == 'ⓘ') {
                 dsty.intent = value.intent.text;
                 if (arg)
                     dsty.arg = arg;
@@ -3128,9 +3143,17 @@ function preprocess(dsty, uast, index, arr) {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+var selip
+
 function getAttrs(value, deflt) {
     var attrs = {};
 
+    if (selip) {
+        attrs.selip = selip
+        selip = null
+    }
+    if (value.selip)
+        attrs.selip = value.selip
     if (value.arg)
         attrs.arg = value.arg;
     if (value.intent)
@@ -3188,9 +3211,9 @@ function mtransform(dsty, puast) {
 
     var key = k(puast);
     var value = v(puast);
-    if (value && !value.arg && puast.hasOwnProperty("arg")) {
+    if (value && !value.arg && puast.hasOwnProperty("arg"))
         value.arg = puast.arg;
-    }
+
     switch (key) {
         case "unicodemath":
             if (autoBuildUp)                // Used for WYSIWYG editing
@@ -3677,6 +3700,8 @@ function mtransform(dsty, puast) {
                             }
                         } else {
                             let val = mtransform(dsty, Array.isArray(value) ? value[i] : value);
+                            if (attrs.selip)
+                                val.mi.attributes.selip = attrs.selip;
                             if (attrs.arg)
                                 val.mi.attributes.arg = attrs.arg;
                             if (attrs.intent)
@@ -3816,8 +3841,12 @@ function mtransform(dsty, puast) {
             if (attrs.intent && attrs.intent[0] in symbolsIntent)
                 attrs.intent = symbolsIntent[attrs.intent[0]] + attrs.intent.substring(1);
 
-            ret = [{mrow: withAttrs(attrs, ret)}];
-            return ret;
+            return [{mrow: withAttrs(attrs, ret)}]
+
+        case "intend":
+            // Set up next element to get selip via getAttrs()
+            selip = value
+            return ''
 
         default:
             return value;
@@ -3975,6 +4004,9 @@ function nary(node, op, cNode) {
 }
 
 function isDigitArg(node) {
+    if (!node || !node.lastElementChild)
+        return false
+
     return node.lastElementChild.nodeName == 'mn' &&
         isAsciiDigit(node.children[1].textContent)
 }
@@ -3984,9 +4016,6 @@ function dump(value, noAddParens) {
     let cNode = value.children.length;
     let intent
     let ret = '';
-    let selip = value.getAttribute('selip')
-    if (selip)
-        console.log('selip = ' + selip + ' element = ' + value.nodeName)
 
     switch (value.nodeName) {
         case 'mtable':
@@ -4006,30 +4035,39 @@ function dump(value, noAddParens) {
                 value.firstElementChild.children.length == 2 &&
                 value.firstElementChild.firstElementChild.firstElementChild.nodeName == 'mtext') {
                 // Numbered equation: convert to UnicodeMath like 𝐸=𝑚𝑐²#(20)
-                return dump(value.firstElementChild.lastElementChild.firstElementChild) +
+                ret = dump(value.firstElementChild.lastElementChild.firstElementChild) +
                     '#' + value.firstElementChild.firstElementChild.firstElementChild.textContent;
+                break;
             }
-            return symbol + '(' + nary(value, '@', cNode) + ')';
+            ret = symbol + '(' + nary(value, '@', cNode) + ')';
+            break;
 
         case 'mtr':
-            return nary(value, '&', cNode);
+            ret = nary(value, '&', cNode);
+            break;
 
         case 'mtd':
-            return nary(value, '', cNode);
+            ret = nary(value, '', cNode);
+            break;
 
         case 'maligngroup':
             if (value.parentElement.nodeName == 'mtd')
-                return '';                  // else fall through
+                break;                  // else fall through
         case 'malignmark':
-            return '&';
+            ret = '&';
+            break;
 
         case 'menclose':
             let notation = value.getAttribute('notation')
             if (notation) {
                 for (const [key, val] of Object.entries(symbolClasses)) {
-                    if (val == notation)
-                        return unary(value, key);
+                    if (val == notation) {
+                        ret = unary(value, key);
+                        break;
+                    }
                 }
+                if (ret)
+                    break;
                 let mask = 0;
 
                 while (notation) {
@@ -4042,13 +4080,16 @@ function dump(value, noAddParens) {
                 }
                 if (mask) {
                     ret = dump(value.firstElementChild, true);
-                    return '▭(' + (mask ^ 15) + '&' + ret + ')'; 
+                    ret = '▭(' + (mask ^ 15) + '&' + ret + ')';
+                    break;
                 }
             }
-            return unary(value, '▭');
+            ret = unary(value, '▭');
+            break;
 
         case 'mphantom':
-            return unary(value, '⟡');       // Full size, no display
+            ret = unary(value, '⟡');       // Full size, no display
+            break;
 
         case 'mpadded':
             var op = '';
@@ -4066,15 +4107,17 @@ function dump(value, noAddParens) {
                     op = '⇳';               // fPhantomZeroWidth
                 else if (mask == 12)
                     op = '⬄';              // fPhantomZeroAscent | fPhantomZeroDescent
-                return op ? op + dump(value.firstElementChild).substring(1)
+                ret = op ? op + dump(value.firstElementChild).substring(1)
                     : '⟡(' + mask + '&' + dump(value.firstElementChild.firstElementChild, true) + ')';
+                break;
             }
             const opsShow = {2: '⬌', 4: '⬆', 8: '⬇', 12: '⬍'};
             op = opsShow[mask];
             mask |= 1;                      // fPhantomShow
 
-            return op ? unary(value, op)
+            ret = op ? unary(value, op)
                 : '⟡(' + mask + '&' + dump(value.firstElementChild, true) + ')';
+            break;
 
         case 'mstyle':
             ret = dump(value.firstElementChild);
@@ -4084,14 +4127,16 @@ function dump(value, noAddParens) {
             val = value.getAttribute('mathbackground')
             if (val)
                 ret = '☁(' + val + '&' + ret + ')';
-            return ret;
+            break;
 
         case 'msqrt':
-            return unary(value, '√');
+            ret = unary(value, '√');
+            break;
 
         case 'mroot':
-            return '√(' + dump(value.lastElementChild, true) + '&' +
-                          dump(value.firstElementChild, true) + ')';
+            ret = '√(' + dump(value.lastElementChild, true) + '&' +
+                         dump(value.firstElementChild, true) + ')';
+            break;
 
         case 'mfrac':
             var op = '/';
@@ -4111,12 +4156,13 @@ function dump(value, noAddParens) {
             if (value.previousElementSibling && value.previousElementSibling.nodeName != 'mo') {
                 ret = ' ' + ret;                    // Separate variable and numerator
             }
-            return ret;
+            break;
 
         case 'msup':
             if (isDigitArg(value)) {
-                return dump(value.firstElementChild) +
+                ret = dump(value.firstElementChild) +
                     digitSuperscripts[value.lastElementChild.textContent];
+                break;
             }
             var op = '^';
             if (isPrime(value.lastElementChild.textContent))
@@ -4130,48 +4176,61 @@ function dump(value, noAddParens) {
                 if (code != 0x22BA) {       // '⊺'
                     if (code > 0xDC00)
                         cRet--;             // To remove whole surrogate pair
-                    return ret.substring(0, cRet - 2) + '⊺';
+                    ret = ret.substring(0, cRet - 2) + '⊺';
                 }
             }
-            return ret;
+            break;
 
         case 'mover':
-            if (overBrackets.includes(value.lastElementChild.textContent))
-                return dump(value.lastElementChild) + dump(value.firstElementChild);
-
+            if (overBrackets.includes(value.lastElementChild.textContent)) {
+                ret = dump(value.lastElementChild) + dump(value.firstElementChild);
+                break;
+            }
             op = value.hasAttribute('accent') ? '' : '┴';
-            return binary(value, op);
+            ret = binary(value, op);
+            break;
 
         case 'munder':
-            if (underBrackets.includes(value.lastElementChild.textContent))
-                return dump(value.lastElementChild) + dump(value.firstElementChild);
+            if (underBrackets.includes(value.lastElementChild.textContent)) {
+                ret = dump(value.lastElementChild) + dump(value.firstElementChild);
+                break;
+            }
 
             op = value.hasAttribute('accentunder') ? '' : '┬';
             if (value.firstElementChild.innerHTML == 'lim')
                 op = '_';
-            return binary(value, op);
+            ret = binary(value, op);
+            break;
 
         case 'msub':
             if (isDigitArg(value)) {
-                return dump(value.firstElementChild) +
+                ret = dump(value.firstElementChild) +
                     digitSubscripts[value.lastElementChild.textContent];
+                break;
             }
-            return binary(value, '_');
+            ret = binary(value, '_');
+            break;
 
         case 'munderover':
             intent = value.parentElement.getAttribute('intent')
-            if (!intent || !intent.startsWith(':sum'))
-                return ternary(value, '┬', '┴');
+            if (!intent || !intent.startsWith(':sum')) {
+                ret = ternary(value, '┬', '┴');
+                break;
+            }
                                             // Fall through to msubsup
         case 'msubsup':
             if (isDigitArg(value)) {
                 ret = dump(value.firstElementChild) +
                     digitSubscripts[value.children[1].textContent];
-                if (isAsciiDigit(value.lastElementChild.textContent))
-                    return ret + digitSuperscripts[value.lastElementChild.textContent]
-                return ret + '^' + dump(value.lastElementChild);
+                if (isAsciiDigit(value.lastElementChild.textContent)) {
+                    ret += digitSuperscripts[value.lastElementChild.textContent]
+                    break;
+                }
+                ret += '^' + dump(value.lastElementChild);
+                break;
             }
-            return ternary(value, '_', '^');
+            ret = ternary(value, '_', '^');
+            break;
 
         case 'mmultiscripts':
             ret = '';
@@ -4188,7 +4247,7 @@ function dump(value, noAddParens) {
                 ret += '_' + dump(value.children[1]);
             if (value.children[2].nodeName != 'none')
                 ret += '^' + dump(value.children[2]);
-            return ret;
+            break;
 
         case 'mfenced':
             let opOpen = value.hasAttribute('open') ? value.getAttribute('open') : '(';
@@ -4203,25 +4262,37 @@ function dump(value, noAddParens) {
                 if (i < cNode - 1)
                     ret += i < cSep - 1 ? opSeparators[i] : opSeparators[cSep - 1];
             }
-            return ret + opClose;
+            ret += opClose;
+            break;
 
         case 'mo':
             var val = value.innerHTML;
-            if (val == '&ApplyFunction;')
-                return '\u2061';
-            if (val == '&lt;')
-                return '<';
-            if (val == '&gt;')
-                return '>';
-            if (val == '/' && !autoBuildUp) // Quote other ops...
-                return '\\/';
-            if (val == '\u202F' && autoBuildUp)
-                return ' '
+            if (val == '&ApplyFunction;') {
+                ret = '\u2061';
+                break;
+            }
+            if (val == '&lt;') {
+                ret = '<';
+                break;
+            }
+            if (val == '&gt;') {
+                ret = '>';
+                break;
+            }
+            if (val == '/' && !autoBuildUp) { // Quote other ops...
+                ret = '\\/';
+                break;
+            }
+            if (val == '\u202F' && autoBuildUp) {
+                ret = ' '
+                break;
+            }
             if (val.startsWith('&#') && val.endsWith(';')) {
                 ret = value.innerHTML.substring(2, val.length - 1);
-                if (ret[0] == 'x') 
+                if (ret[0] == 'x')
                     ret = '0' + ret;
-                return String.fromCodePoint(ret);
+                ret = String.fromCodePoint(ret);
+                break;
             }
             if (value.hasAttribute('title')) {
                 // The DLMF title attribute implies the following intents
@@ -4229,56 +4300,85 @@ function dump(value, noAddParens) {
                 switch (value.getAttribute('title')) {
                     case 'differential':
                     case 'derivative':
-                        return 'ⅆ';
+                        ret = 'ⅆ';
+                        break;
                     case 'binomial coefficient':
-                        return '';
+                        val = '';
                 }
             }
-            return val;
+            if (!ret)
+                ret = val
+            break;
 
         case 'mi':
             intent = value.getAttribute('intent')
-            if (isDoubleStruck(intent))
-                return intent;
-
+            if (isDoubleStruck(intent)) {
+                ret = intent;
+                break;
+            }
             if (value.innerHTML.length == 1) {
                 let c = value.innerHTML;
-                if (!value.hasAttribute('mathvariant'))
-                    return italicizeCharacter(c);
-
+                if (!value.hasAttribute('mathvariant')) {
+                    ret = italicizeCharacter(c);
+                    break;
+                }
                 var mathstyle = mathvariants[value.getAttribute('mathvariant')];
-                if (c in mathFonts && mathstyle in mathFonts[c] && (c < 'Α' || c > 'Ω' && c != '∇'))
-                    return mathFonts[c][mathstyle];
+                if (c in mathFonts && mathstyle in mathFonts[c] && (c < 'Α' || c > 'Ω' && c != '∇')) {
+                    ret = mathFonts[c][mathstyle];
+                    break;
+                }
 
                 if (mathstyle == 'mup') {
                     if (value.hasAttribute('title')) {
                         // Differential d (ⅆ) appears in 'mo'
                         switch (value.getAttribute('title')) {
                             case 'base of natural logarithm':
-                                return 'ⅇ';
+                                ret = 'ⅇ';
+                                break;
                             case 'imaginary unit':
-                                return 'ⅈ';
+                                ret = 'ⅈ';
+                                break;
                         }
+                        if (ret)
+                            break;
                     }
-                    if (c != '∞' && c != '⋯' && !inRange('\u0391', c, '\u03A9'))
-                        return '"' + c + '"';
+                    if (c != '∞' && c != '⋯' && !inRange('\u0391', c, '\u03A9')) {
+                        ret = '"' + c + '"';
+                        break;
+                    }
                 }
             }                               // else fall through
         case 'mn':
-            return value.innerHTML;
+            ret = value.textContent;
+            break;
 
         case 'mtext':
-            return '"' + value.textContent + '"';
+            ret = '"' + value.textContent + '"';
+            break;
 
         case 'mspace':
             let width = value.getAttribute('width')
             if (width) {
                 for (let i = 0; i < spaceWidths.length; i++) {
-                    if (width == spaceWidths[i])
-                        return uniSpaces[i];
+                    if (width == spaceWidths[i]) {
+                        ret = uniSpaces[i];
+                        break;
+                    }
                 }
             }
             break;
+    }
+    if (ret) {
+        let selip = value.getAttribute('selip')
+        if (selip) {
+            if (selip[0] == '-') {
+                // Represent negative selip's by full-width digits to
+                // facilitate peg parsing)
+                selip = String.fromCharCode(selip.codePointAt(1) + 0xFEE0)
+            }
+            return 'Ⓕ' + selip + ret
+        }
+        return ret
     }
 
     // Dump <mrow> children
@@ -4337,11 +4437,12 @@ function MathMLtoUnicodeMath(mathML) {
     return getUnicodeMath(doc.firstElementChild)
 }
 
-function getUnicodeMath(doc) {
+function getUnicodeMath(doc, keepSelInfo) {
     let unicodeMath = dump(doc);
 
     // Remove some unnecessary spaces
-    for (let i = 0; ; i++) {
+    let i = 0
+    for (; ; i++) {
         i = unicodeMath.indexOf(' ', i);
         if (i < 0)
             break;                          // No more spaces
@@ -4358,7 +4459,7 @@ function getUnicodeMath(doc) {
             unicodeMath = unicodeMath.substring(0, i) + unicodeMath.substring(i + j);
         }
     }
-    return unicodeMath;
+    return keepSelInfo ? unicodeMath : discardSelInfo(unicodeMath);
 }
 
 //////////////
