@@ -213,7 +213,6 @@ function checkBrackets(node) {
                 cBracket++
                 if (k == -1)
                     k = i
-                opBuildUp = true
            } else if (isCloseDelimiter(nodeC.textContent)) {
                 cBracket--
                 if (k == -1)
@@ -520,7 +519,6 @@ var emitDefaultIntents =
 ///////////
 
 // control words, to be replaced before parsing proper commences
-// should match controlWords variable in playground.js
 var controlWords = {
     // from tech note: Appendix B. Character Keywords and Properties updated
     // with the Microsoft math autocorrect list. For a more complete list, see

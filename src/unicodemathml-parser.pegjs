@@ -335,6 +335,7 @@ opPhantom = "⟡" / "⬄" / "⇳"
 opSmash = "⬍" / "⬆" / "⬇" / "⬌"
 opAbstractBox = "□"
 opRoot = "√" / "∛" / "∜"
+opSelection = "Ⓐ" / "Ⓕ" / "Ⓘ"
 opScript = [_^┬┴'′″‴⁗!‼₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥₓ⁰¹²³⁴⁵⁶⁷⁸⁹ᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻ⁺⁻⁼⁽⁾]
 opSubSup = "_" / "^"
 opAboveBelow = "┬" / "┴"
@@ -1010,11 +1011,11 @@ arg =
     / "ⓐ(" a:αASCII+ __? c:exp ")" {
         return {intend: {op: "ⓐ", intent: {text: a.join('')}, content: c}};
     }
-    / "Ⓕ" n:nn {
-        return {intend: {op: "Ⓕ", intent: {text: n}, content: n}};
+    / o:opSelection n:nn {
+        return {intend: {op: o, intent: {text: n}, content: n}};
     }
 
-// ❹ highest-precendence constructs (and brackets/grouping, which is high-
+// ❹ highest-precedence constructs (and brackets/grouping, which is high-
 //    precedence with regard to what's outside the brackets, but low-precedence
 //    wrt their contents, which are full, standalone expressions)
 entity
