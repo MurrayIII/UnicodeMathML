@@ -53,6 +53,7 @@ document.onselectionchange = () => {
     setSelAttributes(focusNode, 'selfocus', offset)
 
     output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
+    console.log('uMath = ' + getUnicodeMath(output.firstElementChild, true))
 }
 
 function setSelection(sel, node, offset, nodeFocus, offsetFocus) {
@@ -1068,38 +1069,67 @@ const names = {
     'mfrac': 'fraction', 'msqrt': 'square root',
 }
 
-function refreshDisplays() {
+function refreshDisplays(uMath) {
     // Update MathML, UnicodeMath, and code-point displays; restore selection
     // from selanchor and selfocus
     output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
-    let uMath = getUnicodeMath(output.firstElementChild, true)
+    let uMathCurrent = getUnicodeMath(output.firstElementChild, true)
+
+    if (!uMath)
+        uMath = uMathCurrent
     let undoTop = stackTop(outputUndoStack)
     if (uMath != undoTop)
         outputUndoStack.push(uMath)
 
-    input.innerHTML = discardSelInfo(uMath)
+    input.innerHTML = removeSelInfo(uMathCurrent)
     codepoints.innerHTML = getCodePoints()
 
-    if (!output.firstElementChild)
+    let node = output.firstElementChild     // <math> node
+    if (!node)                              // No <math> node
         return
-    let node = output.firstElementChild
-    let offset = 1
+
+    // Restore selection if previous code set the selection attributes
+    // selanchor and selfocus appropriately
+    let nodeA, nodeF                        // Anchor, focus nodes
+    let offsetA, offsetF                    // Anchor, focus offsets
     let walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, null)
 
-    while (walker.nextNode()) {
-        // Restore selection; previous code has to set attributes selanchor
-        // and selfocus
-        if (walker.currentNode.attributes.selanchor) {
-            node = walker.currentNode
-            offset = node.attributes.selanchor.nodeValue;
-            if (offset == node.textContent.length)
-                atEnd = true
-            break
+    while (walker.nextNode() && (!offsetA || !offsetF)) {
+        node = walker.currentNode
+        if (!offsetA) {
+            offsetA = node.getAttribute('selanchor')
+            if (offsetA) {
+                nodeA = node
+                if (offsetA[0] == '-') {    // Move to #text child
+                    offsetA = offsetA.substring(1)
+                    nodeA = node.firstChild
+                }
+            }
+        }
+        if (!offsetF) {
+            offsetF = node.getAttribute('selfocus')
+            if (offsetF) {
+                nodeF = node
+                if (offsetF[0] == '-') {    // Move to #text child
+                    offsetF = offsetF.substring(1)
+                    nodeF = node.firstChild
+                }
+            }
         }
     }
-    if (node.textContent == '⬚')
-        offset = SELECTNODE
-    setSelection(null, node, offset)
+    if (nodeA && nodeF) {
+        let sel = window.getSelection()
+
+        if (nodeA.textContent == '⬚') {
+            setSelection(sel, nodeA, SELECTNODE)
+        } else if (nodeA === nodeF && offsetA == offsetF) {
+            if (offsetA == nodeA.textContent.length)
+                atEnd = true
+            setSelection(sel, nodeA, offsetA)
+        } else {
+            sel.setBaseAndExtent(nodeA, offsetA, nodeF, offsetF)
+        }
+    }
 }
 
 function checkFunction(node) {
@@ -1121,8 +1151,11 @@ function checkFunction(node) {
 }
 
 function removeSelAttributes(node) {
-    if (!node)
+
+    if (!node) {
         node = output.firstElementChild
+        console.log('remove selection attributes from ' + getUnicodeMath(node, true))
+    }
     let walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, null, false)
     while (walker.nextNode()) {             // Remove current selanchor attribute
         if (walker.currentNode.hasAttribute('selanchor'))
@@ -1352,12 +1385,12 @@ function checkMathSelection(sel) {
     if (nodeAnchor.nodeName[0] != 'm')      // Not MathML so not output window
         return null
 
-    removeSelAttributes()
     if (sel.isCollapsed) {
         //if (!sel.anchorOffset)
         // Following change creates loop to change it back. Probably need to
         // call e.preventDefault(), but still need the default for some cases
         //    sel = setSelection(sel, nodeAnchor, 0, nodeAnchor, 0)
+        removeSelAttributes()
         setSelAttributes(nodeAnchor, 'selanchor', offset, 'selfocus', offset)
         return sel                          // All insertion points are valid
     }
@@ -1436,6 +1469,9 @@ function deleteSelection(sel) {
     let nodeEnd = range.endContainer
     let nodeStart = range.startContainer
     let nodeA = range.commonAncestorContainer
+    let uMath = getUnicodeMath(output.firstElementChild, true)
+    if (removeSelInfo(uMath) == removeSelInfo(stackTop(outputUndoStack)))
+        outputUndoStack.pop()
     removeSelAttributes(nodeA)
 
     // Handle single-node-deletion cases first
@@ -1445,13 +1481,10 @@ function deleteSelection(sel) {
         sel.deleteFromDocument()
         nodeStart = nodeStart.parentElement
         if (nodeStart.textContent) {
-            // Need to handle startOffset > 1
-            setSelection(sel, nodeStart, range.startOffset ? '1' : '0')
-            setSelAttributes(nodeStart, 'selanchor', range.startOffset ? '1' : '0')
-            refreshDisplays()
+            refreshDisplays(uMath)
             return true
         }
-        checkEmpty(nodeStart)
+        checkEmpty(nodeStart, 0, uMath)
         return true
     }
     if (!range.endOffset) {
@@ -1466,18 +1499,18 @@ function deleteSelection(sel) {
     if (nodeEnd === nodeStart) {
         if (isMathMLObject(nodeStart)) {
             nodeStart.remove()
-            checkEmpty(nodeA)
+            checkEmpty(nodeA, 0, uMath)
             return true
         }
         if (nodeStart.nodeName == 'math') {
             nodeStart.innerHTML = `<mi>⬚</mi>`
             outputUndoStack = ['']
-            refreshDisplays()
+            refreshDisplays(uMath)
             return true
         }
     } else if (isMathMLObject(nodeA)) {
         nodeA.remove()
-        refreshDisplays()
+        refreshDisplays(uMath)
         return true
     }
 
@@ -1526,7 +1559,7 @@ function deleteSelection(sel) {
         }
         node.remove()
     }
-    checkEmpty(nodeA)
+    checkEmpty(nodeA, 0, uMath)
     return true
 }
 
@@ -1593,7 +1626,7 @@ function checkAutocomplete(node) {
     })
 }
 
-function checkEmpty(node, offset) {
+function checkEmpty(node, offset, uMath) {
     // If a deletion empties the active node, remove the node unless it's
     // required, e.g., for numerator, denominator, subscript, etc. For the
     // latter, insert the empty argument place holder '⬚'. Set the 'selanchor'
@@ -1638,7 +1671,7 @@ function checkEmpty(node, offset) {
     }
     if (output.firstElementChild && !output.firstElementChild.childElementCount)
         output.firstElementChild.innerHTML = `<mi>⬚</mi>`
-    refreshDisplays()
+    refreshDisplays(uMath)
 }
 
 function checkFormulaAutoBuildUp(node, nodeP, key) {
@@ -1961,7 +1994,7 @@ output.addEventListener("click", function () {
         onac = false
         return
     }
-    removeSelAttributes()
+    //removeSelAttributes()
     let sel = window.getSelection()
     let node = sel.anchorNode
     console.log('getSelection anchorNode = ' + node.nodeName)
@@ -2201,7 +2234,7 @@ output.addEventListener('keydown', function (e) {
                 if (!outputUndoStack.length)
                     return
                 let undoTop = stackTop(outputUndoStack)
-                if (input.value == discardSelInfo(undoTop))
+                if (input.value == removeSelInfo(undoTop))
                     outputUndoStack.pop()
                 let uMath = outputUndoStack.pop()
                 if (!uMath)

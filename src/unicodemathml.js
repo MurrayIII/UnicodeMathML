@@ -241,11 +241,16 @@ function checkSpace(i, node, ret) {
     return ''
 }
 
-function discardSelInfo(uMath) {
+function removeSelInfo(uMath) {
     let i = uMath.indexOf('Ⓕ');
+
     if (i != -1) {
+        console.log('uMath = ' + uMath)
+
         uMath = uMath.substring(0, i) + uMath.substring(i + 2)
-        console.log("ip = " + i)
+        i = uMath.indexOf('Ⓐ');
+        if (i != -1)
+            uMath = uMath.substring(0, i) + uMath.substring(i + 2)
     }
     return uMath
 }
@@ -2342,7 +2347,8 @@ function preprocess(dsty, uast, index, arr) {
     if (!intent)
         intent = uast.intent;
     dsty.intent = dsty.arg = '';
-    let selip = ''
+    let selanchor = ''
+    let selfocus = ''
 
     switch (key) {
         case "unicodemath":
@@ -2863,19 +2869,25 @@ function preprocess(dsty, uast, index, arr) {
                 }
                 return c;
             }
-            if (value.op == 'Ⓕ') {
-                let selip = value.intent.text
-                if (inRange('\uFF10', selip, '\uFF19'))
-                    selip = '-' + String.fromCharCode(selip.codePointAt(0) - 0xFEE0)
-                return {intend: selip}
-            } else if (value.op == 'ⓘ') {
-                dsty.intent = value.intent.text;
-                if (arg)
-                    dsty.arg = arg;
-            } else {
-                dsty.arg = value.intent.text;
-                if (intent)
-                    dsty.intent = intent;
+            val = value.intent.text
+
+            switch (value.op) {
+                case 'Ⓐ':
+                case 'Ⓕ':
+                    if (inRange('\uFF10', val, '\uFF19'))
+                        val = '-' + String.fromCharCode(val.codePointAt(0) - 0xFEE0)
+                    return value.op == 'Ⓐ' ? {intend: {anchor: val}} : {intend: {focus: val}}
+
+                case 'ⓘ':
+                    dsty.intent = val;
+                    if (arg)
+                        dsty.arg = arg;
+                    break
+
+                case 'ⓐ':
+                    dsty.arg = val;
+                    if (intent)
+                        dsty.intent = intent;
             }
             return preprocess(dsty, v(value.content));
 
@@ -3141,17 +3153,27 @@ function preprocess(dsty, uast, index, arr) {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-var selip
+var selanchor
+var selfocus
+
 
 function getAttrs(value, deflt) {
     var attrs = {};
 
-    if (selip) {
-        attrs.selip = selip
-        selip = null
+    if (selanchor) {
+        attrs.selanchor = selanchor
+        selanchor = null
     }
-    if (value.selip)
-        attrs.selip = value.selip
+    if (value.selanchor)
+        attrs.selanchor = value.selanchor
+
+    if (selfocus) {
+        attrs.selfocus = selfocus
+        selfocus = null
+    }
+    if (value.selfocus)
+        attrs.selfocus = value.selfocus
+
     if (value.arg)
         attrs.arg = value.arg;
     if (value.intent)
@@ -3698,8 +3720,10 @@ function mtransform(dsty, puast) {
                             }
                         } else {
                             let val = mtransform(dsty, Array.isArray(value) ? value[i] : value);
-                            if (attrs.selip)
-                                val.mi.attributes.selip = attrs.selip;
+                            if (attrs.selanchor)
+                                val.mi.attributes.selanchor = attrs.selanchor;
+                            if (attrs.selfocus)
+                                val.mi.attributes.selfocus = attrs.selfocus;
                             if (attrs.arg)
                                 val.mi.attributes.arg = attrs.arg;
                             if (attrs.intent)
@@ -3842,8 +3866,11 @@ function mtransform(dsty, puast) {
             return [{mrow: withAttrs(attrs, ret)}]
 
         case "intend":
-            // Set up next element to get selip via getAttrs()
-            selip = value
+            // Set up next element to get selanchor via getAttrs()
+            if (value.anchor)
+                selanchor = value.anchor
+            else if (value.focus)
+                selfocus = value.focus
             return ''
 
         default:
@@ -3999,6 +4026,17 @@ function nary(node, op, cNode) {
             ret += op;
     }
     return ret;
+}
+
+function checkSelAttr(attr) {
+    if (attr == undefined)
+        return ''
+    if (attr[0] != '-')
+        return attr
+
+    // Facilitate peg parsing by representing negative selection attributes
+    // by full-width digits
+    return String.fromCharCode(attr.codePointAt(1) + 0xFEE0)
 }
 
 function isDigitArg(node) {
@@ -4367,15 +4405,12 @@ function dump(value, noAddParens) {
             break;
     }
     if (ret) {
-        let selip = value.getAttribute('selip')
-        if (selip) {
-            if (selip[0] == '-') {
-                // Represent negative selip's by full-width digits to
-                // facilitate peg parsing)
-                selip = String.fromCharCode(selip.codePointAt(1) + 0xFEE0)
-            }
-            return 'Ⓕ' + selip + ret
-        }
+        let selattr = checkSelAttr(value.getAttribute('selfocus'))
+        if (selattr)
+            ret = 'Ⓕ' + selattr + ret
+        selattr = checkSelAttr(value.getAttribute('selanchor'))
+        if (selattr)
+            ret = 'Ⓐ' + selattr + ret
         return ret
     }
 
@@ -4436,11 +4471,10 @@ function MathMLtoUnicodeMath(mathML) {
 }
 
 function getUnicodeMath(doc, keepSelInfo) {
-    let unicodeMath = dump(doc);
+    let unicodeMath = dump(doc);            // Get UnicodeMath from DOM doc
 
     // Remove some unnecessary spaces
-    let i = 0
-    for (; ; i++) {
+    for (let i = 0; ; i++) {
         i = unicodeMath.indexOf(' ', i);
         if (i < 0)
             break;                          // No more spaces
@@ -4457,7 +4491,8 @@ function getUnicodeMath(doc, keepSelInfo) {
             unicodeMath = unicodeMath.substring(0, i) + unicodeMath.substring(i + j);
         }
     }
-    return keepSelInfo ? unicodeMath : discardSelInfo(unicodeMath);
+    // Need selection info for undo
+    return keepSelInfo ? unicodeMath : removeSelInfo(unicodeMath);
 }
 
 //////////////
