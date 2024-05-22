@@ -36,6 +36,7 @@ document.onselectionchange = () => {
         return
 
     // In math output window
+    removeSelAttributes()
     let offset = sel.anchorOffset
     anchorNode = sel.anchorNode
     if (anchorNode.nodeName == '#text') {
@@ -44,14 +45,15 @@ document.onselectionchange = () => {
     }
     setSelAttributes(anchorNode, 'selanchor', offset)
 
-    offset = sel.focusOffset
-    focusNode = sel.focusNode
-    if (focusNode.nodeName == '#text') {
-        focusNode = focusNode.parentElement
-        offset = '-' + offset
+    if (sel.focusOffset != sel.anchorOffset || sel.focusNode != sel.anchorNode) {
+        offset = sel.focusOffset
+        focusNode = sel.focusNode
+        if (focusNode.nodeName == '#text') {
+            focusNode = focusNode.parentElement
+            offset = '-' + offset
+        }
+        setSelAttributes(focusNode, 'selfocus', offset)
     }
-    setSelAttributes(focusNode, 'selfocus', offset)
-
     output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
     console.log('uMath = ' + getUnicodeMath(output.firstElementChild, true))
 }
@@ -62,23 +64,33 @@ function setSelection(sel, node, offset, nodeFocus, offsetFocus) {
     if (!node)
         return sel;
 
-    let range = new Range();
     if (offset == SELECTNODE) {
-        range.selectNodeContents(node)
-    } else {
-        if (node.nodeName == 'mtext')
-            node = node.firstChild
-        if (offset < 0) {                   // Text offset (not child index)
-            offset = -offset
-            if (node.nodeName != '#text')
-                node = node.firstChild      // Should be '#text' now
-        }
-        range.setStart(node, offset);
-        if (nodeFocus)
-            range.setEnd(nodeFocus, offsetFocus)
-        else
-            range.setEnd(node, offset);
+        offset = node.nodeName == '#text'
+               ? node.textContent.length : node.childNodes.length
+        sel.setBaseAndExtent(node, 0, node, offset)
+        return
     }
+
+    if (node.nodeName == 'mtext')
+        node = node.firstChild
+    if (offset < 0) {                       // Text offset (not child index)
+        offset = -offset
+        if (node.nodeName != '#text')
+            node = node.firstChild          // Should be '#text' now
+    }
+    if (nodeFocus) {
+        if (offsetFocus < 0) {              // Text offset (not child index)
+            offsetFocus = -offsetFocus
+            if (nodeFocus.nodeName != '#text')
+                nodeFocus = nodeFocus.firstChild 
+        }
+        sel.setBaseAndExtent(node, offset, nodeFocus, offsetFocus)
+        return sel
+    }
+    let range = new Range();
+    range.setStart(node, offset);
+    range.setEnd(node, offset);
+
     sel.removeAllRanges();
     sel.addRange(range);
     console.log("sel.anchorNode = " + sel.anchorNode.nodeName)
@@ -1088,6 +1100,11 @@ function refreshDisplays(uMath) {
     if (!node)                              // No <math> node
         return
 
+    if (node.firstElementChild.nodeName == 'mi' && node.textContent == '⬚') {
+        setSelection(null, node.firstElementChild, SELECTNODE)
+        return
+    }
+
     // Restore selection if previous code set the selection attributes
     // selanchor and selfocus appropriately
     let nodeA, nodeF                        // Anchor, focus nodes
@@ -1117,18 +1134,24 @@ function refreshDisplays(uMath) {
             }
         }
     }
-    if (nodeA && nodeF) {
-        let sel = window.getSelection()
+    if (!nodeA)
+        return                              // No selection attributes
 
-        if (nodeA.textContent == '⬚') {
-            setSelection(sel, nodeA, SELECTNODE)
-        } else if (nodeA === nodeF && offsetA == offsetF) {
-            if (offsetA == nodeA.textContent.length)
-                atEnd = true
-            setSelection(sel, nodeA, offsetA)
-        } else {
-            sel.setBaseAndExtent(nodeA, offsetA, nodeF, offsetF)
-        }
+    if (!nodeF) {                           // No 'selfocus': insertion point (IP)
+        nodeF = nodeA
+        offsetF = offsetA
+    }
+
+    let sel = window.getSelection()
+
+    if (nodeA.textContent == '⬚') {
+        setSelection(sel, nodeA, SELECTNODE)
+    } else if (nodeA === nodeF && offsetA == offsetF) {
+        if (offsetA == nodeA.textContent.length)
+            atEnd = true
+        setSelection(sel, nodeA, offsetA)
+    } else {
+        sel.setBaseAndExtent(nodeA, offsetA, nodeF, offsetF)
     }
 }
 
@@ -1151,12 +1174,12 @@ function checkFunction(node) {
 }
 
 function removeSelAttributes(node) {
-
     if (!node) {
         node = output.firstElementChild
         console.log('remove selection attributes from ' + getUnicodeMath(node, true))
     }
-    let walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, null, false)
+    let walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, null)
+
     while (walker.nextNode()) {             // Remove current selanchor attribute
         if (walker.currentNode.hasAttribute('selanchor'))
             walker.currentNode.removeAttribute('selanchor')
@@ -1210,7 +1233,7 @@ function handleKeyboardInput(node, key, sel) {
         else {
             let nodeNew = document.createElement(nodeNewName)
             nodeNew.textContent = key
-            setSelAttributes(nodeNew, 'selanchor', '1', 'selfocus', '1')
+            setSelAttributes(nodeNew, 'selanchor', '1')
             node.appendChild(nodeNew)
             refreshDisplays()
             return
@@ -1227,7 +1250,7 @@ function handleKeyboardInput(node, key, sel) {
             node.textContent += key         // Collect control word
             autocl = checkAutocomplete(node)
             let offset = node.textContent.length
-            setSelAttributes(node, 'selanchor', offset, 'selfocus', offset)
+            setSelAttributes(node, 'selanchor', offset)
             nodeP.innerHTML = nodeP.innerHTML // Force redraw
             refreshDisplays()
             speak(resolveSymbols(key))
@@ -1239,7 +1262,7 @@ function handleKeyboardInput(node, key, sel) {
         nodeName = getMmlTag(symbol)
         let nodeNew = document.createElement(nodeName)
         nodeNew.textContent = symbol
-        setSelAttributes(nodeNew, 'selanchor', '1', 'selfocus', '1')
+        setSelAttributes(nodeNew, 'selanchor', '1')
         nodeP.replaceChild(nodeNew, node)
         node = nodeNew
     }
@@ -1301,7 +1324,7 @@ function handleKeyboardInput(node, key, sel) {
     speak(resolveSymbols(key))
     if (!nodeNewName) {
         // node textContent modified; no new node
-        setSelAttributes(node, 'selanchor', -offset, 'selfocus', -offset)
+        setSelAttributes(node, 'selanchor', -offset)
         nodeP.innerHTML = nodeP.innerHTML // Force redraw
         refreshDisplays();
         return
@@ -1309,7 +1332,7 @@ function handleKeyboardInput(node, key, sel) {
     let nodeNew = document.createElement(nodeNewName)
     removeSelAttributes(nodeP)
     nodeNew.textContent = key
-    setSelAttributes(nodeNew, 'selanchor', '1', 'selfocus', '1')
+    setSelAttributes(nodeNew, 'selanchor', '1')
 
     if (node.textContent == '⬚') {
         // Replace empty arg place holder symbol with key
@@ -1367,96 +1390,90 @@ function checkMathSelection(sel) {
     // Ensure selection in output window is valid for math, e.g., select whole
     // math object if selection boundary points are in different children
     let nodeAnchor = sel.anchorNode
-    let offset = sel.anchorOffset
 
     if (nodeAnchor.nodeName == 'DIV') {
-        if (nodeAnchor.id == 'output') {
-            // Empty DIV: insert math zone with place holder
-            nodeAnchor.innerHTML = `<math display='block'><mi>⬚</mi></math>`
-            return setSelection(sel, nodeAnchor, SELECTNODE)
-        }
-        return null
-    }
-    if (nodeAnchor.nodeName == '#text') {
-        // Negative/positive offset's represent cp's/child indices
-        offset = '-' + offset
-        nodeAnchor = nodeAnchor.parentElement
-    }
-    if (nodeAnchor.nodeName[0] != 'm')      // Not MathML so not output window
-        return null
+        if (nodeAnchor.id != 'output')
+            return null
 
-    if (sel.isCollapsed) {
-        //if (!sel.anchorOffset)
-        // Following change creates loop to change it back. Probably need to
-        // call e.preventDefault(), but still need the default for some cases
-        //    sel = setSelection(sel, nodeAnchor, 0, nodeAnchor, 0)
-        removeSelAttributes()
-        setSelAttributes(nodeAnchor, 'selanchor', offset, 'selfocus', offset)
-        return sel                          // All insertion points are valid
+        // Empty DIV: insert math zone with place holder
+        nodeAnchor.innerHTML = `<math display='block'><mi>⬚</mi></math>`
+        return setSelection(sel, nodeAnchor, SELECTNODE)
     }
+    let node = nodeAnchor
+    if (node.nodeName == '#text')
+        node = node.parentElement
+    if (node.nodeName[0] != 'm')
+        return null                         // Not MathML ⇒ not output window
+
+    if (sel.isCollapsed)
+        return sel                          // All insertion points are valid
 
     // Nondegenerate selection
-    let range = document.createRange()
-    range.selectNode(sel.anchorNode)
+    let rel = 1                             // Default that nodeFocus ≠ nodeAnchor
+    let nodeFocus = sel.focusNode
 
-    // rel = -1, 0, 1 for anchor before, same as, or after focus
-    let rel = range.comparePoint(sel.focusNode, sel.focusNode)
-    console.log("rel =" + rel)
-
-    range = sel.getRangeAt(0)
-    let nodeS = range.startContainer
-    let nodeE = range.endContainer
-
-    console.log('nodeS = ' + nodeS.nodeName + ', ' + range.startOffset)
-    console.log('nodeE = ' + nodeE.nodeName + ', ' + range.endOffset)
-
-    if (nodeS === nodeE) {
-        if (nodeS.nodeName == '#text') {
+    if (nodeAnchor === nodeFocus) {
+        if (nodeAnchor.nodeName == '#text') {
             // In a text node and in <mi>, <mn>, <mo>, or <mtext>, all offset
             // combinations are valid
             return sel
         }
-        if (isMathMLObject(nodeS)) {
-            // Selecting a single child is valid. Selecting more than one child
-            // selects the whole object
-            return range.endOffset - range.startOffset <= 1
-                ? sel : setSelection(sel, nodeS, SELECTNODE)
+        if (isMathMLObject(nodeAnchor)) {
+            // Selecting a single child of a MathML object is valid. Selecting
+            // more than one child must select the whole object
+            return Math.abs(sel.anchorOffset - sel.focusOffset) <= 1
+                ? sel : setSelection(sel, nodeAnchor, SELECTNODE)
         }
+        rel = 0
     }
 
-    let nodeA = range.commonAncestorContainer
+    let range = sel.getRangeAt(0)
+    let nodeCA = range.commonAncestorContainer
+    let needSelChange = false
 
-    if (nodeS.nodeName == '#text')
-        nodeS = nodeS.parentElement
-    if (nodeE.nodeName == '#text')
-        nodeE = nodeE.parentElement
-
-    let selChange = false
-    let node = nodeS
-
-    for (; node != nodeA; node = node.parentElement) {
+    for (node = nodeAnchor; node != nodeCA; node = node.parentElement) {
+        // Walk up to common ancestor checking if MathML objects are present
         if (isMathMLObject(node)) {
-            nodeS = node
-            selChange = true
+            nodeAnchor = node
+            needSelChange = true
         }
     }
-    for (node = nodeE; node != nodeA; node = node.parentElement) {
-        if (isMathMLObject(node)) {
-            nodeE = node
-            selChange = true
+    if (!rel) {
+        nodeFocus = nodeAnchor
+    } else {
+        for (node = nodeFocus; node != nodeCA; node = node.parentElement) {
+            if (isMathMLObject(node)) {
+                nodeFocus = node
+                needSelChange = true
+            }
         }
     }
-    if (selChange)
-        sel = setSelection(sel, nodeS, 0, nodeE, nodeE.childNodes.length)
-    else if (isMathMLObject(nodeA) && nodeA !== nodeS) {
-        console.log('sel base&extent = ' + nodeA.nodeName + ', 0 ' + nodeA.childNodes.length)
-        sel.setBaseAndExtent(nodeA, 0, nodeA, nodeA.childNodes.length)
-    }
+    if (needSelChange) {
+        if (!rel) {                         // nodeAnchor equals nodeFocus
+            sel.setBaseAndExtent(nodeAnchor, 0, nodeAnchor, nodeAnchor.childNodes.length)
+        } else {
+            let offset
+            range = document.createRange()
+            range.selectNode(nodeAnchor)
+            rel = range.comparePoint(nodeFocus, 0)
+            // rel = -1, 0, 1 for anchor node precedes, equals, or follows
+            // focus node, respectively
+            console.log("rel =" + rel)
 
-    console.log(
-        "nodeA.nodeName = " + nodeA.nodeName + ' rel = ' + rel + '\n' +
-        "nodeS = " + nodeS.nodeName + ', ' + dump(nodeS) + ', ' + range.startOffset + '\n' +
-        'nodeE = ' + nodeE.nodeName + ', ' + dump(nodeE) + ', ' + range.endOffset)
+            if (rel < 0) {                  // nodeAnchor precedes nodeFocus
+                offset = nodeFocus.nodeName == '#text'
+                       ? nodeFocus.textContent.length : nodeFocus.childNodes.length
+                sel.setBaseAndExtent(nodeAnchor, 0, nodeFocus, offset)
+            } else {                        // nodeAnchor follows nodeFocus
+                offset = nodeAnchor.nodeName == '#text'
+                       ? nodeAnchor.textContent.length : nodeAnchor.childNodes.length
+                sel.setBaseAndExtent(nodeAnchor, offset, nodeFocus, 0)
+            }
+        }
+    } else if (isMathMLObject(nodeCA) && nodeCA !== nodeAnchor) {
+        console.log('sel base&extent = ' + nodeCA.nodeName + ', 0 ' + nodeCA.childNodes.length)
+        sel.setBaseAndExtent(nodeCA, 0, nodeCA, nodeCA.childNodes.length)
+    }
     return sel
 }
 
@@ -1472,6 +1489,8 @@ function deleteSelection(sel) {
     let uMath = getUnicodeMath(output.firstElementChild, true)
     if (removeSelInfo(uMath) == removeSelInfo(stackTop(outputUndoStack)))
         outputUndoStack.pop()
+    if (nodeA.nodeName == '#text')
+        nodeA = nodeA.parentElement
     removeSelAttributes(nodeA)
 
     // Handle single-node-deletion cases first
@@ -1505,7 +1524,7 @@ function deleteSelection(sel) {
         if (nodeStart.nodeName == 'math') {
             nodeStart.innerHTML = `<mi>⬚</mi>`
             outputUndoStack = ['']
-            refreshDisplays(uMath)
+            refreshDisplays()
             return true
         }
     } else if (isMathMLObject(nodeA)) {
@@ -2241,6 +2260,13 @@ output.addEventListener('keydown', function (e) {
                     uMath = '⬚'
                 let t = unicodemathml(uMath, true) // uMath → MathML
                 output.innerHTML = t.mathml
+                if (t.details["intermediates"]) {
+                    var pegjs_ast = t.details["intermediates"]["parse"];
+                    var preprocess_ast = t.details["intermediates"]["preprocess"];
+
+                    output_pegjs_ast.innerHTML = highlightJson(pegjs_ast) + "\n";
+                    output_preprocess_ast.innerHTML = highlightJson(preprocess_ast) + "\n";
+                }
                 refreshDisplays()
                 return
             }

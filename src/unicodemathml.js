@@ -242,14 +242,12 @@ function checkSpace(i, node, ret) {
 }
 
 function removeSelInfo(uMath) {
-    let i = uMath.indexOf('Ⓕ');
+    let i = uMath.indexOf('Ⓐ');
 
     if (i != -1) {
-        console.log('uMath = ' + uMath)
-
         uMath = uMath.substring(0, i) + uMath.substring(i + 2)
-        i = uMath.indexOf('Ⓐ');
-        if (i != -1)
+        i = uMath.indexOf('Ⓕ');
+        if (i != -1)                        // Nondegenerate selection
             uMath = uMath.substring(0, i) + uMath.substring(i + 2)
     }
     return uMath
