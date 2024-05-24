@@ -1180,11 +1180,9 @@ function removeSelAttributes(node) {
     }
     let walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, null)
 
-    while (walker.nextNode()) {             // Remove current selanchor attribute
-        if (walker.currentNode.hasAttribute('selanchor'))
-            walker.currentNode.removeAttribute('selanchor')
-        if (walker.currentNode.hasAttribute('selfocus'))
-            walker.currentNode.removeAttribute('selfocus')
+    for (; node; node = walker.nextNode()) { // Remove current selection attributes
+        node.removeAttribute('selanchor')
+        node.removeAttribute('selfocus')
     }
 }
 
@@ -1386,6 +1384,14 @@ function getMmlTag(ch) {
     return 'mo'
 }
 
+function setAnchorAndFocus(sel, nodeAnchor, offsetAnchor, nodeFocus, offsetFocus) {
+    console.log("anchor, focus = " +
+        nodeAnchor.nodeName + ', ' + offsetAnchor + ', ' +
+        nodeFocus.nodeName + ', ' + offsetFocus)
+
+    sel.setBaseAndExtent(nodeAnchor, offsetAnchor, nodeFocus, offsetFocus)
+}
+
 function checkMathSelection(sel) {
     // Ensure selection in output window is valid for math, e.g., select whole
     // math object if selection boundary points are in different children
@@ -1450,29 +1456,28 @@ function checkMathSelection(sel) {
     }
     if (needSelChange) {
         if (!rel) {                         // nodeAnchor equals nodeFocus
-            sel.setBaseAndExtent(nodeAnchor, 0, nodeAnchor, nodeAnchor.childNodes.length)
+            setAnchorAndFocus(sel, nodeAnchor, 0, nodeAnchor, nodeAnchor.childNodes.length)
         } else {
             let offset
             range = document.createRange()
             range.selectNode(nodeAnchor)
             rel = range.comparePoint(nodeFocus, 0)
-            // rel = -1, 0, 1 for anchor node precedes, equals, or follows
-            // focus node, respectively
+            // rel = -1, 0, 1 for focus node precedes, equals, or follows the
+            // anchor node, respectively
             console.log("rel =" + rel)
 
-            if (rel < 0) {                  // nodeAnchor precedes nodeFocus
+            if (rel > 0) {                  // nodeFocus follows nodeAnchor 
                 offset = nodeFocus.nodeName == '#text'
-                       ? nodeFocus.textContent.length : nodeFocus.childNodes.length
-                sel.setBaseAndExtent(nodeAnchor, 0, nodeFocus, offset)
-            } else {                        // nodeAnchor follows nodeFocus
+                    ? nodeFocus.textContent.length : nodeFocus.childNodes.length
+                setAnchorAndFocus(sel, nodeAnchor, 0, nodeFocus, offset)
+            } else {                        // nodeFocus precedes nodeAnchor
                 offset = nodeAnchor.nodeName == '#text'
                        ? nodeAnchor.textContent.length : nodeAnchor.childNodes.length
-                sel.setBaseAndExtent(nodeAnchor, offset, nodeFocus, 0)
+                setAnchorAndFocus(sel, nodeAnchor, offset, nodeFocus, 0)
             }
         }
     } else if (isMathMLObject(nodeCA) && nodeCA !== nodeAnchor) {
-        console.log('sel base&extent = ' + nodeCA.nodeName + ', 0 ' + nodeCA.childNodes.length)
-        sel.setBaseAndExtent(nodeCA, 0, nodeCA, nodeCA.childNodes.length)
+        setAnchorAndFocus(sel, nodeCA, 0, nodeCA, nodeCA.childNodes.length)
     }
     return sel
 }
@@ -1487,6 +1492,7 @@ function deleteSelection(sel) {
     let nodeStart = range.startContainer
     let nodeA = range.commonAncestorContainer
     let uMath = getUnicodeMath(output.firstElementChild, true)
+
     if (removeSelInfo(uMath) == removeSelInfo(stackTop(outputUndoStack)))
         outputUndoStack.pop()
     if (nodeA.nodeName == '#text')
@@ -1496,10 +1502,11 @@ function deleteSelection(sel) {
     // Handle single-node-deletion cases first
     if (nodeEnd === nodeStart && nodeEnd.nodeName == '#text') {
         if (nodeStart.textContent == '⬚')
-            return
+            return true
         sel.deleteFromDocument()
         nodeStart = nodeStart.parentElement
         if (nodeStart.textContent) {
+            setSelAttributes(nodeStart, 'selanchor', '-' + range.startOffset)
             refreshDisplays(uMath)
             return true
         }
@@ -2261,8 +2268,8 @@ output.addEventListener('keydown', function (e) {
                 let t = unicodemathml(uMath, true) // uMath → MathML
                 output.innerHTML = t.mathml
                 if (t.details["intermediates"]) {
-                    var pegjs_ast = t.details["intermediates"]["parse"];
-                    var preprocess_ast = t.details["intermediates"]["preprocess"];
+                    let pegjs_ast = t.details["intermediates"]["parse"];
+                    let preprocess_ast = t.details["intermediates"]["preprocess"];
 
                     output_pegjs_ast.innerHTML = highlightJson(pegjs_ast) + "\n";
                     output_preprocess_ast.innerHTML = highlightJson(preprocess_ast) + "\n";
@@ -2468,6 +2475,7 @@ async function draw(undo) {
         closeAutocompleteList();
         prevInputValue = "";
         inputUndoStack = [{uMath: ''}]
+        outputUndoStack = ['']
         return;
     }
 

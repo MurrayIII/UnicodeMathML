@@ -3368,8 +3368,8 @@ function mtransform(dsty, puast) {
             return {mpadded: withAttrs(attrs, mtransform(dsty, value.of))};
 
         case "fraction":
-            var of = value.of.map(e => (mtransform(dsty, dropOutermostParens(e))));
             var attrs = getAttrs(value, '');
+            var of = value.of.map(e => (mtransform(dsty, dropOutermostParens(e))));
 
             switch (value.symbol) {
                 case "\u2298":  // small fraction
@@ -3579,8 +3579,19 @@ function mtransform(dsty, puast) {
                         mtransform(dsty, dropOutermostParens(value)))};
 
         case "function":
-            return {mrow: withAttrs(getAttrs(value, ':function'),
-                        [mtransform(dsty, value.f), {mo: noAttr('\u2061')},
+            let selanchorSave = selanchor
+            let selfocusSave = selfocus
+            var attrs = getAttrs(value, ':function')
+            if (selfocusSave && selfocusSave[0] == '-') {
+                // Selection is in function name: move it there
+                delete attrs.selanchor
+                delete attrs.selfocus
+                selanchor = selanchorSave
+                selfocus = selfocusSave
+            }
+            var val = mtransform(dsty, value.f)
+            return {mrow: withAttrs(attrs,
+                        [val, {mo: noAttr('\u2061')},
                          mtransform(dsty, value.of)])};
         case "text":
             // replace spaces with non-breaking spaces (else leading and
@@ -3645,11 +3656,12 @@ function mtransform(dsty, puast) {
             return {mrow: withAttrs(attrs, [mtransform(dsty, value), {mo: noAttr("!")}])};
 
         case "atoms":
-            if (value.funct != undefined) {
-                return mtransform(dsty, value);
-            }
+            var attrs = getAttrs(value, '')
+
+            if (value.funct != undefined)
+                return {mi: withAttrs(attrs, value.chars)}
+
             // n > 1 for atoms with embedded spaces and/or diacritics, e.g., 𝑐𝑎̂𝑏𝑛
-            var attrs = getAttrs(value, '');
             let n = value.length;
             var mis = [];                   // MathML elements to return
 
@@ -3687,6 +3699,10 @@ function mtransform(dsty, puast) {
                                 }
                                 let ch = doublestruckChar(str[j]);
                                 let attrsDoublestruck = getAttrsDoublestruck(ch, str[j]);
+                                let intentD = attrsDoublestruck.intent
+                                attrsDoublestruck = {...attrsDoublestruck, ...attrs}
+                                if (str[j] == 'ⅅ')
+                                    attrsDoublestruck.intent = intentD
                                 mis.push({mi: withAttrs(attrsDoublestruck, ch)});
                             } else if ("-−,+".includes(str[j])) {
                                 if (isAsciiDigit(str[j + 1])) {
@@ -3704,8 +3720,7 @@ function mtransform(dsty, puast) {
                         if (str >= 'ⅅ' && str <= 'ⅉ') {
                             let ch = doublestruckChar(str);
                             let attrsDoublestruck = getAttrsDoublestruck(ch, str);
-                            if (attrs.intent)
-                                attrsDoublestruck.intent = attrs.intent;
+                            attrsDoublestruck = {...attrsDoublestruck, ...attrs}
                             mis.push({mi: withAttrs(attrsDoublestruck, ch)});
                         } else if (str == '⊺' && value.intent == "transpose") {
                             let ch = transposeChar();
@@ -3740,7 +3755,6 @@ function mtransform(dsty, puast) {
             return mis[0];
 
         case "chars":
-
             // tech note, section 4.1: "Similarly it is easier to type ASCII
             // letters than italic letters, but when used as mathematical
             // variables, such letters are traditionally italicized in print
@@ -3756,7 +3770,6 @@ function mtransform(dsty, puast) {
             return {mi: noAttr(italicizeCharacters(value))};
 
         case "diacriticized":
-
             // TODO some of the work could be done in preprocessing step? but
             // need the loop both in preprocessing as well as actual compilation,
             // so doubtful if that would actually be better
@@ -3810,7 +3823,7 @@ function mtransform(dsty, puast) {
             }
 
         case "number":
-            return {mn: noAttr(value)};
+            return {mn: withAttrs(getAttrs(value, ''), value)};
 
         case "bracketed":
             // handle potential separator
@@ -4026,15 +4039,21 @@ function nary(node, op, cNode) {
     return ret;
 }
 
-function checkSelAttr(attr) {
+function checkSelAttr(name, attr) {
     if (attr == undefined)
         return ''
-    if (attr[0] != '-')
-        return attr
 
-    // Facilitate peg parsing by representing negative selection attributes
-    // by full-width digits
-    return String.fromCharCode(attr.codePointAt(1) + 0xFEE0)
+    if (attr[0] == '-') {
+        // Facilitate peg parsing by representing negative selection attributes
+        // by full-width digits
+        attr = String.fromCharCode(attr.codePointAt(1) + 0xFEE0)
+    }
+    if (name == 'mfrac') {
+        // Insert ' ' between selection code and fraction so that code
+        // applies to fraction and not just the numerator
+        attr += ' '
+    }
+    return attr
 }
 
 function isDigitArg(node) {
@@ -4403,13 +4422,15 @@ function dump(value, noAddParens) {
             break;
     }
     if (ret) {
-        let selattr = checkSelAttr(value.getAttribute('selfocus'))
-        if (selattr)
+        let name = value.nodeName
+        let selattr = checkSelAttr(name, value.getAttribute('selfocus'))
+
+        if (selattr) {
             ret = 'Ⓕ' + selattr + ret
-        selattr = checkSelAttr(value.getAttribute('selanchor'))
-        if (selattr)
-            ret = 'Ⓐ' + selattr + ret
-        return ret
+            name = ''
+        }
+        selattr = checkSelAttr(name, value.getAttribute('selanchor'))
+        return selattr ? 'Ⓐ' + selattr + ret : ret
     }
 
     // Dump <mrow> children
