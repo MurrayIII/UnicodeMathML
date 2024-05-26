@@ -3224,7 +3224,16 @@ function mtransform(dsty, puast) {
             arg = {arg: puast.arg};
         else if (puast[0].hasOwnProperty("arg"))
             arg = puast.shift();
-        return {mrow: withAttrs(arg, puast.map(e => mtransform(dsty, e)))};
+        let ret = []
+        for (let i = 0; i < puast.length; i++) {
+            val = mtransform(dsty, puast[i])
+            // Don't include null results returned by entries, e.g., by
+            // selection 'intend' objects
+            if (val)
+                ret.push(val)
+        }
+        return ret.length == 1 && puast.length > 1 // Check for attributes?
+            ? ret[0] : {mrow: withAttrs(arg, ret)}
     }
 
     var key = k(puast);

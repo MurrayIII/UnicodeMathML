@@ -154,6 +154,7 @@ function nextEq() {
     event.key = 'Enter';
     event.altKey = true;
     input.dispatchEvent(event);
+    outputUndoStack = ['']
     draw();
 }
 
@@ -1560,13 +1561,15 @@ function deleteSelection(sel) {
             if (!isMathMLObject(node))  // What about <mrow>?
                 node = node.parentElement
         } else if (isMathMLObject(node.parentElement)) {
-            node = node.parentElement
-            if (isMathMLObject(node.parentElement)) {
-                // isMathMLObject() returns true for an <mrow> with 1 child
-                // if the parent of the <mrow> is a MathML object
+            // isMathMLObject() returns true for an <mrow> with 1 child if
+            // the parent of the <mrow> is a MathML object
+            if (node.parentElement.nodeName != 'mrow') {
                 nodeNext = node.nextElementSibling
-                node.outerHTML = `<mi>⬚</mi>`
-                continue
+                node = node.parentElement
+                if (isMathMLObject(node.parentElement)) {
+                    node.outerHTML = `<mi>⬚</mi>`
+                    continue
+                }
             }
         }
         done = range.endOffset && nodeEnd === node ||
@@ -1663,7 +1666,9 @@ function checkEmpty(node, offset, uMath) {
         if (node.nodeName == '#text')
             node = node.parentElement
 
-        if (!isMathMLObject(node.parentElement)) {
+        if (isMathMLObject(node.parentElement)) {
+            node.outerHTML = `<mi selanchor="0" selfocus="1">⬚</mi>`
+        } else {
             let nodeT = node.parentElement
             if (node.nextElementSibling)
                 nodeT = node.nextElementSibling
@@ -1678,15 +1683,6 @@ function checkEmpty(node, offset, uMath) {
                 setSelection(null, nodeT, 0)
                 atEnd = true
             }
-        } else {
-            if (node.nodeName == 'mrow') {   // Argument consists of empty <mrow>
-                node.outerHTML = `<mi>⬚</mi>`
-            } else {
-                node.textContent = '⬚'
-                if(node.nodeName == 'mi')
-                    node.removeAttribute('intent')
-            }
-            setSelAttributes(node, 'selanchor', '0')
         }
     } else {
         if (offset == undefined)
@@ -1717,6 +1713,8 @@ function checkFormulaAutoBuildUp(node, nodeP, key) {
                 // Same count of open and close delimiters: try to build
                 // up nodeP: nodeP → UnicodeMath
                 uMath = getUnicodeMath(nodeP)
+                if (uMath[0] == '(')        // Delete enclosing parens
+                    uMath = uMath.substring(1, uMath.length - 1)
             } else {
                 // Differing count: try to build up nodeP trailing mi, mo,
                 // mn, mtext children
