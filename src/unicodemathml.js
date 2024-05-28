@@ -355,7 +355,7 @@ function needParens(ret) {
 
         if (!digitSuperscripts.includes(ret[i]) &&
             !isPrime(ret[i]) && !digitSubscripts.includes(ret[i]) &&
-            !'\u2061∞⬌!^'.includes(ret[i]) && (i || ret[i] != '−')) {
+            !'\u2061∞⬌!^ⒶⒻ'.includes(ret[i]) && (i || ret[i] != '−')) {
             return true;
         }
         ch1 = ret[i];
@@ -4075,7 +4075,10 @@ function isDigitArg(node) {
 
 function dump(value, noAddParens) {
 	// Function called recursively to convert MathML to UnicodeMath
-    let cNode = value.children.length;
+    if (!value)
+        return ''
+
+    let cNode = value.nodeName == '#text' ? 1 : value.children.length;
     let intent
     let ret = '';
 
@@ -4329,7 +4332,7 @@ function dump(value, noAddParens) {
 
         case 'mo':
             var val = value.innerHTML;
-            if (val == '&ApplyFunction;') {
+            if (val == '&fa;') {
                 ret = '\u2061';
                 break;
             }
@@ -4510,7 +4513,7 @@ function getUnicodeMath(doc, keepSelInfo) {
             unicodeMath = unicodeMath.substring(0, i);
             break;
         }
-        if ('=+−/ )]}〗'.includes(unicodeMath[i + 1])) {
+        if ('=+−/ ⒶⒻ)]}〗'.includes(unicodeMath[i + 1])) {
             let j = 1;                      // Delete 1 space
             if (unicodeMath[i + 1] == ' ' && i < unicodeMath.length - 2 &&
                 '=+−/)]}'.includes(unicodeMath[i + 2])) {
@@ -4519,7 +4522,7 @@ function getUnicodeMath(doc, keepSelInfo) {
             unicodeMath = unicodeMath.substring(0, i) + unicodeMath.substring(i + j);
         }
     }
-    // Need selection info for undo
+    // Keep selection info for undo
     return keepSelInfo ? unicodeMath : removeSelInfo(unicodeMath);
 }
 

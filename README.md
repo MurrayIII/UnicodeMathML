@@ -342,7 +342,8 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Unicode numeric fractions like ⁵⁶/₆₂₅ are converted into standard fractions.
 * Math speech is added with support for some intent attributes, e.g., derivatives and intervals.
 * Nemeth math braille support is added.
-* Elementary formula autobuildup is supported in the output window provided native MathML rendering is active (not MathJax).
+* Elementary editing and formula autobuildup is supported in the output window provided native MathML rendering is active (not MathJax).
+* The input and output displays have multilevel undo
 
 ## MathML intent-attribute support:
 * The derivative and partial-derivative intent attributes are defined for Leipzig and Euler derivative notations.
@@ -353,5 +354,6 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 
 ## To do:
 * Improve the LaTeX output mode.
-* Ultimately it's desirable to have UnicodeMath WYSIWYG editing in the output window with no need for an input window. That's the approach used in math-aware Microsoft apps. For that, the editor needs to manipulate the backing store which for the current model would be encoded in MathML.
-* Enable undo for changes not handled by the textarea component. Switch from textarea to https://ckeditor.com/?
+* Improve caret placement in output-display editing
+* Left-arrow navigation; Ctrl+arrow navigation. Polish right-arrow navigation
+* Shift+arrow selection

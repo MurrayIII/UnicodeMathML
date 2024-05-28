@@ -1177,6 +1177,8 @@ function checkFunction(node) {
 function removeSelAttributes(node) {
     if (!node) {
         node = output.firstElementChild
+        if (!node)
+            return
         console.log('remove selection attributes from ' + getUnicodeMath(node, true))
     }
     let walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, null)
@@ -1459,12 +1461,13 @@ function checkMathSelection(sel) {
         if (!rel) {                         // nodeAnchor equals nodeFocus
             setAnchorAndFocus(sel, nodeAnchor, 0, nodeAnchor, nodeAnchor.childNodes.length)
         } else {
+            // Compute rel = -1, 0, 1 for the focus node precedes, equals, or
+            // follows the anchor node, respectively. Note: selection.direction
+            // isn't supported by Chromium
             let offset
             range = document.createRange()
             range.selectNode(nodeAnchor)
             rel = range.comparePoint(nodeFocus, 0)
-            // rel = -1, 0, 1 for focus node precedes, equals, or follows the
-            // anchor node, respectively
             console.log("rel =" + rel)
 
             if (rel > 0) {                  // nodeFocus follows nodeAnchor 
@@ -1489,105 +1492,34 @@ function deleteSelection(sel) {
         return false                        // Nothing selected
     }
     let range = sel.getRangeAt(0)
-    let nodeEnd = range.endContainer
     let nodeStart = range.startContainer
-    let nodeA = range.commonAncestorContainer
-    let uMath = getUnicodeMath(output.firstElementChild, true)
-
-    if (removeSelInfo(uMath) == removeSelInfo(stackTop(outputUndoStack)))
-        outputUndoStack.pop()
-    if (nodeA.nodeName == '#text')
-        nodeA = nodeA.parentElement
-    removeSelAttributes(nodeA)
-
-    // Handle single-node-deletion cases first
-    if (nodeEnd === nodeStart && nodeEnd.nodeName == '#text') {
-        if (nodeStart.textContent == '⬚')
-            return true
-        sel.deleteFromDocument()
-        nodeStart = nodeStart.parentElement
-        if (nodeStart.textContent) {
-            setSelAttributes(nodeStart, 'selanchor', '-' + range.startOffset)
-            refreshDisplays(uMath)
-            return true
-        }
-        checkEmpty(nodeStart, 0, uMath)
-        return true
-    }
-    if (!range.endOffset) {
-        while (nodeEnd.parentElement !== nodeA)
-            nodeEnd = nodeEnd.parentElement
-    } else if (nodeEnd.nodeName == '#text')
-        nodeEnd = nodeEnd.parentElement
-
     if (nodeStart.nodeName == '#text')
         nodeStart = nodeStart.parentElement
-
-    if (nodeEnd === nodeStart) {
-        if (isMathMLObject(nodeStart)) {
-            nodeStart.remove()
-            checkEmpty(nodeA, 0, uMath)
-            return true
-        }
-        if (nodeStart.nodeName == 'math') {
-            nodeStart.innerHTML = `<mi>⬚</mi>`
-            outputUndoStack = ['']
-            refreshDisplays()
-            return true
-        }
-    } else if (isMathMLObject(nodeA)) {
-        nodeA.remove()
-        refreshDisplays(uMath)
+    if (nodeStart.nodeName == 'math') {
+        nodeStart.innerHTML = `<mi selanchor="0" selfocus="1">⬚</mi>`
+        refreshDisplays()
         return true
     }
 
-    // Handle multinode deletions. Find nodeStart as a child of nodeA and then
-    // remove nodeStart along with nodes up to or including nodeEnd (depending
-    // on range.endOffset). Define nodeNext before deleting node (alternatively
-    // could go backward from nodeEnd).
-    let done = false
-    let nodeNext
-    let reachedNodeStart = false
-    let walker = document.createTreeWalker(nodeA, NodeFilter.SHOW_ELEMENT, null)
+    // Save current math for undo stack
+    let uMath = getUnicodeMath(output.firstElementChild, true)
+    if (removeSelInfo(uMath) == removeSelInfo(stackTop(outputUndoStack)))
+        outputUndoStack.pop()
 
-    for (let node = walker.nextNode(); node && !done; node = nodeNext) {
-        if (node === nodeStart)
-            reachedNodeStart = true
-        if (!reachedNodeStart) {
-            nodeNext = walker.nextNode()
-            continue
-        }
-        if (node.childElementCount) {
-            if (!isMathMLObject(node))  // What about <mrow>?
-                node = node.parentElement
-        } else if (isMathMLObject(node.parentElement)) {
-            // isMathMLObject() returns true for an <mrow> with 1 child if
-            // the parent of the <mrow> is a MathML object
-            if (node.parentElement.nodeName != 'mrow') {
-                nodeNext = node.nextElementSibling
-                node = node.parentElement
-                if (isMathMLObject(node.parentElement)) {
-                    node.outerHTML = `<mi>⬚</mi>`
-                    continue
-                }
-            }
-        }
-        done = range.endOffset && nodeEnd === node ||
-              !range.endOffset && nodeEnd === nodeNext
+    sel.deleteFromDocument()
+
+    // deleteFromDocument() may leave empty elements: remove them too
+    let nodeNext
+    for (let node = nodeStart; node; node = nodeNext) {
         nodeNext = node.nextElementSibling
-        if (!nodeNext) {
-            nodeNext = node.parentElement.nextElementSibling
-            if (nodeNext) {
-                // Don't delete past nodeEnd
-                let range = document.createRange()
-                range.selectNode(nodeNext)
-                let rel = range.comparePoint(nodeEnd, 0)
-                if (rel <= 0)
-                    done = true     // nodeEnd is before or same as nodeNext
-            }
-        }
+        if (node.textContent)
+            break
         node.remove()
     }
+    let nodeA = range.commonAncestorContainer
+    if (nodeA.nodeName == '#text')
+        nodeA = nodeA.parentElement
+
     checkEmpty(nodeA, 0, uMath)
     return true
 }
@@ -1713,8 +1645,10 @@ function checkFormulaAutoBuildUp(node, nodeP, key) {
                 // Same count of open and close delimiters: try to build
                 // up nodeP: nodeP → UnicodeMath
                 uMath = getUnicodeMath(nodeP)
-                if (uMath[0] == '(')        // Delete enclosing parens
+                if (uMath[0] == '(' && uMath[uMath.length - 1] == ')') {
+                    // Delete enclosing parens
                     uMath = uMath.substring(1, uMath.length - 1)
+                }
             } else {
                 // Differing count: try to build up nodeP trailing mi, mo,
                 // mn, mtext children
