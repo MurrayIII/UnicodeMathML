@@ -1305,8 +1305,8 @@ function handleKeyboardInput(node, key, sel) {
                         isFunction = checkFunction(nodeT)
                 }
             }
-            if (isFunction != undefined) {
-                if (key == ' ' && isFunction)
+            if (isFunction) {
+                if (key == ' ')
                     key = '\u2061'
                 break
             }
@@ -1493,6 +1493,7 @@ function deleteSelection(sel) {
     }
     let range = sel.getRangeAt(0)
     let nodeStart = range.startContainer
+
     if (nodeStart.nodeName == '#text')
         nodeStart = nodeStart.parentElement
     if (nodeStart.nodeName == 'math') {
@@ -1501,26 +1502,43 @@ function deleteSelection(sel) {
         return true
     }
 
-    // Save current math for undo stack
+    let singleArg = range.startContainer === range.endContainer
+    if (singleArg) {
+        if (nodeStart.textContent == '⬚')
+            return true                         // Don't delete place holder
+    }
+    // Save current math for undo stack. If it's already on the stack top,
+    // remove it since uMath will be added by checkEmpty()
     let uMath = getUnicodeMath(output.firstElementChild, true)
     if (removeSelInfo(uMath) == removeSelInfo(stackTop(outputUndoStack)))
         outputUndoStack.pop()
 
     sel.deleteFromDocument()
+    if (ummlConfig.debug)
+        output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
 
-    // deleteFromDocument() may leave empty elements: remove them too
-    let nodeNext
-    for (let node = nodeStart; node; node = nodeNext) {
-        nodeNext = node.nextElementSibling
-        if (node.textContent)
-            break
-        node.remove()
+    let node, nodeNext, nodeP
+
+    if (!singleArg) {
+        // Remove empty elements that sel.deleteFromDocument() leaves behind
+        for (node = nodeStart; node && !node.textContent; node = nodeNext) {
+            nodeP = node.parentElement
+            nodeNext = node.nextElementSibling
+            if (!nodeNext && nodeP.nodeName == 'mrow') {
+                node = nodeP
+                nodeNext = node.nextElementSibling
+                nodeP = node.parentElement
+            }
+            if (isMathMLObject(nodeP) && nodeNext && nodeNext.textContent)
+                node.outerHTML = `<mi selanchor="0" selfocus="1">⬚</mi>`
+            else
+                node.remove()
+        }
     }
-    let nodeA = range.commonAncestorContainer
-    if (nodeA.nodeName == '#text')
-        nodeA = nodeA.parentElement
-
-    checkEmpty(nodeA, 0, uMath)
+    node = sel.anchorNode
+    if (node.childElementCount)
+        node = node.children[sel.anchorOffset]
+    checkEmpty(node, sel.anchorOffset, uMath)
     return true
 }
 
@@ -1591,7 +1609,7 @@ function checkEmpty(node, offset, uMath) {
     // If a deletion empties the active node, remove the node unless it's
     // required, e.g., for numerator, denominator, subscript, etc. For the
     // latter, insert the empty argument place holder '⬚'. Set the 'selanchor'
-    // attribute for the node at the desired selection IP
+    // attribute for the node at the appropriate selection IP
     removeSelAttributes()
 
     if (!node.textContent) {
@@ -1619,8 +1637,10 @@ function checkEmpty(node, offset, uMath) {
     } else {
         if (offset == undefined)
             offset = atEnd ? '1' : '0'
-        if (node.nodeName == '#text')
+        if (node.nodeName == '#text') {
             node = node.parentElement
+            offset = '-' + offset
+        }
         setSelAttributes(node, 'selanchor', offset)
     }
     if (output.firstElementChild && !output.firstElementChild.childElementCount)
