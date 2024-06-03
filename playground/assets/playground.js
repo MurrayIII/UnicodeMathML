@@ -1513,32 +1513,56 @@ function deleteSelection(sel) {
     if (removeSelInfo(uMath) == removeSelInfo(stackTop(outputUndoStack)))
         outputUndoStack.pop()
 
-    sel.deleteFromDocument()
-    if (ummlConfig.debug)
+    sel.deleteFromDocument()                    // Deletes content but leaves tree structure
+    if (ummlConfig.debug)                       // Set breakpoint to see what got deleted
         output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
 
     let node, nodeNext, nodeP
 
     if (!singleArg) {
-        // Remove empty elements that sel.deleteFromDocument() leaves behind
+        // Remove contentless elements that sel.deleteFromDocument() leaves
+        // behind except for elements needed as MathML object arguments
         for (node = nodeStart; node && !node.textContent; node = nodeNext) {
             nodeP = node.parentElement
             nodeNext = node.nextElementSibling
-            if (!nodeNext && nodeP.nodeName == 'mrow') {
-                node = nodeP
-                nodeNext = node.nextElementSibling
-                nodeP = node.parentElement
-            }
-            if (isMathMLObject(nodeP) && nodeNext && nodeNext.textContent)
-                node.outerHTML = `<mi selanchor="0" selfocus="1">⬚</mi>`
-            else
+            if (nodeP.nodeName == 'mrow') {
+                for (; nodeP.childElementCount > 1 && node && !node.textContent; node = nodeNext) {
+                    nodeNext = node.nextElementSibling
+                    node.remove()
+                }
+                if (!node || node.textContent) {
+                    // No element left in mrow or element wasn't deleted
+                    break;
+                }
+                if (isMathMLObject(nodeP))
+                    nodeP.outerHTML = `<mi selanchor="0" selfocus="1">⬚</mi>`
+                else
+                    nodeP.remove()
+            } else if (isMathMLObject(nodeP) && nodeNext && nodeNext.textContent) {
+                node.innerHTML = `<mi selanchor="0" selfocus="1">⬚</mi>`
+            } else {
                 node.remove()
+            }
         }
     }
-    node = sel.anchorNode
-    if (node.childElementCount)
-        node = node.children[sel.anchorOffset]
-    checkEmpty(node, sel.anchorOffset, uMath)
+    // Set up insertion point (IP)
+    node = sel.anchorNode                   // Anchor node after deletions
+    let offset = 0
+
+    if (node.childElementCount) {
+        let i = sel.anchorOffset            // Child index
+
+        if (i == node.childElementCount) {  // Follows last child
+            i--                             // Index of last child
+            offset = 1                      // IP will follow last child
+        }
+        node = node.children[i]
+        if (offset && node.childElementCount)
+            offset = node.childElementCount // At end of last child
+    } else {                                // mi, mo, mn, mtext
+        offset = sel.anchorOffset           // 0 or 1
+    }
+    checkEmpty(node, offset, uMath)
     return true
 }
 
