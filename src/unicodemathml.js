@@ -204,9 +204,15 @@ function checkBrackets(node) {
     for (let i = cNode - 1; i >= 0; i--) {
         let nodeC = node.children[i]
 
-        if (nodeC.childElementCount) {      // Built-up objects aren't included
-            if (k == -1)                    //  in partial build up
+        if (nodeC.childElementCount) {
+            // Most built-up objects aren't included in partial build up but
+            // just in case msup base is a function name...
+            if (nodeC.nodeName == 'msup' &&
+                nodeC.firstElementChild.nodeName == 'mi') {
+                opBuildUp = true
+            } else if (k == -1) {
                 k = i
+            }
         }
         if (nodeC.nodeName == 'mo') {
             if (isOpenDelimiter(nodeC.textContent)) {
@@ -410,7 +416,7 @@ function isMathMLObject(value, ignoreIntent) {
         'munderover', 'msubsup', 'mover', 'munder', 'mpadded', 'mphantom',
         'multiscripts']
 
-    if (value.nodeName == 'mrow') {
+    if (value && value.nodeName == 'mrow') {
         if (!ignoreIntent && value.hasAttribute('intent')) {
             // Conversions to speech, braille, and UnicodeMath ignore
             // parenthesizing due to <mrow> intent values
@@ -4218,6 +4224,7 @@ function dump(value, noAddParens) {
                     op = '⒞';
             }
             ret = binary(value, op);
+            // TODO: also add space for mi mrow mfrac
             if (value.previousElementSibling && value.previousElementSibling.nodeName != 'mo') {
                 ret = ' ' + ret;                    // Separate variable and numerator
             }

@@ -33,7 +33,7 @@ document.onselectionchange = () => {
     sel = checkMathSelection(sel)
     inSelChange = false
     if (!sel)
-        return
+        return                              // Not math output window
 
     // In math output window
     removeSelAttributes()
@@ -41,11 +41,12 @@ document.onselectionchange = () => {
     anchorNode = sel.anchorNode
     if (anchorNode.nodeName == '#text') {
         anchorNode = anchorNode.parentElement
-        offset = '-' + offset
+        offset = '-' + offset               // Indicate offset is a #text offset
     }
     setSelAttributes(anchorNode, 'selanchor', offset)
 
     if (sel.focusOffset != sel.anchorOffset || sel.focusNode != sel.anchorNode) {
+        // Nondegenerate selection
         offset = sel.focusOffset
         focusNode = sel.focusNode
         if (focusNode.nodeName == '#text') {
@@ -54,8 +55,24 @@ document.onselectionchange = () => {
         }
         setSelAttributes(focusNode, 'selfocus', offset)
     }
+    // Update MathML window
     output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
     console.log('uMath = ' + getUnicodeMath(output.firstElementChild, true))
+}
+
+function removeSuperfluousMrow(node) {
+    if (node && node.nodeName == 'mrow' && node.childElementCount == 1 &&
+        !node.attributes.length && node.firstElementChild.nodeName == 'mrow') {
+        let nodeP = node.parentElement
+
+        if (nodeP) {
+            // node is an attributeless mrow with a single child that's also
+            // an mrow. Replace the superfluous mrow node with its mrow child
+            nodeP.replaceChild(node.firstElementChild, node)
+            return nodeP.firstElementChild
+        }
+    }
+    return node
 }
 
 function setSelection(sel, node, offset, nodeFocus, offsetFocus) {
@@ -82,18 +99,14 @@ function setSelection(sel, node, offset, nodeFocus, offsetFocus) {
         if (offsetFocus < 0) {              // Text offset (not child index)
             offsetFocus = -offsetFocus
             if (nodeFocus.nodeName != '#text')
-                nodeFocus = nodeFocus.firstChild 
+                nodeFocus = nodeFocus.firstChild
         }
-        sel.setBaseAndExtent(node, offset, nodeFocus, offsetFocus)
-        return sel
+    } else {                                // Make an insertion point (IP)
+        nodeFocus = node
+        offsetFocus = offset
     }
-    let range = new Range();
-    range.setStart(node, offset);
-    range.setEnd(node, offset);
-
-    sel.removeAllRanges();
-    sel.addRange(range);
-    console.log("sel.anchorNode = " + sel.anchorNode.nodeName)
+    sel.setBaseAndExtent(node, offset, nodeFocus, offsetFocus)
+    console.log("sel.anchorNode = " + node.nodeName + ', sel.focusNode = ' + nodeFocus.nodeName)
     return sel;
 }
 
@@ -1672,11 +1685,11 @@ function checkEmpty(node, offset, uMath) {
     refreshDisplays(uMath)
 }
 
-function checkFormulaAutoBuildUp(node, nodeP, key) {
-    // Return true if formula auto build up succeeds
+function checkAutoBuildUp(node, nodeP, key) {
+    // Return new node if formula auto build up succeeds; else null
     if (nodeP.nodeName != 'mrow' ||
         node.nodeName == 'mtext' && node.textContent[0] == '\\')
-        return false
+        return null
 
     if ('+=-<> )'.includes(key) || key == '/' && node.textContent != ')') {
         // Try to build up <mrow> or trailing part of it
@@ -1713,11 +1726,11 @@ function checkFormulaAutoBuildUp(node, nodeP, key) {
                     let doc = parser.parseFromString(t.mathml, "application/xml");
                     nodeP.appendChild(doc.firstElementChild)
                 }
-                return true
+                return removeSuperfluousMrow(nodeP)
             }
         }
     }
-    return false
+    return null
 }
 function getArgName(node) {
     let attrs
@@ -2260,11 +2273,12 @@ output.addEventListener('keydown', function (e) {
             if (!node.childElementCount && name != 'math')
                 nodeP = node.parentElement
 
-            if (checkFormulaAutoBuildUp(node, nodeP, key)) {
-                node = nodeP
+            let nodeT = checkAutoBuildUp(node, nodeP, key)
+            if (nodeT) {
+                node = nodeT                // FAB succeeded: update node
                 atEnd = true
                 if (key == ' ') {
-                    nodeP.innerHTML = nodeP.innerHTML   // Force redraw
+                    node.innerHTML = node.innerHTML   // Force redraw
                     refreshDisplays();
                     return
                 }
