@@ -1135,7 +1135,6 @@ function resolveSymbols(text) {
 
 	// Convert symbols to words and eliminate some spaces
 	for (let i = 0; i < cchText; i += cchCh) {
-		let mathstyle = '';
 		let code = text.codePointAt(i);
 		cchCh = code > 0xFFFF ? 2 : 1;
 

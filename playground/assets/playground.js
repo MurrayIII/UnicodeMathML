@@ -1207,6 +1207,7 @@ function handleEndOfTextNode(node) {
     let nameT = ''
 
     if (name == 'mrow') {
+        let nodeNext = node.nextElementSibling
         let intent = getIntent(node);
         node = node.parentElement;
         name = node.parentElement.nodeName
@@ -1214,8 +1215,13 @@ function handleEndOfTextNode(node) {
             name = 'function';
         else if (intent.indexOf('integral') != -1)
             name = 'integrand';
-        else
+        else if (isMathMLObject(node.parentElement))
             nameT = getArgName(node)
+        else if (nodeNext) {
+            name = isMathMLObject(nodeNext) ? names[nodeNext.nodeName] : nodeNext.textContent
+            speak(name)
+            return nodeNext
+        }
     } else {
         nameT = getArgName(node)
     }
@@ -1418,7 +1424,7 @@ function checkMathSelection(sel) {
             return null
 
         // Empty DIV: insert math zone with place holder
-        nodeAnchor.innerHTML = `<math display='block'><mi>⬚</mi></math>`
+        nodeAnchor.innerHTML = `<math display='block'><mi selanchor="0" selfocus="1">⬚</mi></math>`
         return setSelection(sel, nodeAnchor, SELECTNODE)
     }
     let node = nodeAnchor
@@ -1526,7 +1532,7 @@ function deleteSelection(sel) {
     if (removeSelInfo(uMath) == removeSelInfo(stackTop(outputUndoStack)))
         outputUndoStack.pop()
 
-    sel.deleteFromDocument()                    // Deletes content but leaves tree structure
+    sel.deleteFromDocument()                    // Deletes #text nodes but leaves element nodes
     if (ummlConfig.debug)                       // Set breakpoint to see what got deleted
         output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
 
@@ -1681,7 +1687,7 @@ function checkEmpty(node, offset, uMath) {
         setSelAttributes(node, 'selanchor', offset)
     }
     if (output.firstElementChild && !output.firstElementChild.childElementCount)
-        output.firstElementChild.innerHTML = `<mi>⬚</mi>`
+        output.firstElementChild.innerHTML = `<mi selanchor="0" selfocus="1">⬚</mi>`
     refreshDisplays(uMath)
 }
 
@@ -2047,7 +2053,7 @@ output.addEventListener('keydown', function (e) {
 
     if (sel.anchorNode.nodeName == 'DIV') {
         // No MathML in output display; insert a math zone
-        node.innerHTML = `<math display="block"></math>`
+        node.innerHTML = `<math display="block"><mi selanchor="0" selfocus="1">⬚</mi></math>`
         node = node.firstElementChild
         name = 'math'
         sel = setSelection(sel, node, 0)

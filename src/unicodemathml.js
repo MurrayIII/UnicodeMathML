@@ -4503,9 +4503,9 @@ function dump(value, noAddParens) {
     return ret;
 }
 
-function MathMLtoUnicodeMath(mathML) {
+function MathMLtoUnicodeMath(mathML, keepSelInfo) {
     const doc = getMathMLDOM(mathML);
-    return getUnicodeMath(doc.firstElementChild)
+    return getUnicodeMath(doc.firstElementChild, keepSelInfo)
 }
 
 function getUnicodeMath(doc, keepSelInfo) {

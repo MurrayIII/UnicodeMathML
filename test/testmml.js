@@ -59,7 +59,12 @@ const mathML = [
     "<math display=\"block\"><mrow><mrow intent=\"cardinality(𝑥)\"><mo>|</mo><mi>𝑥</mi><mo>|</mo></mrow><mrow intent=\"absolute-value($a)\"><mo>|</mo><mrow arg=\"a\"><mi>𝑥</mi><mo>+</mo><mn>2</mn></mrow><mo>|</mo></mrow><mo>=</mo><mn>0</mn></mrow></math>",
     "<math display=\"block\"><mrow intent=\":parenthesized-matrix\"><mo>(</mo><mtable intent=\":matrix(2,2)\"><mtr><mtd><mn>1</mn></mtd><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mn>0</mn></mtd><mtd><mn>1</mn></mtd></mtr></mtable><mo>)</mo></mrow></math>",
     "<math display=\"block\"><mfrac><msubsup><mi>𝛼</mi><mn>2</mn><mn>3</mn></msubsup><mrow><msubsup><mi>𝛽</mi><mn>2</mn><mn>3</mn></msubsup><mo>+</mo><msubsup><mi>𝛾</mi><mn>2</mn><mn>3</mn></msubsup></mrow></mfrac></math>",
-];
+    "<math display=\"block\"><mfenced open=\"[\" close=\"]\"><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow><mrow><mi>𝑐</mi><mo>+</mo><mi>𝑑</mi></mrow></mfenced></math>",
+    "<math display=\"block\"><mrow><mi>𝐸</mi><mo>=</mo><mrow><mi selanchor=\"-0\">𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mrow></mrow></math>",
+    "<math display=\"block\"><mrow><mi>𝐸</mi><mo>=</mo><mrow><mi>𝑚</mi><msup selanchor=\"0\" selfocus=\"2\"><mi>𝑐</mi><mn>2</mn></msup></mrow></mrow></math>",
+    "<math display=\"block\"><mrow><mi>𝐸</mi><mo>=</mo><mrow><mi selanchor=\"-0\">𝑚</mi><msup selfocus=\"2\"><mi>𝑐</mi><mn>2</mn></msup></mrow></mrow></math>",
+    "<math display=\"block\"><mrow><mrow intent=\":function\"><msup><mi selanchor=\"-1\" selfocus=\"-2\">sin</mi><mn>2</mn></msup><mo>⁡</mo><mi>𝜃</mi></mrow><mo>+</mo><mrow intent=\":function\"><msup><mi>cos</mi><mn>2</mn></msup><mo>⁡</mo><mi>𝜃</mi></mrow><mo>=</mo><mn>1</mn></mrow></math>",
+]
 
 const unicodeMath = [
     "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)",
@@ -119,6 +124,11 @@ const unicodeMath = [
     "ⓒ𝑥 ⒜(𝑥+2)=0",
     "⒨(1&0@0&1)",
     "𝛼₂³/(𝛽₂³+𝛾₂³)",
+    "[𝑎+𝑏,𝑐+𝑑]",
+    "𝐸=Ⓐ０𝑚𝑐²",
+    "𝐸=𝑚Ⓐ0Ⓕ2𝑐²",
+    "𝐸=Ⓐ０𝑚Ⓕ2𝑐²",
+    "Ⓐ１Ⓕ２sin²⁡𝜃+cos²⁡𝜃=1",
 ];
 
 const mathSpeech = [
@@ -185,6 +195,11 @@ const mathSpeech = [
     "cardinality of x , absolute value of x + 2 , end absolute value = 0",
     "the 2 by 2 matrix,  , row 1 , 1 , 0 , row 2 , 0 , 1 , end matrix",
     "fraction alpha sub 2 cubed over beta sub 2 cubed + gamma sub 2 cubed , end fraction",
+    "open bracket eigh + b comma c + d close bracket",
+    "cap E = m c squared",
+    "cap E = m c squared",
+    "cap E = m c squared",
+    "sine squared theta + cosine squared theta = 1",
 ]
 
 const mathBraille = [
@@ -244,14 +259,19 @@ const mathBraille = [
     "⠁⠘⠆",
     "⠳⠭⠳⠳⠭⠬⠆⠳⠀⠨⠅⠀⠼⠴",
     "⠠⠷⠼⠂⠀⠼⠴⣍⠼⠴⠀⠼⠂⠠⠾",
-    "⠹⠨⠁⠆⠘⠒⠐⠌⠨⠃⠆⠘⠒⠐⠬⠨⠛⠆⠘⠒⠐⠼"
+    "⠹⠨⠁⠆⠘⠒⠐⠌⠨⠃⠆⠘⠒⠐⠬⠨⠛⠆⠘⠒⠐⠼",
+    "⠈⠷⠁⠬⠃⠠⠀⠉⠬⠙⠈⠾",
+    "⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆",
+    "⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆",
+    "⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆",
+    "⠎⠊⠝⠘⠆⠀⠨⠹⠬⠉⠕⠎⠘⠆⠀⠨⠹⠀⠨⠅⠀⠼⠂",
 ]
 
 function testMathMLtoUnicodeMath() {
     var iSuccess = 0;
     var iFail = 0;
    for (var i = 0; i < mathML.length; i++) {
-        var result = MathMLtoUnicodeMath(mathML[i]);
+        var result = MathMLtoUnicodeMath(mathML[i], true);
         if (result != unicodeMath[i]) {
             if (unicodeMath[i][0] != 'ⓘ') {
                 console.log("Expect: " + unicodeMath[i] + '\n');
@@ -297,6 +317,32 @@ function testMathMLtoBraille() {
     console.log(iSuccess + " passes; " + iFail + " failures\n");
 }
 
+// 1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)
+const unicodeMathPartial = [
+    "",
+]
+
+function testInputToOutput() {
+    var iSuccess = 0;
+
+    for (var i = 0; i < unicodeMath[0].length; i++) {
+        const event = new Event('keydown');
+        event.key = unicodeMath[0][i];
+        output.dispatchEvent(event);
+        setTimeout(function () { }, 200);  // Sleep for 200 msec
+        var result = input.value;
+        if (result != unicodeMathPartial[i]) {
+            console.log(event.key + '\n');
+            console.log("Expect: " + unicodeMathPartial[i] + '\n');
+            console.log("Result: " + result + '\n\n');
+        } else {
+            iSuccess++;
+        }
+    }
+    var iFail = keys.length - iSuccess;
+    console.log(iSuccess + " passes; " + iFail + " failures\n");
+}
+
 input.addEventListener("keydown", function (e) {
     if (e.key == 'Enter') {
         e.preventDefault();
@@ -309,4 +355,5 @@ input.addEventListener("keydown", function (e) {
     root.testMathMLtoUnicodeMath = testMathMLtoUnicodeMath;
     root.testMathMLtoSpeech = testMathMLtoSpeech;
     root.testMathMLtoBraille = testMathMLtoBraille;
+    root.testInputToOutput = testInputToOutput;
 })(this);
