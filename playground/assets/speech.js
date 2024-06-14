@@ -419,7 +419,10 @@ const symbolSpeechStrings = {
 	'⒩': 'normed matrix',					// 24A9
 	'⒭': 'root',							// 24AD
 	'⒱': 'determinant',						// 24B1
+	'Ⓐ': 'sel-anchor',						// 24B6
 	'Ⓒ': 'cases',							// 24B8
+	'Ⓕ': 'sel-focus',						// 24BB
+	'Ⓘ': 'insertion point',					// 24BE
 	'Ⓢ': 'curly braced matrix',				// 24C8
 	'ⓒ': 'cardinality',						// 24D2
 	'ⓢ': 'bracketed matrix',				// 24E2
@@ -772,17 +775,20 @@ function speech(value, noAddParens) {
 			for (let i = 0; i < cNode; i++) {
 				ret += sep + (i + 1) + '⏳' + speech(value.children[i]);
 			}
-			return the ? the + ret + '¶' + symbol : ret;
+			ret = the ? the + ret + '¶' + symbol : ret
+			break
 
 		case 'mtr':
 			var op = '⏳';
 			if (value.parentElement.attributes.hasOwnProperty('intent') &&
 				value.parentElement.attributes.intent.textContent.endsWith('equations'))
 				op = '';
-			return nary(value, op, cNode);
+			ret = nary(value, op, cNode)
+			break
 
 		case 'mtd':
-			return nary(value, '', cNode);
+			ret = nary(value, '', cNode)
+			break
 
 		case 'menclose':
 			let notation = '';
@@ -803,11 +809,13 @@ function speech(value, noAddParens) {
 					return boxNotations[c];
 			});
 			// E.g., 'line on right left enclosing c + b , end enclosure'
-			return '─' + nota.join('') + '⼖' + ret + '¶⼞';
+			ret = '─' + nota.join('') + '⼖' + ret + '¶⼞'
+			break
 
 		case 'mphantom':
 			// Full size, no display
-			return '⟡' + speech(value.firstElementChild, true) + '¶⟡';
+			ret = '⟡' + speech(value.firstElementChild, true) + '¶⟡'
+			break
 
 		case 'mpadded':
 			var op = '';
@@ -832,8 +840,9 @@ function speech(value, noAddParens) {
 			op = opsShow[mask];
 			mask |= 1;                      // fPhantomShow
 
-			return op ? unary(value, op)
-				: '⟡(' + mask + '&' + speech(value.firstElementChild, true) + ')';
+			ret = op ? unary(value, op)
+				: '⟡(' + mask + '&' + speech(value.firstElementChild, true) + ')'
+			break
 
 		case 'mstyle':
 			ret = speech(value.firstElementChild);
@@ -849,15 +858,17 @@ function speech(value, noAddParens) {
 					color = '⬢ ' + color.substring(1) + '⏳';
 				ret = '☁' + color + ' ' + ret + '¶☁';
 			}
-			return ret;
+			break
 
 		case 'msqrt':
 			ret = speech(value.firstElementChild, true);
-			return needParens(ret) ? '√⏳' + ret + '¶√' : '√⏳' + ret;
+			ret = needParens(ret) ? '√⏳' + ret + '¶√' : '√⏳' + ret
+			break
 
 		case 'mroot':
-			return '⒭' + speech(value.lastElementChild, true) + '▒' +
-				speech(value.firstElementChild, true) + '¶⒭';
+			ret = '⒭' + speech(value.lastElementChild, true) + '▒' +
+				speech(value.firstElementChild, true) + '¶⒭'
+			break
 
 		case 'mfrac':
 			var op = '/';
@@ -894,70 +905,78 @@ function speech(value, noAddParens) {
 			}
 			if (value.previousElementSibling && value.previousElementSibling.nodeName != 'mo')
 				ret = '⏳' + ret;		// Pause betw. variable & numerator
-			return ret;
+			break
 
 		case 'msup':
 			if (value.attributes.intent && value.attributes.intent.textContent == ':sup')
-				return speech(value.firstElementChild) + '^' + speech(value.lastElementChild);
-
-			if (value.lastElementChild.nodeName == 'mn' &&
+				ret = speech(value.firstElementChild) + '^' + speech(value.lastElementChild)
+			else if (value.lastElementChild.nodeName == 'mn' &&
 				isAsciiDigit(value.lastElementChild.textContent[0])) {
 				let power = getPower(value.lastElementChild.textContent);
-				return speech(value.firstElementChild) + power;
+				ret = speech(value.firstElementChild) + power
 			}
-			if (value.lastElementChild.attributes.hasOwnProperty('intent') &&
+			else if (value.lastElementChild.attributes.hasOwnProperty('intent') &&
 				value.lastElementChild.attributes.intent.nodeValue == 'transpose') {
-				return speech(value.firstElementChild) + '⏉';	// 'transpose'
+				ret = speech(value.firstElementChild) + '⏉' 	// 'transpose'
 			}
-			if (isPrime(value.lastElementChild.textContent))
-				return binary(value, '');
-
-			if (value.lastElementChild.textContent == '∗')
-				return speech(value.firstElementChild) + '☆';	// 'conjugate'
-
-			ret = speech(value.lastElementChild, true);
-			return speech(value.firstElementChild) + '⮵' + ret +
-				(needParens(ret) ? '⚡' : '⏳');	// 'power' : pause
+			else if (isPrime(value.lastElementChild.textContent))
+				ret = binary(value, '')
+			else if (value.lastElementChild.textContent == '∗')
+				ret = speech(value.firstElementChild) + '☆' 	// 'conjugate'
+			else {
+				ret = speech(value.lastElementChild, true);
+				ret = speech(value.firstElementChild) + '⮵' + ret +
+					(needParens(ret) ? '⚡' : '⏳')		// 'power' : pause
+			}
+			break
 
 		case 'mover':
-			if (value.attributes.hasOwnProperty('accent'))
-				return binary(value, '');
-
-			return 'modified ' + speech(value.firstElementChild, true) +
-				'⁐' + speech(value.lastElementChild, true) + '┴'; // 'with' ... 'above'
+			if (value.attributes.hasOwnProperty('accent')) {
+				ret = binary(value, '')
+			} else {
+				ret = 'modified ' + speech(value.firstElementChild, true) +
+					'⁐' + speech(value.lastElementChild, true) + '┴' // 'with' ... 'above'
+			}
+			break
 
 		case 'munder':
 			if (value.firstElementChild.innerHTML == 'lim') {
-				return speech(value.firstElementChild) + '⍨' +	// 'limit as' ... 'of'
-					speech(value.lastElementChild, true) + '▒';
+				ret = speech(value.firstElementChild) + '⍨' +	// 'limit as' ... 'of'
+					speech(value.lastElementChild, true) + '▒'
+			} else if (value.attributes.hasOwnProperty('accentunder')) {
+				ret = binary(value, '')
+			} else {
+				ret = 'modified ' + speech(value.firstElementChild, true) +
+					'⁐' + speech(value.lastElementChild, true) + '┬' // 'with' ... 'below'
 			}
-			if (value.attributes.hasOwnProperty('accentunder'))
-				return binary(value, '');
-
-			return 'modified ' + speech(value.firstElementChild, true) +
-				'⁐' + speech(value.lastElementChild, true) + '┬'; // 'with' ... 'below'
+			break
 
 		case 'msub':
-			return binary(value, '_');
+			ret = binary(value, '_')
+			break
 
 		case 'munderover':
 			if (!value.parentElement.attributes.hasOwnProperty('intent') ||
-				isNary(value.firstElementChild.innerHTML))
-					return Nary(value);
-			return ternary(value, '┬', '┴');
+				isNary(value.firstElementChild.innerHTML)) {
+				ret = Nary(value)
+			} else {
+				ret = ternary(value, '┬', '┴')
+			}
+			break
 
 		case 'msubsup':
 			if (value.lastElementChild.nodeName == 'mn' &&
 				isAsciiDigit(value.lastElementChild.textContent[0])) {
 				let power = getPower(value.lastElementChild.textContent);
-				return binary(value, '_') + power;
-			}
-			if (isPrime(value.lastElementChild.textContent)) {
-				return speech(value.firstElementChild) +
+				ret = binary(value, '_') + power
+			} else if (isPrime(value.lastElementChild.textContent)) {
+				ret = speech(value.firstElementChild) +
 					value.lastElementChild.textContent + '_' + speech(value.children[1])
+			} else {
+				ret = isNary(value.firstElementChild.innerHTML)
+					? Nary(value) : ternary(value, '_', '⮵');	// 'to the'
 			}
-			return isNary(value.firstElementChild.innerHTML)
-				? Nary(value) : ternary(value, '_', '⮵');	// 'to the'
+			break
 
 		case 'mmultiscripts':
 			ret = '';
@@ -974,7 +993,7 @@ function speech(value, noAddParens) {
 				ret += '_' + speech(value.children[1]);
 			if (value.children[2].nodeName != 'none')
 				ret += '^' + speech(value.children[2]);
-			return ret;
+			break
 
 		case 'mfenced':
 			let opOpen = value.hasAttribute('open') ? value.getAttribute('open') : '(';
@@ -989,16 +1008,17 @@ function speech(value, noAddParens) {
 				if (i < cNode - 1)
 					ret += i < cSep - 1 ? opSeparators[i] : opSeparators[cSep - 1];
 			}
-			return ret + opClose;
+			ret += opClose
+			break
 
 		case 'mo':
 			var val = value.innerHTML;
 			if (val == '\u2062')			// Ignore invisible times
-				return '';
+				break
 
 			if (val == '{' && value.parentElement.attributes.intent &&
 				value.parentElement.attributes.intent.nodeValue == ':cases') {
-				return '';					// Don't add 'open brace'
+				break						// Don't add 'open brace'
 			}
 
 			if (val[0] == '&') {
@@ -1024,15 +1044,16 @@ function speech(value, noAddParens) {
 				// (see also for 'mi')
 				switch (value.attributes.title.textContent) {
 					case 'binomial coefficient':
-						return '';
+						return ''
 				}
 			}
 			if (val == '→' && value.parentElement.nodeName == 'mrow' &&
 				value.parentElement.parentElement.nodeName == 'munder' &&
 				value.parentElement.parentElement.firstElementChild.innerHTML == 'lim') {
-				return '☛';					// 'goes to'
+				val = '☛';					// 'goes to'
 			}
-			return val;
+			ret = val
+			break
 
 		case 'mi':
 			let c = value.innerHTML;
@@ -1045,24 +1066,64 @@ function speech(value, noAddParens) {
 			} else if (c in functions) {
 				c = functions[c] + ' ';
 			}
-			return c;
+			ret = c
+			break
 
 		case 'mn':
-			return value.innerHTML;
+			ret = value.innerHTML
+			break
 
 		case 'mtext':
 			if (value.textContent == 'c.c.')
-				return '★';					// 'complex conjugate'
-			return value.textContent + ' ';
+				ret = '★';					// 'complex conjugate'
+			else
+				ret = value.textContent + ' '
+			break
 
 		case 'mspace':
 			if (value.attributes.hasOwnProperty('width')) {
 				for (let i = 0; i < spaceWidths.length; i++) {
-					if (value.attributes.width.nodeValue == spaceWidths[i])
-						return uniSpaces[i];
+					if (value.attributes.width.nodeValue == spaceWidths[i]) {
+						ret = uniSpaces[i]
+						break
+					}
 				}
 			}
 			break;
+	}
+	if (ret) {
+		let selattra = value.getAttribute('selanchor')
+		let selAttrF = value.getAttribute('selfocus')
+		let i
+
+		if (selattra) {
+			if (selattra == '-0' || selattra == '0') {
+				ret = 'Ⓐ' + ret
+			} else if (selattra[0] == '-') {
+				ret = value.textContent
+				i = +selattra[1]
+				ret = ret.substring(0, i) + 'Ⓐ' + ret.substring(i)
+			} else {
+				ret = 'Ⓐ' + selattra + ret
+			}
+		}
+
+		if (selAttrF) {
+			if (selAttrF == '-0' || selAttrF == '0') {
+				ret = 'Ⓕ' + ret
+			} else if (selAttrF[0] == '-') {
+				let j = +selAttrF[1]
+				if (i && j > i)
+					j++
+				ret = ret.substring(0, j) + 'Ⓕ' + ret.substring(j)
+			} else {
+				if (selAttrF == argCounts[value.nodeName])
+					ret += 'Ⓕ'
+				else
+					ret = 'Ⓕ' + selAttrF + ret
+			}
+		}
+		return ret
 	}
 
 	let mrowIntent = value.nodeName == 'mrow' && value.attributes.hasOwnProperty('intent')
@@ -1132,6 +1193,7 @@ function resolveSymbols(text) {
 	let cchText = text.length;
 	let ch;									// Current char
 	let cchCh;								// Code count of current
+	let focus = false						// Whether Ⓕ has appeared
 
 	// Convert symbols to words and eliminate some spaces
 	for (let i = 0; i < cchText; i += cchCh) {
@@ -1202,6 +1264,11 @@ function resolveSymbols(text) {
 			ret += ch;
 			continue;
 		}
+		if (ch == 'Ⓕ')
+			focus = true
+		else if (ch == 'Ⓐ'&& !focus && text.indexOf('Ⓕ', i + 1) == -1)
+			ch = 'Ⓘ'
+
 		let c = symbolSpeech(ch);
 		if (c != ch) {
 			ch = c;

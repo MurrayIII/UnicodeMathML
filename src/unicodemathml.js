@@ -6,6 +6,11 @@ const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
 const overBrackets = '\u23B4\u23DC\u23DE\u23E0¯';
 const underBrackets = '\u23B5\u23DD\u23DF\u23E1';
 
+const argCounts = {
+    'msup': 2, 'msub': 2, 'msubsup': 3, 'munder': 2, 'mover': 2, 'munderover': 3,
+    'mfrac': 2, 'msqrt': 1, 'mroot': 2
+}
+
 const unicodeFractions = {
     "½": [1, 2], "⅓": [1, 3], "⅔": [2, 3], "¼": [1, 4], "¾": [3, 4], "⅕": [1, 5],
     "⅖": [2, 5], "⅗": [3, 5], "⅘": [4, 5], "⅙": [1, 6], "⅚": [5, 6], "⅐": [1, 7],

@@ -64,6 +64,8 @@ const mathML = [
     "<math display=\"block\"><mrow><mi>𝐸</mi><mo>=</mo><mrow><mi>𝑚</mi><msup selanchor=\"0\" selfocus=\"2\"><mi>𝑐</mi><mn>2</mn></msup></mrow></mrow></math>",
     "<math display=\"block\"><mrow><mi>𝐸</mi><mo>=</mo><mrow><mi selanchor=\"-0\">𝑚</mi><msup selfocus=\"2\"><mi>𝑐</mi><mn>2</mn></msup></mrow></mrow></math>",
     "<math display=\"block\"><mrow><mrow intent=\":function\"><msup><mi selanchor=\"-1\" selfocus=\"-2\">sin</mi><mn>2</mn></msup><mo>⁡</mo><mi>𝜃</mi></mrow><mo>+</mo><mrow intent=\":function\"><msup><mi>cos</mi><mn>2</mn></msup><mo>⁡</mo><mi>𝜃</mi></mrow><mo>=</mo><mn>1</mn></mrow></math>",
+    "<math display=\"block\"><mrow><mn selanchor=\"-1\" selfocus=\"-2\">123</mn><mo>=</mo></mrow></math>",
+    "<math display=\"block\"><mrow intent=\":function\"><mi selanchor=\"-1\" selfocus=\"-2\">sin</mi><mo>⁡</mo><mi>𝑥</mi></mrow></math>",
 ]
 
 const unicodeMath = [
@@ -129,7 +131,9 @@ const unicodeMath = [
     "𝐸=𝑚Ⓐ0Ⓕ2𝑐²",
     "𝐸=Ⓐ０𝑚Ⓕ2𝑐²",
     "Ⓐ１Ⓕ２sin²⁡𝜃+cos²⁡𝜃=1",
-];
+    "Ⓐ１Ⓕ２123=",
+    "Ⓐ１Ⓕ２sin⁡𝑥",
+]
 
 const mathSpeech = [
     "1 over 2 pi integral from 0 to 2 width smash pi of , fraction d theta over eigh + b sine theta , end fraction = fraction 1 over square root , eigh squared minus b squared , end square root , end fraction",
@@ -196,10 +200,12 @@ const mathSpeech = [
     "the 2 by 2 matrix,  , row 1 , 1 , 0 , row 2 , 0 , 1 , end matrix",
     "fraction alpha sub 2 cubed over beta sub 2 cubed + gamma sub 2 cubed , end fraction",
     "open bracket eigh + b comma c + d close bracket",
-    "cap E = m c squared",
-    "cap E = m c squared",
-    "cap E = m c squared",
-    "sine squared theta + cosine squared theta = 1",
+    "cap E = insertion point m c squared",
+    "cap E = m sel-anchor c squared sel-focus",
+    "cap E = sel-anchor m c squared sel-focus",
+    "s sel-anchor i sel-focus n squared theta + cosine squared theta = 1",
+    "1 sel-anchor 2 sel-focus 3 =",
+    "s sel-anchor i sel-focus n x",
 ]
 
 const mathBraille = [
@@ -265,6 +271,8 @@ const mathBraille = [
     "⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆",
     "⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆",
     "⠎⠊⠝⠘⠆⠀⠨⠹⠬⠉⠕⠎⠘⠆⠀⠨⠹⠀⠨⠅⠀⠼⠂",
+    "⠼⠂⠆⠒⠀⠨⠅⠀",
+    "⠎⠊⠝⠀⠭",
 ]
 
 function testMathMLtoUnicodeMath() {
