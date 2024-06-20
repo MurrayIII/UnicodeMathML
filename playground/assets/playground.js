@@ -2338,8 +2338,14 @@ if (window.innerWidth < 768 || !ummlConfig.debug) {
     // Suppress AST tabs for mobile devices
     var tabs = document.getElementsByClassName('tabs');
     tabs[0].style.display = "none";
+
     if (!input.value)
         output_source.innerHTML = 'MathML will appear here'
+
+    if (window.innerWidth <= 768) {
+        let history = document.getElementsByClassName("history")
+        history[0].style.display = "none"
+    }
 }
 
 // if LaTeX output is enabled, hide AST tab (since there is no LaTeX AST) and
