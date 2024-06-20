@@ -62,7 +62,8 @@ document.onselectionchange = () => {
 
 function removeSuperfluousMrow(node) {
     if (node && node.nodeName == 'mrow' && node.childElementCount == 1 &&
-        !node.attributes.length && node.firstElementChild.nodeName == 'mrow') {
+        !node.attributes.length && node.firstElementChild.nodeName == 'mrow' &&
+        !node.firstElementChild.hasAttribute('intent')) {
         let nodeP = node.parentElement
 
         if (nodeP) {
@@ -1095,17 +1096,19 @@ const names = {
     'mfrac': 'fraction', 'msqrt': 'square root',
 }
 
-function refreshDisplays(uMath) {
+function refreshDisplays(uMath, noUndo) {
     // Update MathML, UnicodeMath, and code-point displays; restore selection
     // from selanchor and selfocus
     output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
     let uMathCurrent = getUnicodeMath(output.firstElementChild, true)
 
-    if (!uMath)
-        uMath = uMathCurrent
-    let undoTop = stackTop(outputUndoStack)
-    if (uMath != undoTop)
-        outputUndoStack.push(uMath)
+    if (!noUndo) {
+        if (!uMath)
+            uMath = uMathCurrent
+        let undoTop = stackTop(outputUndoStack)
+        if (uMath != undoTop)
+            outputUndoStack.push(uMath)
+    }
 
     input.innerHTML = removeSelInfo(uMathCurrent)
     codepoints.innerHTML = getCodePoints()
@@ -2251,7 +2254,14 @@ output.addEventListener('keydown', function (e) {
                     node.setAttribute('mathvariant', 'normal')
                 refreshDisplays()
                 return
-            } else if (e.ctrlKey && e.key == 'z') { // Ctrl+z
+            } else if (e.ctrlKey && e.key == 'r') { // Ctrl+r
+                // Refresh MathML display (MathML → UnicodeMath → MathML)
+                let uMath = getUnicodeMath(output.firstElementChild, true)
+                let t = unicodemathml(uMath, true) // uMath → MathML
+                output.innerHTML = t.mathml
+                refreshDisplays('', true)
+                return
+           } else if (e.ctrlKey && e.key == 'z') { // Ctrl+z
                 if (!outputUndoStack.length)
                     return
                 let undoTop = stackTop(outputUndoStack)
@@ -2262,6 +2272,7 @@ output.addEventListener('keydown', function (e) {
                     uMath = '⬚'
                 let t = unicodemathml(uMath, true) // uMath → MathML
                 output.innerHTML = t.mathml
+                output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
                 if (t.details["intermediates"]) {
                     let pegjs_ast = t.details["intermediates"]["parse"];
                     let preprocess_ast = t.details["intermediates"]["preprocess"];
@@ -2283,11 +2294,20 @@ output.addEventListener('keydown', function (e) {
             if (nodeT) {
                 node = nodeT                // FAB succeeded: update node
                 atEnd = true
-                if (key == ' ') {
-                    node.innerHTML = node.innerHTML   // Force redraw
-                    refreshDisplays();
-                    return
+                if (key == ' ') {           // Set insertion point
+                    let cChild = node.childElementCount
+                    if (cChild) {
+                        while (node.nodeName == 'mrow') {
+                            node = node.lastElementChild
+                            cChild = node.childElementCount
+                        }
+                        node.setAttribute('selanchor', cChild ? cChild : 1)
+                    }
+                } else {
+                    handleKeyboardInput(node, key, sel)
                 }
+                refreshDisplays('', true)
+                return
             }
             let autocl = handleKeyboardInput(node, key, sel)
 
