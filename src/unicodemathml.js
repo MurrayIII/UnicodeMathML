@@ -4028,6 +4028,19 @@ function binary(node, op) {
     let ret = dump(node.firstElementChild);
     let retd = dump(node.lastElementChild);
 
+    if (isMathMLObject(node)) {
+        // Add enclosing parens for parenthesized arguments that lose their
+        // outermost parens when built up.
+        let attr = node.lastElementChild.getAttribute('intent')
+        if (attr == ':fenced' && retd[0] == '(' && retd[retd.length - 1] == ')')
+            retd = '(' + retd + ')'
+        if (node.nodeName == 'mfrac') {
+            attr = node.firstElementChild.getAttribute('intent')
+            if (attr == ':fenced' && ret[0] == '(' && ret[ret.length - 1] == ')')
+                ret = '(' + ret + ')'
+        }
+    }
+
     if (op == '⊘') {
         let ch = getUnicodeFraction(ret, retd);
         if (ch)
@@ -4044,6 +4057,9 @@ function binary(node, op) {
 }
 
 function ternary(node, op1, op2) {
+    // TODO: Add enclosing parens for parenthesized arguments that lose their
+    // outermost parens when built up, namely for munderover/msubsup second
+    // and third children (see algorithm in binary())
     return dump(node.firstElementChild) + op1 + dump(node.children[1]) +
         op2 + dump(node.lastElementChild) + ' ';
 }

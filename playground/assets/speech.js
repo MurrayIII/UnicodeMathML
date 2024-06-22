@@ -645,21 +645,7 @@ function checkIntent(value) {
 			opDerivative = 'đ';
 											// Fall through to partial-derivative
 		case 'partial-derivative':
-			let order = args[0];
-			if (order) {
-				if (isAsciiDigit(order)) {
-					order = order >= '2' ? ordinals[order] : '';
-				} else if (order[0] == '(') {
-					order = order.substring(1, order.length - 1);
-					if (isAsciiDigit(order[order.length - 1])) {
-						order = order.substring(0, order.length - 1) +
-							ordinals[order[order.length - 1]];
-					}
-				} else {
-					let code = codeAt(order, 0);
-					order = foldMathItalic(code) + 'th';
-				}
-			}
+			let order = getOrder(args[0])
 			let arg = args[1] ? '▒' + args[1] : '';
 
 			// E.g., "second derivative of f(x) with respect to x"
@@ -672,6 +658,25 @@ function checkIntent(value) {
 			break;
 	}
 	return ret;
+}
+
+function getOrder(order) {
+	if (!order)
+		return order
+
+	if (isAsciiDigit(order))
+		return order >= '2' ? ordinals[order] : ''
+
+	if (order[0] == '(') {
+		order = order.substring(1, order.length - 1);
+		if (isAsciiDigit(order[order.length - 1])) {
+			order = order.substring(0, order.length - 1) +
+				ordinals[order[order.length - 1]];
+		}
+		return order
+	}
+	let code = codeAt(order, 0);
+	return foldMathItalic(code) + 'th';
 }
 
 function unary(node, op) {
@@ -709,6 +714,18 @@ function nary(node, op, cNode) {
 	return ret;
 }
 
+
+function checkLagrangeDerivative(node) {
+	// If node and next element node has form 𝑓⁽ⁿ⁾(𝑥), return speech for n
+	if (node.firstElementChild.nodeName != 'mi' ||
+		node.lastElementChild.getAttribute('intent') != ':fenced' ||
+		node.lastElementChild.firstElementChild.textContent != '(' ||
+		!node.nextElementSibling ||
+		node.nextElementSibling.getAttribute('intent') != ':fenced') {
+		return ''
+	}
+	return getOrder(speech(node.lastElementChild.children[1]))
+}
 
 function speech(value, noAddParens) {
 	function Nary(node) {
@@ -924,6 +941,12 @@ function speech(value, noAddParens) {
 			else if (value.lastElementChild.textContent == '∗')
 				ret = speech(value.firstElementChild) + '☆' 	// 'conjugate'
 			else {
+				let n = checkLagrangeDerivative(value)
+				if (n) {
+					// E.g., for "𝑓⁽²⁾(𝑥)" ret = "second derivative of f of"
+					ret = n + 'đ▒' + speech(value.firstElementChild) + '▒'
+					break
+				}
 				ret = speech(value.lastElementChild, true);
 				ret = speech(value.firstElementChild) + '⮵' + ret +
 					(needParens(ret) ? '⚡' : '⏳')		// 'power' : pause
@@ -1130,6 +1153,14 @@ function speech(value, noAddParens) {
 		? value.attributes.intent.nodeValue : '';
 
 	if ((!mrowIntent || mrowIntent == ':fenced') && (cNode == 2 || cNode == 3)) {
+		if (mrowIntent == ':fenced' &&
+			value.firstElementChild.textContent == '(' &&
+			value.children[1].nodeName == 'mi' &&
+			value.lastElementChild.textContent == ')' &&
+			value.previousElementSibling && value.previousElementSibling.nodeName == 'msup') {
+			// Speech for Lagrange derivative wrt variable, e.g., for 𝑥 in 𝑓⁽²⁾(𝑥)
+			return speech(value.children[1])
+		}
 		if (value.firstElementChild.textContent == '|' &&
 			value.lastElementChild.textContent == '|') {
 			mrowIntent = 'absolute-value';

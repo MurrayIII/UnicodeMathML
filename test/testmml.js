@@ -66,6 +66,8 @@ const mathML = [
     "<math display=\"block\"><mrow><mrow intent=\":function\"><msup><mi selanchor=\"-1\" selfocus=\"-2\">sin</mi><mn>2</mn></msup><mo>⁡</mo><mi>𝜃</mi></mrow><mo>+</mo><mrow intent=\":function\"><msup><mi>cos</mi><mn>2</mn></msup><mo>⁡</mo><mi>𝜃</mi></mrow><mo>=</mo><mn>1</mn></mrow></math>",
     "<math display=\"block\"><mrow><mn selanchor=\"-1\" selfocus=\"-2\">123</mn><mo>=</mo></mrow></math>",
     "<math display=\"block\"><mrow intent=\":function\"><mi selanchor=\"-1\" selfocus=\"-2\">sin</mi><mo>⁡</mo><mi>𝑥</mi></mrow></math>",
+    "<math display=\"block\"><mrow><mrow><msup><mi>𝑓</mi><mrow intent=\":fenced\"><mo>(</mo><mn>2</mn><mo>)</mo></mrow></msup><mrow intent=\":fenced\"><mo>(</mo><mi>𝑥</mi><mo>)</mo></mrow></mrow><mo>=</mo><mn>0</mn></mrow></math>",
+    "<math display=\"block\"><mfrac><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow><mo>)</mo></mrow><mi>𝑐</mi></mfrac></math>",
 ]
 
 const unicodeMath = [
@@ -133,6 +135,8 @@ const unicodeMath = [
     "Ⓐ１Ⓕ２sin²⁡𝜃+cos²⁡𝜃=1",
     "Ⓐ１Ⓕ２123=",
     "Ⓐ１Ⓕ２sin⁡𝑥",
+    "𝑓^((2)) (𝑥)=0",
+    "((𝑎+𝑏))/𝑐",
 ]
 
 const mathSpeech = [
@@ -206,6 +210,8 @@ const mathSpeech = [
     "s sel-anchor i sel-focus n squared theta + cosine squared theta = 1",
     "1 sel-anchor 2 sel-focus 3 =",
     "s sel-anchor i sel-focus n x",
+    "second derivative of f of x = 0",
+    "open eigh + b close over c",
 ]
 
 const mathBraille = [
@@ -273,6 +279,8 @@ const mathBraille = [
     "⠎⠊⠝⠘⠆⠀⠨⠹⠬⠉⠕⠎⠘⠆⠀⠨⠹⠀⠨⠅⠀⠼⠂",
     "⠼⠂⠆⠒⠀⠨⠅⠀",
     "⠎⠊⠝⠀⠭",
+    "⠋⠘⠷⠆⠾⠐⠷⠭⠾⠀⠨⠅⠀⠼⠴",
+    "⠹⠷⠁⠬⠃⠾⠌⠉⠼",
 ]
 
 function testMathMLtoUnicodeMath() {
