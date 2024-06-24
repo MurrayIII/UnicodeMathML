@@ -4057,11 +4057,20 @@ function binary(node, op) {
 }
 
 function ternary(node, op1, op2) {
-    // TODO: Add enclosing parens for parenthesized arguments that lose their
-    // outermost parens when built up, namely for munderover/msubsup second
-    // and third children (see algorithm in binary())
-    return dump(node.firstElementChild) + op1 + dump(node.children[1]) +
-        op2 + dump(node.lastElementChild) + ' ';
+    let ret = [dump(node.children[1]), dump(node.children[2])]
+
+    if (node.nodeName == 'msubsup' || node.nodeName == 'munderover') {
+        // Add enclosing parens for parenthesized arguments that lose their
+        // outermost parens when built up, here for munderover/msubsup
+        // second and third children
+        for (let i = 0; i < 2; i++) {
+            let attr = node.children[i + 1].getAttribute('intent')
+
+            if (attr == ':fenced' && ret[i][0] == '(' && ret[i][ret[i].length - 1] == ')')
+                ret[i] = '(' + ret[i] + ')'
+        }
+    }
+    return dump(node.firstElementChild) + op1 + ret[0] + op2 + ret[1] + ' '
 }
 
 function nary(node, op, cNode) {

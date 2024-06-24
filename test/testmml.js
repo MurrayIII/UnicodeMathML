@@ -68,6 +68,7 @@ const mathML = [
     "<math display=\"block\"><mrow intent=\":function\"><mi selanchor=\"-1\" selfocus=\"-2\">sin</mi><mo>⁡</mo><mi>𝑥</mi></mrow></math>",
     "<math display=\"block\"><mrow><mrow><msup><mi>𝑓</mi><mrow intent=\":fenced\"><mo>(</mo><mn>2</mn><mo>)</mo></mrow></msup><mrow intent=\":fenced\"><mo>(</mo><mi>𝑥</mi><mo>)</mo></mrow></mrow><mo>=</mo><mn>0</mn></mrow></math>",
     "<math display=\"block\"><mfrac><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow><mo>)</mo></mrow><mi>𝑐</mi></mfrac></math>",
+    "<math display=\"block\"><msubsup><mi>𝑓</mi><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑎</mi><mo>−</mo><mn>0</mn></mrow><mo>)</mo></mrow><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑏</mi><mo>+</mo><mi>𝑐</mi></mrow><mo>)</mo></mrow></msubsup></math>",
 ]
 
 const unicodeMath = [
@@ -137,6 +138,7 @@ const unicodeMath = [
     "Ⓐ１Ⓕ２sin⁡𝑥",
     "𝑓^((2)) (𝑥)=0",
     "((𝑎+𝑏))/𝑐",
+    "𝑓_((𝑎−0))^((𝑏+𝑐))",
 ]
 
 const mathSpeech = [
@@ -212,6 +214,7 @@ const mathSpeech = [
     "s sel-anchor i sel-focus n x",
     "second derivative of f of x = 0",
     "open eigh + b close over c",
+    "f sub open eigh minus 0 close to the open b + c close",
 ]
 
 const mathBraille = [
@@ -281,6 +284,7 @@ const mathBraille = [
     "⠎⠊⠝⠀⠭",
     "⠋⠘⠷⠆⠾⠐⠷⠭⠾⠀⠨⠅⠀⠼⠴",
     "⠹⠷⠁⠬⠃⠾⠌⠉⠼",
+    "⠋⠰⠷⠁⠤⠴⠾⠘⠷⠃⠬⠉⠾",
 ]
 
 function testMathMLtoUnicodeMath() {
