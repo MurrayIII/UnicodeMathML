@@ -24,6 +24,7 @@ var selectionEnd
 var anchorNode
 var focusNode
 var inSelChange = false
+var testing
 
 document.onselectionchange = () => {
     if (inSelChange)
@@ -56,7 +57,8 @@ document.onselectionchange = () => {
         setSelAttributes(focusNode, 'selfocus', offset)
     }
     // Update MathML window
-    output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
+    if(!testing)
+        output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
     console.log('uMath = ' + getUnicodeMath(output.firstElementChild, true))
 }
 
@@ -1099,7 +1101,8 @@ const names = {
 function refreshDisplays(uMath, noUndo) {
     // Update MathML, UnicodeMath, and code-point displays; restore selection
     // from selanchor and selfocus
-    output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
+    if(!testing)
+        output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
     let uMathCurrent = getUnicodeMath(output.firstElementChild, true)
 
     if (!noUndo) {
@@ -1111,7 +1114,8 @@ function refreshDisplays(uMath, noUndo) {
     }
 
     input.innerHTML = removeSelInfo(uMathCurrent)
-    codepoints.innerHTML = getCodePoints()
+    if (!testing)
+        codepoints.innerHTML = getCodePoints()
 
     let node = output.firstElementChild     // <math> node
     if (!node)                              // No <math> node
@@ -1195,7 +1199,8 @@ function removeSelAttributes(node) {
         node = output.firstElementChild
         if (!node)
             return
-        console.log('remove selection attributes from ' + getUnicodeMath(node, true))
+        if (!testing)
+            console.log('remove selection attributes from ' + getUnicodeMath(node, true))
     }
     let walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, null)
 
@@ -2045,10 +2050,8 @@ output.addEventListener('keydown', function (e) {
     let sel = window.getSelection()
 
     let range = document.createRange()
-    range.selectNode(sel.anchorNode)
-    let rel = range.comparePoint(sel.focusNode, sel.focusOffset)
-    console.log("rel = " + rel)
-    range = sel.getRangeAt(0)               // Save entry selection
+    if(sel.type != 'None')
+        range = sel.getRangeAt(0)           // Save entry selection
 
     let node = sel.anchorNode
     let name = node.nodeName
@@ -2164,7 +2167,7 @@ output.addEventListener('keydown', function (e) {
             return
 
         default:
-            if (key.length > 1)             // 'Shift', etc.
+            if (key.length > 1 && !inRange('\uD800', key[0], '\uDBFF')) // 'Shift', etc.
                 return
 
             e.preventDefault();
@@ -2321,8 +2324,10 @@ output.addEventListener('keydown', function (e) {
 function checkResize() {
     let h = document.getElementsByTagName('h1');
     let heading = document.getElementById("heading");
-    if (heading == undefined)
+    if (heading == undefined) {
+        testing = true
         return                              // (for tests)
+    }
 
     if (window.innerHeight > 1000) {
         let outputs = document.getElementsByClassName('tabcontent');
@@ -2334,55 +2339,57 @@ function checkResize() {
 
 checkResize();
 
-if (window.innerWidth < 768 || !ummlConfig.debug) {
-    // Suppress AST tabs for mobile devices
-    var tabs = document.getElementsByClassName('tabs');
-    tabs[0].style.display = "none";
+if (!testing) {
+    if (window.innerWidth < 768 || !ummlConfig.debug) {
+        // Suppress AST tabs for mobile devices
+        var tabs = document.getElementsByClassName('tabs');
+        tabs[0].style.display = "none";
 
-    if (!input.value)
-        output_source.innerHTML = 'MathML will appear here'
+        if (!input.value)
+            output_source.innerHTML = 'MathML will appear here'
 
-    if (window.innerWidth <= 768) {
-        let history = document.getElementsByClassName("history")
-        history[0].style.display = "none"
+        if (window.innerWidth <= 768) {
+            let history = document.getElementsByClassName("history")
+            history[0].style.display = "none"
+        }
     }
-}
 
-// if LaTeX output is enabled, hide AST tab (since there is no LaTeX AST) and
-// rename source tab
-if (ummlConfig.outputLaTeX) {
-    document.getElementById("mathml_ast").style.display = "none";
-    document.getElementById("source").innerHTML = document.getElementById("source").innerHTML.replace("MathML", "LaTeX");
-    measurements_pretty = document.getElementById("measurements_pretty");  // target lock reacquired
-}
+    // if LaTeX output is enabled, hide AST tab (since there is no LaTeX AST) and
+    // rename source tab
+    if (ummlConfig.outputLaTeX) {
+        document.getElementById("mathml_ast").style.display = "none";
+        document.getElementById("source").innerHTML = document.getElementById("source").innerHTML.replace("MathML", "LaTeX");
+        measurements_pretty = document.getElementById("measurements_pretty");  // target lock reacquired
+    }
 
-// if tracing is enabled, add trace tab
-if (ummlConfig.tracing) {
-    var tempElem = document.createElement('button');
-    tempElem.classList.add('tab');
-    tempElem.id = 'trace';
-    tempElem.innerHTML = 'Trace';
-    document.getElementById('pegjs_ast').parentNode.insertBefore(tempElem, document.getElementById('pegjs_ast').nextSibling);
+    // if tracing is enabled, add trace tab
+    if (ummlConfig.tracing) {
+        var tempElem = document.createElement('button');
+        tempElem.classList.add('tab');
+        tempElem.id = 'trace';
+        tempElem.innerHTML = 'Trace';
+        document.getElementById('pegjs_ast').parentNode.insertBefore(tempElem, document.getElementById('pegjs_ast').nextSibling);
 
-    tempElem = document.createElement('pre');
-    tempElem.id = 'output_trace';
-    output_pegjs_ast.parentNode.insertBefore(tempElem, output_pegjs_ast.nextSibling);
-    var output_trace = document.getElementById('output_trace');
-}
+        tempElem = document.createElement('pre');
+        tempElem.id = 'output_trace';
+        output_pegjs_ast.parentNode.insertBefore(tempElem, output_pegjs_ast.nextSibling);
+        var output_trace = document.getElementById('output_trace');
+    }
 
-// load local storage data from previous page load
-if (window.localStorage.getItem('unicodemath')) {
-    input.innerHTML = window.localStorage.getItem('unicodemath').replace(/LINEBREAK/g, '\n');
-    draw();
-}
-if (window.localStorage.getItem('active_tab')) {
-    setActiveTab(window.localStorage.getItem('active_tab'));
-} else {
-    setActiveTab(activeTab);
-}
-if (window.localStorage.getItem('history')) {
-    hist = JSON.parse(window.localStorage.getItem('history'));
-    displayHistory();
+    // load local storage data from previous page load
+    if (window.localStorage.getItem('unicodemath')) {
+        input.innerHTML = window.localStorage.getItem('unicodemath').replace(/LINEBREAK/g, '\n');
+        draw();
+    }
+    if (window.localStorage.getItem('active_tab')) {
+        setActiveTab(window.localStorage.getItem('active_tab'));
+    } else {
+        setActiveTab(activeTab);
+    }
+    if (window.localStorage.getItem('history')) {
+        hist = JSON.parse(window.localStorage.getItem('history'));
+        displayHistory();
+    }
 }
 
 // Enable autocorrect and autocomplete

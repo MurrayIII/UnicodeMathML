@@ -339,15 +339,24 @@ function testMathMLtoBraille() {
 
 // 1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)
 const unicodeMathPartial = [
-    "",
+    "1",
+    "1\\/",
+    "1\\/2",
+    "1\\/2𝜋",
+    "1/2𝜋",                                 // Dummy since 𝜋 is a surrogate pair
+    "1/2𝜋",
 ]
 
 function testInputToOutput() {
-    var iSuccess = 0;
+    let iFail = unicodeMathPartial.length
+    let iSuccess = 0;
+    let sel = window.getSelection()
+    let output = document.getElementById('output')
+    setSelection(sel, output, 0)
 
-    for (var i = 0; i < unicodeMath[0].length; i++) {
+    for (var i = 0; i < 6; i++) {
         const event = new Event('keydown');
-        event.key = unicodeMath[0][i];
+        event.key = getCh(unicodeMath[0], i); 
         output.dispatchEvent(event);
         setTimeout(function () { }, 200);  // Sleep for 200 msec
         var result = input.value;
@@ -358,8 +367,12 @@ function testInputToOutput() {
         } else {
             iSuccess++;
         }
+        if (event.key.length == 2) {
+            i++                             // Bypass trail surrogate
+            iFail--
+        }
     }
-    var iFail = keys.length - iSuccess;
+    iFail -= iSuccess;
     console.log(iSuccess + " passes; " + iFail + " failures\n");
 }
 

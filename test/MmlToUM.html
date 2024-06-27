@@ -12,16 +12,17 @@
     </style>
 </head>
 <body>
-    <textarea id="input" placeholder="Enter MathML here..." autocomplete="off" spellcheck="false"></textarea>
-    <textarea id="output" spellcheck="false"></textarea>
+    <textarea id="input" autocomplete="off" spellcheck="false"></textarea>
+    <div id="output" contentEditable="true" spellcheck="false"></div>
     <p></p>
     <button type="button" id="myBtn" onclick="testMathMLtoUnicodeMath()">Test MathML to UnicodeMath conversion...</button>
     <p></p>
     <button type="button" id="myBtn1" onclick="testMathMLtoSpeech()">Test MathML to speech conversion...</button>
     <p></p>
     <button type="button" id="myBtn2" onclick="testMathMLtoBraille()">Test MathML to braille conversion...</button>
+    <p></p>
+    <button type="button" id="myBtn3" onclick="testInputToOutput()">Test input to output display...</button>
     <script>
-
         // prevent caching
         function loadUncachedStylesheet(path) {
             document.write('<link rel="stylesheet" href="' + path + '?' + Math.random() + '">');
@@ -29,10 +30,45 @@
         function loadUncachedScript(path) {
             document.write('<script src="' + path + '?' + Math.random() + '"></scr' + 'ipt>');
         }
+        var defaultConfig = {
+            splitInput: true,
+            resolveControlWords: true,
+            displaystyle: true,
+            debug: true,
+            caching: true,
+            tracing: false,
+            forceMathJax: false,
+            outputLaTeX: false,
+            defaultIntents: false,
+            doubleStruckMode: "us-tech",
+            transposeChar: "T",
+        };
+        var ummlConfig = JSON.parse(JSON.stringify(defaultConfig));  // clone it
     </script>
     <script>loadUncachedScript("testmml.js")</script>
+    <script src="../lib/peg-0.10.0.min.js"></script>
+    <script>
+        var ummlParser = undefined;
+
+        // load grammar from file, then generate parser
+        var client = new XMLHttpRequest();
+        client.open('GET', '../src/unicodemathml-parser.pegjs' + "?" + Math.random());
+        client.onreadystatechange = function () {
+            if (client.readyState === 4) {
+                try {
+                    ummlParser = peg.generate(client.responseText, { cache: ummlConfig.caching, trace: ummlConfig.tracing });
+                } catch (error) {
+                    document.write("Error during parser generation: " + error + "<br>");
+                    console.log(error);
+                }
+            }
+        }
+        client.send();
+    </script>
+    <script src="../playground/assets/lib/jquery.min.js"></script>
     <script>loadUncachedScript("../src/unicodemathml.js")</script>
     <script>loadUncachedScript("../playground/assets/speech.js")</script>
     <script>loadUncachedScript("../playground/assets/braille.js")</script>
+    <script>loadUncachedScript("../playground/assets/playground.js")</script>
 </body>
 </html>

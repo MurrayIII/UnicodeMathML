@@ -256,7 +256,10 @@ function removeSelInfo(uMath) {
     let i = uMath.indexOf('Ⓐ');
 
     if (i != -1) {
-        uMath = uMath.substring(0, i) + uMath.substring(i + 2)
+        let delta = 2
+        if (uMath[i + 2] == ' ')
+            delta = 3
+        uMath = uMath.substring(0, i) + uMath.substring(i + delta)
         i = uMath.indexOf('Ⓕ');
         if (i != -1)                        // Nondegenerate selection
             uMath = uMath.substring(0, i) + uMath.substring(i + 2)
