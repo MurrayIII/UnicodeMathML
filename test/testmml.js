@@ -69,6 +69,7 @@ const mathML = [
     "<math display=\"block\"><mrow><mrow><msup><mi>𝑓</mi><mrow intent=\":fenced\"><mo>(</mo><mn>2</mn><mo>)</mo></mrow></msup><mrow intent=\":fenced\"><mo>(</mo><mi>𝑥</mi><mo>)</mo></mrow></mrow><mo>=</mo><mn>0</mn></mrow></math>",
     "<math display=\"block\"><mfrac><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow><mo>)</mo></mrow><mi>𝑐</mi></mfrac></math>",
     "<math display=\"block\"><msubsup><mi>𝑓</mi><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑎</mi><mo>−</mo><mn>0</mn></mrow><mo>)</mo></mrow><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑏</mi><mo>+</mo><mi>𝑐</mi></mrow><mo>)</mo></mrow></msubsup></math>",
+    "<math display=\"block\"><mrow><mfrac intent=\"derivative(1,$f,𝑥)\"><mi>𝑑</mi><mrow><mi>𝑑</mi><mi>𝑥</mi></mrow></mfrac><mrow arg=\"f\"><mrow intent=\":fenced\"><mo>(</mo><mrow><msup><mi>𝑥</mi><mn>2</mn></msup><mo>+</mo><mi>𝑥</mi><mo>+</mo><mn>1</mn></mrow><mo>)</mo></mrow></mrow><mo>=</mo><mrow><mn>2</mn><mi>𝑥</mi></mrow><mo>+</mo><mn>1</mn></mrow></math>",
 ]
 
 const unicodeMath = [
@@ -139,6 +140,7 @@ const unicodeMath = [
     "𝑓^((2)) (𝑥)=0",
     "((𝑎+𝑏))/𝑐",
     "𝑓_((𝑎−0))^((𝑏+𝑐))",
+    "𝑑/𝑑𝑥 (𝑥²+𝑥+1)=2𝑥+1",
 ]
 
 const mathSpeech = [
@@ -215,6 +217,7 @@ const mathSpeech = [
     "second derivative of f of x = 0",
     "open eigh + b close over c",
     "f sub open eigh minus 0 close to the open b + c close",
+    "derivative of x squared + x + 1 with respect to x = 2 x + 1",
 ]
 
 const mathBraille = [
@@ -285,6 +288,7 @@ const mathBraille = [
     "⠋⠘⠷⠆⠾⠐⠷⠭⠾⠀⠨⠅⠀⠼⠴",
     "⠹⠷⠁⠬⠃⠾⠌⠉⠼",
     "⠋⠰⠷⠁⠤⠴⠾⠘⠷⠃⠬⠉⠾",
+    "⠹⠙⠌⠙⠭⠼⠷⠭⠘⠆⠐⠬⠭⠬⠂⠾⠀⠨⠅⠀⠼⠆⠭⠬⠂",
 ]
 
 function testMathMLtoUnicodeMath() {
@@ -343,7 +347,6 @@ const unicodeMathPartial = [
     "1\\/",
     "1\\/2",
     "1\\/2𝜋",
-    "1/2𝜋",                                 // Dummy since 𝜋 is a surrogate pair
     "1/2𝜋",
 ]
 
@@ -354,23 +357,21 @@ function testInputToOutput() {
     let output = document.getElementById('output')
     setSelection(sel, output, 0)
 
-    for (var i = 0; i < 6; i++) {
+    for (let i = 0, j = 0; i < 6; i++, j++) {
         const event = new Event('keydown');
         event.key = getCh(unicodeMath[0], i); 
         output.dispatchEvent(event);
         setTimeout(function () { }, 200);  // Sleep for 200 msec
         var result = input.value;
-        if (result != unicodeMathPartial[i]) {
+        if (result != unicodeMathPartial[j]) {
             console.log(event.key + '\n');
             console.log("Expect: " + unicodeMathPartial[i] + '\n');
             console.log("Result: " + result + '\n\n');
         } else {
             iSuccess++;
         }
-        if (event.key.length == 2) {
+        if (event.key.length == 2)
             i++                             // Bypass trail surrogate
-            iFail--
-        }
     }
     iFail -= iSuccess;
     console.log(iSuccess + " passes; " + iFail + " failures\n");

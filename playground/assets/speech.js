@@ -573,7 +573,7 @@ function styleSpeech(mathStyle) {
 }
 
 function findArg(value, arg) {
-	if (value.attributes.arg && value.attributes.arg.textContent == arg)
+	if (value.getAttribute('arg') == arg)
 		return value;
 
 	for (let i = 0; i < value.children.length; i++) {
@@ -581,14 +581,14 @@ function findArg(value, arg) {
 		if (ret)
 			return ret;
 	}
-	return '';
+	return ''
 }
 
 function checkIntent(value) {
 	// Handle intents like "intent='derivative($n,$f,𝑥)'"
-	if (!value.attributes || !value.attributes.intent)
+	let intent = value.getAttribute('intent')
+	if (!intent)
 		return '';							// No intent
-	let intent = value.attributes.intent.textContent;
 	if (intent[0] == ':') {
 		if (intent.indexOf('derivative') == -1)
 			return '';						// It's a property
@@ -611,16 +611,22 @@ function checkIntent(value) {
 		if (j == -1)
 			j = intent.length - 1;
 		let arg = intent.substring(i, j);
-		if (arg[0] == '$')
-			arg = speech(findArg(value, arg.substring(1)));
+		if (arg[0] == '$') {
+			let nodeArg = findArg(value, arg.substring(1))
+			if (!nodeArg && value.nextElementSibling) {
+				nodeArg = findArg(value.nextElementSibling, arg.substring(1))
+			}
+			arg = nodeArg ? speech(nodeArg) : ''
+		}
 		args.push(arg);
 	}
 
 	if (name[0] == '$') {
 		let val = findArg(value, name.substring(1));
-		if (!val.attributes.intent)
+		intent = val.getAttribute('intent')
+		if (!intent)
 			return '';
-		ret = val.attributes.intent.textContent + '▒'; // intent + 'of'
+		ret = intent + '▒';					// intent + 'of'
 		for (i = 0; i < args.length; i++) {
 			ret += args[i];
 			if (i < args.length - 1)
@@ -748,14 +754,10 @@ function speech(value, noAddParens) {
 			ret = cNode + '☒';				// cNode 'by' ...
 			var symbol = '■';				// 'matrix'
 			var sep = '@';					// 'row'
-			let intnt = '';
+			let intnt = value.parentElement.getAttribute('intent')
 			let the = 'ⓣ';
 
-			if (value.parentElement.attributes.hasOwnProperty('intent'))
-				intnt = value.parentElement.attributes.intent.nodeValue;
-
-			if (value.attributes.hasOwnProperty('intent') &&
-				value.attributes.intent.value == ':equations') {
+			if (value.getAttribute('intent') == ':equations') {
 				symbol = '█';				// 'equation array'
 				sep = '⍈';					// 'equation'
 				if (intnt == ':cases') {
@@ -797,8 +799,8 @@ function speech(value, noAddParens) {
 
 		case 'mtr':
 			var op = '⏳';
-			if (value.parentElement.attributes.hasOwnProperty('intent') &&
-				value.parentElement.attributes.intent.textContent.endsWith('equations'))
+			let intent = value.parentElement.getAttribute('intent')
+			if (intent && intent.endsWith('equations'))
 				op = '';
 			ret = nary(value, op, cNode)
 			break
@@ -808,13 +810,11 @@ function speech(value, noAddParens) {
 			break
 
 		case 'menclose':
-			let notation = '';
-			ret = speech(value.firstElementChild, true);
+			ret = speech(value.firstElementChild, true)
 
-			if (!value.attributes.hasOwnProperty('notation'))
+			let notation = value.getAttribute('notation')
+			if (!notation)
 				return '▭' + ret + '¶▭';
-
-			notation = value.attributes.notation.nodeValue;
 
 			for (const [key, val] of Object.entries(symbolClasses)) {
 				if (val == notation) {
@@ -838,11 +838,11 @@ function speech(value, noAddParens) {
 			var op = '';
 			var mask = 0;                   // Compute phantom mask
 
-			if (value.attributes.width && value.attributes.width.nodeValue == '0')
+			if (value.getAttribute('width') == '0')
 				mask = 2;                   // fPhantomZeroWidth
-			if (value.attributes.height && value.attributes.height.nodeValue == '0')
+			if (value.getAttribute('height') == '0')
 				mask |= 4;                  // fPhantomZeroAscent
-			if (value.attributes.depth && value.attributes.depth.nodeValue == '0')
+			if (value.getAttribute('depth') == '0')
 				mask |= 8;                  // fPhantomZeroDescent
 
 			if (value.firstElementChild.nodeName == 'mphantom') { // No display
@@ -862,15 +862,15 @@ function speech(value, noAddParens) {
 			break
 
 		case 'mstyle':
-			ret = speech(value.firstElementChild);
-			if (value.attributes.hasOwnProperty('mathcolor')) {
-				let color = value.attributes.mathcolor.value;
+			ret = speech(value.firstElementChild)
+			let color = value.getAttribute('mathcolor')
+			if (color) {
 				if (color[0] == '#')
 					color = '⬢ ' + color.substring(1) + '⏳';
 				ret = '✎' + color + ' ' + ret + '¶✎';
 			}
-			if (value.attributes.hasOwnProperty('mathbackground')) {
-				let color = value.attributes.mathbackground.value;
+			color = value.getAttribute('mathbackground')
+			if (color) {
 				if (color[0] == '#')
 					color = '⬢ ' + color.substring(1) + '⏳';
 				ret = '☁' + color + ' ' + ret + '¶☁';
@@ -891,19 +891,16 @@ function speech(value, noAddParens) {
 			var op = '/';
 			let num = speech(value.firstElementChild, true);
 			let den = speech(value.lastElementChild, true);
+			let linethickness = value.getAttribute('linethickness')
 
-			if (value.attributes.hasOwnProperty('linethickness')) {
-				var val = value.attributes.linethickness.nodeValue;
-				if (val == '0' || val == '0.0pt') {
-					op = '¦';
-					if (value.parentElement.attributes.hasOwnProperty('intent') &&
-						value.parentElement.attributes.intent.nodeValue.startsWith('binomial-coefficient') ||
-						value.parentElement.firstElementChild.attributes.title &&
-						value.parentElement.firstElementChild.attributes.title.nodeValue == 'binomial coefficient') {
-						ret = (needParens(num) ? '(' + num + ')' : num) + ' ⒞';
-						ret += (needParens(den) ? '(' + den + ')' : den) + ' ';
-						op = '⒞';
-					}
+			if (linethickness == '0' || linethickness == '0.0pt') {
+				op = '¦';
+				if (value.parentElement.hasAttribute('intent') &&
+					value.parentElement.getAttribute('intent').startsWith('binomial-coefficient') ||
+					value.parentElement.firstElementChild.getAttribute('title') == 'binomial coefficient') {
+					ret = (needParens(num) ? '(' + num + ')' : num) + ' ⒞';
+					ret += (needParens(den) ? '(' + den + ')' : den) + ' ';
+					op = '⒞';
 				}
 			}
 			if (op == '/') {
@@ -925,17 +922,15 @@ function speech(value, noAddParens) {
 			break
 
 		case 'msup':
-			if (value.attributes.intent && value.attributes.intent.textContent == ':sup')
+			if (value.getAttribute('intent') == ':sup')
 				ret = speech(value.firstElementChild) + '^' + speech(value.lastElementChild)
 			else if (value.lastElementChild.nodeName == 'mn' &&
 				isAsciiDigit(value.lastElementChild.textContent[0])) {
 				let power = getPower(value.lastElementChild.textContent);
 				ret = speech(value.firstElementChild) + power
 			}
-			else if (value.lastElementChild.attributes.hasOwnProperty('intent') &&
-				value.lastElementChild.attributes.intent.nodeValue == 'transpose') {
+			else if (value.lastElementChild.getAttribute('intent') == 'transpose')
 				ret = speech(value.firstElementChild) + '⏉' 	// 'transpose'
-			}
 			else if (isPrime(value.lastElementChild.textContent))
 				ret = binary(value, '')
 			else if (value.lastElementChild.textContent == '∗')
@@ -954,7 +949,7 @@ function speech(value, noAddParens) {
 			break
 
 		case 'mover':
-			if (value.attributes.hasOwnProperty('accent')) {
+			if (value.hasAttribute('accent')) {
 				ret = binary(value, '')
 			} else {
 				ret = 'modified ' + speech(value.firstElementChild, true) +
@@ -966,7 +961,7 @@ function speech(value, noAddParens) {
 			if (value.firstElementChild.innerHTML == 'lim') {
 				ret = speech(value.firstElementChild) + '⍨' +	// 'limit as' ... 'of'
 					speech(value.lastElementChild, true) + '▒'
-			} else if (value.attributes.hasOwnProperty('accentunder')) {
+			} else if (value.hasAttribute('accentunder')) {
 				ret = binary(value, '')
 			} else {
 				ret = 'modified ' + speech(value.firstElementChild, true) +
@@ -979,7 +974,7 @@ function speech(value, noAddParens) {
 			break
 
 		case 'munderover':
-			if (!value.parentElement.attributes.hasOwnProperty('intent') ||
+			if (!value.parentElement.hasAttribute('intent') ||
 				isNary(value.firstElementChild.innerHTML)) {
 				ret = Nary(value)
 			} else {
@@ -1019,10 +1014,7 @@ function speech(value, noAddParens) {
 			break
 
 		case 'mfenced':
-			let opOpen = value.hasAttribute('open') ? value.getAttribute('open') : '(';
-			let opClose = value.hasAttribute('close') ? value.getAttribute('close') : ')';
-			let opSeparators = value.hasAttribute('separators')
-				? value.getAttribute('separators') : ',';
+			let [opClose, opOpen, opSeparators] = getFencedOps(value)
 			let cSep = opSeparators.length;
 
 			ret = opOpen;
@@ -1039,10 +1031,8 @@ function speech(value, noAddParens) {
 			if (val == '\u2062')			// Ignore invisible times
 				break
 
-			if (val == '{' && value.parentElement.attributes.intent &&
-				value.parentElement.attributes.intent.nodeValue == ':cases') {
+			if (val == '{' && value.parentElement.getAttribute('intent') == ':cases')
 				break						// Don't add 'open brace'
-			}
 
 			if (val[0] == '&') {
 				if (val.startsWith('&#') && val.endsWith(';')) {
@@ -1062,10 +1052,10 @@ function speech(value, noAddParens) {
 						break;
 				}
 			}
-			if (value.attributes.title) {
+			if (value.hasAttribute('title')) {
 				// The DLMF title attribute implies the following intents
 				// (see also for 'mi')
-				switch (value.attributes.title.textContent) {
+				switch (value.getAttribute('title')) {
 					case 'binomial coefficient':
 						return ''
 				}
@@ -1079,11 +1069,13 @@ function speech(value, noAddParens) {
 			break
 
 		case 'mi':
-			let c = value.innerHTML;
-			if (value.attributes.hasOwnProperty('mathvariant')) {
+			let c = value.innerHTML
+			let mathvariant = value.getAttribute('mathvariant')
+
+			if (mathvariant) {
 				// Convert to Unicode math alphanumeric. Conversion to speech
 				// is done upon returning from the original speech() call.
-				let mathstyle = mathvariants[value.attributes.mathvariant.nodeValue];
+				let mathstyle = mathvariants[mathvariant];
 				if (c in mathFonts && mathstyle in mathFonts[c])
 					c = mathFonts[c][mathstyle];
 			} else if (c in functions) {
@@ -1104,9 +1096,10 @@ function speech(value, noAddParens) {
 			break
 
 		case 'mspace':
-			if (value.attributes.hasOwnProperty('width')) {
+			let width = value.getAttribute('width')
+			if (width) {
 				for (let i = 0; i < spaceWidths.length; i++) {
-					if (value.attributes.width.nodeValue == spaceWidths[i]) {
+					if (width == spaceWidths[i]) {
 						ret = uniSpaces[i]
 						break
 					}
@@ -1149,8 +1142,8 @@ function speech(value, noAddParens) {
 		return ret
 	}
 
-	let mrowIntent = value.nodeName == 'mrow' && value.attributes.hasOwnProperty('intent')
-		? value.attributes.intent.nodeValue : '';
+	let mrowIntent = value.nodeName == 'mrow' && value.hasAttribute('intent')
+		? value.getAttribute('intent') : ''
 
 	if ((!mrowIntent || mrowIntent == ':fenced') && (cNode == 2 || cNode == 3)) {
 		if (mrowIntent == ':fenced' &&
@@ -1185,6 +1178,15 @@ function speech(value, noAddParens) {
 
 	for (var i = 0; i < cNode; i++) {
 		let node = value.children[i];
+
+		if (i > 0 && node.getAttribute('arg') == 'f' &&
+			value.children[i - 1].nodeName == 'mfrac') {
+			// Handle derivatives like 𝑑/𝑑𝑥 (𝑥²+𝑥+1). The (𝑥²+𝑥+1) is already
+			// in the parent return string so don't add it again
+			intent = value.children[i - 1].getAttribute('intent')
+			if (intent && intent.startsWith('derivative'))
+				continue
+		}
 		ret += speech(node, false, i);
 	}
 
@@ -1212,7 +1214,7 @@ function speech(value, noAddParens) {
 
 function MathMLtoSpeech(mathML) {
 	const doc = getMathMLDOM(mathML);
-	return getSpeech(doc);
+	return getSpeech(doc.firstElementChild);
 }
 
 function getSpeech(doc) {
@@ -1252,7 +1254,8 @@ function resolveSymbols(text) {
 			if (j != -1) {
 				if (cchText > j && text[j + 1] == 'ŵ') { // 'with respect to'
 					// Set up 'f of ' ... 'with respect to'
-					ret += symbolSpeech('▒');	// 'of'
+					if (text[i - 1] != '▒')
+						ret += symbolSpeech('▒');	// 'of'
 					continue;
 				}
 				let ch1 = i ? text[i - 1] : '';

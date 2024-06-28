@@ -20,6 +20,19 @@ const unicodeFractions = {
 
 const symbolsIntent = {'⒜': 'absolute-value', 'ⓒ': 'cardinality'}
 
+function getFencedOps(value) {
+    let opClose = value.getAttribute('close')
+    let opOpen = value.getAttribute('open')
+    let opSeparators = value.getAttribute('separators')
+
+    if (!opClose)
+        opClose = ')'
+    if (!opOpen)
+        opOpen = '('
+    if (!opSeparators)
+        opSeparators = ','
+    return [opClose, opOpen, opSeparators]
+}
 function getUnicodeFraction(chNum, chDenom) {
     if (chNum.length == 1) {
         if (chDenom == '10' && chNum == '1')
@@ -4355,10 +4368,7 @@ function dump(value, noAddParens) {
             break;
 
         case 'mfenced':
-            let opOpen = value.hasAttribute('open') ? value.getAttribute('open') : '(';
-            let opClose = value.hasAttribute('close') ? value.getAttribute('close') : ')';
-            let opSeparators = value.hasAttribute('separators')
-                ? value.getAttribute('separators') : ',';
+            let [opClose, opOpen, opSeparators] = getFencedOps(value)
             let cSep = opSeparators.length;
 
             ret = opOpen;

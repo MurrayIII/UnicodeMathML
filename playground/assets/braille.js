@@ -698,8 +698,8 @@ function braille(value, noAddParens, subsup) {
 
 		case 'mtr':
 			var op = '⠀';					// Braille space (U+2800)
-			if (value.parentElement.attributes.hasOwnProperty('intent') &&
-				value.parentElement.attributes.intent.textContent.endsWith('equations'))
+			if (value.parentElement.hasAttribute('intent') &&
+				value.parentElement.getAttribute('intent').endsWith('equations'))
 				op = '';
 			ret = '';
 			if (value.firstElementChild.firstElementChild.nodeName == 'mn')
@@ -710,13 +710,11 @@ function braille(value, noAddParens, subsup) {
 			return nary(value, '', cNode);
 
 		case 'menclose':
-			let notation = '';
+			let notation = value.getAttribute('notation')
 			ret = braille(value.firstElementChild, true);
 
-			if (!value.attributes.hasOwnProperty('notation'))
+			if (!notation)
 				return '⠫⠗⠸⠫' + ret + '⠻';
-
-			notation = value.attributes.notation.nodeValue;
 
 			for (const [key, val] of Object.entries(symbolClasses)) {
 				if (val == notation)
@@ -753,12 +751,11 @@ function braille(value, noAddParens, subsup) {
 		case 'mfrac':
 			let num = braille(value.firstElementChild, true);
 			let den = braille(value.lastElementChild, true);
+			let linethickness = value.getAttribute('linethickness')
 
-			if (value.attributes.hasOwnProperty('linethickness')) {
-				var val = value.attributes.linethickness.nodeValue;
-				if (val == '0' || val == '0.0pt')
-					return num + '⠩' + den; // binomial coefficient
-			}
+			if (linethickness == '0' || linethickness == '0.0pt')
+				return num + '⠩' + den; // binomial coefficient
+
 			return '⠹' + num + '⠌' + den + '⠼';
 
 		case 'msup':
@@ -778,7 +775,7 @@ function braille(value, noAddParens, subsup) {
 			return val ? ret + subsup + val : ret;
 
 		case 'mover':
-			//if (value.attributes.hasOwnProperty('accent'))
+			//if (value.hasAttribute('accent'))
 			//	return binary(value, '');
 
 			return '⠐' + braille(value.firstElementChild, true) +
@@ -788,7 +785,7 @@ function braille(value, noAddParens, subsup) {
 			return '⠐' + braille(value.firstElementChild, true) + '⠩' +
 				braille(value.lastElementChild, true) + '⠻';
 
-			//if (value.attributes.hasOwnProperty('accentunder'))
+			//if (value.hasAttribute('accentunder'))
 			//	return binary(value, '');
 
 			//return 'modified ' + braille(value.firstElementChild, true) +
@@ -840,10 +837,7 @@ function braille(value, noAddParens, subsup) {
 			return ret;
 
 		case 'mfenced':
-			let opOpen = value.hasAttribute('open') ? value.getAttribute('open') : '(';
-			let opClose = value.hasAttribute('close') ? value.getAttribute('close') : ')';
-			let opSeparators = value.hasAttribute('separators')
-				? value.getAttribute('separators') : ',';
+			let [opClose, opOpen, opSeparators] = getFencedOps(value)
 			let cSep = opSeparators.length;
 
 			ret = opOpen;
@@ -880,15 +874,17 @@ function braille(value, noAddParens, subsup) {
 
 		case 'mi':
 			let c = value.innerHTML;
-			//if (value.attributes.hasOwnProperty('intent')) {
-			//	let ch = value.attributes.intent.nodeValue;
+			//if (value.hasAttribute('intent')) {
+			//	let ch = value.getAttribute('intent')
 			//	if (isDoubleStruck(ch))
 			//		c = ch;
 			//}
-			if (value.attributes.hasOwnProperty('mathvariant')) {
+			let mathvariant = value.getAttribute('mathvariant')
+
+			if (mathvariant) {
 				// Convert to Unicode math alphanumeric. Conversion to speech
 				// is done upon returning from the original braille() call.
-				let mathstyle = mathvariants[value.attributes.mathvariant.nodeValue];
+				let mathstyle = mathvariants[mathvariant];
 				if (c in mathFonts && mathstyle in mathFonts[c])
 					c = mathFonts[c][mathstyle];
 			}
@@ -902,8 +898,8 @@ function braille(value, noAddParens, subsup) {
 			return '';
 	}
 
-	let mrowIntent = value.nodeName == 'mrow' && value.attributes.hasOwnProperty('intent')
-		? value.attributes.intent.nodeValue : '';
+	let mrowIntent = value.nodeName == 'mrow' && value.hasAttribute('intent')
+		? value.getAttribute('intent') : ''
 
 	if (mrowIntent.startsWith('absolute-value') ||
 		mrowIntent.startsWith('cardinality')) {
