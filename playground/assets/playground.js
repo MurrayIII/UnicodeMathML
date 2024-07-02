@@ -24,7 +24,6 @@ var selectionEnd
 var anchorNode
 var focusNode
 var inSelChange = false
-var testing
 
 document.onselectionchange = () => {
     if (inSelChange)
@@ -59,7 +58,8 @@ document.onselectionchange = () => {
     // Update MathML window
     if(!testing)
         output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
-    console.log('uMath = ' + getUnicodeMath(output.firstElementChild, true))
+    if(!testing)
+        console.log('uMath = ' + getUnicodeMath(output.firstElementChild, true))
 }
 
 function removeSuperfluousMrow(node) {
@@ -109,7 +109,8 @@ function setSelection(sel, node, offset, nodeFocus, offsetFocus) {
         offsetFocus = offset
     }
     sel.setBaseAndExtent(node, offset, nodeFocus, offsetFocus)
-    console.log("sel.anchorNode = " + node.nodeName + ', sel.focusNode = ' + nodeFocus.nodeName)
+    if(!testing)
+        console.log("sel.anchorNode = " + node.nodeName + ', sel.focusNode = ' + nodeFocus.nodeName)
     return sel;
 }
 
@@ -204,7 +205,8 @@ function mathBraille() {
 }
 
 function speak(s) {
-    console.log(s)
+    if(!testing)
+        console.log(s)
     s = symbolSpeech(s)
     let utterance = new SpeechSynthesisUtterance(s)
     if (voiceZira)
@@ -1099,8 +1101,8 @@ const names = {
 }
 
 function refreshDisplays(uMath, noUndo) {
-    // Update MathML, UnicodeMath, and code-point displays; restore selection
-    // from selanchor and selfocus
+    // Update MathML, UnicodeMath, and code-point displays; push current content
+    // onto output undo stack; restore selection from selanchor and selfocus
     if(!testing)
         output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
     let uMathCurrent = getUnicodeMath(output.firstElementChild, true)

@@ -341,40 +341,74 @@ function testMathMLtoBraille() {
     console.log(iSuccess + " passes; " + iFail + " failures\n");
 }
 
-// 1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)
-const unicodeMathPartial = [
-    "1",
-    "1\\/",
-    "1\\/2",
-    "1\\/2𝜋",
-    "1/2𝜋",
+// Test autobuildup of 1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)
+
+const unicodeMathPartial = [                          // test
+    "Ⓐ11",                                           // 0
+    "1Ⓐ1\\/",                                        // 1
+    "1\\/Ⓐ12",                                       // 2
+    "1\\/2Ⓐ1𝜋",                                      // 3
+    "Ⓐ2 1/2𝜋",                                       // 4
+    "1/2𝜋Ⓐ1∫",                                       // 5
+    "1/2𝜋 ∫Ⓐ1_",                                     // 6
+    "1/2𝜋 ∫_Ⓐ10",                                    // 7
+    "1/2𝜋 ∫_0Ⓐ1^",                                   // 8
+    "1/2𝜋 ∫_0^Ⓐ12",                                  // 9
+    "1/2𝜋 ∫_0^2Ⓐ1⬌",                                // 10
+    "1/2𝜋 ∫_0^2⬌Ⓐ1𝜋",                               // 11
+    "1/2𝜋Ⓐ3∫_0^2⬌𝜋",                                // 12
+    "1/2𝜋 ∫_0^2⬌𝜋Ⓐ1ⅆ",                              // 13
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆⒶ1𝜃",                            // 14
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃Ⓐ1\\/",                         // 15
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃\\/Ⓐ1(",                        // 16
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃\\/(Ⓐ1𝑎",                       // 17
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃\\/(𝑎Ⓐ1+",                      // 18
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃\\/(𝑎+Ⓐ1𝑏",                     // 19
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃\\/(𝑎+𝑏Ⓐ1 ",                     // 20
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃\\/(𝑎+𝑏 Ⓐ1𝑠",                    // 21
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃\\/(𝑎+𝑏 𝑠Ⓐ1𝑖",                    // 22
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃\\/(𝑎+𝑏 𝑠𝑖Ⓐ1𝑛",                   // 23
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃\\/(𝑎+𝑏 sinⒶ1\u2061",            // 24
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃\\/(𝑎+𝑏 sin⁡Ⓐ1𝜃",                 // 25
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃\\/(𝑎+𝑏 sin⁡𝜃Ⓐ1)",                // 26
+    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)Ⓐ1=",                // 27
+    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=Ⓐ11",               // 28
+    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=1Ⓐ1\\/",            // 29
+    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/Ⓐ1√",           // 30
+    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√Ⓐ1(",          // 31
+    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√(Ⓐ1𝑎",         // 32
+    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√(𝑎Ⓐ1²",        // 33
+    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√(𝑎²Ⓐ1−",       // 34
+    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√(𝑎²−Ⓐ1𝑏",      // 35
+    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√(𝑎²−𝑏Ⓐ1²",     // 36
+    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√(𝑎²−𝑏²Ⓐ1)",    // 37
+    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=Ⓐ2 1/√(𝑎²−𝑏²)",     // 38
 ]
 
 function testInputToOutput() {
-    let iFail = unicodeMathPartial.length
-    let iSuccess = 0;
+    let iSuccess = 0
     let sel = window.getSelection()
     let output = document.getElementById('output')
     setSelection(sel, output, 0)
 
-    for (let i = 0, j = 0; i < 6; i++, j++) {
-        const event = new Event('keydown');
-        event.key = getCh(unicodeMath[0], i); 
-        output.dispatchEvent(event);
-        setTimeout(function () { }, 200);  // Sleep for 200 msec
-        var result = input.value;
+    for (let i = 0, j = 0; i < unicodeMath[0].length + 1; i++, j++) {
+        const event = new Event('keydown')
+        event.key = (i == unicodeMath[0].length)
+                  ? ' ' : getCh(unicodeMath[0], i)
+        output.dispatchEvent(event)
+        setTimeout(function () { }, 200)    // Sleep for 200 msec
+        var result = getUnicodeMath(output.firstElementChild, true, true)
         if (result != unicodeMathPartial[j]) {
-            console.log(event.key + '\n');
-            console.log("Expect: " + unicodeMathPartial[i] + '\n');
-            console.log("Result: " + result + '\n\n');
+            console.log('test ' + j + ': key = \'' + event.key + '\', expect: ' + unicodeMathPartial[j] + '\n');
+            console.log("Result: " + result + '\n\n')
         } else {
-            iSuccess++;
+            iSuccess++
         }
         if (event.key.length == 2)
             i++                             // Bypass trail surrogate
     }
-    iFail -= iSuccess;
-    console.log(iSuccess + " passes; " + iFail + " failures\n");
+    let iFail = unicodeMathPartial.length - iSuccess
+    console.log(iSuccess + " passes; " + iFail + " failures\n")
 }
 
 input.addEventListener("keydown", function (e) {

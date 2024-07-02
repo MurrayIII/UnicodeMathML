@@ -1,4 +1,6 @@
-var autoBuildUp = false;                    // (could be a unicodemathml() arg)
+var autoBuildUp = false                     // (could be a unicodemathml() arg)
+var ksi = false
+var testing
 
 const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
 const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
@@ -235,8 +237,10 @@ function checkBrackets(node) {
         if (nodeC.nodeName == 'mo') {
             if (isOpenDelimiter(nodeC.textContent)) {
                 cBracket++
-                if (k == -1)
+                if (k == -1) {
                     k = i
+                    break;
+                }
            } else if (isCloseDelimiter(nodeC.textContent)) {
                 cBracket--
                 if (k == -1)
@@ -266,22 +270,24 @@ function checkSpace(i, node, ret) {
 }
 
 function removeSelInfo(uMath) {
-    let i = uMath.indexOf('Ⓐ');
+    // For now at least, don't attempt to remove selection info (Ⓐn and Ⓕn
+    // act as operators. When they are not present a space may be needed...)
+    //let i = uMath.indexOf('Ⓐ');
 
-    if (i != -1) {
-        let delta = 2
-        if (uMath[i + 2] == ' ')
-            delta = 3
-        uMath = uMath.substring(0, i) + uMath.substring(i + delta)
-        i = uMath.indexOf('Ⓕ');
-        if (i != -1)                        // Nondegenerate selection
-            uMath = uMath.substring(0, i) + uMath.substring(i + 2)
-    }
+    //if (i != -1) {
+    //    let delta = 2
+    //    if (uMath[i + 2] == '⌠')
+    //        delta = 3
+    //    uMath = uMath.substring(0, i) + uMath.substring(i + delta)
+    //    i = uMath.indexOf('Ⓕ');
+    //    if (i != -1)                        // Nondegenerate selection
+    //        uMath = uMath.substring(0, i) + uMath.substring(i + 2)
+    //}
     return uMath
 }
 
 function getMathMLDOM(mathML) {
-    // Convert MathML to UnicodeMath
+    // Get DOM for converting MathML to UnicodeMath
     if (mathML.startsWith('<mml:math') || mathML.startsWith('<m:math'))
         mathML = removeMmlPrefixes(mathML);
 
@@ -523,6 +529,8 @@ function getChD(value) {
 
 // if in debug mode, opens (or closes if the argument is null) a console.group
 function debugGroup(s) {
+    if (testing)
+        return
     if (typeof ummlConfig !== "undefined" && typeof ummlConfig.debug !== "undefined" && ummlConfig.debug) {
         if (s != null) {
             console.group(s);
@@ -534,6 +542,8 @@ function debugGroup(s) {
 
 // if in debug mode, console.log the given value
 function debugLog(x) {
+    if (testing)
+        return
     if (typeof ummlConfig !== "undefined" && typeof ummlConfig.debug !== "undefined" && ummlConfig.debug) {
         console.log(x);
     }
@@ -3259,6 +3269,9 @@ function mtransform(dsty, puast) {
             if (val)
                 ret.push(val)
         }
+        if (!ret.length)
+            return ''
+
         return ret.length == 1 && puast.length > 1 // Check for attributes?
             ? ret[0] : {mrow: withAttrs(arg, ret)}
     }
@@ -4044,7 +4057,7 @@ function binary(node, op) {
     let ret = dump(node.firstElementChild);
     let retd = dump(node.lastElementChild);
 
-    if (isMathMLObject(node)) {
+    if (isMathMLObject(node) && node.childElementCount) {
         // Add enclosing parens for parenthesized arguments that lose their
         // outermost parens when built up.
         let attr = node.lastElementChild.getAttribute('intent')
@@ -4484,6 +4497,9 @@ function dump(value, noAddParens) {
             break;
     }
     if (ret) {
+        if (!ksi)                           // Keep selinfo?
+            return ret
+
         let name = value.nodeName
         let selattr = checkSelAttr(name, value.getAttribute('selfocus'))
 
@@ -4552,6 +4568,7 @@ function MathMLtoUnicodeMath(mathML, keepSelInfo) {
 }
 
 function getUnicodeMath(doc, keepSelInfo) {
+    ksi = keepSelInfo                       // Keep selection info for undo
     let unicodeMath = dump(doc);            // Get UnicodeMath from DOM doc
 
     // Remove some unnecessary spaces
@@ -4572,8 +4589,7 @@ function getUnicodeMath(doc, keepSelInfo) {
             unicodeMath = unicodeMath.substring(0, i) + unicodeMath.substring(i + j);
         }
     }
-    // Keep selection info for undo
-    return keepSelInfo ? unicodeMath : removeSelInfo(unicodeMath);
+    return unicodeMath
 }
 
 //////////////
@@ -4591,7 +4607,7 @@ function escapeHTMLSpecialChars(str) {
     });
 };
 
-function unicodemathml(unicodemath, displaystyle) {
+    function unicodemathml(unicodemath, displaystyle) {
     debugGroup(unicodemath);
     if (isMathML(unicodemath)) {
         if (unicodemath.startsWith('<mml:math') || unicodemath.startsWith('<m:math'))
