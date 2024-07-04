@@ -787,6 +787,16 @@ input.addEventListener("keydown", function (e) {
 // the input field or, if there is no cursor, append them to its value,
 // via https://stackoverflow.com/a/11077016
 function insertAtCursorPos(symbols) {
+    let sel = document.getSelection()
+    sel = checkMathSelection(sel)
+    if (sel) {
+        // Insert into output window
+        const event = new Event('keydown')
+        event.key = symbols
+        output.dispatchEvent(event)
+        return
+    }
+
     if (input.selectionStart || input.selectionStart == '0') {
         var startPos = input.selectionStart;
         var endPos = input.selectionEnd;
@@ -1257,7 +1267,8 @@ function handleKeyboardInput(node, key, sel) {
     let nodeNewName = getMmlTag(key)
 
     if (node.nodeName == 'math') {
-        console.log('Input at end of math zone')
+        if(!testing)
+            console.log('Input at end of math zone')
         if (node.lastElementChild)
             node = node.lastElementChild
         else {
@@ -1291,6 +1302,11 @@ function handleKeyboardInput(node, key, sel) {
             return
         nodeName = getMmlTag(symbol)
         let nodeNew = document.createElement(nodeName)
+        if (isDoubleStruck(symbol)) {
+            let ch = doublestruckChar(symbol)
+            nodeNew.setAttribute('intent', symbol)
+            symbol = ch
+        }
         nodeNew.textContent = symbol
         setSelAttributes(nodeNew, 'selanchor', '1')
         nodeP.replaceChild(nodeNew, node)
@@ -1361,17 +1377,17 @@ function handleKeyboardInput(node, key, sel) {
     }
     let nodeNew = document.createElement(nodeNewName)
     removeSelAttributes(nodeP)
+    if (isDoubleStruck(key)) {
+        let ch = doublestruckChar(key)
+        nodeNew.setAttribute('intent', key)
+        key = ch
+    }
     nodeNew.textContent = key
     setSelAttributes(nodeNew, 'selanchor', '1')
 
     if (node.textContent == '⬚') {
         // Replace empty arg place holder symbol with key
-        if (nodeNewName == node.nodeName) {
-            node.textContent = key
-            setSelAttributes(node, 'selanchor', '1')
-        } else {
-            nodeP.replaceChild(nodeNew, node)
-        }
+        nodeP.replaceChild(nodeNew, node)
     } else if (node.nodeName == 'mrow' && atEnd) {
         node.appendChild(nodeNew)
     } else if (nodeP.nodeName == 'mrow') {
@@ -1409,7 +1425,7 @@ function getMmlTag(ch) {
         return ''
     if (isAsciiDigit(ch))
         return 'mn'
-    if (isAsciiAlphabetic(ch) || isGreek(ch) || ch > '\u3017')
+    if (isAsciiAlphabetic(ch) || isGreek(ch) || ch > '\u3017' || isDoubleStruck(ch))
         return 'mi'
     if (ch == '\\')
         return 'mtext'
@@ -1726,7 +1742,7 @@ function checkAutoBuildUp(node, nodeP, key) {
                 // Differing count: try to build up nodeP trailing mi, mo,
                 // mn, mtext children
                 for (let i = k + 1; i < cNode; i++)
-                    uMath += nodeP.children[i].textContent;
+                    uMath += dump(nodeP.children[i]);
             }
             let t = unicodemathml(uMath, true) // uMath → MathML
             if (autoBuildUp) {          // Autobuildup succeeded

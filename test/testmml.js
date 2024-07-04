@@ -370,19 +370,19 @@ const unicodeMathPartial = [                          // test
     "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃\\/(𝑎+𝑏 𝑠𝑖Ⓐ1𝑛",                   // 23
     "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃\\/(𝑎+𝑏 sinⒶ1\u2061",            // 24
     "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃\\/(𝑎+𝑏 sin⁡Ⓐ1𝜃",                 // 25
-    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃\\/(𝑎+𝑏 sin⁡𝜃Ⓐ1)",                // 26
-    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)Ⓐ1=",                // 27
-    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=Ⓐ11",               // 28
-    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=1Ⓐ1\\/",            // 29
-    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/Ⓐ1√",           // 30
-    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√Ⓐ1(",          // 31
-    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√(Ⓐ1𝑎",         // 32
-    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√(𝑎Ⓐ1²",        // 33
-    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√(𝑎²Ⓐ1−",       // 34
-    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√(𝑎²−Ⓐ1𝑏",      // 35
-    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√(𝑎²−𝑏Ⓐ1²",     // 36
-    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√(𝑎²−𝑏²Ⓐ1)",    // 37
-    "1/2𝜋 ∫_0^2⬌𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=Ⓐ2 1/√(𝑎²−𝑏²)",     // 38
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃\\/(𝑎+𝑏 sin⁡𝜃Ⓐ1)",               // 26
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)Ⓐ1=",                // 27
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=Ⓐ11",               // 28
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1Ⓐ1\\/",            // 29
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/Ⓐ1√",           // 30
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√Ⓐ1(",          // 31
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√(Ⓐ1𝑎",         // 32
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√(𝑎Ⓐ1²",        // 33
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√(𝑎²Ⓐ1−",       // 34
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√(𝑎²−Ⓐ1𝑏",      // 35
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√(𝑎²−𝑏Ⓐ1²",     // 36
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√(𝑎²−𝑏²Ⓐ1)",    // 37
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=Ⓐ2 1/√(𝑎²−𝑏²)",     // 38
 ]
 
 function testInputToOutput() {
@@ -397,7 +397,7 @@ function testInputToOutput() {
                   ? ' ' : getCh(unicodeMath[0], i)
         output.dispatchEvent(event)
         setTimeout(function () { }, 200)    // Sleep for 200 msec
-        var result = getUnicodeMath(output.firstElementChild, true, true)
+        let result = getUnicodeMath(output.firstElementChild, true)
         if (result != unicodeMathPartial[j]) {
             console.log('test ' + j + ': key = \'' + event.key + '\', expect: ' + unicodeMathPartial[j] + '\n');
             console.log("Result: " + result + '\n\n')
@@ -408,6 +408,39 @@ function testInputToOutput() {
             i++                             // Bypass trail surrogate
     }
     let iFail = unicodeMathPartial.length - iSuccess
+    console.log(iSuccess + " passes; " + iFail + " failures\n")
+
+    // Execute remaining UnicodeMath strings a character at a time
+    // and check final results
+    iFail = 8
+    iSuccess = 0
+
+    for (let k = 0; k < iFail; k++) {
+        output.firstElementChild.innerHTML = `<math display='block'><mi selanchor="0" selfocus="1">⬚</mi></math>`
+        setSelection(sel, output, 0)
+        for (let i = 0; i < unicodeMath[k].length + 1; i++) {
+            const event = new Event('keydown')
+            if (i == unicodeMath[k].length) {
+                if (k == 5 || k == 7)
+                    break;                  // These don't need build-up space
+                event.key = ' '
+            } else {
+                event.key = getCh(unicodeMath[k], i)
+            }
+            output.dispatchEvent(event)
+            setTimeout(function () { }, 200) // Sleep for 200 msec
+            if (event.key.length == 2)
+                i++                         // Bypass trail surrogate
+        }
+        let result = getUnicodeMath(output.firstElementChild, false)
+        if (result != unicodeMath[k]) {
+            console.log('Expect: ' + unicodeMath[k] + '\n');
+            console.log("Result: " + result + '\n\n')
+        } else {
+            iSuccess++
+        }
+    }
+    iFail -= iSuccess
     console.log(iSuccess + " passes; " + iFail + " failures\n")
 }
 

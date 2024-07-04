@@ -237,10 +237,10 @@ function checkBrackets(node) {
         if (nodeC.nodeName == 'mo') {
             if (isOpenDelimiter(nodeC.textContent)) {
                 cBracket++
-                if (k == -1) {
+                if (k == -1)
                     k = i
+                if (cBracket)
                     break;
-                }
            } else if (isCloseDelimiter(nodeC.textContent)) {
                 cBracket--
                 if (k == -1)
