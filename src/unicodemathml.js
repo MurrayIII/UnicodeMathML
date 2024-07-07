@@ -181,6 +181,8 @@ function isLcGreek(ch) {
 
 function isLeadSurrogate(code) { return code >= 0xD800 && code <= 0xDBFF; }
 
+function isMathColor(val) { return val == '☁(' || val == '✎(' }
+
 function isMathML(unicodemath) {
     return unicodemath.startsWith("<math") ||
            unicodemath.startsWith("<mml:math") ||
@@ -239,7 +241,7 @@ function checkBrackets(node) {
                 cBracket++
                 if (k == -1)
                     k = i
-                if (cBracket)
+                if (cBracket > 0)
                     break;
            } else if (isCloseDelimiter(nodeC.textContent)) {
                 cBracket--
@@ -3003,11 +3005,9 @@ function preprocess(dsty, uast, index, arr) {
             return {sizeoverride: {size: value.size, of: preprocess(dsty, value.of)}};
 
         case "colored":
-            if (autoBuildUp)
-                return preprocess(dsty, value.of)
-            return {colored: {color: value.color, of: preprocess(dsty, value.of)}};
+            return {colored: {color: foldMathItalics(value.color), of: preprocess(dsty, value.of)}};
         case "bgcolored":
-            return {bgcolored: {color: value.color, of: preprocess(dsty, value.of)}};
+            return {bgcolored: {color: foldMathItalics(value.color), of: preprocess(dsty, value.of)}};
 
         case "primed":
             // Cannot do anything here if in script, since the script transform
@@ -4048,7 +4048,7 @@ function pretty(mast) {
 
 function unary(node, op) {
     let ret = dump(node.firstElementChild);
-    if (node.firstElementChild.nodeName == 'mfrac')
+    if (node.firstElementChild && node.firstElementChild.nodeName == 'mfrac')
         ret = '(' + ret + ')';
     return op + ret;
 }
@@ -4134,7 +4134,7 @@ function isDigitArg(node) {
     if (!node || !node.lastElementChild)
         return false
 
-    return node.lastElementChild.nodeName == 'mn' &&
+    return node.lastElementChild.nodeName == 'mn' && node.children[1] &&
         isAsciiDigit(node.children[1].textContent)
 }
 
@@ -4147,7 +4147,7 @@ function dump(value, noAddParens) {
     let intent
     let ret = '';
 
-    switch (value.nodeName) {
+    switch (value.localName) {
         case 'mtable':
             var symbol = '■';
             if (value.getAttribute('intent') == ':equations') {
@@ -4405,6 +4405,10 @@ function dump(value, noAddParens) {
             }
             if (val == '&gt;') {
                 ret = '>';
+                break;
+            }
+            if (val == '&amp;') {
+                ret = '&';
                 break;
             }
             if (val == '/' && !autoBuildUp) { // Quote other ops...

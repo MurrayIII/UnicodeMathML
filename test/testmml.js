@@ -412,10 +412,14 @@ function testInputToOutput() {
 
     // Execute remaining UnicodeMath strings a character at a time
     // and check final results
-    iFail = 8
+    iFail = unicodeMath.length
     iSuccess = 0
 
     for (let k = 0; k < iFail; k++) {
+        if (unicodeMath[k].indexOf('Ⓐ') != -1) {
+            iSuccess++
+            continue                    // Users don't enter sel info
+        }
         output.firstElementChild.innerHTML = `<math display='block'><mi selanchor="0" selfocus="1">⬚</mi></math>`
         setSelection(sel, output, 0)
         for (let i = 0; i < unicodeMath[k].length + 1; i++) {
@@ -432,7 +436,8 @@ function testInputToOutput() {
             if (event.key.length == 2)
                 i++                         // Bypass trail surrogate
         }
-        let result = getUnicodeMath(output.firstElementChild, false)
+        let result = getUnicodeMath(output.firstElementChild, false).trimEnd()
+        result = result.replace(/\u202F/g, ' ')
         if (result != unicodeMath[k]) {
             console.log('Expect: ' + unicodeMath[k] + '\n');
             console.log("Result: " + result + '\n\n')

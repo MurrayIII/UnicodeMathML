@@ -108,7 +108,14 @@ function setSelection(sel, node, offset, nodeFocus, offsetFocus) {
         nodeFocus = node
         offsetFocus = offset
     }
-    sel.setBaseAndExtent(node, offset, nodeFocus, offsetFocus)
+    try {
+        sel.setBaseAndExtent(node, offset, nodeFocus, offsetFocus)
+    } catch(error) {
+        console.log(error)
+        console.log("sel.anchorNode = " + node.outerHTML + ', sel.anchorOffset = ' + offset)
+        console.log("sel.focusNode = " + nodeFocus.outerHTML + ', sel.focusOffset = ' + offsetFocus)
+    }
+
     if(!testing)
         console.log("sel.anchorNode = " + node.nodeName + ', sel.focusNode = ' + nodeFocus.nodeName)
     return sel;
@@ -788,8 +795,10 @@ input.addEventListener("keydown", function (e) {
 // via https://stackoverflow.com/a/11077016
 function insertAtCursorPos(symbols) {
     let sel = document.getSelection()
-    sel = checkMathSelection(sel)
-    if (sel) {
+    let node = sel.anchorNode
+    if (node.nodeName == '#text')
+        node = node.parentElement
+    if (node.nodeName[0] == 'm') {
         // Insert into output window
         const event = new Event('keydown')
         event.key = symbols
@@ -857,7 +866,7 @@ function autocomplete() {
             return false;                   // \arg: leave as is
 
         if (i < 0 || input.value[i] != '\\' &&
-            (!i || input.value.substring(i - 1, i + 1) != '✎(')) {
+            (!i || !isMathColor(input.value.substring(i - 1, i + 1)))) {
             // Not control word; check for italicization & operator autocorrect
             var ch = italicizeCharacter(delim);
             if (ch != delim) {
@@ -1180,8 +1189,11 @@ function refreshDisplays(uMath, noUndo) {
     if (nodeA.textContent == '⬚') {
         setSelection(sel, nodeA, SELECTNODE)
     } else if (nodeA === nodeF && offsetA == offsetF) {
-        if (offsetA == nodeA.textContent.length)
-            atEnd = true
+        if (nodeA.nodeName == '#text' && offsetA == nodeA.textContent.length ||
+            !nodeA.childElementCount && offsetA == '1' ||
+            nodeA.childElementCount == offsetA) {
+                atEnd = true
+        }
         setSelection(sel, nodeA, offsetA)
     } else {
         sel.setBaseAndExtent(nodeA, offsetA, nodeF, offsetF)
@@ -1723,30 +1735,53 @@ function checkAutoBuildUp(node, nodeP, key) {
         node.nodeName == 'mtext' && node.textContent[0] == '\\')
         return null
 
-    if ('+=-<> )'.includes(key) || key == '/' && node.textContent != ')') {
+    let cNode = nodeP.childElementCount
+    if (key == '"') {
+        for (let i = cNode - 1; i >= 0; i--) {
+            if (nodeP.children[i].childElementCount)
+                break;
+            if (nodeP.children[i].textContent == '"') {
+                // Replace child nodes i through cNode - 1 with <mtext>
+                if (i == cNode - 1)
+                    break;                  // No mtext content
+                nodeP.removeChild(nodeP.children[i]) // Remove quote
+                let str = ''
+                for (let j = i + 1; j < cNode; j++) {
+                    str += nodeP.children[i].textContent
+                    nodeP.removeChild(nodeP.children[i])
+                }
+                let nodeNew = document.createElement('mtext')
+                nodeNew.textContent = str
+                nodeP.appendChild(nodeNew)
+                return nodeP
+            }
+        }
+    }
+    if ('+=-<> )'.includes(key) || key == '/' && !node.textContent.endsWith(')')) {
         // Try to build up <mrow> or trailing part of it
         let uMath = ''
         let [cParen, k, opBuildUp] = checkBrackets(nodeP)
         if (opBuildUp && (!cParen || k != -1)) {
             autoBuildUp = true
-            let cNode = nodeP.childElementCount
             if (!cParen) {
                 // Same count of open and close delimiters: try to build
                 // up nodeP: nodeP → UnicodeMath
                 uMath = getUnicodeMath(nodeP)
-                if (uMath[0] == '(' && uMath[uMath.length - 1] == ')') {
-                    // Delete enclosing parens
-                    uMath = uMath.substring(1, uMath.length - 1)
-                }
             } else {
                 // Differing count: try to build up nodeP trailing mi, mo,
                 // mn, mtext children
                 for (let i = k + 1; i < cNode; i++)
                     uMath += dump(nodeP.children[i]);
+                uMath = uMath.replace('/Ⓐ1', '/') // Else -> negatedoperator
             }
             let t = unicodemathml(uMath, true) // uMath → MathML
             if (autoBuildUp) {          // Autobuildup succeeded
-                autoBuildUp = false
+                if (!testing && ummlConfig.debug) {
+                    let pegjs_ast = t.details["intermediates"]["parse"];
+                    let preprocess_ast = t.details["intermediates"]["preprocess"];
+                    output_pegjs_ast.innerHTML = highlightJson(pegjs_ast) + "\n";
+                    output_preprocess_ast.innerHTML = highlightJson(preprocess_ast) + "\n";
+                }
                 if (!cParen) {          // Full build up of nodeP
                     nodeP.innerHTML = t.mathml
                 } else {                // Build up of trailing children
@@ -2315,7 +2350,7 @@ output.addEventListener('keydown', function (e) {
             if (nodeT) {
                 node = nodeT                // FAB succeeded: update node
                 atEnd = true
-                if (key == ' ') {           // Set insertion point
+                if (key == ' ' || key == '"') { // Set insertion point
                     let cChild = node.childElementCount
                     if (cChild) {
                         while (node.nodeName == 'mrow') {
@@ -2328,6 +2363,7 @@ output.addEventListener('keydown', function (e) {
                     handleKeyboardInput(node, key, sel)
                 }
                 refreshDisplays('', true)
+                autoBuildUp = false
                 return
             }
             let autocl = handleKeyboardInput(node, key, sel)
