@@ -1223,8 +1223,6 @@ function removeSelAttributes(node) {
         node = output.firstElementChild
         if (!node)
             return
-        if (!testing)
-            console.log('remove selection attributes from ' + getUnicodeMath(node, true))
     }
     let walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, null)
 
@@ -1774,6 +1772,7 @@ function checkAutoBuildUp(node, nodeP, key) {
                     uMath += dump(nodeP.children[i]);
                 uMath = uMath.replace('/Ⓐ1', '/') // Else -> negatedoperator
             }
+            uMath = uMath.replace('"\\"', '\\')
             let t = unicodemathml(uMath, true) // uMath → MathML
             if (autoBuildUp) {          // Autobuildup succeeded
                 if (!testing && ummlConfig.debug) {

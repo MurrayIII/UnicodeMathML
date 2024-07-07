@@ -242,7 +242,7 @@ function checkBrackets(node) {
                 if (k == -1)
                     k = i
                 if (cBracket > 0)
-                    break;
+                    break
            } else if (isCloseDelimiter(nodeC.textContent)) {
                 cBracket--
                 if (k == -1)
@@ -3163,6 +3163,10 @@ function preprocess(dsty, uast, index, arr) {
                                 intent: intent, content: value.content}};
 
         case "operator":
+            if (value.length > 1 && value[0] == '\\') {
+                value = value[1]
+                intent = ':text'
+            }
             if (value == '<')
                 value = '&lt;';
             return {[key]: {intent: intent, arg: arg, content: value}};
@@ -4395,6 +4399,12 @@ function dump(value, noAddParens) {
 
         case 'mo':
             var val = value.innerHTML;
+            if (!intent)
+                intent = value.getAttribute('intent')
+            if (intent == ':text') {
+                ret = '\\' + val
+                break
+            }
             if (val == '&fa;') {
                 ret = '\u2061';
                 break;

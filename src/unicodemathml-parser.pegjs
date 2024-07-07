@@ -1026,7 +1026,7 @@ entity
     / number
     / arg
     / "\\" c:char {  // "literal"/escape operator
-        return {operator: c};
+        return {operator: "\\" + c};
     }
     /// expBracket  // ⚡ performance optimization
 

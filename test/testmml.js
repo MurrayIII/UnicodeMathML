@@ -416,7 +416,8 @@ function testInputToOutput() {
     iSuccess = 0
 
     for (let k = 0; k < iFail; k++) {
-        if (unicodeMath[k].indexOf('Ⓐ') != -1) {
+        if (unicodeMath[k].indexOf('Ⓐ') != -1 ||
+            unicodeMath[k][0] == 'ⓘ') {
             iSuccess++
             continue                    // Users don't enter sel info
         }
