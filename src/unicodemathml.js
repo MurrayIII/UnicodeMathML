@@ -4552,7 +4552,37 @@ function dump(value, noAddParens) {
         if (mrowIntent.startsWith('binomial-coefficient') ||
             mrowIntent.endsWith('matrix') || mrowIntent.endsWith('determinant')) {
             // Remove enclosing parens for 𝑛⒞𝑘 and bracketed matrices
-            return ret.substring(1, ret.length - 1);
+            let i = ret.length - 1
+            if (ret[0] != '(')
+                return ret
+            if (ret[i] == ')')
+                return ret.substring(1, i)
+
+            // Doesn't end with ')'. Scan ret matching parens. If the last
+            // ')' follows the '⒞' and matches the opening '(', remove them.
+            let binomial
+            let cParen = 1
+            let k = 0
+
+            for (i = 1; i < ret.length - 1; i++) {
+                switch (ret[i]) {
+                    case '(':
+                        cParen++
+                        break;
+                    case ')':
+                        cParen--
+                        if (!cParen) {
+                            if (!binomial)
+                                return ret  // E.g., (𝑘−𝑧)⒞𝑧
+                            k = i
+                        }
+                        break;
+                    case '⒞':
+                        binomial = true
+                        break;
+                }
+            }
+            return k ? ret.substring(1, k) + ret.substring(k + 1) : ret
         }
         if (mrowIntent == ':function' && value.previousElementSibling &&
             value.firstElementChild &&      // (in case empty)
