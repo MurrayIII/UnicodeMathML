@@ -63,18 +63,20 @@ document.onselectionchange = () => {
 }
 
 function removeSuperfluousMrow(node) {
-    if (node && node.nodeName == 'mrow' && node.childElementCount == 1 &&
-        !node.attributes.length && node.firstElementChild.nodeName == 'mrow' &&
-        !node.firstElementChild.hasAttribute('intent')) {
-        let nodeP = node.parentElement
+    // The following doesn't work reliably when selection attributes are
+    // involved. Might be fixable...
+    //if (node && node.nodeName == 'mrow' && node.childElementCount == 1 &&
+    //    !node.attributes.length && node.firstElementChild.nodeName == 'mrow' &&
+    //    !node.firstElementChild.hasAttribute('intent')) {
+    //    let nodeP = node.parentElement
 
-        if (nodeP) {
-            // node is an attributeless mrow with a single child that's also
-            // an mrow. Replace the superfluous mrow node with its mrow child
-            nodeP.replaceChild(node.firstElementChild, node)
-            return nodeP.firstElementChild
-        }
-    }
+    //    if (nodeP) {
+    //        // node is an attributeless mrow with a single child that's also
+    //        // an mrow. Replace the superfluous mrow node with its mrow child
+    //        nodeP.replaceChild(node.firstElementChild, node)
+    //        return nodeP.firstElementChild
+    //    }
+    //}
     return node
 }
 
@@ -98,6 +100,8 @@ function setSelection(sel, node, offset, nodeFocus, offsetFocus) {
         if (node.nodeName != '#text')
             node = node.firstChild          // Should be '#text' now
     }
+    if (!node.childNodes.length)
+        offset = 0
     if (nodeFocus) {
         if (offsetFocus < 0) {              // Text offset (not child index)
             offsetFocus = -offsetFocus
@@ -1808,9 +1812,9 @@ function checkAutoBuildUp(node, nodeP, key) {
             } else {
                 // Differing count: try to build up nodeP trailing mi, mo,
                 // mn, mtext children
+                ksi = false
                 for (let i = k + 1; i < cNode; i++)
                     uMath += dump(nodeP.children[i]);
-                uMath = uMath.replace('/Ⓐ1', '/') // Else -> negatedoperator
             }
             uMath = uMath.replace('"\\"', '\\')
             let t = unicodemathml(uMath, true) // uMath → MathML
