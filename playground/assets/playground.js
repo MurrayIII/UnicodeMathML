@@ -1274,6 +1274,30 @@ function handleKeyboardInput(node, key, sel) {
         sel = window.getSelection()
         node = sel.anchorNode
     }
+    if (key == '#') {
+        // Create equation number table if child of <math> is <mi>, <mn>,
+        // <mo>, or <mtext>
+        let nodeT = output.firstElementChild.firstElementChild
+        let createEqNo = !nodeT.childElementCount
+
+        if (!createEqNo && nodeT.nodeName == 'mrow') {
+            // Or create eqno table for <mrow> without unmatched parens
+            let [cParen, k, opBuildUp] =
+                checkBrackets(output.firstElementChild.firstElementChild)
+            createEqNo = !cParen
+        }
+        if (createEqNo) {
+            // Create equation number table with first mtd containing <mtext>
+            // with place holder and second mtd containing current MathML
+            removeSelAttributes()
+            let html = `<mtable><mlabeledtr><mtd><mtext selanchor="0" selfocus="1">⬚</mtext></mtd><mtd>` +
+                output.firstElementChild.innerHTML +
+                `</mtd></mlabeledtr></mtable>`
+            output.firstElementChild.innerHTML = html
+            refreshDisplays()
+            return
+        }
+    }
     let nodeNewName = getMmlTag(key)
 
     if (node.nodeName == 'math') {
@@ -1292,9 +1316,22 @@ function handleKeyboardInput(node, key, sel) {
     }
     removeSelAttributes()
     let autocl
+    if (node.nodeName == '#text')
+        node = node.parentElement
     let nodeName = node.nodeName.toLowerCase()
     let nodeP = node.parentElement
 
+    if (nodeName == 'mtext' && nodeP.nodeName == 'mtd' &&
+        nodeP.parentElement.nodeName == 'mlabeledtr') {
+        // Entering an equation number
+        if (node.textContent == '⬚')
+            node.textContent = key
+        else
+            node.textContent += key
+        setSelAttributes(node, 'selanchor', '-' + node.textContent.length)
+        refreshDisplays()
+        return
+    }
     if (nodeName == 'mtext' && node.textContent[0] == '\\') {
         // Collect control word; offer autocompletion menu
         if (isAsciiAlphabetic(key)) {
@@ -1552,6 +1589,7 @@ function deleteSelection(sel) {
     if (nodeStart.nodeName == '#text')
         nodeStart = nodeStart.parentElement
     if (nodeStart.nodeName == 'math') {
+        outputUndoStack = ['']
         nodeStart.innerHTML = `<mi selanchor="0" selfocus="1">⬚</mi>`
         refreshDisplays()
         return true
@@ -1695,7 +1733,7 @@ function checkEmpty(node, offset, uMath) {
         if (node.nodeName == '#text')
             node = node.parentElement
 
-        if (isMathMLObject(node.parentElement)) {
+        if (isMathMLObject(node.parentElement) || node.parentElement.nodeName == 'mtd') {
             node.outerHTML = `<mi selanchor="0" selfocus="1">⬚</mi>`
         } else {
             let nodeT = node.parentElement
@@ -1755,7 +1793,9 @@ function checkAutoBuildUp(node, nodeP, key) {
             }
         }
     }
-    if ('+=-<> )'.includes(key) || key == '/' && !node.textContent.endsWith(')')) {
+    if ('+=-<> )'.includes(key) ||
+        key == '/' && !node.textContent.endsWith(')') || // Not end of numerator
+        key == '#' && !node.textContent.endsWith('(')) { // Not hex RGB: eq-no
         // Try to build up <mrow> or trailing part of it
         let uMath = ''
         let [cParen, k, opBuildUp] = checkBrackets(nodeP)

@@ -425,13 +425,9 @@ function testInputToOutput() {
         setSelection(sel, output, 0)
         for (let i = 0; i < unicodeMath[k].length + 1; i++) {
             const event = new Event('keydown')
-            if (i == unicodeMath[k].length) {
-                if (k == 5 || k == 7)
-                    break;                  // These don't need build-up space
-                event.key = ' '
-            } else {
+            event.key = ' '
+            if (i < unicodeMath[k].length)
                 event.key = getCh(unicodeMath[k], i)
-            }
             output.dispatchEvent(event)
             setTimeout(function () { }, 200) // Sleep for 200 msec
             if (event.key.length == 2)
