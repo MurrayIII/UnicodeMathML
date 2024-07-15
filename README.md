@@ -342,8 +342,10 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Unicode numeric fractions like ⁵⁶/₆₂₅ are converted into standard fractions.
 * Math speech is added with support for some intent attributes, e.g., derivatives and intervals.
 * Nemeth math braille support is added.
-* Elementary editing and formula autobuildup is supported in the output window provided native MathML rendering is active (not MathJax).
-* The input and output displays have multilevel undo
+* Editing and formula autobuildup is supported in the output window provided native MathML rendering is active (not MathJax). The typography is not up to MathJax and the UI needs more polishing.
+* The input and output windows have multilevel undo. The output window undo facility is a work in progress...
+* Edit selection attributes have been added to UnicodeMath and MathML so that they can represent the current output window math including the current selection. Selection attributes are needed for accessible editing and for the output undo facility which represents previous editing states using a stack of UnicodeMath strings.
+* Formula autobuild-up tests have been added in testmml.js
 
 ## MathML intent-attribute support:
 * The derivative and partial-derivative intent attributes are defined for Leipzig and Euler derivative notations.

@@ -341,7 +341,43 @@ function testMathMLtoBraille() {
     console.log(iSuccess + " passes; " + iFail + " failures\n");
 }
 
-// Test autobuildup of 1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)
+function ctrlZ() {
+    // Execute undo
+    const event = new Event('keydown')
+    event.key = 'z'
+    event.ctrlKey = true
+    output.dispatchEvent(event)
+    setTimeout(function () { }, 50)    // Sleep for 200 msec
+}
+
+function buildUp(sel, uMath, uMathPartial) {
+    // Build up UnicodeMath string one character at a time. If uMathPartial
+    // is defined, check results against uMathPartial
+    output.innerHTML = `<math display='block'><mi selanchor="0" selfocus="1">⬚</mi></math>`
+    setSelection(sel, output, 0)
+    let iSuccess = 0
+
+    for (let i = 0, j = 0; i < uMath.length + 1; i++, j++) {
+        const event = new Event('keydown')
+        event.key = ' '
+        if (i < uMath.length)
+            event.key = getCh(uMath, i)
+        output.dispatchEvent(event)
+        setTimeout(function () { }, 50) // Sleep for 200 msec
+        if (event.key.length == 2)
+            i++                         // Bypass trail surrogate
+        if (uMathPartial) {
+            let result = getUnicodeMath(output.firstElementChild, true)
+            if (result != uMathPartial[j]) {
+                console.log('test ' + j + ': key = \'' + event.key + '\', expect: ' + unicodeMathPartial[j] + '\n');
+                console.log("Result: " + result + '\n\n')
+            } else {
+                iSuccess++
+            }
+        }
+    }
+    return iSuccess
+}
 
 const unicodeMathPartial = [                          // test
     "Ⓐ11",                                           // 0
@@ -385,33 +421,35 @@ const unicodeMathPartial = [                          // test
     "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=Ⓐ2 1/√(𝑎²−𝑏²)",     // 38
 ]
 
-function testInputToOutput() {
-    let iSuccess = 0
+function testAutoBuildUp() {
     let sel = window.getSelection()
     let output = document.getElementById('output')
     setSelection(sel, output, 0)
 
-    for (let i = 0, j = 0; i < unicodeMath[0].length + 1; i++, j++) {
-        const event = new Event('keydown')
-        event.key = (i == unicodeMath[0].length)
-                  ? ' ' : getCh(unicodeMath[0], i)
-        output.dispatchEvent(event)
-        setTimeout(function () { }, 200)    // Sleep for 200 msec
-        let result = getUnicodeMath(output.firstElementChild, true)
-        if (result != unicodeMathPartial[j]) {
-            console.log('test ' + j + ': key = \'' + event.key + '\', expect: ' + unicodeMathPartial[j] + '\n');
-            console.log("Result: " + result + '\n\n')
-        } else {
-            iSuccess++
-        }
-        if (event.key.length == 2)
-            i++                             // Bypass trail surrogate
-    }
+    // Test autobuildup of 1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)
+    let iSuccess = buildUp(sel, unicodeMath[0], unicodeMathPartial)
     let iFail = unicodeMathPartial.length - iSuccess
-    console.log(iSuccess + " passes; " + iFail + " failures\n")
+    console.log('Build up mode-locking equation: ' + iSuccess + " passes; " + iFail + " failures\n")
 
-    // Execute remaining UnicodeMath strings a character at a time
-    // and check final results
+    // Test undo of autobuildup of 1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)
+    iSuccess = 0
+    //console.log('Undo mode-locking equation (work in progress...)')
+    //for (let i = unicodeMathPartial.length - 2; i > 0; i--) {
+    //    ctrlZ()
+    //    let result = getUnicodeMath(output, true)
+    //    if (result != unicodeMathPartial[i]) {
+    //        console.log('test ' + i)
+    //        console.log('Expect: ' + unicodeMathPartial[i])
+    //        console.log("Result: " + result)
+    //    } else {
+    //        iSuccess++
+    //    }
+    //}
+    //iFail = unicodeMathPartial.length - 1 - iSuccess
+    //console.log(iSuccess + " passes; " + iFail + " failures\n")
+
+    // Autobuildup UnicodeMath strings a character at a time and check
+    // final results
     iFail = unicodeMath.length
     iSuccess = 0
 
@@ -421,18 +459,7 @@ function testInputToOutput() {
             iSuccess++
             continue                    // Users don't enter sel info
         }
-        output.firstElementChild.innerHTML = `<math display='block'><mi selanchor="0" selfocus="1">⬚</mi></math>`
-        setSelection(sel, output, 0)
-        for (let i = 0; i < unicodeMath[k].length + 1; i++) {
-            const event = new Event('keydown')
-            event.key = ' '
-            if (i < unicodeMath[k].length)
-                event.key = getCh(unicodeMath[k], i)
-            output.dispatchEvent(event)
-            setTimeout(function () { }, 200) // Sleep for 200 msec
-            if (event.key.length == 2)
-                i++                         // Bypass trail surrogate
-        }
+        buildUp(sel, unicodeMath[k])
         let result = getUnicodeMath(output.firstElementChild, false).trimEnd()
         result = result.replace(/\u202F/g, ' ')
         if (result != unicodeMath[k]) {
@@ -443,7 +470,36 @@ function testInputToOutput() {
         }
     }
     iFail -= iSuccess
-    console.log(iSuccess + " passes; " + iFail + " failures\n")
+    console.log('Build up all equations: ' + iSuccess + " passes; " + iFail + " failures\n")
+
+    // Test undo of autobuildup of 𝑎/𝑏+𝑐/𝑑=0
+    const unicodeMathPartialFractions = [
+        '𝑎/𝑏+𝑐/𝑑=Ⓐ10',                  // Insertion point after '0'
+        '𝑎/𝑏+𝑐/𝑑Ⓐ1=',
+        '𝑎/𝑏+𝑐\\/Ⓐ1𝑑',                  // \/ implies build up did not occur
+        '𝑎/𝑏+𝑐Ⓐ1\\/',
+        '𝑎/𝑏+Ⓐ1𝑐',
+        '𝑎/𝑏Ⓐ1+',
+        '𝑎\\/Ⓐ1𝑏',
+        '𝑎Ⓐ1\\/',
+        'Ⓐ1𝑎',
+    ]
+
+    buildUp(sel, 'a/b+c/d=0')
+    iSuccess = 0
+    for (let i = unicodeMathPartialFractions.length, j = 0; i > 0; i--, j++) {
+        ctrlZ()
+        let result = getUnicodeMath(output, true)
+        if (result != unicodeMathPartialFractions[j]) {
+            console.log('test ' + i)
+            console.log('Expect: ' + unicodeMathPartialFractions[j])
+            console.log("Result: " + result)
+        } else {
+            iSuccess++
+        }
+    }
+    iFail = unicodeMathPartialFractions.length - iSuccess
+    console.log("Undo build up of 'a/b+c/d=0': " + iSuccess + " passes; " + iFail + " failures\n")
 }
 
 input.addEventListener("keydown", function (e) {
@@ -458,5 +514,5 @@ input.addEventListener("keydown", function (e) {
     root.testMathMLtoUnicodeMath = testMathMLtoUnicodeMath;
     root.testMathMLtoSpeech = testMathMLtoSpeech;
     root.testMathMLtoBraille = testMathMLtoBraille;
-    root.testInputToOutput = testInputToOutput;
+    root.testAutoBuildUp = testAutoBuildUp
 })(this);

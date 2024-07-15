@@ -248,7 +248,7 @@ function checkBrackets(node) {
                 if (k == -1)
                     k = i
                 opBuildUp = true
-            } else if ('_^/√\u2061'.includes(nodeC.textContent)) {
+            } else if ('_^/√⒞\u2061'.includes(nodeC.textContent)) {
                 opBuildUp = true
             }
         }
@@ -2724,11 +2724,22 @@ function preprocess(dsty, uast, index, arr) {
 
             switch (value.type) {
                 case "subsup":
-                    // if the subsup contains a primed expression, pull the
-                    // prime up into the superscript and make the prime's base
-                    // the subsup's base
                     var base = dropSingletonLists(value.base);
-                    if (base.hasOwnProperty("primed")) {
+                    if (base.hasOwnProperty('intend') && base.intend.op == 'Ⓐ') {
+                        // If the selanchor is applied to the base, make the
+                        // selanchor apply to the sub/superscript object to
+                        // make it parsable
+                        var val = base.intend.intent.text
+                        if (inRange('\uFF10', val, '\uFF19'))
+                            val = '-' + String.fromCharCode(val.codePointAt(0) - 0xFEE0)
+                        ret.base = arr[index - 1]
+                        ret.high = value.high
+                        ret.low = value.low
+                        arr[index - 1] = {intend: {anchor: val}}
+                    } else if (base.hasOwnProperty("primed")) {
+                        // if the subsup contains a primed expression, pull the
+                        // prime up into the superscript and make the prime's
+                        // base the subsup's base
                         var primes = {operator: processPrimes(base.primed.primes)};  // TODO not ideal for latex output
                         if ("low" in value) {
                             ret.low = preprocess(dsty, value.low);
@@ -3628,8 +3639,10 @@ function mtransform(dsty, puast) {
                         [mtransform(dsty, dropOutermostParens(value.of)),
                          mtransform(dsty, value.degree)])};
         case "sqrt":
-            return {msqrt: withAttrs(getAttrs(value, ''),
-                        mtransform(dsty, dropOutermostParens(value)))};
+            var val = mtransform(dsty, dropOutermostParens(value))
+            var attrs = getAttrs(value, '')
+
+            return {msqrt: withAttrs(attrs, val)};
 
         case "function":
             let selanchorSave = selanchor

@@ -1000,14 +1000,14 @@ function handleAutocompleteKeys(x, e) {
 
     switch (e.key) {
         case "ArrowDown":
-            // Increase currentFocus; highlight corresponding control-word
+            // Increase currentFocus & highlight corresponding control-word
             e.preventDefault();
             currentFocus++;
             addActive(x);
             return true;
 
         case "ArrowUp":
-            // Decrease currentFocus; highlight corresponding control-word
+            // Decrease currentFocus & highlight corresponding control-word
             e.preventDefault();
             currentFocus--;
             addActive(x);
@@ -1016,12 +1016,14 @@ function handleAutocompleteKeys(x, e) {
         case " ":
         case "Enter":
         case "Tab":
-            // Prevent form from being submitted; simulate a click on the
-            // "active" control-word option
-            e.preventDefault();
+        case "\\":
+            // Simulate a click on the "active" control-word option
             if (currentFocus >= 0 && x)
                 x[currentFocus].click();
-            return true;
+            if (e.key != '\\') {
+                e.preventDefault();
+                return true
+            }                               // Return false to input backslash
     }
     return false
 }
@@ -2364,20 +2366,30 @@ output.addEventListener('keydown', function (e) {
                 if (!outputUndoStack.length)
                     return
                 let undoTop = stackTop(outputUndoStack)
-                if (input.value == removeSelInfo(undoTop))
+                if (input.innerHTML == removeSelInfo(undoTop))
                     outputUndoStack.pop()
                 let uMath = outputUndoStack.pop()
                 if (!uMath)
                     uMath = '⬚'
+                let i = uMath.indexOf('"')
+                if (i != -1) {
+                    let j = uMath.indexOf('"', i + 1)
+                    if (j != -1) {
+                        // Remove quotes to aid parser
+                        uMath = uMath.substring(0, i) + uMath.substring(i + 1, j) +
+                            uMath.substring(j + 1)
+                    }
+                }
                 let t = unicodemathml(uMath, true) // uMath → MathML
                 output.innerHTML = t.mathml
-                output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
-                if (t.details["intermediates"]) {
-                    let pegjs_ast = t.details["intermediates"]["parse"];
-                    let preprocess_ast = t.details["intermediates"]["preprocess"];
-
-                    output_pegjs_ast.innerHTML = highlightJson(pegjs_ast) + "\n";
-                    output_preprocess_ast.innerHTML = highlightJson(preprocess_ast) + "\n";
+                if (!testing) {
+                    output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
+                    if (t.details["intermediates"]) {
+                        let pegjs_ast = t.details["intermediates"]["parse"];
+                        let preprocess_ast = t.details["intermediates"]["preprocess"];
+                        output_pegjs_ast.innerHTML = highlightJson(pegjs_ast) + "\n";
+                        output_preprocess_ast.innerHTML = highlightJson(preprocess_ast) + "\n";
+                    }
                 }
                 refreshDisplays()
                 return
