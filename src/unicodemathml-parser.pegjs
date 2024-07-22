@@ -557,7 +557,7 @@ atop
         return {binom: {top: r, bottom: t}};
     }
     / opa:operand op:(opFraction / opChoose) { // Suppress error message
-        return [opa, {colored: {color: '#F00', of: {operator: op}}}];
+        return [opa, {colored: {color: '#F01', of: {operator: op}}}];
     }
 
 // ❷ operands/factors: medium-precedence constructs, comprising constructs
@@ -586,7 +586,7 @@ factor
     / !(functionName) e:entity !opScript {return e}  // ⚡ performance optimization
     / subsupScript
     / abovebelowScript
-    / b:scriptbase o:[_^] {return [b, {colored: {color: '#F00', of: {operator: o}}}];}  // Suppress error message
+    / b:scriptbase o:[_^] {return [b, {colored: {color: '#F01', of: {operator: o}}}];}  // Suppress error message
     / sfactor  // covers all other constructs
 
 // normal subscripts and superscripts – these are fairly involved since there's
@@ -606,7 +606,7 @@ subsupScript
     / b:scriptbase '_' b1:scriptbase '^' {
         // Suppress error message for trailing '^' since user may be about
         // to enter a superscript.
-        return [b, {operator: '_'}, b1, {colored: {color: '#F00', of: {operator: '^'}}}];
+        return [b, {operator: '_'}, b1, {colored: {color: '#F01', of: {operator: '^'}}}];
     }
     / subsupSubscript
     / subsupSuperscript
@@ -877,7 +877,7 @@ root
     / "∜" o:operand {
         return {root: {degree: {number: "4"}, of: o}};
     }
-    / o:opRoot {return {colored: {color: '#F00', of: {operator: o}}};} // Suppress error message
+    / o:opRoot {return {colored: {color: '#F01', of: {operator: o}}};} // Suppress error message
 
 // "built-in" functions. the invisible function-apply character can be used to
 // glue function name and operand together. tech note, section 3.5: "If the
@@ -1183,7 +1183,7 @@ expBracket
         return {bracketed: {open: "{", close: "", intent: ":cases", content: {array: r}}};  // }
     }
     / op:expBracketOpen {
-        return {colored: {color: '#F00', of: {operator: op}}};  // Suppress error message
+        return {colored: {color: '#F01', of: {operator: op}}};  // Suppress error message
     }
 
 opSquareBrackets = "]" / "["

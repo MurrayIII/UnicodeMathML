@@ -2381,6 +2381,14 @@ output.addEventListener('keydown', function (e) {
                     }
                 }
                 let t = unicodemathml(uMath, true) // uMath → MathML
+                if (t.mathml.startsWith('<span')) {
+                    // Conversion error occurred. Try again without sel anchor
+                    i = uMath.indexOf('Ⓐ')
+                    if (i != -1) {
+                        uMath = uMath.substring(0, i) + uMath.substring(i + 2)
+                        t = unicodemathml(uMath, true)
+                    }
+                }
                 output.innerHTML = t.mathml
                 if (!testing) {
                     output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
@@ -2391,7 +2399,7 @@ output.addEventListener('keydown', function (e) {
                         output_preprocess_ast.innerHTML = highlightJson(preprocess_ast) + "\n";
                     }
                 }
-                refreshDisplays()
+                refreshDisplays('', true)
                 return
             }
             if (name == '#text')

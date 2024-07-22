@@ -2890,6 +2890,12 @@ function preprocess(dsty, uast, index, arr) {
             return {script: ret};
 
         case "enclosed":
+            if (Array.isArray(value.of) && value.of[0].colored &&
+                value.of[0].colored.color == '#F01') {
+                // Unclosed parentheses: downgrade symbol to operator.
+                value.of.unshift({operator: value.symbol})
+                return value.of
+            }
             if (value.symbol >= "╱" && value.symbol <= "╳") {
                 // Set mask for \cancel, \bcancel, \xcancel
                 value.mask = (value.symbol == "╱") ? 79 : (value.symbol == "╲") ? 143 : 207;
@@ -2943,6 +2949,12 @@ function preprocess(dsty, uast, index, arr) {
             return {root: {intent: intent, arg: arg, degree: value.degree, of: preprocess(dsty, value.of)}};
         case "sqrt":
             value = preprocess(dsty, value);
+            if (Array.isArray(value) && value[0].colored &&
+                value[0].colored.color == '#F01') {
+                // Unclosed parentheses: downgrade √ to operator.
+                value.unshift({operator: '√'})
+                return value
+            }
             if (intent)
                 value.intent = intent;
             if (arg)
@@ -3543,9 +3555,9 @@ function mtransform(dsty, puast) {
             }
 
         case "enclosed":
+            var symbol = value.symbol;
             var attrs = getAttrs(value, '');
             var mask = value.mask;
-            var symbol = value.symbol;
             attrs.notation = enclosureAttrs(mask, symbol);
 
             return {menclose: withAttrs(attrs, mtransform(dsty,

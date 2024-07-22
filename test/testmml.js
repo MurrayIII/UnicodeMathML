@@ -306,7 +306,7 @@ function testMathMLtoUnicodeMath() {
             iSuccess++;
         }
     }
-    console.log(iSuccess + " passes; " + iFail + " failures\n");
+    console.log("Test MathML to UnicodeMath: " + iSuccess + " passes; " + iFail + " failures\n");
 }
 
 function testMathMLtoSpeech() {
@@ -322,7 +322,7 @@ function testMathMLtoSpeech() {
         }
     }
     var iFail = mathML.length - iSuccess;
-    console.log(iSuccess + " passes; " + iFail + " failures\n");
+    console.log("Test MathML to speech: " + iSuccess + " passes; " + iFail + " failures\n");
 }
 
 function testMathMLtoBraille() {
@@ -338,7 +338,7 @@ function testMathMLtoBraille() {
         }
     }
     var iFail = mathML.length - iSuccess;
-    console.log(iSuccess + " passes; " + iFail + " failures\n");
+    console.log("Test MathML to braille: " + iSuccess + " passes; " + iFail + " failures\n");
 }
 
 function ctrlZ() {
@@ -350,10 +350,11 @@ function ctrlZ() {
     setTimeout(function () { }, 50)    // Sleep for 200 msec
 }
 
-function buildUp(sel, uMath, uMathPartial) {
+function buildUp(uMath, uMathPartial) {
     // Build up UnicodeMath string one character at a time. If uMathPartial
     // is defined, check results against uMathPartial
     output.innerHTML = `<math display='block'><mi selanchor="0" selfocus="1">⬚</mi></math>`
+    let sel = window.getSelection()
     setSelection(sel, output, 0)
     let iSuccess = 0
 
@@ -377,6 +378,26 @@ function buildUp(sel, uMath, uMathPartial) {
         }
     }
     return iSuccess
+}
+
+function testUndo(uMathIn, uMathOut) {
+    let iSuccess = 0
+
+    buildUp(uMathIn)
+
+    for (let i = uMathOut.length, j = 0; i > 0; i--, j++) {
+        ctrlZ()
+        let result = getUnicodeMath(output, true)
+        if (result != uMathOut[j]) {
+            console.log('test ' + j)
+            console.log('Expect: ' + uMathOut[j])
+            console.log('Result: ' + result)
+        } else {
+            iSuccess++
+        }
+    }
+    let iFail = uMathOut.length - iSuccess
+    console.log('Test undo build up of ' + uMathIn + ': ' + iSuccess + ' passes; ' + iFail + ' failures')
 }
 
 const unicodeMathPartial = [                          // test
@@ -427,9 +448,9 @@ function testAutoBuildUp() {
     setSelection(sel, output, 0)
 
     // Test autobuildup of 1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)
-    let iSuccess = buildUp(sel, unicodeMath[0], unicodeMathPartial)
+    let iSuccess = buildUp(unicodeMath[0], unicodeMathPartial)
     let iFail = unicodeMathPartial.length - iSuccess
-    console.log('Build up mode-locking equation: ' + iSuccess + " passes; " + iFail + " failures\n")
+    console.log('Test build up of mode-locking equation: ' + iSuccess + " passes; " + iFail + " failures\n")
 
     // Test undo of autobuildup of 1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)
     iSuccess = 0
@@ -459,7 +480,7 @@ function testAutoBuildUp() {
             iSuccess++
             continue                    // Users don't enter sel info
         }
-        buildUp(sel, unicodeMath[k])
+        buildUp(unicodeMath[k])
         let result = getUnicodeMath(output.firstElementChild, false).trimEnd()
         result = result.replace(/\u202F/g, ' ')
         if (result != unicodeMath[k]) {
@@ -470,9 +491,9 @@ function testAutoBuildUp() {
         }
     }
     iFail -= iSuccess
-    console.log('Build up all equations: ' + iSuccess + " passes; " + iFail + " failures\n")
+    console.log('Test build up of all equations: ' + iSuccess + " passes; " + iFail + " failures\n")
 
-    // Test undo of autobuildup of 𝑎/𝑏+𝑐/𝑑=0
+    // Test undo of autobuildup of 𝑎/𝑏+𝑐/𝑑=0 and 1/√(𝑎²-𝑏²)
     const unicodeMathPartialFractions = [
         '𝑎/𝑏+𝑐/𝑑=Ⓐ10',                  // Insertion point after '0'
         '𝑎/𝑏+𝑐/𝑑Ⓐ1=',
@@ -485,21 +506,18 @@ function testAutoBuildUp() {
         'Ⓐ1𝑎',
     ]
 
-    buildUp(sel, 'a/b+c/d=0')
-    iSuccess = 0
-    for (let i = unicodeMathPartialFractions.length, j = 0; i > 0; i--, j++) {
-        ctrlZ()
-        let result = getUnicodeMath(output, true)
-        if (result != unicodeMathPartialFractions[j]) {
-            console.log('test ' + i)
-            console.log('Expect: ' + unicodeMathPartialFractions[j])
-            console.log("Result: " + result)
-        } else {
-            iSuccess++
-        }
-    }
-    iFail = unicodeMathPartialFractions.length - iSuccess
-    console.log("Undo build up of 'a/b+c/d=0': " + iSuccess + " passes; " + iFail + " failures\n")
+    const unicodeMathPartialSqrt = [
+        'Ⓐ1√(𝑎²−𝑏²)',
+        '√(𝑎²−𝑏²',
+        '√(𝑎²−Ⓐ1𝑏',
+        '√(𝑎²Ⓐ1−',
+        '√(𝑎²',
+        '√(Ⓐ1𝑎',
+        '√(',
+        '√',
+    ]
+    testUndo('a/b+c/d=0', unicodeMathPartialFractions)
+    testUndo('√(𝑎²-𝑏²)', unicodeMathPartialSqrt)
 }
 
 input.addEventListener("keydown", function (e) {
