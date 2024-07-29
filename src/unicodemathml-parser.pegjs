@@ -839,6 +839,9 @@ enclosed
         // as in OfficeMath implementation but can't get it to parse
         return {fraction: {symbol: '/', of: [r, t]}};
     }
+    / e:opSelection "(" o:exp? ")" {
+        return {enclosed: {mask: null, symbol: e, of: o}};
+    }
 
 // abstract boxes
 abstractbox = opAbstractBox "(" m:bitmask "&" o:exp ")" {
@@ -1010,9 +1013,6 @@ arg =
     }
     / "ⓐ(" a:αASCII+ __? c:exp ")" {
         return {intend: {op: "ⓐ", intent: {text: a.join('')}, content: c}};
-    }
-    / o:opSelection n:nn {
-        return {intend: {op: o, intent: {text: n}, content: n}};
     }
 
 // ❹ highest-precedence constructs (and brackets/grouping, which is high-

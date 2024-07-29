@@ -1,6 +1,9 @@
 var autoBuildUp = false                     // (could be a unicodemathml() arg)
 var ksi = false
 var testing
+var selanchor
+var selfocus
+
 
 const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
 const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
@@ -2730,8 +2733,6 @@ function preprocess(dsty, uast, index, arr) {
                         // selanchor apply to the sub/superscript object to
                         // make it parsable
                         var val = base.intend.intent.text
-                        if (inRange('\uFF10', val, '\uFF19'))
-                            val = '-' + String.fromCharCode(val.codePointAt(0) - 0xFEE0)
                         ret.base = arr[index - 1]
                         ret.high = value.high
                         ret.low = value.low
@@ -2892,9 +2893,19 @@ function preprocess(dsty, uast, index, arr) {
         case "enclosed":
             if (Array.isArray(value.of) && value.of[0].colored &&
                 value.of[0].colored.color == '#F01') {
-                // Unclosed parentheses: downgrade symbol to operator.
+                // Unclosed parentheses: downgrade symbol to operator
                 value.of.unshift({operator: value.symbol})
                 return value.of
+            }
+            if (value.symbol == 'Ⓐ' || value.symbol == 'Ⓕ') {
+                val = '0'
+                if (value.of && value.of.expr) {
+                    let i = value.of.expr.length - 1
+                    val = value.of.expr[i][0].number
+                    if (i > 0)
+                        val = '-' + val
+                }
+                return value.symbol == 'Ⓐ' ? {intend: {anchor: val}} : {intend: {focus: val}}
             }
             if (value.symbol >= "╱" && value.symbol <= "╳") {
                 // Set mask for \cancel, \bcancel, \xcancel
@@ -2926,12 +2937,6 @@ function preprocess(dsty, uast, index, arr) {
             val = value.intent.text
 
             switch (value.op) {
-                case 'Ⓐ':
-                case 'Ⓕ':
-                    if (inRange('\uFF10', val, '\uFF19'))
-                        val = '-' + String.fromCharCode(val.codePointAt(0) - 0xFEE0)
-                    return value.op == 'Ⓐ' ? {intend: {anchor: val}} : {intend: {focus: val}}
-
                 case 'ⓘ':
                     dsty.intent = val;
                     if (arg)
@@ -2949,9 +2954,10 @@ function preprocess(dsty, uast, index, arr) {
             return {root: {intent: intent, arg: arg, degree: value.degree, of: preprocess(dsty, value.of)}};
         case "sqrt":
             value = preprocess(dsty, value);
-            if (Array.isArray(value) && value[0].colored &&
-                value[0].colored.color == '#F01') {
-                // Unclosed parentheses: downgrade √ to operator.
+            if (Array.isArray(value) &&
+                (value[0].colored && value[0].colored.color == '#F01' ||
+                 value[0].intend && value.length == 1)) {
+                // Unclosed parentheses or solo intend: downgrade √ to operator
                 value.unshift({operator: '√'})
                 return value
             }
@@ -3215,9 +3221,6 @@ function preprocess(dsty, uast, index, arr) {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-var selanchor
-var selfocus
-
 
 function getAttrs(value, deflt) {
     var attrs = {};
@@ -3388,14 +3391,17 @@ function mtransform(dsty, puast) {
             return mtransform(dsty, value);
 
         case "nary":
-            var attrs = getAttrs(value, 'n-ary');
-            var attrsn = getAttrs(value.naryand);
-            value.naryand = mtransform(dsty, value.naryand);
+            var attrs = getAttrs(value, 'n-ary')
+            var attrsn = getAttrs(value.naryand)
+            value.limits = mtransform(dsty, value.limits)
+            value.naryand = mtransform(dsty, value.naryand)
             if (attrsn != {})
-                value.naryand.attributes = attrsn;
-            return {mrow: withAttrs(attrs, [mtransform(dsty, value.limits), value.naryand])};
+                value.naryand.attributes = attrsn
+            return {mrow: withAttrs(attrs, [value.limits, value.naryand])}
+
         case "opnary":
-            return {mo: noAttr(value)};
+            var attrs = getAttrs(value, '');
+            return {mo: withAttrs(attrs, value)};
 
         case "phantom":
             var attrs = getAttrs(value, '');
@@ -3710,14 +3716,18 @@ function mtransform(dsty, puast) {
             }
 
         case "colored":
-            var attrs = {mathcolor: value.color};
+            var attrs = getAttrs(value.of, '')
+            attrs.mathcolor = value.color
             value.of = mtransform(dsty, value.of);
-            if (value.of.hasOwnProperty('mo')) {
+            if (value.of.hasOwnProperty('mo'))
                 return {mo: withAttrs(attrs, value.of.mo.content)};
-            }
-            return {mstyle: withAttrs(attrs, value.of)};
+            return {mstyle: withAttrs(attrs, value.of)}
+
         case "bgcolored":
-            return {mstyle: withAttrs({mathbackground: value.color}, mtransform(dsty, value.of))};
+            var attrs = getAttrs(value.of, '')
+            attrs.mathbackground = value.color
+            return {mstyle: withAttrs(attrs, mtransform(dsty, value.of))}
+
         case "comment":
             return {"␢": noAttr()};
         case "tt":
@@ -4142,21 +4152,14 @@ function nary(node, op, cNode) {
     return ret;
 }
 
-function checkSelAttr(name, attr) {
-    if (attr == undefined)
+function checkSelAttr(value, op) {
+    let attr = op == 'Ⓐ' ? 'selanchor' : 'selfocus'
+    let selattr = value.getAttribute(attr)
+    if (!selattr)
         return ''
-
-    if (attr[0] == '-') {
-        // Facilitate peg parsing by representing negative selection attributes
-        // by full-width digits
-        attr = String.fromCharCode(attr.codePointAt(1) + 0xFEE0)
-    }
-    if (name == 'mfrac') {
-        // Insert ' ' between selection code and fraction so that code
-        // applies to fraction and not just the numerator
-        attr += ' '
-    }
-    return attr
+    if (selattr == '0')
+        selattr = ''
+    return op + '(' + selattr + ')'
 }
 
 function isDigitArg(node) {
@@ -4539,15 +4542,16 @@ function dump(value, noAddParens) {
         if (!ksi)                           // Keep selinfo?
             return ret
 
-        let name = value.nodeName
-        let selattr = checkSelAttr(name, value.getAttribute('selfocus'))
+        let selcode = checkSelAttr(value, 'Ⓐ') + checkSelAttr(value, 'Ⓕ')
+        if (!selcode)
+            return ret
 
-        if (selattr) {
-            ret = 'Ⓕ' + selattr + ret
-            name = ''
+        if (value.nodeName == 'mfrac') {
+            // Insert ' ' between the selection code(s) and fraction so that
+            // the code(s) apply to the fraction and not just the numerator
+            selcode += ' '
         }
-        selattr = checkSelAttr(name, value.getAttribute('selanchor'))
-        return selattr ? 'Ⓐ' + selattr + ret : ret
+        return selcode + ret
     }
 
     // Dump <mrow> children
@@ -4676,7 +4680,7 @@ function escapeHTMLSpecialChars(str) {
     });
 };
 
-    function unicodemathml(unicodemath, displaystyle) {
+function unicodemathml(unicodemath, displaystyle) {
     debugGroup(unicodemath);
     if (isMathML(unicodemath)) {
         if (unicodemath.startsWith('<mml:math') || unicodemath.startsWith('<m:math'))
@@ -4708,6 +4712,10 @@ function escapeHTMLSpecialChars(str) {
 
         var t3s = performance.now();
         mast = mtransform(displaystyle, puast);
+        if (selanchor && mast.math) {
+            mast.math.attributes.selanchor = '1'
+            selanchor = ''
+        }
         var t3e = performance.now();
         debugLog(mast);
 
