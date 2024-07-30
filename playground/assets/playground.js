@@ -682,118 +682,154 @@ input.addEventListener("keydown", function (e) {
         undoTop.selEnd = input.selectionEnd
         undoTop.selStart = input.selectionStart
     }
-    if (e.key == 'x' && e.altKey) {         // Alt+x
-        e.preventDefault();
-        let cchSel = input.selectionEnd - input.selectionStart;
-        let [ch, cchDel] = hexToUnicode(input.value, input.selectionEnd, cchSel);
-        let offsetStart = input.selectionEnd - cchDel
-        input.value = input.value.substring(0, offsetStart) + ch +
-            input.value.substring(input.selectionEnd);
-        input.selectionStart = input.selectionEnd = offsetStart + ch.length
-    } else if (e.ctrlKey && (e.key == 'b' || e.key == 'i')) {
-        // Toggle math bold/italic (Ctrl+b/Ctrl+i)
-        e.preventDefault();
-        let chars = getInputSelection();
-        chars = boldItalicToggle(chars, e.key);
-        if (chars.length == 1 && (isAsciiAlphabetic(chars) || isLcGreek(chars)))
-            chars = '"' + chars + '"'
-        insertAtCursorPos(chars);
-        input.selectionStart -= chars.length;
-        input.focus();
-        draw();
-    } else if (e.ctrlKey && e.key == 'z') { // Ctrl+z
-        e.preventDefault();
-        if (!inputUndoStack.length)
-            return
-        let undoTop = inputUndoStack.pop()
-        if (input.value == undoTop.uMath) {
-            if (!inputUndoStack.length)
+    if (e.altKey) {
+        switch (e.key) {
+            case 'b':                       // Alt+b
+                // Braille MathML
+                e.preventDefault()
+                let mathML = isMathML(input.value)
+                    ? input.value
+                    : document.getElementById('output_source').innerText
+                let braille = MathMLtoBraille(mathML)
+                console.log('Math braille = ' + braille)
+                speechDisplay.innerText += '\n' + braille
                 return
-            undoTop = inputUndoStack.pop()
-        }
-        input.value = undoTop.uMath
-        if (undoTop.selStart != undefined) {
-            input.selectionStart = undoTop.selStart
-            input.selectionEnd = undoTop.selEnd
-        }
-        input.focus()
-        draw(true)
-        return
-    } else if (e.shiftKey && e.key == 'Enter') { // Shift+Enter
-        //e.preventDefault();
-        //insertAtCursorPos('\u200B');  // Want VT for math paragraph
-    } else if (e.altKey && e.key == 'm') { // Alt+m
-        // Toggle Unicode and MathML in input
-        e.preventDefault();
-        ksi = true
-        input.value = isMathML(input.value)
-            ? MathMLtoUnicodeMath(input.value, true)
-            : document.getElementById('output_source').innerText;
-        draw();
-    } else if (e.altKey && e.key == 'b') { // Alt+b
-        // Braille MathML
-        e.preventDefault();
-        let mathML = isMathML(input.value)
-            ? input.value
-            : document.getElementById('output_source').innerText;
-        let braille = MathMLtoBraille(mathML);
-        console.log('Math braille = ' + braille);
-        speechDisplay.innerText += '\n' + braille;
-    } else if (e.altKey && e.key == 's') { // Alt+s
-        // Speak MathML
-        e.preventDefault();
-        if (speechSynthesis.speaking) {
-            speechSynthesis.cancel();
-        } else {
-            let mathML = isMathML(input.value)
-                ? input.value
-                : document.getElementById('output_source').innerText;
-            let speech = MathMLtoSpeech(mathML);
-            console.log('Math speech = ' + speech);
-            speechDisplay.innerText = '\n' + speech;
-            let utterance = new SpeechSynthesisUtterance(speech);
-            if (voiceZira)
-                utterance.voice = voiceZira;
-            speechSynthesis.speak(utterance);
-        }
-    } else if (e.altKey && e.key == 'Enter') { // Alt+Enter
-        // Enter Examples[iExample]
-        x = document.getElementById('Examples').childNodes[0];
-        input.value = x.childNodes[iExample].innerText;
-        var cExamples = x.childNodes.length;
 
-        iExample++;                 // Increment for next time
-        if (iExample > cExamples - 1)
-            iExample = 0;
+            case 'd':                       // Alt+d
+                // Toggle dictation mode on/off
+                e.preventDefault()
+                $("#mic").click()
+                return
+
+            case 'Enter':                   // Alt+Enter
+                // Enter Examples[iExample] (see also Demo mode)
+                x = document.getElementById('Examples').childNodes[0]
+                input.value = x.childNodes[iExample].innerText
+                var cExamples = x.childNodes.length
+
+                iExample++                 // Increment for next time
+                if (iExample > cExamples - 1)
+                    iExample = 0
+                return
+
+            case 'm':                       // Alt+m
+                // Toggle Unicode and MathML in input display
+                e.preventDefault()
+                ksi = true
+                input.value = isMathML(input.value)
+                    ? MathMLtoUnicodeMath(input.value, true)
+                    : document.getElementById('output_source').innerText
+                draw()
+                return
+
+            case 'p':                       // Alt+p
+                // Presentation: toggle demo mode on/off
+                e.preventDefault()
+                startDemo()
+                return
+
+            case 's':                       // Alt+s
+                // Speak MathML
+                e.preventDefault()
+                if (speechSynthesis.speaking) {
+                    speechSynthesis.cancel()
+                } else {
+                    let mathML = isMathML(input.value)
+                        ? input.value
+                        : document.getElementById('output_source').innerText
+                    let speech = MathMLtoSpeech(mathML)
+                    console.log('Math speech = ' + speech)
+                    speechDisplay.innerText = '\n' + speech
+                    let utterance = new SpeechSynthesisUtterance(speech)
+                    if (voiceZira)
+                        utterance.voice = voiceZira
+                    speechSynthesis.speak(utterance)
+                }
+                return
+
+            case 'x':                       // Alt+x
+                // Toggle between char code and char
+                e.preventDefault()
+                let cchSel = input.selectionEnd - input.selectionStart
+                let [ch, cchDel] = hexToUnicode(input.value, input.selectionEnd, cchSel)
+                let offsetStart = input.selectionEnd - cchDel
+                input.value = input.value.substring(0, offsetStart) + ch +
+                    input.value.substring(input.selectionEnd)
+                input.selectionStart = input.selectionEnd = offsetStart + ch.length
+                return
+        }
+    }
+    if (e.ctrlKey) {
+        switch (e.key) {
+            case 'b':                       // Ctrl+b
+            case 'i':                       // Ctrl+i
+                // Toggle math bold/italic
+                e.preventDefault()
+                let chars = getInputSelection()
+                if (chars[0] == '"' && chars[chars.length - 1] == '"')
+                    chars = chars.substring(1, chars.length - 1)
+                chars = boldItalicToggle(chars, e.key)
+                if (chars.length == 1 && (isAsciiAlphabetic(chars) || isLcGreek(chars)))
+                    chars = '"' + chars + '"'
+                insertAtCursorPos(chars)
+                input.selectionStart -= chars.length
+                input.focus()
+                draw()
+                return
+
+            case 'z':                       // Ctrl+z
+                // Undo
+                e.preventDefault()
+                if (!inputUndoStack.length)
+                    return
+                let undoTop = inputUndoStack.pop()
+                if (input.value == undoTop.uMath) {
+                    if (!inputUndoStack.length)
+                        return
+                    undoTop = inputUndoStack.pop()
+                }
+                input.value = undoTop.uMath
+                if (undoTop.selStart != undefined) {
+                    input.selectionStart = undoTop.selStart
+                    input.selectionEnd = undoTop.selEnd
+                }
+                input.focus()
+                draw(true)
+                return
+        }
+    }
+    if (e.shiftKey && e.key == 'Enter') {   // Shift+Enter
+        //e.preventDefault()
+        //insertAtCursorPos('\u200B')       // Want VT for math paragraph
     }
     if (demoID) {
-        var demoEq = document.getElementById('demos');
+        var demoEq = document.getElementById('demos')
         switch (e.key) {
+            case 'ArrowRight':
+                nextEq()
+                return
+            case 'ArrowLeft':
+                prevEq()
+                return
             case 'Escape':
                 // Turn off demo mode
-                endDemo();
-                return;
+                endDemo()
+                return
             case ' ':
                 // Toggle pause
-                e.preventDefault();
+                e.preventDefault()
                 if (demoPause) {
-                    demoID = 0;         // Needed to start (instead of end)
-                    startDemo();
+                    demoID = 0         // Needed to start (instead of end)
+                    startDemo()
                 } else {
-                    demoPause = true;
-                    clearInterval(demoID);
-                    demoEq.style.backgroundColor = 'green';
+                    demoPause = true
+                    clearInterval(demoID)
+                    demoEq.style.backgroundColor = 'green'
                 }
-                return;
-            case 'ArrowRight':
-                nextEq();
-                return;
-            case 'ArrowLeft':
-                prevEq();
-                return;
+                return
         }
     }
-});
+})
 
 // insert one or multiple characters at the current cursor position of
 // the input field or, if there is no cursor, append them to its value,
@@ -2933,18 +2969,16 @@ $('#mathchar').on("change keyup paste", function (e) {
 });
 
 function getInputSelection() {
-    if (input.selectionStart || input.selectionStart == '0') {
-        var s = input.selectionStart;
-        var e = input.selectionEnd;
-        if (s == e) {
-            return null;  // no selection
-        } else {
-            return input.value.substring(s, e);
-        }
-    } else {
-        return null;  // no selection
+    let s = input.selectionStart
+
+    if (s || s == '0') {
+        let e = input.selectionEnd
+        if (s != e)
+            return input.value.substring(s, e)
     }
+    return null                             // no selection
 }
+
 $('button.mathfont').click(function () {
     var font = this.id;
 
@@ -3011,7 +3045,7 @@ $('button.mathfont').click(function () {
             var chFolded = ch;
             var anCode = 0;
 
-            if (code >= 0x2102) {                // Letterlike symbols or beyond
+            if (code >= 0x2102) {           // Letterlike symbols or beyond
                 if (code > 0xFFFF) {
                     ch = chars.substring(i, i + 2);
                     i++;
