@@ -2185,7 +2185,7 @@ output.addEventListener('keydown', function (e) {
     let sel = window.getSelection()
 
     let range = document.createRange()
-    if(sel.type != 'None')
+    if (sel.type != 'None')
         range = sel.getRangeAt(0)           // Save entry selection
 
     let node = sel.anchorNode
@@ -2219,41 +2219,6 @@ output.addEventListener('keydown', function (e) {
         case 'ArrowLeft':
             dir = '←'
             return;                     // Do default for now
-
-        case 'Delete':
-            e.preventDefault()
-            if (deleteSelection(sel))
-                return
-
-            if (node.nodeName == 'math')
-                return
-
-            if (isMathMLObject(node)) {
-                setSelection(sel, node, SELECTNODE)
-                return
-            }
-            if (node.nodeName == '#text') {
-                if (offset < node.textContent.length) {
-                    let autocl = deleteChar(node, offset)
-                    if (autocl != undefined)
-                        this.parentNode.appendChild(autocl)
-                    checkEmpty(node, -offset)
-                    return
-                }
-                node = node.parentElement
-            }
-            if (node.nodeName == 'mrow' && node.childElementCount)
-                node = node.children[offset]
-
-            if (isMathMLObject(node)) {
-                setSelection(sel, node, SELECTNODE)
-                return
-            }
-            cchCh = getCch(node.textContent, 0)
-            node.textContent = node.textContent.substring(cchCh)
-
-            checkEmpty(node)
-            return
 
         case 'Backspace':
             e.preventDefault()
@@ -2301,17 +2266,89 @@ output.addEventListener('keydown', function (e) {
             checkEmpty(node)
             return
 
-        default:
-            if (key.length > 1 && !inRange('\uD800', key[0], '\uDBFF')) // 'Shift', etc.
+        case 'Delete':
+            e.preventDefault()
+            if (deleteSelection(sel))
                 return
 
-            e.preventDefault();
-            if (key == 'a' && e.ctrlKey) {  // Ctrl+a
+            if (node.nodeName == 'math')
+                return
+
+            if (isMathMLObject(node)) {
+                setSelection(sel, node, SELECTNODE)
+                return
+            }
+            if (node.nodeName == '#text') {
+                if (offset < node.textContent.length) {
+                    let autocl = deleteChar(node, offset)
+                    if (autocl != undefined)
+                        this.parentNode.appendChild(autocl)
+                    checkEmpty(node, -offset)
+                    return
+                }
+                node = node.parentElement
+            }
+            if (node.nodeName == 'mrow' && node.childElementCount)
+                node = node.children[offset]
+
+            if (isMathMLObject(node)) {
+                setSelection(sel, node, SELECTNODE)
+                return
+            }
+            cchCh = getCch(node.textContent, 0)
+            node.textContent = node.textContent.substring(cchCh)
+
+            checkEmpty(node)
+            return
+    }
+    if (key.length > 1 && !inRange('\uD800', key[0], '\uDBFF')) // 'Shift', etc.
+        return
+
+    e.preventDefault();
+    let uMath
+
+    if (e.ctrlKey) {
+        switch (key) {
+            case 'a':                       // Ctrl+a
                 // Select math zone
                 sel = setSelection(sel, output.firstElementChild, SELECTNODE)
                 return
-            }
-            if (key == 'x' && e.altKey) {   // Alt+x: hex → Unicode
+
+            case 'b':                       // Ctrl+b
+            case 'i':                       // Ctrl+i
+                // Toggle math bold/italic ()
+                if (sel.isCollapsed)
+                    return
+                if (node.nodeName == '#text')
+                    node = node.parentElement
+                let chars = node.textContent;
+
+                if (chars.length == 1 && chars != 'ℎ') {
+                    // Single letters display in math italic unless
+                    // mathvariant = 'normal'
+                    if (node.attributes.mathvariant &&
+                        node.attributes.mathvariant.value == 'normal') {
+                        node.removeAttribute('mathvariant')
+                    } else {
+                        chars = italicizeCharacter(chars)
+                    }
+                }
+                chars = boldItalicToggle(chars, key)
+                node.textContent = chars
+                if (chars.length == 1 && chars != 'ℎ' && node.nodeName == 'mi')
+                    node.setAttribute('mathvariant', 'normal')
+                refreshDisplays()
+                return
+
+            case 'r':                       // Ctrl+r
+                // Refresh MathML display (MathML → UnicodeMath → MathML)
+                uMath = getUnicodeMath(output.firstElementChild, true)
+                t = unicodemathml(uMath, true) // uMath → MathML
+                output.innerHTML = t.mathml
+                refreshDisplays('', true)
+                return
+
+            case 'x':                       // Alt+x: hex → Unicode
                 let cchSel = 0              // Default degenerate selection
                 let str = ''                // Collects hex string
 
@@ -2368,65 +2405,20 @@ output.addEventListener('keydown', function (e) {
                 name = node.nodeName
                 atEnd = true
                 key = ch
-            } else if (e.ctrlKey && (key == 'b' || key == 'i')) {
-                // Toggle math bold/italic (Ctrl+b/Ctrl+i)
-                if (sel.isCollapsed)
-                    return
-                if (node.nodeName == '#text')
-                    node = node.parentElement
-                let chars = node.textContent;
+                break
 
-                if (chars.length == 1 && chars != 'ℎ') {
-                    // Single letters display in math italic unless
-                    // mathvariant = 'normal'
-                    if (node.attributes.mathvariant &&
-                        node.attributes.mathvariant.value == 'normal') {
-                        node.removeAttribute('mathvariant')
-                    } else {
-                        chars = italicizeCharacter(chars)
-                    }
-                }
-                chars = boldItalicToggle(chars, key)
-                node.textContent = chars
-                if (chars.length == 1 && chars != 'ℎ' && node.nodeName == 'mi')
-                    node.setAttribute('mathvariant', 'normal')
-                refreshDisplays()
-                return
-            } else if (e.ctrlKey && e.key == 'r') { // Ctrl+r
-                // Refresh MathML display (MathML → UnicodeMath → MathML)
-                let uMath = getUnicodeMath(output.firstElementChild, true)
-                let t = unicodemathml(uMath, true) // uMath → MathML
-                output.innerHTML = t.mathml
-                refreshDisplays('', true)
-                return
-           } else if (e.ctrlKey && e.key == 'z') { // Ctrl+z
+            case 'z':                       // Ctrl+z
                 if (!outputUndoStack.length)
                     return
                 let undoTop = stackTop(outputUndoStack)
                 if (input.innerHTML == removeSelInfo(undoTop))
                     outputUndoStack.pop()
-                let uMath = outputUndoStack.pop()
+                uMath = outputUndoStack.pop()
                 if (!uMath)
                     uMath = '⬚'
-                let i = uMath.indexOf('"')
-                if (i != -1) {
-                    let j = uMath.indexOf('"', i + 1)
-                    if (j != -1) {
-                        // Remove quotes to aid parser
-                        uMath = uMath.substring(0, i) + uMath.substring(i + 1, j) +
-                            uMath.substring(j + 1)
-                    }
-                }
                 let t = unicodemathml(uMath, true) // uMath → MathML
-                if (t.mathml.startsWith('<span')) {
-                    // Conversion error occurred. Try again without sel anchor
-                    i = uMath.indexOf('Ⓐ')
-                    if (i != -1) {
-                        uMath = uMath.substring(0, i) + uMath.substring(i + 2)
-                        t = unicodemathml(uMath, true)
-                    }
-                }
                 output.innerHTML = t.mathml
+
                 if (!testing) {
                     output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
                     if (t.details["intermediates"]) {
@@ -2438,42 +2430,44 @@ output.addEventListener('keydown', function (e) {
                 }
                 refreshDisplays('', true)
                 return
-            }
-            if (name == '#text')
-                node = node.parentElement
+        }                                   // switch(e.key) {}
+    }                                       // if (e.ctrlKey) {}
+    // Handle character input
+    if (name == '#text')
+        node = node.parentElement
 
-            let nodeP = node
-            if (!node.childElementCount && name != 'math')
-                nodeP = node.parentElement
+    let nodeP = node
+    if (!node.childElementCount && name != 'math')
+        nodeP = node.parentElement
 
-            let nodeT = checkAutoBuildUp(node, nodeP, key)
-            if (nodeT) {
-                node = nodeT                // FAB succeeded: update node
-                atEnd = true
-                if (key == ' ' || key == '"') { // Set insertion point
-                    let cChild = node.childElementCount
-                    if (cChild) {
-                        while (node.nodeName == 'mrow') {
-                            node = node.lastElementChild
-                            cChild = node.childElementCount
-                        }
-                        node.setAttribute('selanchor', cChild ? cChild : 1)
-                    }
-                } else {
-                    handleKeyboardInput(node, key, sel)
+    let nodeT = checkAutoBuildUp(node, nodeP, key)
+    if (nodeT) {
+        node = nodeT                        // FAB succeeded: update node
+        atEnd = true
+        if (key == ' ' || key == '"') {     // Set insertion point
+            let cChild = node.childElementCount
+            if (cChild) {
+                while (node.nodeName == 'mrow') {
+                    node = node.lastElementChild
+                    cChild = node.childElementCount
                 }
-                refreshDisplays('', true)
-                autoBuildUp = false
-                return
+                node.setAttribute('selanchor', cChild ? cChild : 1)
             }
-            let autocl = handleKeyboardInput(node, key, sel)
+        } else {
+            handleKeyboardInput(node, key, sel)
+        }
+        refreshDisplays('', true)
+        autoBuildUp = false
+        return
+    }
+    let autocl = handleKeyboardInput(node, key, sel)
 
-            // If defined, append autocomplete list to output autocomplete container
-            if (autocl != undefined)
-                this.parentNode.appendChild(autocl)
-            return                      // Ignore other input for now
-    }                                   // End of switch(key)
-});
+    // If defined, append autocomplete list to output autocomplete container
+    if (autocl != undefined)
+        this.parentNode.appendChild(autocl)
+
+    // Ignore other input for now
+})
 
 function checkResize() {
     let h = document.getElementsByTagName('h1');
