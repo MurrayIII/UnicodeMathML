@@ -338,6 +338,7 @@ opRoot = "√" / "∛" / "∜"
 opSelection = "Ⓐ" / "Ⓕ"
 opScript = [_^┬┴'′″‴⁗!‼₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥₓ⁰¹²³⁴⁵⁶⁷⁸⁹ᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻ⁺⁻⁼⁽⁾]
 opSubSup = "_" / "^"
+opSubSupEtc = [_^)]
 opAboveBelow = "┬" / "┴"
 opSizeOverride = "Ⅎ"
 opColor = "✎"
@@ -839,8 +840,8 @@ enclosed
         // as in OfficeMath implementation but can't get it to parse
         return {fraction: {symbol: '/', of: [r, t]}};
     }
-    / e:opSelection "(" o:exp? ")" {
-        return {enclosed: {mask: null, symbol: e, of: o}};
+    / e:opSelection "(" o:exp? ")" m:opSubSupEtc? {
+        return {enclosed: {mask: m, symbol: e, of: o}};
     }
 
 // abstract boxes

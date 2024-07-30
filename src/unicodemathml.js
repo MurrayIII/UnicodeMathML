@@ -2333,8 +2333,13 @@ function dropOutermostParens(uast) {
         return {expr: dropOutermostParens(uast.expr)};
     }
 
-    if (Array.isArray(uast) && uast.length == 1) {
-        return [dropOutermostParens(uast[0])];
+    if (Array.isArray(uast)) {
+        if (uast.length == 1)
+            return [dropOutermostParens(uast[0])];
+        if (uast.length == 2 && uast[0].hasOwnProperty("bracketed") &&
+            uast[1].hasOwnProperty("intend")) {
+            return [dropOutermostParens(uast[0]), uast[1]]
+        }
     }
 
     if (!uast.hasOwnProperty("bracketed")) {
@@ -2898,6 +2903,7 @@ function preprocess(dsty, uast, index, arr) {
                 return value.of
             }
             if (value.symbol == 'Ⓐ' || value.symbol == 'Ⓕ') {
+                // Prepare selection attributes
                 val = '0'
                 if (value.of && value.of.expr) {
                     let i = value.of.expr.length - 1
@@ -2905,7 +2911,8 @@ function preprocess(dsty, uast, index, arr) {
                     if (i > 0)
                         val = '-' + val
                 }
-                return value.symbol == 'Ⓐ' ? {intend: {anchor: val}} : {intend: {focus: val}}
+                // For example, for '𝑎Ⓐ()^', value.mask = '^'
+                return {intend: {symbol: value.symbol, value: val, op: value.mask}}
             }
             if (value.symbol >= "╱" && value.symbol <= "╳") {
                 // Set mask for \cancel, \bcancel, \xcancel
@@ -3966,11 +3973,11 @@ function mtransform(dsty, puast) {
 
         case "intend":
             // Set up next element to get selanchor via getAttrs()
-            if (value.anchor)
-                selanchor = value.anchor
-            else if (value.focus)
-                selfocus = value.focus
-            return ''
+            if (value.symbol == 'Ⓐ')
+                selanchor = value.value
+            else if (value.symbol == 'Ⓕ')
+                selfocus = value.value
+            return value.op ? {mo: withAttrs(getAttrs(value, ''), value.op)} : ''
 
         default:
             return value;

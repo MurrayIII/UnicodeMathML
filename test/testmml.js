@@ -70,6 +70,7 @@ const mathML = [
     "<math display=\"block\"><mfrac><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow><mo>)</mo></mrow><mi>𝑐</mi></mfrac></math>",
     "<math display=\"block\"><msubsup><mi>𝑓</mi><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑎</mi><mo>−</mo><mn>0</mn></mrow><mo>)</mo></mrow><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑏</mi><mo>+</mo><mi>𝑐</mi></mrow><mo>)</mo></mrow></msubsup></math>",
     "<math display=\"block\"><mrow><mfrac intent=\"derivative(1,$f,𝑥)\"><mi>𝑑</mi><mrow><mi>𝑑</mi><mi>𝑥</mi></mrow></mfrac><mrow arg=\"f\"><mrow intent=\":fenced\"><mo>(</mo><mrow><msup><mi>𝑥</mi><mn>2</mn></msup><mo>+</mo><mi>𝑥</mi><mo>+</mo><mn>1</mn></mrow><mo>)</mo></mrow></mrow><mo>=</mo><mrow><mn>2</mn><mi>𝑥</mi></mrow><mo>+</mo><mn>1</mn></mrow></math>",
+    "<math display=\"block\"><mrow><mi>𝑎</mi><mo selanchor=\"0\">^</mo></mrow></math>",
 ]
 
 const unicodeMath = [
@@ -141,6 +142,7 @@ const unicodeMath = [
     "((𝑎+𝑏))/𝑐",
     "𝑓_((𝑎−0))^((𝑏+𝑐))",
     "𝑑/𝑑𝑥 (𝑥²+𝑥+1)=2𝑥+1",
+    "𝑎Ⓐ()^",
 ]
 
 const mathSpeech = [
@@ -218,6 +220,7 @@ const mathSpeech = [
     "open eigh + b close over c",
     "f sub open eigh minus 0 close to the open b + c close",
     "derivative of x squared + x + 1 with respect to x = 2 x + 1",
+    "eigh insertion point soup",
 ]
 
 const mathBraille = [
@@ -289,6 +292,7 @@ const mathBraille = [
     "⠹⠷⠁⠬⠃⠾⠌⠉⠼",
     "⠋⠰⠷⠁⠤⠴⠾⠘⠷⠃⠬⠉⠾",
     "⠹⠙⠌⠙⠭⠼⠷⠭⠘⠆⠐⠬⠭⠬⠂⠾⠀⠨⠅⠀⠼⠆⠭⠬⠂",
+    "⠁⠸⠣",
 ]
 
 function testMathMLtoUnicodeMath() {
@@ -507,7 +511,7 @@ function testAutoBuildUp() {
     ]
 
     const unicodeMathPartialSqrt = [
-        'Ⓐ(1)√(𝑎²−𝑏²)',
+        '√(𝑎²−𝑏²Ⓐ(1))',
         '√(𝑎²−𝑏Ⓐ(1)²',
         '√(𝑎²−Ⓐ(1)𝑏',
         '√(𝑎²Ⓐ(1)−',

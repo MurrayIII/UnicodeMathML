@@ -725,8 +725,9 @@ input.addEventListener("keydown", function (e) {
     } else if (e.altKey && e.key == 'm') { // Alt+m
         // Toggle Unicode and MathML in input
         e.preventDefault();
+        ksi = true
         input.value = isMathML(input.value)
-            ? MathMLtoUnicodeMath(input.value)
+            ? MathMLtoUnicodeMath(input.value, true)
             : document.getElementById('output_source').innerText;
         draw();
     } else if (e.altKey && e.key == 'b') { // Alt+b
