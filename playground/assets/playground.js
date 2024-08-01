@@ -56,10 +56,11 @@ document.onselectionchange = () => {
         setSelAttributes(focusNode, 'selfocus', offset)
     }
     // Update MathML window
-    if(!testing)
+    if (!testing) {
         output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
-    if(!testing)
         console.log('uMath = ' + getUnicodeMath(output.firstElementChild, true))
+        input.innerHTML = getUnicodeMath(output.firstElementChild, true)
+    }
 }
 
 function removeSuperfluousMrow(node) {
@@ -82,9 +83,9 @@ function removeSuperfluousMrow(node) {
 
 function setSelection(sel, node, offset, nodeFocus, offsetFocus) {
     if (!sel)
-        sel = window.getSelection();
+        sel = window.getSelection()
     if (!node)
-        return sel;
+        return sel
 
     if (offset == SELECTNODE) {
         offset = node.nodeName == '#text'
@@ -100,8 +101,6 @@ function setSelection(sel, node, offset, nodeFocus, offsetFocus) {
         if (node.nodeName != '#text')
             node = node.firstChild          // Should be '#text' now
     }
-    if (!node.childNodes.length)
-        offset = 0
     if (nodeFocus) {
         if (offsetFocus < 0) {              // Text offset (not child index)
             offsetFocus = -offsetFocus
@@ -113,16 +112,23 @@ function setSelection(sel, node, offset, nodeFocus, offsetFocus) {
         offsetFocus = offset
     }
     try {
+        if (node.nodeName == '#text') {
+            if (offset > node.textContent.length)
+                offset = offsetFocus = node.textContent.length
+        } else if (offset > node.childNodes.length) {
+            offset = offsetFocus = node.childNodes.length
+        }
         sel.setBaseAndExtent(node, offset, nodeFocus, offsetFocus)
     } catch(error) {
         console.log(error)
+        console.log("output = " + output.firstElementChild.outerHTML)
         console.log("sel.anchorNode = " + node.outerHTML + ', sel.anchorOffset = ' + offset)
         console.log("sel.focusNode = " + nodeFocus.outerHTML + ', sel.focusOffset = ' + offsetFocus)
     }
 
     if(!testing)
         console.log("sel.anchorNode = " + node.nodeName + ', sel.focusNode = ' + nodeFocus.nodeName)
-    return sel;
+    return sel
 }
 
 var mappedPair = {
@@ -1173,8 +1179,11 @@ function refreshDisplays(uMath, noUndo) {
         if (!uMath)
             uMath = uMathCurrent
         let undoTop = stackTop(outputUndoStack)
-        if (uMath != undoTop)
+        if (uMath != undoTop) {
             outputUndoStack.push(uMath)
+            if (!testing)
+                console.log("Push " + uMath)
+        }
     }
 
     input.innerHTML = removeSelInfo(uMathCurrent)
@@ -1364,6 +1373,16 @@ function handleKeyboardInput(node, key, sel) {
     let nodeName = node.nodeName.toLowerCase()
     let nodeP = node.parentElement
 
+    if (isAsciiAlphabetic(key) && node.textContent.endsWith('\\')) {
+        let nodeNew = document.createElement('mtext')
+        nodeNew.innerHTML = node.textContent + key
+        setSelAttributes(nodeNew, 'selanchor', '-' + nodeNew.textContent.length)
+        nodeP.replaceChild(nodeNew, node)
+        nodeP.innerHTML = nodeP.innerHTML
+        refreshDisplays()
+        return
+    }
+
     if (nodeName == 'mtext' && nodeP.nodeName == 'mtd' &&
         nodeP.parentElement.nodeName == 'mlabeledtr') {
         // Entering an equation number
@@ -1375,12 +1394,21 @@ function handleKeyboardInput(node, key, sel) {
         refreshDisplays()
         return
     }
+    if (nodeName == 'mtext' && node.textContent[0] == '"') {
+        if (key == '"')
+            node.textContent = node.textContent.substring(1)
+        else
+            node.textContent += key
+        setSelAttributes(node, 'selanchor', '-' + node.textContent.length)
+        refreshDisplays()
+        return
+    }
     if (nodeName == 'mtext' && node.textContent[0] == '\\') {
         // Collect control word; offer autocompletion menu
         if (isAsciiAlphabetic(key)) {
             node.textContent += key         // Collect control word
             autocl = checkAutocomplete(node)
-            let offset = node.textContent.length
+            let offset = '-' + node.textContent.length
             setSelAttributes(node, 'selanchor', offset)
             nodeP.innerHTML = nodeP.innerHTML // Force redraw
             refreshDisplays()
@@ -1402,7 +1430,6 @@ function handleKeyboardInput(node, key, sel) {
         nodeP.replaceChild(nodeNew, node)
         node = nodeNew
     }
-
     let offset = sel.anchorOffset
     let isFunction
 
@@ -1517,7 +1544,7 @@ function getMmlTag(ch) {
         return 'mn'
     if (isAsciiAlphabetic(ch) || isGreek(ch) || ch > '\u3017' || isDoubleStruck(ch))
         return 'mi'
-    if (ch == '\\')
+    if (ch == '"')
         return 'mtext'
     return 'mo'
 }
@@ -2416,6 +2443,16 @@ output.addEventListener('keydown', function (e) {
                 uMath = outputUndoStack.pop()
                 if (!uMath)
                     uMath = '⬚'
+                let i = uMath.indexOf('"')
+                if (i != -1 && uMath[i + 1] == '\\' && uMath[i + 2] != '"') {
+                    let j = uMath.indexOf('"', i + 1)
+                    if (j != -1) {
+                        // Remove quotes to aid parser. Partial control words
+                        // are quoted
+                        uMath = uMath.substring(0, i) + uMath.substring(i + 1, j) +
+                            uMath.substring(j + 1)
+                    }
+                }
                 let t = unicodemathml(uMath, true) // uMath → MathML
                 output.innerHTML = t.mathml
 

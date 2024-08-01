@@ -487,6 +487,7 @@ function testAutoBuildUp() {
         buildUp(unicodeMath[k])
         let result = getUnicodeMath(output.firstElementChild, false).trimEnd()
         result = result.replace(/\u202F/g, ' ')
+        result = result.replace(/\u00A0/g, ' ')
         if (result != unicodeMath[k]) {
             console.log('Expect: ' + unicodeMath[k] + '\n');
             console.log("Result: " + result + '\n\n')
@@ -497,7 +498,7 @@ function testAutoBuildUp() {
     iFail -= iSuccess
     console.log('Test build up of all equations: ' + iSuccess + " passes; " + iFail + " failures\n")
 
-    // Test undo of autobuildup of 𝑎/𝑏+𝑐/𝑑=0 and 1/√(𝑎²-𝑏²)
+    // Test undo of autobuildup of 𝑎/𝑏+𝑐/𝑑=0, 1/√(𝑎²-𝑏²), \alpha , "rate"
     const unicodeMathPartialFractions = [
         '𝑎/𝑏+𝑐/𝑑=Ⓐ(1)0',                  // Insertion point after '0'
         '𝑎/𝑏+𝑐/𝑑Ⓐ(1)=',
@@ -509,7 +510,6 @@ function testAutoBuildUp() {
         '𝑎Ⓐ(1)\\/',
         'Ⓐ(1)𝑎',
     ]
-
     const unicodeMathPartialSqrt = [
         '√(𝑎²−𝑏²Ⓐ(1))',
         '√(𝑎²−𝑏Ⓐ(1)²',
@@ -520,8 +520,27 @@ function testAutoBuildUp() {
         '√Ⓐ(1)(',
         'Ⓐ(1)√',
     ]
+    const unicodeMathPartialControlWord = [
+        'Ⓐ(1)𝛼',
+        'Ⓐ(-6)𝛼',
+        'Ⓐ(-5)"\\alph"',
+        'Ⓐ(-4)"\\alp"',
+        'Ⓐ(-3)"\\al"',
+        'Ⓐ(-2)"\\a"',
+        'Ⓐ(1)\\',
+    ]
+    const unicodeMathPartialText = [
+        'Ⓐ(-4)"rate"',
+        'Ⓐ(-5)"\\"rate"',
+        'Ⓐ(-4)"\\"rat"',
+        'Ⓐ(-3)"\\"ra"',
+        'Ⓐ(-2)"\\"r"',
+        'Ⓐ(1)"\\""',
+    ]
     testUndo('a/b+c/d=0', unicodeMathPartialFractions)
     testUndo('√(𝑎²-𝑏²)', unicodeMathPartialSqrt)
+    testUndo('\\alpha ', unicodeMathPartialControlWord)
+    testUndo('"rate"', unicodeMathPartialText)
 }
 
 input.addEventListener("keydown", function (e) {

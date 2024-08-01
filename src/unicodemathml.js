@@ -1975,7 +1975,8 @@ function parse(unicodemath) {
         var tracer = new SimpleTracer();
         try {
             uast = ummlParser.parse(unicodemath, {tracer: tracer});
-        } finally {
+        //} finally {
+        } catch {
 
             // output trace (independent of whether the parse was successful or
             // not, hence the weird try..finally). the output_trace element is
@@ -4530,7 +4531,8 @@ function dump(value, noAddParens) {
             break;
 
         case 'mtext':
-            ret = '"' + value.textContent + '"';
+            ret = value.textContent.replace(/\"/g, '\\\"')
+            ret = '"' + ret + '"';
             break;
 
         case 'mspace':
