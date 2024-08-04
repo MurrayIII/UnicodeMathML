@@ -543,6 +543,29 @@ function testAutoBuildUp() {
     testUndo('"rate"', unicodeMathPartialText)
 }
 
+    const clipExpect = "<mfrac><mi selanchor=\"0\">𝑎</mi><mi>𝑏</mi></mfrac><mo>+</mo><mfrac selfocus=\"2\"><mi>𝑐</mi><mi>𝑑</mi></mfrac>"
+
+    function testCopyPaste() {
+        output.innerHTML = `<math display='block'><mi selanchor="0" selfocus="1">⬚</mi></math>`
+        input.textContent = 'Ⓐ()𝑎/𝑏+Ⓕ(2) 𝑐/𝑑=0'
+        draw()
+        setTimeout(function () { }, 50)    // Sleep for 50 msec
+        const event = new Event('keydown')
+        event.key = 's'
+        event.ctrlKey = true
+        input.dispatchEvent(event)
+        setTimeout(function () { }, 50)
+        event.key = 'c'
+        output.dispatchEvent(event)
+        setTimeout(function () { }, 50)
+
+        navigator.clipboard.readText()
+            .then((clipText) => {
+                console.log("clipText = " + clipText)
+                console.log(clipText == clipExpect ? 'Copy succeeded' : 'Copy failed')
+            })
+}
+
 input.addEventListener("keydown", function (e) {
     if (e.key == 'Enter') {
         e.preventDefault();
@@ -556,4 +579,5 @@ input.addEventListener("keydown", function (e) {
     root.testMathMLtoSpeech = testMathMLtoSpeech;
     root.testMathMLtoBraille = testMathMLtoBraille;
     root.testAutoBuildUp = testAutoBuildUp
+    root.testCopyPaste = testCopyPaste
 })(this);

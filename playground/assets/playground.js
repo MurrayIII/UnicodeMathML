@@ -783,6 +783,40 @@ input.addEventListener("keydown", function (e) {
                 draw()
                 return
 
+            case 's':                       // Ctrl+s
+                // Set output selection according to selection attributes
+                e.preventDefault()
+                let sel = window.getSelection()
+                let selanchor, selfocus
+                let node, nodeAnchor, nodeFocus
+                let walker = document.createTreeWalker(output.firstElementChild, NodeFilter.SHOW_ELEMENT, null)
+
+                for (node = walker.currentNode; node; node = walker.nextNode()) {
+                    if (!selanchor) {
+                        selanchor = node.getAttribute('selanchor')
+                        if (selanchor)
+                            nodeAnchor = node
+                    }
+                    if (!selfocus) {
+                        selfocus = node.getAttribute('selfocus')
+                        if (selfocus)
+                            nodeFocus = node
+                    }
+                }
+                if (!selanchor)
+                    return
+                if (!selfocus) {
+                    selfocus = selanchor
+                    nodeFocus = nodeAnchor
+                }
+                if (selanchor[0] == '-')    // Should switch to #text node...
+                    selanchor = selanchor.substring(1)
+                if (selfocus[0] == '-')
+                    selfocus = selfocus.substring(1)
+                sel.setBaseAndExtent(nodeAnchor, selanchor, nodeFocus, selfocus)
+                checkMathSelection(sel)
+                return
+
             case 'z':                       // Ctrl+z
                 // Undo
                 e.preventDefault()
@@ -1205,7 +1239,7 @@ function refreshDisplays(uMath, noUndo) {
     let offsetA, offsetF                    // Anchor, focus offsets
     let walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, null)
 
-    while (walker.nextNode() && (!offsetA || !offsetF)) {
+    while (!offsetA || !offsetF) {
         node = walker.currentNode
         if (!offsetA) {
             offsetA = node.getAttribute('selanchor')
@@ -1227,6 +1261,8 @@ function refreshDisplays(uMath, noUndo) {
                 }
             }
         }
+        if (!walker.nextNode())
+            break
     }
     if (!nodeA)
         return                              // No selection attributes
@@ -1243,7 +1279,7 @@ function refreshDisplays(uMath, noUndo) {
     } else if (nodeA === nodeF && offsetA == offsetF) {
         if (nodeA.nodeName == '#text' && offsetA == nodeA.textContent.length ||
             !nodeA.childElementCount && offsetA == '1' ||
-            nodeA.childElementCount == offsetA) {
+            offsetA && nodeA.childElementCount == offsetA) {
                 atEnd = true
         }
         setSelection(sel, nodeA, offsetA)
@@ -1561,6 +1597,8 @@ function checkMathSelection(sel) {
     // Ensure selection in output window is valid for math, e.g., select whole
     // math object if selection boundary points are in different children
     let nodeAnchor = sel.anchorNode
+    if (!nodeAnchor)
+        return nullc
 
     if (nodeAnchor.nodeName == 'DIV') {
         if (nodeAnchor.id != 'output')
@@ -2327,12 +2365,31 @@ output.addEventListener('keydown', function (e) {
 
             checkEmpty(node)
             return
+
+        case 'End':
+        case 'Home':
+            node = output.firstElementChild
+            if (node.nodeName != 'math')
+                return
+            speak(key)
+            atEnd = key == 'End'
+            offset = 0
+            node = node.firstElementChild
+            if (node.nodeName == 'mrow')
+                node = atEnd ? node.lastElementChild : node.firstElementChild
+            if (atEnd)
+                offset = node.childElementCount ? node.childNodes.length : 1
+            removeSelAttributes()
+            setSelAttributes(node, 'selanchor', offset)
+            refreshDisplays('', true)
+            return
     }
     if (key.length > 1 && !inRange('\uD800', key[0], '\uDBFF')) // 'Shift', etc.
         return
 
     e.preventDefault();
     let uMath
+    let walker
 
     if (e.ctrlKey) {
         switch (key) {
@@ -2365,6 +2422,41 @@ output.addEventListener('keydown', function (e) {
                 if (chars.length == 1 && chars != 'ℎ' && node.nodeName == 'mi')
                     node.setAttribute('mathvariant', 'normal')
                 refreshDisplays()
+                return
+
+            case 'c':                       // Ctrl+c
+                e.preventDefault()
+                let mathml = ''             // Collects MathML for selected nodes
+                let range = sel.getRangeAt(0)
+                let nodeS = range.startContainer
+                if (nodeS.nodeName == '#text')
+                    nodeS = nodeS.parentElement
+                let nodeE = range.endContainer
+                if (nodeE.nodeName == '#text')
+                    nodeE = nodeE.parentElement
+                node = range.commonAncestorContainer
+                if (node.nodeName == '#text')
+                    node = node.parentElement
+                walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, null)
+
+                while (node && node !== nodeS)
+                    node = walker.nextNode() // Advance walker to starting node
+
+                while (node) {
+                    mathml += node.outerHTML
+                    if (node === nodeE)     // Reached the ending node
+                        break
+                    if (!walker.nextSibling()) {
+                        while (true) {      // Bypass current node
+                            walker.nextNode()
+                            let position = walker.currentNode.compareDocumentPosition(node)
+                            if (!(position & 8))
+                                break       // currentNode isn't inside node
+                        }
+                    }
+                    node = walker.currentNode
+                }
+                navigator.clipboard.writeText(mathml)
                 return
 
             case 'r':                       // Ctrl+r
@@ -2477,6 +2569,7 @@ output.addEventListener('keydown', function (e) {
     if (!node.childElementCount && name != 'math')
         nodeP = node.parentElement
 
+    atEnd = sel.anchorOffset != 0
     let nodeT = checkAutoBuildUp(node, nodeP, key)
     if (nodeT) {
         node = nodeT                        // FAB succeeded: update node
@@ -2632,7 +2725,7 @@ function getCodePoints() {
 
         // lookup tooltip data as previously defined for the on-screen buttons
         // and prepend it
-        if (symbolTooltips[c] != undefined && symbolTooltips[c] != "") {
+        if (!testing && symbolTooltips[c] != undefined && symbolTooltips[c] != "") {
             tooltip = symbolTooltips[c] + "<hr>" + tooltip;
         }
 
@@ -2664,8 +2757,10 @@ async function draw(undo) {
     }
 
     // clear some stuff
-    codepoints.innerHTML = "";
-    speechDisplay.innerHTML = "";
+    if (!testing) {
+        codepoints.innerHTML = "";
+        speechDisplay.innerHTML = "";
+    }
     if (ummlConfig.tracing)
         output_trace.innerHTML = ""
 
@@ -2699,7 +2794,7 @@ async function draw(undo) {
         // Resize to display input MathML
         input.style.height = window.innerHeight > 1000 ? "500px" : "400px";
         input.style.fontSize = "0.9rem";
-    } else {
+    } else if(!testing) {
         codepoints.innerHTML = getCodePoints()
     }
     // update local storage
@@ -2796,31 +2891,35 @@ async function draw(undo) {
     });
 
     // display measurements
-    var sum = a => a.reduce((a, b) => a + b, 0);
-    measurements_parse.innerHTML = sum(m_parse) + 'ms';
-    measurements_preprocess.innerHTML = sum(m_preprocess) + 'ms';
-    measurements_transform.innerHTML = sum(m_transform) + 'ms';
-    measurements_pretty.innerHTML = sum(m_pretty) + 'ms';
-    if (m_parse.length > 1) {
-        measurements_parse.title = m_parse.map(m => m + 'ms').join(" + ");
-        measurements_preprocess.title = m_preprocess.map(m => m + 'ms').join(" + ");
-        measurements_transform.title = m_transform.map(m => m + 'ms').join(" + ");
-        measurements_pretty.title = m_pretty.map(m => m + 'ms').join(" + ");
-    } else {
-        measurements_parse.title = "";
-        measurements_preprocess.title = "";
-        measurements_transform.title = "";
-        measurements_pretty.title = "";
+    if (!testing) {
+        var sum = a => a.reduce((a, b) => a + b, 0);
+        measurements_parse.innerHTML = sum(m_parse) + 'ms';
+        measurements_preprocess.innerHTML = sum(m_preprocess) + 'ms';
+        measurements_transform.innerHTML = sum(m_transform) + 'ms';
+        measurements_pretty.innerHTML = sum(m_pretty) + 'ms';
+        if (m_parse.length > 1) {
+            measurements_parse.title = m_parse.map(m => m + 'ms').join(" + ");
+            measurements_preprocess.title = m_preprocess.map(m => m + 'ms').join(" + ");
+            measurements_transform.title = m_transform.map(m => m + 'ms').join(" + ");
+            measurements_pretty.title = m_pretty.map(m => m + 'ms').join(" + ");
+        } else {
+            measurements_parse.title = "";
+            measurements_preprocess.title = "";
+            measurements_transform.title = "";
+            measurements_pretty.title = "";
+        }
     }
 
     // write outputs to dom (doing this inside the loop becomes excruciatingly
     // slow when more than a few dozen inputs are present)
     // if mathjax is loaded, tell it to redraw math
     output.innerHTML = output_HTML;
-    output_pegjs_ast.innerHTML = output_pegjs_ast_HTML;
-    output_preprocess_ast.innerHTML = output_preprocess_ast_HTML;
-    output_mathml_ast.innerHTML = output_mathml_ast_HTML;
-    output_source.innerHTML = output_source_HTML;
+    if (!testing) {
+        output_pegjs_ast.innerHTML = output_pegjs_ast_HTML;
+        output_preprocess_ast.innerHTML = output_preprocess_ast_HTML;
+        output_mathml_ast.innerHTML = output_mathml_ast_HTML;
+        output_source.innerHTML = output_source_HTML;
+    }
 
     if (ummlConfig.forceMathJax) {
         try {

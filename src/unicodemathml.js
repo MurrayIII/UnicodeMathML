@@ -1975,8 +1975,7 @@ function parse(unicodemath) {
         var tracer = new SimpleTracer();
         try {
             uast = ummlParser.parse(unicodemath, {tracer: tracer});
-        //} finally {
-        } catch {
+        } finally {
 
             // output trace (independent of whether the parse was successful or
             // not, hence the weird try..finally). the output_trace element is
@@ -1984,7 +1983,7 @@ function parse(unicodemath) {
             if (output_trace) {
                 output_trace.innerHTML = tracer.traceLogHTML().join('\n');
             }
-            debugLog(tracer.traceLog);
+            //debugLog(tracer.traceLog);
             tracer.reset();
         }
     }

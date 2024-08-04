@@ -544,7 +544,7 @@ fraction
                            // fractions, via unicodefractions.com
         return {unicodefraction: f};
     }
-    / r:(operand __? opFraction)+ t:operand {
+    / r:(operand _? opFraction)+ t:operand {
         return nestRight2("fraction", r.map(a => [a[0], a[2]]).concat([t]));
     }
 
