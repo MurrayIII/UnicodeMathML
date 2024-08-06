@@ -4546,11 +4546,9 @@ function dump(value, noAddParens) {
             }
             break;
     }
-    if (ret) {
-        if (!ksi)                           // Keep selinfo?
-            return ret
 
-        let selcode = checkSelAttr(value, 'Ⓐ') + checkSelAttr(value, 'Ⓕ')
+    if (ret) {
+        let selcode = ksi ? checkSelAttr(value, 'Ⓐ') + checkSelAttr(value, 'Ⓕ') : ''
         if (!selcode)
             return ret
 

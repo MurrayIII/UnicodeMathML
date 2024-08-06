@@ -2368,17 +2368,24 @@ output.addEventListener('keydown', function (e) {
 
         case 'End':
         case 'Home':
+            e.preventDefault()
             node = output.firstElementChild
-            if (node.nodeName != 'math')
+            if (node.nodeName != 'math' || node.firstElementChild.textContent == '⬚')
                 return
-            speak(key)
-            atEnd = key == 'End'
-            offset = 0
             node = node.firstElementChild
-            if (node.nodeName == 'mrow')
-                node = atEnd ? node.lastElementChild : node.firstElementChild
-            if (atEnd)
-                offset = node.childElementCount ? node.childNodes.length : 1
+            if (key == 'End') {
+                atEnd = true
+                while (node.nodeName == 'mrow') // UnicodeMath doesn't use <mrow>'s
+                    node = node.lastElementChild
+                offset = node.childElementCount ? node.childElementCount : 1
+            } else {
+                key = 'Start'
+                atEnd = false
+                offset = 0
+                while (node.nodeName == 'mrow')
+                    node = node.firstElementChild
+            }
+            speak(key + ' of math zone')
             removeSelAttributes()
             setSelAttributes(node, 'selanchor', offset)
             refreshDisplays('', true)

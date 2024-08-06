@@ -543,27 +543,47 @@ function testAutoBuildUp() {
     testUndo('"rate"', unicodeMathPartialText)
 }
 
-    const clipExpect = "<mfrac><mi selanchor=\"0\">𝑎</mi><mi>𝑏</mi></mfrac><mo>+</mo><mfrac selfocus=\"2\"><mi>𝑐</mi><mi>𝑑</mi></mfrac>"
+const clipExpect = "<mfrac><mi selanchor=\"0\">𝑎</mi><mi>𝑏</mi></mfrac><mo>+</mo><mfrac selfocus=\"2\"><mi>𝑐</mi><mi>𝑑</mi></mfrac>"
+const homeExpect = "Ⓐ() 𝑎/𝑏+𝑐/𝑑=0"
+const endExpect = "𝑎/𝑏+𝑐/𝑑=Ⓐ(1)0"
 
-    function testCopyPaste() {
-        output.innerHTML = `<math display='block'><mi selanchor="0" selfocus="1">⬚</mi></math>`
-        input.textContent = 'Ⓐ()𝑎/𝑏+Ⓕ(2) 𝑐/𝑑=0'
-        draw()
-        setTimeout(function () { }, 50)    // Sleep for 50 msec
-        const event = new Event('keydown')
-        event.key = 's'
-        event.ctrlKey = true
-        input.dispatchEvent(event)
-        setTimeout(function () { }, 50)
-        event.key = 'c'
-        output.dispatchEvent(event)
-        setTimeout(function () { }, 50)
+function testHotKey(key, expect) {
+    const event = new Event('keydown')
+    event.key = key
+    output.dispatchEvent(event)
+    setTimeout(function () { }, 50)
+    let uMath = getUnicodeMath(output.firstElementChild, true)
+    if (uMath == expect) {
+        console.log(key + ' succeeded')
+    } else {
+        console.log(key + ' failed. result: ' + uMath + " expect: " + expect)
+    }
+}
 
-        navigator.clipboard.readText()
-            .then((clipText) => {
-                console.log("clipText = " + clipText)
-                console.log(clipText == clipExpect ? 'Copy succeeded' : 'Copy failed')
-            })
+function testHotKeys() {
+    // Test Ctrl+c (copy)
+    output.innerHTML = `<math display='block'><mi selanchor="0" selfocus="1">⬚</mi></math>`
+    input.textContent = 'Ⓐ()𝑎/𝑏+Ⓕ(2) 𝑐/𝑑=0'
+    draw()
+    setTimeout(function () { }, 50)    // Sleep for 50 msec
+    const event = new Event('keydown')
+    event.key = 's'
+    event.ctrlKey = true
+    input.dispatchEvent(event)
+    setTimeout(function () { }, 50)
+    event.key = 'c'
+    output.dispatchEvent(event)
+    setTimeout(function () { }, 50)
+
+    navigator.clipboard.readText()
+    .then((clipText) => {
+        console.log("clipText = " + clipText)
+        console.log(clipText == clipExpect ? 'Copy succeeded' : 'Copy failed')
+    })
+
+    // Test Home/End hot keys
+    testHotKey('Home', homeExpect)
+    testHotKey('End', endExpect)
 }
 
 input.addEventListener("keydown", function (e) {
@@ -579,5 +599,5 @@ input.addEventListener("keydown", function (e) {
     root.testMathMLtoSpeech = testMathMLtoSpeech;
     root.testMathMLtoBraille = testMathMLtoBraille;
     root.testAutoBuildUp = testAutoBuildUp
-    root.testCopyPaste = testCopyPaste
+    root.testHotKeys = testHotKeys
 })(this);
