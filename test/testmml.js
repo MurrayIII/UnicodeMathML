@@ -1,5 +1,4 @@
-﻿(function (root) {
-    'use strict';
+﻿'use strict';
 
 const mathML = [
     "<math display=\"block\"><mrow><mfrac><mn>1</mn><mrow><mn>2</mn><mi>𝜋</mi></mrow></mfrac><mrow intent=\":integral(0,$h,$n)\"><msubsup><mo>∫</mo><mn>0</mn><mrow arg=\"h\"><mn>2</mn><mpadded width=\"0\"><mi>𝜋</mi></mpadded></mrow></msubsup><mfrac arg=\"n\"><mrow><mi intent=\"ⅆ\">𝑑</mi><mi>𝜃</mi></mrow><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi><mrow intent=\":function\"><mi>sin</mi><mo>⁡</mo><mi>𝜃</mi></mrow></mrow></mfrac></mrow><mo>=</mo><mfrac><mn>1</mn><msqrt><mrow><msup><mi>𝑎</mi><mn>2</mn></msup><mo>−</mo><msup><mi>𝑏</mi><mn>2</mn></msup></mrow></msqrt></mfrac></mrow></math>",
@@ -223,7 +222,7 @@ const mathSpeech = [
     "eigh insertion point soup",
 ]
 
-const mathBraille = [
+const mathBrailles = [
     "⠹⠂⠌⠆⠨⠏⠼⠮⠰⠴⠘⠆⠨⠏⠐⠹⠙⠨⠹⠌⠁⠬⠃⠀⠎⠊⠝⠀⠨⠹⠼⠀⠨⠅⠀⠹⠂⠌⠜⠁⠘⠆⠐⠤⠃⠘⠆⠐⠻⠼",
     "⠸⠨⠫⠈⠡⠸⠰⠠⠑⠀⠨⠅⠀⠤⠹⠈⠙⠸⠰⠠⠃⠌⠈⠙⠞⠼",
     "⠊⠈⠓⠹⠈⠙⠨⠽⠀⠷⠭⠠⠀⠞⠾⠌⠈⠙⠞⠼⠀⠨⠅⠀⠈⠷⠤⠹⠈⠓⠘⠆⠐⠌⠆⠍⠼⠹⠈⠙⠘⠆⠐⠌⠈⠙⠭⠘⠆⠐⠼⠬⠠⠧⠷⠭⠠⠀⠞⠾⠈⠾⠨⠽⠷⠭⠠⠀⠞⠾",
@@ -333,9 +332,9 @@ function testMathMLtoBraille() {
     var iSuccess = 0;
     for (var i = 0; i < mathML.length; i++) {
         var result = MathMLtoBraille(mathML[i]);
-        if (result != mathBraille[i]) {
+        if (result != mathBrailles[i]) {
             console.log(unicodeMath[i] + '\n');
-            console.log("Expect: " + mathBraille[i] + '\n');
+            console.log("Expect: " + mathBrailles[i] + '\n');
             console.log("Result: " + result + '\n\n');
         } else {
             iSuccess++;
@@ -547,7 +546,7 @@ const clipExpect = "<mfrac><mi selanchor=\"0\">𝑎</mi><mi>𝑏</mi></mfrac><mo
 const homeExpect = "Ⓐ() 𝑎/𝑏+𝑐/𝑑=0"
 const endExpect = "𝑎/𝑏+𝑐/𝑑=Ⓐ(1)0"
 
-function testHotKey(key, expect) {
+function testOutputHotKey(key, expect) {
     const event = new Event('keydown')
     event.key = key
     output.dispatchEvent(event)
@@ -557,6 +556,24 @@ function testHotKey(key, expect) {
         console.log(key + ' succeeded')
     } else {
         console.log(key + ' failed. result: ' + uMath + " expect: " + expect)
+    }
+}
+
+function testInputHotKey(key, expect, expectStart, expectEnd) {
+    const event = new Event('keydown')
+    event.key = key
+    if (isAsciiAlphabetic(key))
+        event.ctrlKey = true
+    input.dispatchEvent(event)
+    setTimeout(function () { }, 50)
+    if (input.value == expect) {
+        console.log(key + ' succeeded')
+    } else {
+        console.log(key + ' failed. result: ' + input.value + " expect: " + expect)
+    }
+    if (input.selectionStart != expectStart || input.selectionEnd != expectEnd) {
+        console.log('Selection failed. result: ' + input.selectionStart + ', ' +
+            input.selectionEnd + " expect: " + expectStart + ', ' + expectEnd)
     }
 }
 
@@ -576,28 +593,29 @@ function testHotKeys() {
     setTimeout(function () { }, 50)
 
     navigator.clipboard.readText()
-    .then((clipText) => {
-        console.log("clipText = " + clipText)
-        console.log(clipText == clipExpect ? 'Copy succeeded' : 'Copy failed')
-    })
+        .then((clipText) => {
+            if (clipText == clipExpect)
+                console.log('Copy succeeded')
+            else
+                console.log('Copy failed: clipText = ' + clipText)
+        })
 
-    // Test Home/End hot keys
-    testHotKey('Home', homeExpect)
-    testHotKey('End', endExpect)
+    // Test output Home/End hot keys
+    testOutputHotKey('Home', homeExpect)
+    testOutputHotKey('End', endExpect)
+
+    // Test input Ctrl+z and Ctrl+y hot keys
+    inputUndoStack = [{uMath: ''}]
+    input.value = '𝑎/𝑏+𝑐/𝑑=0'
+    input.selectionStart = 3                // Select 𝑏
+    input.selectionEnd = 5
+    draw()
+    // Simulate Delete key
+    input.value = input.value.substring(0, 3) + input.value.substring(5)
+    input.selectionStart = 3
+    input.selectionEnd = 3
+    draw()
+    testInputHotKey('z', '𝑎/𝑏+𝑐/𝑑=0', 3, 5)
+    testInputHotKey('y', '𝑎/+𝑐/𝑑=0', 3, 3)
 }
 
-input.addEventListener("keydown", function (e) {
-    if (e.key == 'Enter') {
-        e.preventDefault();
-        var result = MathMLtoUnicodeMath(input.value);
-        console.log(input.value + '\n' + result + '\n\n');
-        output.value = result;
-    }
-});
-
-    root.testMathMLtoUnicodeMath = testMathMLtoUnicodeMath;
-    root.testMathMLtoSpeech = testMathMLtoSpeech;
-    root.testMathMLtoBraille = testMathMLtoBraille;
-    root.testAutoBuildUp = testAutoBuildUp
-    root.testHotKeys = testHotKeys
-})(this);

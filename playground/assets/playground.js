@@ -817,6 +817,21 @@ input.addEventListener("keydown", function (e) {
                 checkMathSelection(sel)
                 return
 
+            case 'y':                       // Ctrl+y
+                // Redo
+                e.preventDefault()
+                if (!inputRedoStack.length)
+                    return
+
+                let redoTop = inputRedoStack.pop()
+                input.value = redoTop.uMath
+                if (redoTop.selStart != undefined) {
+                    input.selectionStart = redoTop.selStart
+                    input.selectionEnd = redoTop.selEnd
+                }
+                draw(true)
+                return
+
             case 'z':                       // Ctrl+z
                 // Undo
                 e.preventDefault()
@@ -828,12 +843,16 @@ input.addEventListener("keydown", function (e) {
                         return
                     undoTop = inputUndoStack.pop()
                 }
+                let redoNext = {
+                    uMath: input.value, selStart: input.selectionStart,
+                    selEnd: input.selectionEnd
+                }
+                inputRedoStack.push(redoNext)
                 input.value = undoTop.uMath
                 if (undoTop.selStart != undefined) {
                     input.selectionStart = undoTop.selStart
                     input.selectionEnd = undoTop.selEnd
                 }
-                input.focus()
                 draw(true)
                 return
         }
@@ -1727,12 +1746,17 @@ function deleteSelection(sel) {
             nodeP = node.parentElement
             nodeNext = node.nextElementSibling
             if (nodeP.nodeName == 'mrow') {
-                for (; nodeP.childElementCount > 1 && node && !node.textContent; node = nodeNext) {
+                for (; nodeP.childElementCount > 1 && node && !node.textContent;
+                    node = nodeNext) {
                     nodeNext = node.nextElementSibling
                     node.remove()
                 }
                 if (!node || node.textContent) {
-                    // No element left in mrow or element wasn't deleted
+                    // No element left in mrow or element wasn't deleted. If
+                    // only one child is left, replace an attribute-less mrow
+                    // by that child
+                    if (nodeP.childElementCount == 1 && !nodeP.attributes.length)
+                        nodeP.parentElement.replaceChild(node, nodeP)
                     break;
                 }
                 if (isMathMLObject(nodeP))
@@ -2791,6 +2815,7 @@ async function draw(undo) {
         closeAutocompleteList();
         prevInputValue = "";
         inputUndoStack = [{uMath: ''}]
+        inputRedoStack = []
         outputUndoStack = ['']
         return;
     }
@@ -2810,8 +2835,8 @@ async function draw(undo) {
     if (undo == undefined) {
         let undoTop = stackTop(inputUndoStack)
         if (input.value != undoTop.uMath) {
-            let undoNext = {uMath: input.value, selStart: selectionStart,
-                            selEnd: selectionEnd}
+            let undoNext = {uMath: input.value, selStart: input.selectionStart,
+                            selEnd: input.selectionEnd}
             inputUndoStack.push(undoNext)
         }
     }
