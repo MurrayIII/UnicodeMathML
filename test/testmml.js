@@ -344,10 +344,13 @@ function testMathMLtoBraille() {
     console.log("Test MathML to braille: " + iSuccess + " passes; " + iFail + " failures\n");
 }
 
-function ctrlZ() {
-    // Execute undo
+function ctrlZ(key) {
+    // Execute undo (if 'z')
+    if (!key)
+        key = 'z'
+
     const event = new Event('keydown')
-    event.key = 'z'
+    event.key = key
     event.ctrlKey = true
     output.dispatchEvent(event)
     setTimeout(function () { }, 50)    // Sleep for 200 msec
@@ -549,13 +552,17 @@ const endExpect = "𝑎/𝑏+𝑐/𝑑=Ⓐ(1)0"
 function testOutputHotKey(key, expect) {
     const event = new Event('keydown')
     event.key = key
+    if (isAsciiAlphabetic(key)) {
+        event.ctrlKey = true
+        key = 'Ctrl+' + key
+    }
     output.dispatchEvent(event)
     setTimeout(function () { }, 50)
     let uMath = getUnicodeMath(output.firstElementChild, true)
     if (uMath == expect) {
-        console.log(key + ' succeeded')
+        console.log('Output ' + key + ' succeeded')
     } else {
-        console.log(key + ' failed. result: ' + uMath + " expect: " + expect)
+        console.log('Output ' + key + ' failed. result: ' + uMath + " expect: " + expect)
     }
 }
 
@@ -601,14 +608,19 @@ function testHotKeys() {
     navigator.clipboard.readText()
         .then((clipText) => {
             if (clipText == clipExpect)
-                console.log('Copy succeeded')
+                console.log('Output Ctrl+c succeeded')
             else
-                console.log('Copy failed: clipText = ' + clipText)
+                console.log('Output Ctrl+c failed: clipText = ' + clipText)
         })
 
     // Test output Home/End hot keys
     testOutputHotKey('Home', homeExpect)
     testOutputHotKey('End', endExpect)
+
+    // Test output Ctrl+z and Ctrl+y hot keys
+    buildUp('𝑎²+𝑏²=𝑐²')
+    testOutputHotKey('z', '𝑎²+𝑏²=𝑐Ⓐ(1)²')
+    testOutputHotKey('y', '𝑎²+𝑏²=𝑐²Ⓐ(1) ')
 
     // Test input Ctrl+z and Ctrl+y hot keys
     inputUndoStack = [{uMath: ''}]

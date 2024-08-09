@@ -19,6 +19,7 @@ const SELECTNODE = -1024
 var inputUndoStack = [{uMath: ''}]
 var inputRedoStack = []
 var outputUndoStack = ['']
+var outputRedoStack = ['']
 var selectionStart
 var selectionEnd
 var anchorNode
@@ -233,6 +234,32 @@ function speak(s) {
     speechSynthesis.speak(utterance)
 }
 
+function setUnicodeMath(uMath) {
+    if (!uMath)
+        uMath = '⬚'
+    let i = uMath.indexOf('"')
+    if (i != -1 && uMath[i + 1] == '\\' && uMath[i + 2] != '"') {
+        let j = uMath.indexOf('"', i + 1)
+        if (j != -1) {
+            // Remove quotes around partial control words to aid parser
+            uMath = uMath.substring(0, i) + uMath.substring(i + 1, j) +
+                uMath.substring(j + 1)
+        }
+    }
+    let t = unicodemathml(uMath, true) // uMath → MathML
+    output.innerHTML = t.mathml
+
+    if (!testing) {
+        output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
+        if (t.details["intermediates"]) {
+            let pegjs_ast = t.details["intermediates"]["parse"];
+            let preprocess_ast = t.details["intermediates"]["preprocess"];
+            output_pegjs_ast.innerHTML = highlightJson(pegjs_ast) + "\n";
+            output_preprocess_ast.innerHTML = highlightJson(preprocess_ast) + "\n";
+        }
+    }
+    refreshDisplays('', true)
+}
 
 // escape mathml tags and entities, via https://stackoverflow.com/a/13538245
 function escapeMathMLSpecialChars(str) {
@@ -1227,9 +1254,10 @@ const names = {
 function refreshDisplays(uMath, noUndo) {
     // Update MathML, UnicodeMath, and code-point displays; push current content
     // onto output undo stack; restore selection from selanchor and selfocus
-    if(!testing)
-        output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
     let uMathCurrent = getUnicodeMath(output.firstElementChild, true)
+    if (!testing)
+        output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)))
+    input.innerHTML = uMathCurrent
 
     if (!noUndo) {
         if (!uMath)
@@ -2285,6 +2313,7 @@ output.addEventListener('keydown', function (e) {
     let node = sel.anchorNode
     let name = node.nodeName
     let offset = sel.anchorOffset
+    let uMath
 
     if (sel.anchorNode.nodeName == 'DIV') {
         // No MathML in output display; insert a math zone
@@ -2327,13 +2356,14 @@ output.addEventListener('keydown', function (e) {
                 setSelection(sel, node, SELECTNODE)
                 return
             }
+            uMath = getUnicodeMath(output.firstElementChild, true)
             if (node.nodeName == '#text') {
                 if (offset > 0) {
                     offset--
                     let autocl = deleteChar(node, offset)
                     if (autocl != undefined)
                         this.parentNode.appendChild(autocl)
-                    checkEmpty(node, -offset)
+                    checkEmpty(node, -offset, uMath)
                     return
                 }
                 node = node.parentElement
@@ -2357,7 +2387,7 @@ output.addEventListener('keydown', function (e) {
                 node.textContent = node.textContent.substring(0,
                     node.textContent.length - cchCh)
             }
-            checkEmpty(node)
+            checkEmpty(node, 0, uMath)
             return
 
         case 'Delete':
@@ -2372,12 +2402,13 @@ output.addEventListener('keydown', function (e) {
                 setSelection(sel, node, SELECTNODE)
                 return
             }
+            uMath = getUnicodeMath(output.firstElementChild, true)
             if (node.nodeName == '#text') {
                 if (offset < node.textContent.length) {
                     let autocl = deleteChar(node, offset)
                     if (autocl != undefined)
                         this.parentNode.appendChild(autocl)
-                    checkEmpty(node, -offset)
+                    checkEmpty(node, -offset, uMath)
                     return
                 }
                 node = node.parentElement
@@ -2392,7 +2423,7 @@ output.addEventListener('keydown', function (e) {
             cchCh = getCch(node.textContent, 0)
             node.textContent = node.textContent.substring(cchCh)
 
-            checkEmpty(node)
+            checkEmpty(node, 0, uMath)
             return
 
         case 'End':
@@ -2425,7 +2456,6 @@ output.addEventListener('keydown', function (e) {
         return
 
     e.preventDefault();
-    let uMath
     let walker
 
     if (e.ctrlKey) {
@@ -2462,7 +2492,6 @@ output.addEventListener('keydown', function (e) {
                 return
 
             case 'c':                       // Ctrl+c
-                e.preventDefault()
                 let mathml = ''             // Collects MathML for selected nodes
                 let range = sel.getRangeAt(0)
                 let nodeS = range.startContainer
@@ -2499,104 +2528,90 @@ output.addEventListener('keydown', function (e) {
             case 'r':                       // Ctrl+r
                 // Refresh MathML display (MathML → UnicodeMath → MathML)
                 uMath = getUnicodeMath(output.firstElementChild, true)
-                t = unicodemathml(uMath, true) // uMath → MathML
+                let t = unicodemathml(uMath, true) // uMath → MathML
                 output.innerHTML = t.mathml
                 refreshDisplays('', true)
                 return
 
-            case 'x':                       // Alt+x: hex → Unicode
-                let cchSel = 0              // Default degenerate selection
-                let str = ''                // Collects hex string
-
-                if (!sel.isCollapsed) {     // Nondegenerate selection
-                    let rg = sel.getRangeAt(0)
-                    node = rg.endContainer
-                    str = rg + ''
-                    cchSel = str.length
-                }
-                if (node.nodeName == '#text')
-                    node = node.parentElement
-                let nodeP = node.parentElement
-                if (nodeP.nodeName != 'mrow')
+            case 'y':                       // Ctrl+y
+                // Redo
+                if (!outputRedoStack.length)
                     return
-                let cNode = nodeP.childElementCount
-                let iEnd = -1               // Index of node in nodeP
-                let iStart = 0              // Index of 1st node that might be part of hex
-
-                // Collect span of alphanumerics ending with node
-                for (i = cNode - 1; i >= 0; i--) {
-                    let nodeC = nodeP.children[i]
-                    if (nodeC.nodeName != 'mi' && nodeC.nodeName != 'mn') {
-                        if (iEnd > 0) {     // Index of last node is defined
-                            iStart = i + 1  // Set index of first node
-                            break
-                        }
-                    } else {
-                        if (nodeC == node)
-                            iEnd = i        // Found node's index
-                        if (iEnd > 0 && !cchSel)
-                            str = nodeC.textContent + str
-                    }
-                }
-                let [ch, cchDel] = hexToUnicode(str, str.length, cchSel)
-
-                // Remove cchDel codes along with emptied nodes
-                for (i = iEnd; i >= iStart && cchDel > 0; i--) {
-                    let nodeC = nodeP.children[i]
-                    let cch = nodeC.textContent.length
-
-                    if (cch > cchDel) { // ∃ more codes than need deletion
-                        nodeC.innerHTML = nodeC.innerHTML.substring(0, cch - cchDel)
-                        break;
-                    }
-                    cchDel -= cch
-                    if (nodeP.childElementCount == 1) {
-                        // Leave empty child as place holder for ch
-                        nodeC.innerHTML = ''
-                    } else {
-                        nodeC.remove()
-                    }
-                }
-                node = nodeP.children[i >= 0 ? i : 0]
-                name = node.nodeName
-                atEnd = true
-                key = ch
-                break
+                outputUndoStack.push(input.innerHTML)
+                uMath = outputRedoStack.pop()
+                setUnicodeMath(uMath)
+                return
 
             case 'z':                       // Ctrl+z
                 if (!outputUndoStack.length)
                     return
+                outputRedoStack.push(input.innerHTML)
                 let undoTop = stackTop(outputUndoStack)
                 if (input.innerHTML == undoTop)
                     outputUndoStack.pop()
                 uMath = outputUndoStack.pop()
-                if (!uMath)
-                    uMath = '⬚'
-                let i = uMath.indexOf('"')
-                if (i != -1 && uMath[i + 1] == '\\' && uMath[i + 2] != '"') {
-                    let j = uMath.indexOf('"', i + 1)
-                    if (j != -1) {
-                        // Remove quotes around partial control words to aid parser
-                        uMath = uMath.substring(0, i) + uMath.substring(i + 1, j) +
-                            uMath.substring(j + 1)
-                    }
-                }
-                let t = unicodemathml(uMath, true) // uMath → MathML
-                output.innerHTML = t.mathml
-
-                if (!testing) {
-                    output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
-                    if (t.details["intermediates"]) {
-                        let pegjs_ast = t.details["intermediates"]["parse"];
-                        let preprocess_ast = t.details["intermediates"]["preprocess"];
-                        output_pegjs_ast.innerHTML = highlightJson(pegjs_ast) + "\n";
-                        output_preprocess_ast.innerHTML = highlightJson(preprocess_ast) + "\n";
-                    }
-                }
-                refreshDisplays('', true)
+                setUnicodeMath(uMath)
                 return
         }                                   // switch(e.key) {}
-    }                                       // if (e.ctrlKey) {}
+    } else if (e.altKey && e.key == 'x') {  // Alt+x: hex → Unicode
+        let cchSel = 0                      // Default degenerate selection
+        let str = ''                        // Collects hex string
+
+        if (!sel.isCollapsed) {             // Nondegenerate selection
+            let rg = sel.getRangeAt(0)
+            node = rg.endContainer
+            str = rg + ''
+            cchSel = str.length
+        }
+        if (node.nodeName == '#text')
+            node = node.parentElement
+        let nodeP = node.parentElement
+        if (nodeP.nodeName != 'mrow')
+            return
+        let cNode = nodeP.childElementCount
+        let iEnd = -1                       // Index of node in nodeP
+        let iStart = 0                      // Index of 1st node that might be part of hex
+
+        // Collect span of alphanumerics ending with node
+        for (i = cNode - 1; i >= 0; i--) {
+            let nodeC = nodeP.children[i]
+            if (nodeC.nodeName != 'mi' && nodeC.nodeName != 'mn') {
+                if (iEnd > 0) {             // Index of last node is defined
+                    iStart = i + 1          // Set index of first node
+                    break
+                }
+            } else {
+                if (nodeC == node)
+                    iEnd = i                // Found node's index
+                if (iEnd > 0 && !cchSel)
+                    str = nodeC.textContent + str
+            }
+        }
+        let [ch, cchDel] = hexToUnicode(str, str.length, cchSel)
+
+        // Remove cchDel codes along with emptied nodes
+        for (i = iEnd; i >= iStart && cchDel > 0; i--) {
+            let nodeC = nodeP.children[i]
+            let cch = nodeC.textContent.length
+
+            if (cch > cchDel) {             // ∃ more codes than need deletion
+                nodeC.innerHTML = nodeC.innerHTML.substring(0, cch - cchDel)
+                break;
+            }
+            cchDel -= cch
+            if (nodeP.childElementCount == 1) {
+                // Leave empty child as place holder for ch
+                nodeC.innerHTML = ''
+            } else {
+                nodeC.remove()
+            }
+        }
+        node = nodeP.children[i >= 0 ? i : 0]
+        name = node.nodeName
+        atEnd = true
+        key = ch
+    }
+
     // Handle character input
     if (name == '#text')
         node = node.parentElement
@@ -2822,6 +2837,7 @@ async function draw(undo) {
         inputUndoStack = [{uMath: ''}]
         inputRedoStack = []
         outputUndoStack = ['']
+        outputRedoStack = ['']
         return;
     }
 
