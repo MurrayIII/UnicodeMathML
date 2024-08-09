@@ -274,23 +274,6 @@ function checkSpace(i, node, ret) {
     return ''
 }
 
-function removeSelInfo(uMath) {
-    // For now at least, don't attempt to remove selection info (Ⓐn and Ⓕn
-    // act as operators. When they are not present a space may be needed...)
-    //let i = uMath.indexOf('Ⓐ');
-
-    //if (i != -1) {
-    //    let delta = 2
-    //    if (uMath[i + 2] == '⌠')
-    //        delta = 3
-    //    uMath = uMath.substring(0, i) + uMath.substring(i + delta)
-    //    i = uMath.indexOf('Ⓕ');
-    //    if (i != -1)                        // Nondegenerate selection
-    //        uMath = uMath.substring(0, i) + uMath.substring(i + 2)
-    //}
-    return uMath
-}
-
 function getMathMLDOM(mathML) {
     // Get DOM for converting MathML to UnicodeMath
     if (mathML.startsWith('<mml:math') || mathML.startsWith('<m:math'))

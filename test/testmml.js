@@ -559,13 +559,19 @@ function testOutputHotKey(key, expect) {
     }
 }
 
-function testInputHotKey(key, expect, expectStart, expectEnd) {
+function testInputHotKey(key, altkey, ctrlKey, expect, expectStart, expectEnd) {
     const event = new Event('keydown')
     event.key = key
-    if (isAsciiAlphabetic(key))
+    if (altkey)
+        event.altKey = true
+    if (ctrlKey)
         event.ctrlKey = true
     input.dispatchEvent(event)
     setTimeout(function () { }, 50)
+    if (event.altKey)
+        key = 'Alt+' + key
+    if (event.ctrlKey)
+        key = 'Ctrl+' + key
     if (input.value == expect) {
         console.log(key + ' succeeded')
     } else {
@@ -578,7 +584,7 @@ function testInputHotKey(key, expect, expectStart, expectEnd) {
 }
 
 function testHotKeys() {
-    // Test Ctrl+c (copy)
+    // Test output Ctrl+c (copy)
     output.innerHTML = `<math display='block'><mi selanchor="0" selfocus="1">⬚</mi></math>`
     input.textContent = 'Ⓐ()𝑎/𝑏+Ⓕ(2) 𝑐/𝑑=0'
     draw()
@@ -615,7 +621,18 @@ function testHotKeys() {
     input.selectionStart = 3
     input.selectionEnd = 3
     draw()
-    testInputHotKey('z', '𝑎/𝑏+𝑐/𝑑=0', 3, 5)
-    testInputHotKey('y', '𝑎/+𝑐/𝑑=0', 3, 3)
+    //                    Alt   Ctrl    expect     sel
+    testInputHotKey('z', false, true, '𝑎/𝑏+𝑐/𝑑=0', 3, 5)
+    testInputHotKey('y', false, true, '𝑎/+𝑐/𝑑=0', 3, 3)
+    testInputHotKey('z', false, true, '𝑎/𝑏+𝑐/𝑑=0', 3, 5)
+
+    // Test input Ctrl+b hot key
+    input.selectionStart = 3                // Select 𝑏
+    input.selectionEnd = 5
+    testInputHotKey('b', false, true, '𝑎/𝒃+𝑐/𝑑=0', 3, 5)
+
+    // Test input Alt+x hot key
+    input.value = '𝑎+222b'
+    testInputHotKey('x', true, false, '𝑎+∫', 4, 4)
 }
 

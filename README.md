@@ -343,7 +343,7 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Math speech is added with support for some intent attributes, e.g., derivatives and intervals.
 * Nemeth math braille support is added.
 * Editing and formula autobuildup is supported in the output window provided native MathML rendering is active (not MathJax). The typography is not up to MathJax and the UI needs more polishing.
-* The input and output windows have multilevel undo driven by Ctrl+z.
+* The input and output windows have multilevel undo executed by Ctrl+z. Input window has redo executed by Ctrl+y.
 * Edit-selection enclosure operators (Ⓐ for anchor, Ⓕ for focus) have been added to UnicodeMath that map to the MathML selection attributes selanchor and selfocus. This enables the current output-window selection to be represented and undone. Selection attributes are needed for accessible editing and for the output undo facility which represents previous editing states using a stack of UnicodeMath strings.
 * Formula autobuild-up tests have been added in testmml.js
 * Ctrl+c copies MathML for selected output-window nodes to the clipboard
@@ -356,8 +356,8 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Default intents are defined for \abs, \choose, \cases, fences, n-ary objects, math-function objects, transpose objects, and double-struck italic symbols like differential d (ⅆ). This improves MathML readablity and supports round-tripping these concepts via MathML.
 
 ## To do:
-* Improve the LaTeX output mode.
+* Improve the LaTeX output mode (derive from MathML)
 * Improve caret placement in output-display editing
 * Left-arrow navigation; Ctrl+arrow navigation. Polish right-arrow navigation
 * Shift+arrow selection
-* redo driven by Ctrl+y
+* Output-window redo executed by Ctrl+y

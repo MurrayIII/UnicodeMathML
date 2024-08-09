@@ -683,7 +683,7 @@ input.addEventListener("keydown", function (e) {
         return
 
     // Target is input. For undo, save the selection before it changes
-    if (inputUndoStack.length) {
+    if (inputUndoStack.length && (!e.ctrlKey || e.key != 'z')) {
         let undoTop = stackTop(inputUndoStack)
         undoTop.selEnd = input.selectionEnd
         undoTop.selStart = input.selectionStart
@@ -779,8 +779,6 @@ input.addEventListener("keydown", function (e) {
                     chars = '"' + chars + '"'
                 insertAtCursorPos(chars)
                 input.selectionStart -= chars.length
-                input.focus()
-                draw()
                 return
 
             case 's':                       // Ctrl+s
@@ -822,6 +820,11 @@ input.addEventListener("keydown", function (e) {
                 e.preventDefault()
                 if (!inputRedoStack.length)
                     return
+
+                inputUndoStack.push({
+                    uMath: input.value, selStart: input.selectionStart,
+                    selEnd: input.selectionEnd
+                })
 
                 let redoTop = inputRedoStack.pop()
                 input.value = redoTop.uMath
@@ -1239,7 +1242,7 @@ function refreshDisplays(uMath, noUndo) {
         }
     }
 
-    input.innerHTML = removeSelInfo(uMathCurrent)
+    input.innerHTML = uMathCurrent
     if (!testing)
         codepoints.innerHTML = getCodePoints()
 
@@ -1605,10 +1608,11 @@ function getMmlTag(ch) {
 }
 
 function setAnchorAndFocus(sel, nodeAnchor, offsetAnchor, nodeFocus, offsetFocus) {
-    console.log("anchor, focus = " +
-        nodeAnchor.nodeName + ', ' + offsetAnchor + ', ' +
-        nodeFocus.nodeName + ', ' + offsetFocus)
-
+    if (!testing) {
+        console.log("anchor, focus = " +
+            nodeAnchor.nodeName + ', ' + offsetAnchor + ', ' +
+            nodeFocus.nodeName + ', ' + offsetFocus)
+    }
     sel.setBaseAndExtent(nodeAnchor, offsetAnchor, nodeFocus, offsetFocus)
 }
 
@@ -1617,7 +1621,7 @@ function checkMathSelection(sel) {
     // math object if selection boundary points are in different children
     let nodeAnchor = sel.anchorNode
     if (!nodeAnchor)
-        return nullc
+        return null
 
     if (nodeAnchor.nodeName == 'DIV') {
         if (nodeAnchor.id != 'output')
@@ -1687,7 +1691,8 @@ function checkMathSelection(sel) {
             range = document.createRange()
             range.selectNode(nodeAnchor)
             rel = range.comparePoint(nodeFocus, 0)
-            console.log("rel =" + rel)
+            if(!testing)
+                console.log("rel =" + rel)
 
             if (rel > 0) {                  // nodeFocus follows nodeAnchor 
                 offset = nodeFocus.nodeName == '#text'
@@ -1730,7 +1735,7 @@ function deleteSelection(sel) {
     // Save current math for undo stack. If it's already on the stack top,
     // remove it since uMath will be added by checkEmpty()
     let uMath = getUnicodeMath(output.firstElementChild, true)
-    if (removeSelInfo(uMath) == removeSelInfo(stackTop(outputUndoStack)))
+    if (uMath == stackTop(outputUndoStack))
         outputUndoStack.pop()
 
     sel.deleteFromDocument()                    // Deletes #text nodes but leaves element nodes
@@ -2409,7 +2414,8 @@ output.addEventListener('keydown', function (e) {
                 while (node.nodeName == 'mrow')
                     node = node.firstElementChild
             }
-            speak(key + ' of math zone')
+            if(!testing)
+                speak(key + ' of math zone')
             removeSelAttributes()
             setSelAttributes(node, 'selanchor', offset)
             refreshDisplays('', true)
@@ -2561,7 +2567,7 @@ output.addEventListener('keydown', function (e) {
                 if (!outputUndoStack.length)
                     return
                 let undoTop = stackTop(outputUndoStack)
-                if (input.innerHTML == removeSelInfo(undoTop))
+                if (input.innerHTML == undoTop)
                     outputUndoStack.pop()
                 uMath = outputUndoStack.pop()
                 if (!uMath)
@@ -2570,8 +2576,7 @@ output.addEventListener('keydown', function (e) {
                 if (i != -1 && uMath[i + 1] == '\\' && uMath[i + 2] != '"') {
                     let j = uMath.indexOf('"', i + 1)
                     if (j != -1) {
-                        // Remove quotes to aid parser. Partial control words
-                        // are quoted
+                        // Remove quotes around partial control words to aid parser
                         uMath = uMath.substring(0, i) + uMath.substring(i + 1, j) +
                             uMath.substring(j + 1)
                     }
