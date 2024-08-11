@@ -1,0 +1,494 @@
+﻿
+///////////////////////////
+// MathML to [La]TeX //
+///////////////////////////
+
+function MathMLtoTeX(mathML) {
+    const doc = getMathMLDOM(mathML);
+    return TeX(doc.firstElementChild)
+}
+
+
+function checkBracing(str) {
+    let code = str.codePointAt(0)
+    if (str.length > 2 && !isOpenDelimiter(str[0]) && str[0] != '\\' || str.length == 2 && code < 0xD800)
+        str = '{' + str + '}'
+    return str
+}
+
+function isDigitArg(node) {
+    if (!node || !node.lastElementChild)
+        return false
+
+    return node.lastElementChild.nodeName == 'mn' && node.children[1] &&
+        isAsciiDigit(node.children[1].textContent)
+}
+
+function TeX(value, noAddParens) {
+    // Function called recursively to convert MathML to [La]TeX
+    if (!value)
+        return ''
+
+    function unary(node, op) {
+        return op + '{' + TeX(node.firstElementChild) + '}'
+    }
+
+    function binary(node, op) {
+        let reta = checkBracing(TeX(node.firstElementChild))
+        let retb = checkBracing(TeX(node.lastElementChild))
+
+        return reta + op + retb;
+    }
+
+    function ternary(node, op1, op2) {
+        let reta = checkBracing(TeX(node.firstElementChild))
+        let retb = checkBracing(TeX(node.children[1]))
+        let retc = checkBracing(TeX(node.lastElementChild))
+
+        return reta + op1 + retb + op2 + retc
+    }
+
+    function nary(node, op, cNode) {
+        let ret = '';
+
+        for (let i = 0; i < cNode; i++) {
+            ret += checkBracing(TeX(node.children[i]))
+            if (i < cNode - 1)
+                ret += op;
+        }
+        return ret;
+    }
+
+    let cNode = value.nodeName == '#text' ? 1 : value.childElementCount
+    let intent
+    let ret = '';
+
+    switch (value.localName) {
+        case 'mtable':
+            var symbol = '■';
+            if (value.getAttribute('intent') == ':equations') {
+                symbol = '█';
+            } else if (value.parentElement.hasAttribute('intent')) {
+                intent = value.parentElement.getAttribute('intent');
+
+                for (const [key, val] of Object.entries(matrixIntents)) {
+                    if (val == intent) {
+                        symbol = key;
+                        break;
+                    }
+                }
+            } else if (value.firstElementChild.nodeName == 'mlabeledtr' &&
+                value.firstElementChild.childElementCount == 2 &&
+                value.firstElementChild.firstElementChild.firstElementChild.nodeName == 'mtext') {
+                // Numbered equation: convert to UnicodeMath like 𝐸=𝑚𝑐²#(20)
+                ret = TeX(value.firstElementChild.lastElementChild.firstElementChild) +
+                    '#' + value.firstElementChild.firstElementChild.firstElementChild.textContent;
+                break;
+            }
+            ret = symbol + '(' + nary(value, '@', cNode) + ')';
+            break;
+
+        case 'mtr':
+            ret = nary(value, '&', cNode);
+            break;
+
+        case 'mtd':
+            ret = nary(value, '', cNode);
+            break;
+
+        case 'maligngroup':
+            if (value.parentElement.nodeName == 'mtd')
+                break;                  // else fall through
+        case 'malignmark':
+            ret = '&';
+            break;
+
+        case 'menclose':
+            let notation = value.getAttribute('notation')
+            if (notation) {
+                for (const [key, val] of Object.entries(symbolClasses)) {
+                    if (val == notation) {
+                        ret = unary(value, key);
+                        break;
+                    }
+                }
+                if (ret)
+                    break;
+                let mask = 0;
+
+                while (notation) {
+                    let attr = notation.match(/[a-z]+/)[0];
+                    notation = notation.substring(attr.length + 1);
+                    for (const [key, val] of Object.entries(maskClasses)) {
+                        if (val == attr)
+                            mask += Number(key);
+                    }
+                }
+                if (mask) {
+                    ret = TeX(value.firstElementChild, true);
+                    ret = '▭(' + (mask ^ 15) + '&' + ret + ')';
+                    break;
+                }
+            }
+            ret = unary(value, '▭');
+            break;
+
+        case 'mphantom':
+            ret = unary(value, '⟡');       // Full size, no display
+            break;
+
+        case 'mpadded':
+            var op = '';
+            var mask = 0;                   // Compute phantom mask
+
+            if (value.getAttribute('width') === '0')
+                mask = 2;                   // fPhantomZeroWidth
+            if (value.getAttribute('height') === '0')
+                mask |= 4;                  // fPhantomZeroAscent
+            if (value.getAttribute('depth') === '0')
+                mask |= 8;                  // fPhantomZeroDescent
+
+            if (value.firstElementChild.nodeName == 'mphantom') { // No display
+                if (mask == 2)
+                    op = '⇳';               // fPhantomZeroWidth
+                else if (mask == 12)
+                    op = '⬄';              // fPhantomZeroAscent | fPhantomZeroDescent
+                ret = op ? op + TeX(value.firstElementChild).substring(1)
+                    : '⟡(' + mask + '&' + TeX(value.firstElementChild.firstElementChild, true) + ')';
+                break;
+            }
+            const opsShow = {2: '\\hsmash', 4: '\\asmash', 8: '\\dsmash', 12: '\\smash'};
+            op = opsShow[mask];
+            mask |= 1;                      // fPhantomShow
+
+            ret = op ? unary(value, op)
+                : '⟡(' + mask + '&' + TeX(value.firstElementChild, true) + ')';
+            break;
+
+        case 'mstyle':
+            ret = TeX(value.firstElementChild);
+            val = value.getAttribute('mathcolor')
+            if (val)
+                ret = '✎(' + val + '&' + ret + ')';
+            val = value.getAttribute('mathbackground')
+            if (val)
+                ret = '☁(' + val + '&' + ret + ')';
+            break;
+
+        case 'msqrt':
+            ret = unary(value, '\\sqrt');
+            break;
+
+        case 'mroot':
+            ret = '\\sqrt[' + TeX(value.lastElementChild) + ']{' +
+                TeX(value.firstElementChild, true) + '}';
+            break;
+
+        case 'mfrac':
+            var op = '\\frac';
+            val = value.getAttribute('displaystyle')
+            if (!val) {
+            }
+            val = value.getAttribute('linethickness')
+            if (val == '0' || val == '0.0pt') {
+                op = '¦';
+                if (value.parentElement.hasAttribute('intent') &&
+                    value.parentElement.getAttribute('intent').startsWith('binomial-coefficient') ||
+                    value.parentElement.firstElementChild.hasAttribute('title') &&
+                    value.parentElement.firstElementChild.getAttribute('title') == 'binomial coefficient')
+                    op = '\\choose';
+            }
+            ret = op + '{' + TeX(value.firstElementChild) + '}{' + TeX(value.lastElementChild) + '}'
+            break;
+
+        case 'msup':
+            var op = '^';
+            if (isPrime(value.lastElementChild.textContent))
+                op = '';
+            ret = binary(value, op);
+
+            // Check for intent='transpose'
+            if (value.lastElementChild.getAttribute('intent') == 'transpose') {
+                let cRet = ret.length;
+                let code = codeAt(ret, cRet - 2);
+                if (code != 0x22BA) {       // '⊺'
+                    if (code > 0xDC00)
+                        cRet--;             // To remove whole surrogate pair
+                    ret = ret.substring(0, cRet - 2) + '⊺';
+                }
+            }
+            break;
+
+        case 'mover':
+            if (overBrackets.includes(value.lastElementChild.textContent)) {
+                ret = TeX(value.lastElementChild) + TeX(value.firstElementChild);
+                break;
+            }
+            if (value.lastElementChild.innerHTML == '\u0302') {
+                ret = '\\hat{' + TeX(value.firstElementChild) + '}'
+            } else {
+                op = value.hasAttribute('accent') ? '' : '┴';
+                ret = binary(value, op);
+            }
+            break;
+
+        case 'munder':
+            if (underBrackets.includes(value.lastElementChild.textContent)) {
+                ret = TeX(value.lastElementChild) + TeX(value.firstElementChild);
+                break;
+            }
+
+            op = value.hasAttribute('accentunder') ? '' : '┬';
+            if (value.firstElementChild.innerHTML == 'lim')
+                op = '_';
+            ret = binary(value, op);
+            break;
+
+        case 'msub':
+            ret = binary(value, '_');
+            break;
+
+        case 'munderover':
+            intent = value.parentElement.getAttribute('intent')
+            if (!intent || !intent.startsWith(':sum')) {
+                ret = ternary(value, '┬', '┴');
+                break;
+            }
+        // Fall through to msubsup
+        case 'msubsup':
+            ret = ternary(value, '_', '^');
+            break;
+
+        case 'mmultiscripts':
+            ret = '';
+            if (value.children[3].nodeName == 'mprescripts') {
+                if (value.children[4].nodeName != 'none')
+                    ret = '_' + TeX(value.children[4]);
+                if (value.children[5].nodeName != 'none')
+                    ret += '^' + TeX(value.children[5]);
+                if (ret)
+                    ret += ' ';
+            }
+            ret += TeX(value.children[0]);
+            if (value.children[1].nodeName != 'none')
+                ret += '_' + TeX(value.children[1]);
+            if (value.children[2].nodeName != 'none')
+                ret += '^' + TeX(value.children[2]);
+            break;
+
+        case 'mfenced':
+            let [opClose, opOpen, opSeparators] = getFencedOps(value)
+            let cSep = opSeparators.length;
+
+            ret = opOpen;
+            for (let i = 0; i < cNode; i++) {
+                ret += TeX(value.children[i]);
+                if (i < cNode - 1)
+                    ret += i < cSep - 1 ? opSeparators[i] : opSeparators[cSep - 1];
+            }
+            ret += opClose;
+            break;
+
+        case 'mo':
+            var val = value.innerHTML;
+            if (!intent)
+                intent = value.getAttribute('intent')
+            if (intent == ':text') {
+                ret = '\\' + val
+                break
+            }
+            if (val == '&fa;') {
+                ret = '\u2061';
+                break;
+            }
+            if (val == '&lt;') {
+                ret = '<';
+                break;
+            }
+            if (val == '&gt;') {
+                ret = '>';
+                break;
+            }
+            if (val == '&amp;') {
+                ret = '&';
+                break;
+            }
+            if (val == '/' && !autoBuildUp) { // Quote other ops...
+                ret = '\\/';
+                break;
+            }
+            if (val == '\u202F' && autoBuildUp) {
+                ret = ' '
+                break;
+            }
+            if (val.startsWith('&#') && val.endsWith(';')) {
+                ret = value.innerHTML.substring(2, val.length - 1);
+                if (ret[0] == 'x')
+                    ret = '0' + ret;
+                ret = String.fromCodePoint(ret);
+                break;
+            }
+            if (value.hasAttribute('title')) {
+                // The DLMF title attribute implies the following intents
+                // (see also for 'mi')
+                switch (value.getAttribute('title')) {
+                    case 'differential':
+                    case 'derivative':
+                        ret = 'ⅆ';
+                        break;
+                    case 'binomial coefficient':
+                        val = '';
+                }
+            }
+            if (!ret)
+                ret = val
+            break;
+
+        case 'mi':
+            intent = value.getAttribute('intent')
+            if (isDoubleStruck(intent)) {
+                ret = intent;
+                break;
+            }
+            if (value.innerHTML.length == 1) {
+                let c = value.innerHTML;
+                if (!value.hasAttribute('mathvariant')) {
+                    ret = italicizeCharacter(c);
+                    break;
+                }
+                var mathstyle = mathvariants[value.getAttribute('mathvariant')];
+                if (c in mathFonts && mathstyle in mathFonts[c] && (c < 'Α' || c > 'Ω' && c != '∇')) {
+                    ret = mathFonts[c][mathstyle];
+                    break;
+                }
+
+                if (mathstyle == 'mup') {
+                    if (value.hasAttribute('title')) {
+                        // Differential d (ⅆ) appears in 'mo'
+                        switch (value.getAttribute('title')) {
+                            case 'base of natural logarithm':
+                                ret = 'ⅇ';
+                                break;
+                            case 'imaginary unit':
+                                ret = 'ⅈ';
+                                break;
+                        }
+                        if (ret)
+                            break;
+                    }
+                    if (c != '∞' && c != '⋯' && !inRange('\u0391', c, '\u03A9')) {
+                        ret = '"' + c + '"';
+                        break;
+                    }
+                }
+            } else if (isFunctionName(value.textContent)) {
+                ret = '\\' + value.textContent + ' '
+                break
+            }                              // else fall through
+
+        case 'mn':
+            ret = value.textContent;
+            break;
+
+        case 'mtext':
+            ret = value.textContent.replace(/\"/g, '\\\"')
+            ret = '"' + ret + '"';
+            break;
+
+        case 'mspace':
+            let width = value.getAttribute('width')
+            if (width) {
+                for (let i = 0; i < spaceWidths.length; i++) {
+                    if (width == spaceWidths[i]) {
+                        ret = uniSpaces[i];
+                        break;
+                    }
+                }
+            }
+            break;
+    }
+
+    if (ret)
+        return ret
+
+    // TeX <mrow> children
+    for (var i = 0; i < cNode; i++) {
+        let node = value.children[i];
+        ret += checkSpace(i, node, ret)
+        ret += TeX(node, false, i);
+    }
+
+    let mrowIntent = value.nodeName == 'mrow' && value.hasAttribute('intent')
+        ? value.getAttribute('intent') : '';
+
+    if (mrowIntent) {
+        if (mrowIntent == ':cases')
+            return 'Ⓒ' + ret.substring(2);
+
+        if (mrowIntent == ':fenced' && value.childElementCount &&
+            !value.lastElementChild.textContent) {
+            return !value.firstElementChild.textContent ? '〖' + ret + '〗' : ret + '┤';
+        }
+        if (mrowIntent.startsWith('absolute-value') ||
+            mrowIntent.startsWith('cardinality')) {
+            let abs = mrowIntent[0] == 'a' ? '⒜' : 'ⓒ';
+            ret = ret.substring(1, ret.length - 1); // Remove '|'s
+            return needParens(ret) ? abs + '(' + ret + ')' : abs + ret + ' ';
+        }
+        if (mrowIntent.startsWith('binomial-coefficient') ||
+            mrowIntent.endsWith('matrix') || mrowIntent.endsWith('determinant')) {
+            // Remove enclosing parens for 𝑛⒞𝑘 and bracketed matrices
+            let i = ret.length - 1
+            if (ret[0] != '(')
+                return ret
+            if (ret[i] == ')')
+                return ret.substring(1, i)
+
+            // Doesn't end with ')'. Scan ret matching parens. If the last
+            // ')' follows the '⒞' and matches the opening '(', remove them.
+            let binomial
+            let cParen = 1
+            let k = 0
+
+            for (i = 1; i < ret.length - 1; i++) {
+                switch (ret[i]) {
+                    case '(':
+                        cParen++
+                        break;
+                    case ')':
+                        cParen--
+                        if (!cParen) {
+                            if (!binomial)
+                                return ret  // E.g., (𝑘−𝑧)⒞𝑧
+                            k = i
+                        }
+                        break;
+                    case '⒞':
+                        binomial = true
+                        break;
+                }
+            }
+            return k ? ret.substring(1, k) + ret.substring(k + 1) : ret
+        }
+        if (mrowIntent == ':function' && value.previousElementSibling &&
+            value.firstElementChild &&      // (in case empty)
+            value.firstElementChild.nodeName == 'mi' &&
+            value.firstElementChild.textContent < '\u2100' &&
+            value.previousElementSibling.nodeName == 'mi') {
+            return ' ' + ret;               // Separate variable & function name
+        }
+    }
+    if (value.firstElementChild && value.firstElementChild.nodeName == 'mo' &&
+        !autoBuildUp && isOpenDelimiter(value.firstElementChild.textContent)) {
+        if (value.lastElementChild.nodeName != 'mo' || !value.lastElementChild.textContent)
+            ret += '┤';                     // Happens for some DLMF pmml
+    }
+
+    //if (cNode > 1 && value.nodeName != 'math' && !noAddParens &&
+    //    (!mrowIntent || mrowIntent != ':fenced') &&
+    //    isMathMLObject(value.parentElement, true) &&
+    //    value.parentElement.nodeName != 'mfrac') {
+    //    ret = '{' + ret + '}';
+    //}
+    return ret;
+}

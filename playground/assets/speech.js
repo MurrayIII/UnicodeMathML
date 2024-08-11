@@ -685,42 +685,6 @@ function getOrder(order) {
 	return foldMathItalic(code) + 'th';
 }
 
-function unary(node, op) {
-	return op + speech(node.firstElementChild);
-}
-
-function binary(node, op) {
-	let ret = speech(node.firstElementChild);
-	let retd = speech(node.children[1]);
-
-	if (op == '/' && (ret.endsWith('^∗ )') || ret.endsWith('^† )'))) {
-		// Remove superfluous build-up space & parens
-		ret = ret.substring(1, ret.length - 2);
-	}
-	ret += op + retd;
-	if (op)
-		ret += ' ';
-	return ret;
-}
-
-function ternary(node, op1, op2) {
-	return speech(node.firstElementChild) + op1 + speech(node.children[1]) +
-		op2 + speech(node.lastElementChild) + ' ';
-}
-
-function nary(node, op, cNode) {
-	let ret = '';
-
-	for (let i = 0; i < cNode; i++) {
-		// Get the rows
-		ret += speech(node.children[i]);
-		if (i < cNode - 1)
-			ret += op;
-	}
-	return ret;
-}
-
-
 function checkLagrangeDerivative(node) {
 	// If node and next element node has form 𝑓⁽ⁿ⁾(𝑥), return speech for n
 	if (node.firstElementChild.nodeName != 'mi' ||
@@ -734,6 +698,41 @@ function checkLagrangeDerivative(node) {
 }
 
 function speech(value, noAddParens) {
+	function unary(node, op) {
+		return op + speech(node.firstElementChild);
+	}
+
+	function binary(node, op) {
+		let ret = speech(node.firstElementChild);
+		let retd = speech(node.children[1]);
+
+		if (op == '/' && (ret.endsWith('^∗ )') || ret.endsWith('^† )'))) {
+			// Remove superfluous build-up space & parens
+			ret = ret.substring(1, ret.length - 2);
+		}
+		ret += op + retd;
+		if (op)
+			ret += ' ';
+		return ret;
+	}
+
+	function ternary(node, op1, op2) {
+		return speech(node.firstElementChild) + op1 + speech(node.children[1]) +
+			op2 + speech(node.lastElementChild) + ' ';
+	}
+
+	function nary(node, op, cNode) {
+		let ret = '';
+
+		for (let i = 0; i < cNode; i++) {
+			// Get the rows
+			ret += speech(node.children[i]);
+			if (i < cNode - 1)
+				ret += op;
+		}
+		return ret;
+	}
+
 	function Nary(node) {
 		// symbol 'from' lower-limit 'to' upper-limit 'of'
 		return speech(node.firstElementChild) + '☟' +	// 'from'

@@ -218,7 +218,7 @@ function checkBrackets(node) {
     // order. Also return the node index of the final child that shouldn't be
     // included in partial build up. Partial build up of trailing children
     // may occur for a nonzero bracket count difference, e.g., √(𝑎²-𝑏²
-    let cNode = node.children.length
+    let cNode = node.childElementCount
     let cBracket = 0
     let opBuildUp = false
     let k = -1                              // Index of final child not in
@@ -747,7 +747,7 @@ var controlWords = {
     'four':             '4',    // 0034
     'frakturH':         'ℌ',    // 210C
     'frown':            '⌢',	    // 2322
-    'fullouterjoin':    '⟗',    // 27D7
+    'fullouterjoin':    '⟗',   // 27D7
     'funcapply':        '⁡',	    // 2061
     'gamma':            'γ',	// 03B3
     'ge':               '≥',	// 2265
@@ -4165,7 +4165,7 @@ function dump(value, noAddParens) {
     if (!value)
         return ''
 
-    let cNode = value.nodeName == '#text' ? 1 : value.children.length;
+    let cNode = value.nodeName == '#text' ? 1 : value.childElementCount
     let intent
     let ret = '';
 
@@ -4184,7 +4184,7 @@ function dump(value, noAddParens) {
                     }
                 }
             } else if (value.firstElementChild.nodeName == 'mlabeledtr' &&
-                value.firstElementChild.children.length == 2 &&
+                value.firstElementChild.childElementCount == 2 &&
                 value.firstElementChild.firstElementChild.firstElementChild.nodeName == 'mtext') {
                 // Numbered equation: convert to UnicodeMath like 𝐸=𝑚𝑐²#(20)
                 ret = dump(value.firstElementChild.lastElementChild.firstElementChild) +
@@ -5153,7 +5153,7 @@ root.isFunctionName = isFunctionName;
 root.italicizeCharacter = italicizeCharacter;
 root.italicizeCharacters = italicizeCharacters;
 root.mathFonts = mathFonts;
-root.MathMLtoUnicodeMath = MathMLtoUnicodeMath;
+root.MathMLtoUnicodeMath = MathMLtoUnicodeMath
 root.negs = negs;
 root.resolveCW = resolveCW;
 root.unicodemathml = unicodemathml;

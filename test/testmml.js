@@ -294,6 +294,21 @@ const mathBrailles = [
     "⠁⠸⠣",
 ]
 
+const mathTeX = [
+    '\\frac{1}{2𝜋}∫_0^{2\\hsmash{𝜋}}\\frac{ⅆ𝜃}{𝑎+𝑏  \\sin ⁡𝜃}=\\frac{1}{\\sqrt{𝑎^2−𝑏^2}}',
+    '𝛁⨯𝐄=−\\frac{𝜕𝐁}{𝜕𝑡}',
+    '𝑖ℏ\\frac{𝜕𝜓⁡(𝑥,𝑡)}{𝜕𝑡}=[−\\frac{ℏ^2}{2𝑚}\\frac{𝜕^2}{𝜕𝑥^2}+𝑉(𝑥,𝑡)]𝜓(𝑥,𝑡)',
+    '(𝑎+𝑏)^𝑛=∑_{𝑘=0}^𝑛\\choose{𝑛}{𝑘}𝑎^𝑘𝑏^{𝑛−𝑘}',
+    '𝑥=\\frac{−𝑏±\\sqrt{𝑏^2−4𝑎𝑐}}{2𝑎}',
+    '\\sin ^2⁡𝜃+\\cos ^2⁡𝜃=1',
+    '∫_{−∞}^∞𝑒^{−𝑥^2}ⅆ𝑥=\\sqrt{𝜋}',
+    '𝑎 𝑏',
+    '\\lim _{𝑛→∞}⁡(1+\\frac{1}{𝑛})^𝑛=𝑒',
+    '\\hat{𝑓}(𝜉)=∫_{−∞}^∞𝑓(𝑥)ⅇ^{−2𝜋ⅈ𝑥𝜉}ⅆ𝑥',
+    '\\sqrt[𝑛]{𝑎+𝑏}',
+    '\\cos ⁡𝜃=\\frac{1}{2}𝑒^{ⅈ𝜃}+"c.c."',
+]
+
 function testMathMLtoUnicodeMath() {
     var iSuccess = 0;
     var iFail = 0;
@@ -342,6 +357,22 @@ function testMathMLtoBraille() {
     }
     var iFail = mathML.length - iSuccess;
     console.log("Test MathML to braille: " + iSuccess + " passes; " + iFail + " failures\n");
+}
+
+function testMathMLtoTeX() {
+    var iSuccess = 0;
+    for (var i = 0; i < mathTeX.length; i++) {
+        var result = MathMLtoTeX(mathML[i]);
+        if (result != mathTeX[i]) {
+            console.log(unicodeMath[i] + '\n');
+            console.log("Expect: " + mathTeX[i] + '\n');
+            console.log("Result: " + result + '\n\n');
+        } else {
+            iSuccess++;
+        }
+    }
+    var iFail = mathTeX.length - iSuccess;
+    console.log("Test MathML to TeX: " + iSuccess + " passes; " + iFail + " failures\n");
 }
 
 function ctrlZ(key) {

@@ -780,6 +780,14 @@ input.addEventListener("keydown", function (e) {
                 }
                 return
 
+            case 't':                       // Alt+t
+                // MathML to Unicode [La]TeX
+                e.preventDefault()
+                let LaTeX = TeX(output.firstElementChild)
+                console.log('Math TeX = ' + LaTeX)
+                speechDisplay.innerText += '\n' + LaTeX
+                return
+
             case 'x':                       // Alt+x
                 // Toggle between char code and char
                 e.preventDefault()
