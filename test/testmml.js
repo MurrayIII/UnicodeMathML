@@ -294,7 +294,7 @@ const mathBrailles = [
     "⠁⠸⠣",
 ]
 
-const mathTeX = [
+const mathTeX = [                           // Some cases aren't supported by TeX
     '\\frac{1}{2𝜋}∫_0^{2\\hsmash{𝜋}}\\frac{ⅆ𝜃}{𝑎+𝑏  \\sin ⁡𝜃}=\\frac{1}{\\sqrt{𝑎^2−𝑏^2}}',
     '𝛁⨯𝐄=−\\frac{𝜕𝐁}{𝜕𝑡}',
     '𝑖ℏ\\frac{𝜕𝜓⁡(𝑥,𝑡)}{𝜕𝑡}=[−\\frac{ℏ^2}{2𝑚}\\frac{𝜕^2}{𝜕𝑥^2}+𝑉(𝑥,𝑡)]𝜓(𝑥,𝑡)',
@@ -316,15 +316,15 @@ const mathTeX = [
     '_𝑛 𝐶_𝑘=\\choose{𝑛}{𝑘}=\\frac{𝑛!}{𝑘!(𝑛−𝑘)!}',
     '(𝑎+𝑏,𝑐+𝑑)',
     '\\fbox{𝑎+𝑏}',
-    '',
+    '\\fbox{𝑎+𝑏}',                          // TeX has partial \fbox?
     '\\overbrace{𝑥_1+⋯+𝑥_𝑘}^{𝑘\\textrm{ times}}',
     '\\underbrace{𝑥_1+⋯+𝑥_𝑘}_{𝑘\\textrm{ times}}',
     '𝑎\\phantom{𝑎+𝑏}+1',
     '1+\\fbox{\\phantom{\\frac{\\frac{\\frac{\\frac{1}{2}}{3}}{4}}{5}}}',
     '𝑎+\\hphantom{𝑏+𝑐}+𝑑',
-    '',
-    '',
-    '',
+    '𝑎⟡(4&𝑎+𝑏)𝑐',                           // TeX doesn't have this & next
+    '𝑎⟡(7&𝑎+𝑏)𝑐',
+    '\\begin{equation}𝐸=𝑚𝑐^2\\end{equation}',
     'ℌ',
     '𝑎≤𝑏≤𝑐',
     '\\frac{𝑑𝜓⁡(𝑥,𝑡)}{𝑑𝑡}=0',

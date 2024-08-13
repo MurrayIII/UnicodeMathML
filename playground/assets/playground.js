@@ -204,6 +204,15 @@ function stackTop(arr) {
     return arr.length ? arr[arr.length - 1] : ''
 }
 
+function mathBraille() {
+    // Called if Braille button is clicked on
+    input.focus();
+    const event = new Event('keydown');
+    event.key = 'b';
+    event.altKey = true;
+    input.dispatchEvent(event);
+}
+
 function mathSpeak() {
     // Called if Speak button is clicked on
     input.focus();
@@ -213,13 +222,11 @@ function mathSpeak() {
     input.dispatchEvent(event);
 }
 
-function mathBraille() {
-    // Called if Braille button is clicked on
-    input.focus();
-    const event = new Event('keydown');
-    event.key = 'b';
-    event.altKey = true;
-    input.dispatchEvent(event);
+function mathTeX() {
+    let LaTeX = TeX(output.firstElementChild)
+    console.log('Math TeX = ' + LaTeX)
+    speechDisplay.innerText += '\n' + LaTeX
+
 }
 
 function speak(s) {
@@ -783,9 +790,7 @@ input.addEventListener("keydown", function (e) {
             case 't':                       // Alt+t
                 // MathML to Unicode [La]TeX
                 e.preventDefault()
-                let LaTeX = TeX(output.firstElementChild)
-                console.log('Math TeX = ' + LaTeX)
-                speechDisplay.innerText += '\n' + LaTeX
+                mathTeX()
                 return
 
             case 'x':                       // Alt+x

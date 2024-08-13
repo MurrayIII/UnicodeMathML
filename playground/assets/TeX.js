@@ -1,6 +1,6 @@
 ﻿
 ///////////////////////////
-// MathML to [La]TeX //
+//   MathML to [La]TeX   //
 ///////////////////////////
 
 const accentsAbove = {
@@ -32,17 +32,16 @@ const accentsBelow = {
 }
 
 const enclosures = {
-    'fbox': 'box',
-    '̄': 'top',
-    '▁': 'bottom',
-    '▢': 'roundedbox',
-    '○': 'circle',
-    '⟌': 'longdiv',
-    "⃧": 'actuarial',
-    '⬭': 'circle',
-    '╱': 'cancel',
-    '╲': 'bcancel',
-    '╳': 'xcancel'
+    'box':          'fbox',
+    'top':          '',
+    'bottom':       '',
+    'roundedbox':   '',
+    'circle':       'circle',
+    'longdiv':      '',
+    'actuarial':    '',
+    'cancel':       'cancel',
+    'bcancel':      'bcancel',
+    'xcancel':      'xcancel',
 }
 
 function MathMLtoTeX(mathML) {
@@ -130,8 +129,8 @@ function TeX(value, noAddParens) {
                 value.firstElementChild.childElementCount == 2 &&
                 value.firstElementChild.firstElementChild.firstElementChild.nodeName == 'mtext') {
                 // Numbered equation: convert to UnicodeMath like 𝐸=𝑚𝑐²#(20)
-                ret = TeX(value.firstElementChild.lastElementChild.firstElementChild) +
-                    '#' + value.firstElementChild.firstElementChild.firstElementChild.textContent;
+                ret = '\\begin{equation}' + TeX(value.firstElementChild.lastElementChild.firstElementChild) +
+                    '\\end{equation}'
                 break;
             }
             ret = '\\begin{' + symbol + '}' + nary(value, '\\\\\n', cNode) + '\\end{' + symbol + '}'
@@ -154,30 +153,9 @@ function TeX(value, noAddParens) {
 
         case 'menclose':
             let notation = value.getAttribute('notation')
-            if (notation) {
-                for (const [key, val] of Object.entries(enclosures)) {
-                    if (val == notation) {
-                        ret = unary(value, '\\' + key);
-                        break;
-                    }
-                }
-                if (ret)
-                    break;
-                let mask = 0;
-
-                while (notation) {
-                    let attr = notation.match(/[a-z]+/)[0];
-                    notation = notation.substring(attr.length + 1);
-                    for (const [key, val] of Object.entries(maskClasses)) {
-                        if (val == attr)
-                            mask += Number(key);
-                    }
-                }
-                if (mask) {
-                    ret = TeX(value.firstElementChild, true);
-                    ret = '\\fbox{' + (mask ^ 15) + '&' + ret + '}';
-                    break;
-                }
+            if (notation && enclosures[notation]) {
+                ret = unary(value, '\\' + enclosures[notation]);
+                break;
             }
             ret = unary(value, '\\fbox');
             break;
@@ -524,17 +502,5 @@ function TeX(value, noAddParens) {
             return ' ' + ret;               // Separate variable & function name
         }
     }
-    //if (value.firstElementChild && value.firstElementChild.nodeName == 'mo' &&
-    //    !autoBuildUp && isOpenDelimiter(value.firstElementChild.textContent)) {
-    //    if (value.lastElementChild.nodeName != 'mo' || !value.lastElementChild.textContent)
-    //        ret += '┤';                     // Happens for some DLMF pmml
-    //}
-
-    //if (cNode > 1 && value.nodeName != 'math' && !noAddParens &&
-    //    (!mrowIntent || mrowIntent != ':fenced') &&
-    //    isMathMLObject(value.parentElement, true) &&
-    //    value.parentElement.nodeName != 'mfrac') {
-    //    ret = '{' + ret + '}';
-    //}
     return ret;
 }
