@@ -3,6 +3,48 @@
 // MathML to [La]TeX //
 ///////////////////////////
 
+const accentsAbove = {
+    '¯':        'overbar',
+    '\u0300':   'grave',
+    '\u0301':   'acute',
+    '\u0302':   'hat',
+    '\u0303':   'tilde',
+    '\u0305':   'bar',
+    '\u0306':   'breve',
+    '\u0307':   'dot',
+    '\u0308':   'ddot',
+    '\u030C':   'check',
+    '\u20D7':   'vec',
+    '\u20DB':   'dddot',
+    '\u20DC':   'ddddot',
+    '\u23B4':   'overbracket',
+    '\u23DC':   'overparen',
+    '\u23DE':   'overbrace',
+    '\u23E0':   'overshell',
+}
+
+const accentsBelow = {
+    '\u23B5':   'underbracket',
+    '\u23DD':   'underparen',
+    '\u23DF':   'underbrace',
+    '\u23E1':   'undershell',
+    '\u2581':   'underbar',
+}
+
+const enclosures = {
+    'fbox': 'box',
+    '̄': 'top',
+    '▁': 'bottom',
+    '▢': 'roundedbox',
+    '○': 'circle',
+    '⟌': 'longdiv',
+    "⃧": 'actuarial',
+    '⬭': 'circle',
+    '╱': 'cancel',
+    '╲': 'bcancel',
+    '╳': 'xcancel'
+}
+
 function MathMLtoTeX(mathML) {
     const doc = getMathMLDOM(mathML);
     return TeX(doc.firstElementChild)
@@ -58,6 +100,13 @@ function TeX(value, noAddParens) {
         }
         return ret;
     }
+    const matrixIntents = {
+        'pmatrix': ':parenthesized-matrix',
+        'vmatrix': ':determinant',
+        'Vmatrix': ':normed-matrix',
+        'bmatrix': ':bracketed-matrix',
+        'Bmatrix': ':curly-braced-matrix',
+    }
 
     let cNode = value.nodeName == '#text' ? 1 : value.childElementCount
     let intent
@@ -65,9 +114,9 @@ function TeX(value, noAddParens) {
 
     switch (value.localName) {
         case 'mtable':
-            var symbol = '■';
+            var symbol = 'matrix';
             if (value.getAttribute('intent') == ':equations') {
-                symbol = '█';
+                symbol = 'eqnarray';
             } else if (value.parentElement.hasAttribute('intent')) {
                 intent = value.parentElement.getAttribute('intent');
 
@@ -85,7 +134,7 @@ function TeX(value, noAddParens) {
                     '#' + value.firstElementChild.firstElementChild.firstElementChild.textContent;
                 break;
             }
-            ret = symbol + '(' + nary(value, '@', cNode) + ')';
+            ret = '\\begin{' + symbol + '}' + nary(value, '\\\\\n', cNode) + '\\end{' + symbol + '}'
             break;
 
         case 'mtr':
@@ -106,9 +155,9 @@ function TeX(value, noAddParens) {
         case 'menclose':
             let notation = value.getAttribute('notation')
             if (notation) {
-                for (const [key, val] of Object.entries(symbolClasses)) {
+                for (const [key, val] of Object.entries(enclosures)) {
                     if (val == notation) {
-                        ret = unary(value, key);
+                        ret = unary(value, '\\' + key);
                         break;
                     }
                 }
@@ -126,15 +175,15 @@ function TeX(value, noAddParens) {
                 }
                 if (mask) {
                     ret = TeX(value.firstElementChild, true);
-                    ret = '▭(' + (mask ^ 15) + '&' + ret + ')';
+                    ret = '\\fbox{' + (mask ^ 15) + '&' + ret + '}';
                     break;
                 }
             }
-            ret = unary(value, '▭');
+            ret = unary(value, '\\fbox');
             break;
 
         case 'mphantom':
-            ret = unary(value, '⟡');       // Full size, no display
+            ret = unary(value,'\\phantom'); // Full size, no display
             break;
 
         case 'mpadded':
@@ -150,10 +199,10 @@ function TeX(value, noAddParens) {
 
             if (value.firstElementChild.nodeName == 'mphantom') { // No display
                 if (mask == 2)
-                    op = '⇳';               // fPhantomZeroWidth
+                    op = '\\vphantom';        // fPhantomZeroWidth
                 else if (mask == 12)
-                    op = '⬄';              // fPhantomZeroAscent | fPhantomZeroDescent
-                ret = op ? op + TeX(value.firstElementChild).substring(1)
+                    op = '\\hphantom';        // fPhantomZeroAscent | fPhantomZeroDescent
+                ret = op ? op + TeX(value.firstElementChild).substring(8)
                     : '⟡(' + mask + '&' + TeX(value.firstElementChild.firstElementChild, true) + ')';
                 break;
             }
@@ -220,25 +269,26 @@ function TeX(value, noAddParens) {
             break;
 
         case 'mover':
-            if (overBrackets.includes(value.lastElementChild.textContent)) {
-                ret = TeX(value.lastElementChild) + TeX(value.firstElementChild);
-                break;
+            if (value.lastElementChild.nodeName == 'mo') {
+                let cwAccent = accentsAbove[value.lastElementChild.textContent]
+                if (cwAccent) {
+                    ret = '\\' + cwAccent + '{' + TeX(value.firstElementChild) + '}'
+                    break
+                }
             }
-            if (value.lastElementChild.innerHTML == '\u0302') {
-                ret = '\\hat{' + TeX(value.firstElementChild) + '}'
-            } else {
-                op = value.hasAttribute('accent') ? '' : '┴';
-                ret = binary(value, op);
-            }
+            op = value.hasAttribute('accent') ? '' : '^';
+            ret = binary(value, op);
             break;
 
         case 'munder':
-            if (underBrackets.includes(value.lastElementChild.textContent)) {
-                ret = TeX(value.lastElementChild) + TeX(value.firstElementChild);
-                break;
+            if (value.lastElementChild.nodeName == 'mo') {
+                let cwAccent = accentsBelow[value.lastElementChild.textContent]
+                if (cwAccent) {
+                    ret = '\\' + cwAccent + '{' + TeX(value.firstElementChild) + '}'
+                    break
+                }
             }
-
-            op = value.hasAttribute('accentunder') ? '' : '┬';
+            op = value.hasAttribute('accentunder') ? '' : '_';
             if (value.firstElementChild.innerHTML == 'lim')
                 op = '_';
             ret = binary(value, op);
@@ -311,10 +361,6 @@ function TeX(value, noAddParens) {
             }
             if (val == '&amp;') {
                 ret = '&';
-                break;
-            }
-            if (val == '/' && !autoBuildUp) { // Quote other ops...
-                ret = '\\/';
                 break;
             }
             if (val == '\u202F' && autoBuildUp) {
@@ -392,7 +438,7 @@ function TeX(value, noAddParens) {
 
         case 'mtext':
             ret = value.textContent.replace(/\"/g, '\\\"')
-            ret = '"' + ret + '"';
+            ret = '\\textrm{' + ret + '}';
             break;
 
         case 'mspace':
@@ -423,7 +469,7 @@ function TeX(value, noAddParens) {
 
     if (mrowIntent) {
         if (mrowIntent == ':cases')
-            return 'Ⓒ' + ret.substring(2);
+            return '\\cases{' + ret.substring(2) + '}'
 
         if (mrowIntent == ':fenced' && value.childElementCount &&
             !value.lastElementChild.textContent) {
@@ -431,9 +477,9 @@ function TeX(value, noAddParens) {
         }
         if (mrowIntent.startsWith('absolute-value') ||
             mrowIntent.startsWith('cardinality')) {
-            let abs = mrowIntent[0] == 'a' ? '⒜' : 'ⓒ';
-            ret = ret.substring(1, ret.length - 1); // Remove '|'s
-            return needParens(ret) ? abs + '(' + ret + ')' : abs + ret + ' ';
+            let abs = mrowIntent[0] == 'a' ? '\\abs' : '\\card'
+            ret = ret.substring(1, ret.length - 1) // Remove '|'s
+            return abs + '{' + ret + '}'
         }
         if (mrowIntent.startsWith('binomial-coefficient') ||
             mrowIntent.endsWith('matrix') || mrowIntent.endsWith('determinant')) {

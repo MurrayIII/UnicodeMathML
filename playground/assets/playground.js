@@ -550,7 +550,7 @@ function GetCodePoint(str, i, cch) {
     // Code point for hex string of max length cch in str ending at offset i
     if (cch > i)
         cch = i;
-    if (cch < 2)
+    if (cch < 1)
         return 0;
 
     var cchCh = 1;
