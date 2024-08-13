@@ -263,7 +263,7 @@ function TeX(value, noAddParens) {
                 if (code != 0x22BA) {       // '⊺'
                     if (code > 0xDC00)
                         cRet--;             // To remove whole surrogate pair
-                    ret = ret.substring(0, cRet - 2) + '⊺';
+                    ret = ret.substring(0, cRet - 2) + '^⊺';
                 }
             }
             break;
@@ -473,7 +473,7 @@ function TeX(value, noAddParens) {
 
         if (mrowIntent == ':fenced' && value.childElementCount &&
             !value.lastElementChild.textContent) {
-            return !value.firstElementChild.textContent ? '〖' + ret + '〗' : ret + '┤';
+            return !value.firstElementChild.textContent ? '{' + ret + '}' : ret
         }
         if (mrowIntent.startsWith('absolute-value') ||
             mrowIntent.startsWith('cardinality')) {
@@ -524,11 +524,11 @@ function TeX(value, noAddParens) {
             return ' ' + ret;               // Separate variable & function name
         }
     }
-    if (value.firstElementChild && value.firstElementChild.nodeName == 'mo' &&
-        !autoBuildUp && isOpenDelimiter(value.firstElementChild.textContent)) {
-        if (value.lastElementChild.nodeName != 'mo' || !value.lastElementChild.textContent)
-            ret += '┤';                     // Happens for some DLMF pmml
-    }
+    //if (value.firstElementChild && value.firstElementChild.nodeName == 'mo' &&
+    //    !autoBuildUp && isOpenDelimiter(value.firstElementChild.textContent)) {
+    //    if (value.lastElementChild.nodeName != 'mo' || !value.lastElementChild.textContent)
+    //        ret += '┤';                     // Happens for some DLMF pmml
+    //}
 
     //if (cNode > 1 && value.nodeName != 'math' && !noAddParens &&
     //    (!mrowIntent || mrowIntent != ':fenced') &&
