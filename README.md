@@ -347,17 +347,16 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Edit-selection enclosure operators (Ⓐ for anchor, Ⓕ for focus) have been added to UnicodeMath that map to the MathML selection attributes selanchor and selfocus. This enables the current output-window selection to be represented and undone. Selection attributes are needed for accessible editing and for the output undo facility which represents previous editing states using a stack of UnicodeMath strings.
 * Formula autobuild-up tests have been added in testmml.js
 * Ctrl+c copies MathML for selected output-window nodes to the clipboard
+* Unicode TeX output is supported by a TeX menu button and by Alt+t
 
 ## MathML intent-attribute support:
-* The derivative and partial-derivative intent attributes are defined for Leipzig and Euler derivative notations.
+* Derivative and partial-derivative intent attributes are defined for Leipzig and Euler derivative notations.
 * The templates […,…], […,…[, ]…,…], and ]…,…[, produce closed-interval, closed-open-interval, open-closed-interval, and open-interval structures, respectively, each including the intent attribute with the interval name and arguments. The … can be a signed number, variable name or ∞. Similarly, the templates (…,…], and […,…) also produce open-closed-interval and closed-open-interval structures with the corresponding intent attribute values. The template (…,…) isn't given an intent attribute since it can be used for a math-function argument list or a point in a 2D plane.
 * The \intent (ⓘ) and \arg (ⓐ) options are defined for enclosures, factorials, fences, atoms, sub/superscripts, and other expressions, thereby enabling the user to add intents explicitly to these constructs.
 * \abs for unambiguous entry of absolute value with the absolute-value intent attribute. \choose along with its intent attribute (binomial-coefficient). Intent attributes are included for UnicodeMath equation arrays, matrices, and determinants.
 * Default intents are defined for \abs, \choose, \cases, fences, n-ary objects, math-function objects, transpose objects, and double-struck italic symbols like differential d (ⅆ). This improves MathML readablity and supports round-tripping these concepts via MathML.
 
 ## To do:
-* Improve the LaTeX output mode (derive from MathML)
 * Improve caret placement in output-display editing
 * Left-arrow navigation; Ctrl+arrow navigation. Polish right-arrow navigation
 * Shift+arrow selection
-* Output-window redo executed by Ctrl+y

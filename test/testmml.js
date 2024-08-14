@@ -294,7 +294,7 @@ const mathBrailles = [
     "⠁⠸⠣",
 ]
 
-const mathTeX = [                           // Some cases aren't supported by TeX
+const mathTeXs = [                          // Some cases aren't supported by TeX
     '\\frac{1}{2𝜋}∫_0^{2\\hsmash{𝜋}}\\frac{ⅆ𝜃}{𝑎+𝑏  \\sin ⁡𝜃}=\\frac{1}{\\sqrt{𝑎^2−𝑏^2}}',
     '𝛁⨯𝐄=−\\frac{𝜕𝐁}{𝜕𝑡}',
     '𝑖ℏ\\frac{𝜕𝜓⁡(𝑥,𝑡)}{𝜕𝑡}=[−\\frac{ℏ^2}{2𝑚}\\frac{𝜕^2}{𝜕𝑥^2}+𝑉(𝑥,𝑡)]𝜓(𝑥,𝑡)',
@@ -418,17 +418,17 @@ function testMathMLtoBraille() {
 
 function testMathMLtoTeX() {
     var iSuccess = 0;
-    for (var i = 0; i < mathTeX.length; i++) {
+    for (var i = 0; i < mathTeXs.length; i++) {
         var result = MathMLtoTeX(mathML[i]);
-        if (result != mathTeX[i]) {
+        if (result != mathTeXs[i]) {
             console.log(unicodeMath[i] + '\n');
-            console.log("Expect: " + mathTeX[i] + '\n');
+            console.log("Expect: " + mathTeXs[i] + '\n');
             console.log("Result: " + result + '\n\n');
         } else {
             iSuccess++;
         }
     }
-    var iFail = mathTeX.length - iSuccess;
+    var iFail = mathTeXs.length - iSuccess;
     console.log("Test MathML to TeX: " + iSuccess + " passes; " + iFail + " failures\n");
 }
 
@@ -640,7 +640,7 @@ const endExpect = "𝑎/𝑏+𝑐/𝑑=Ⓐ(1)0"
 function testOutputHotKey(key, expect) {
     const event = new Event('keydown')
     event.key = key
-    if (isAsciiAlphabetic(key)) {
+    if (key.length == 1) {
         event.ctrlKey = true
         key = 'Ctrl+' + key
     }

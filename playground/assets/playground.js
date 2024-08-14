@@ -2696,14 +2696,6 @@ if (!testing) {
         }
     }
 
-    // if LaTeX output is enabled, hide AST tab (since there is no LaTeX AST) and
-    // rename source tab
-    if (ummlConfig.outputLaTeX) {
-        document.getElementById("mathml_ast").style.display = "none";
-        document.getElementById("source").innerHTML = document.getElementById("source").innerHTML.replace("MathML", "LaTeX");
-        measurements_pretty = document.getElementById("measurements_pretty");  // target lock reacquired
-    }
-
     // if tracing is enabled, add trace tab
     if (ummlConfig.tracing) {
         var tempElem = document.createElement('button');
@@ -2906,44 +2898,25 @@ async function draw(undo) {
             output_HTML += '<div class="notice">Note that the UnicodeMath delimiters ⁅⋯⁆ you\'ve used in the expression below aren\'t required – ' + (ummlConfig.splitInput? 'each line of the' : 'the entire') + ' input is automatically treated as a UnicodeMath expression.</div>';
         }
 
-        if (!ummlConfig.outputLaTeX) {
-
-            // mathml output
-            var mathml, details;
-            ({mathml, details} = unicodemathml(val, ummlConfig.displaystyle));
-            output_HTML += mathml;
-            if (isMathML(input.value)) {
-                output_source_HTML = MathMLtoUnicodeMath(input.value);
-            } else {
-                output_source_HTML += highlightMathML(escapeMathMLSpecialChars(indentMathML(mathml))) + "\n";
-            }
-
-            // show parse tree and mathml ast
-            if (details["intermediates"]) {
-                var pegjs_ast = details["intermediates"]["parse"];
-                var preprocess_ast = details["intermediates"]["preprocess"];
-                var mathml_ast = details["intermediates"]["transform"];
-
-                output_pegjs_ast_HTML += highlightJson(details["intermediates"]["json"]) + "\n";
-                output_preprocess_ast_HTML += highlightJson(preprocess_ast) + "\n";
-                output_mathml_ast_HTML += highlightJson(mathml_ast) + "\n";
-            }
+        // mathml output
+        var mathml, details;
+        ({mathml, details} = unicodemathml(val, ummlConfig.displaystyle));
+        output_HTML += mathml;
+        if (isMathML(input.value)) {
+            output_source_HTML = MathMLtoUnicodeMath(input.value);
         } else {
+            output_source_HTML += highlightMathML(escapeMathMLSpecialChars(indentMathML(mathml))) + "\n";
+        }
 
-            // LaTeX output
-            var latex, details;
-            ({latex, details} = unicodemathtex(val, ummlConfig.displaystyle));
-            output_HTML += latex;
-            output_source_HTML += escapeMathMLSpecialChars(latex) + "\n";
+        // show parse tree and mathml ast
+        if (details["intermediates"]) {
+            var pegjs_ast = details["intermediates"]["parse"];
+            var preprocess_ast = details["intermediates"]["preprocess"];
+            var mathml_ast = details["intermediates"]["transform"];
 
-            // show parse tree
-            if (details["intermediates"]) {
-                var pegjs_ast = details["intermediates"]["parse"];
-                var preprocess_ast = details["intermediates"]["preprocess"];
-
-                output_pegjs_ast_HTML += highlightJson(pegjs_ast) + "\n";
-                output_preprocess_ast_HTML += highlightJson(preprocess_ast) + "\n";
-            }
+            output_pegjs_ast_HTML += highlightJson(details["intermediates"]["json"]) + "\n";
+            output_preprocess_ast_HTML += highlightJson(preprocess_ast) + "\n";
+            output_mathml_ast_HTML += highlightJson(mathml_ast) + "\n";
         }
 
         // tally measurements
