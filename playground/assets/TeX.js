@@ -32,7 +32,7 @@ const accentsBelow = {
 }
 
 const enclosures = {
-    'box':          'fbox',
+    'box':          'boxed',
     'top':          '',
     'bottom':       '',
     'roundedbox':   '',
@@ -93,7 +93,7 @@ function TeX(value, noAddParens) {
         let ret = '';
 
         for (let i = 0; i < cNode; i++) {
-            ret += checkBracing(TeX(node.children[i]))
+            ret += TeX(node.children[i])
             if (i < cNode - 1)
                 ret += op;
         }
@@ -109,15 +109,21 @@ function TeX(value, noAddParens) {
 
     let cNode = value.nodeName == '#text' ? 1 : value.childElementCount
     let intent
-    let ret = '';
+    let ret = ''
+    let val
 
     switch (value.localName) {
         case 'mtable':
-            var symbol = 'matrix';
-            if (value.getAttribute('intent') == ':equations') {
-                symbol = 'eqnarray';
+            var symbol = 'matrix'
+            if (value.getAttribute('intent') == ':equations')
+                symbol = 'aligned'
+            if (value.parentElement.firstElementChild.textContent == '{' &&
+                (value.parentElement.childElementCount == 2 || !value.parentElement.lastElementChild.textContent) &&
+                value.parentElement.children[1] == value) {
+                    ret = '\\begin{cases}' + nary(value, '\\\\', cNode) + '\\end{cases}'
+                    break
             } else if (value.parentElement.hasAttribute('intent')) {
-                intent = value.parentElement.getAttribute('intent');
+                intent = value.parentElement.getAttribute('intent')
 
                 for (const [key, val] of Object.entries(matrixIntents)) {
                     if (val == intent) {
@@ -133,7 +139,7 @@ function TeX(value, noAddParens) {
                     '\\end{equation}'
                 break;
             }
-            ret = '\\begin{' + symbol + '}' + nary(value, '\\\\\n', cNode) + '\\end{' + symbol + '}'
+            ret = '\\begin{' + symbol + '}' + nary(value, '\\\\', cNode) + '\\end{' + symbol + '}'
             break;
 
         case 'mtr':
@@ -157,7 +163,7 @@ function TeX(value, noAddParens) {
                 ret = unary(value, '\\' + enclosures[notation]);
                 break;
             }
-            ret = unary(value, '\\fbox');
+            ret = unary(value, '\\boxed');
             break;
 
         case 'mphantom':
@@ -222,8 +228,9 @@ function TeX(value, noAddParens) {
                 if (value.parentElement.hasAttribute('intent') &&
                     value.parentElement.getAttribute('intent').startsWith('binomial-coefficient') ||
                     value.parentElement.firstElementChild.hasAttribute('title') &&
-                    value.parentElement.firstElementChild.getAttribute('title') == 'binomial coefficient')
-                    op = '\\choose';
+                    value.parentElement.firstElementChild.getAttribute('title') == 'binomial coefficient') {
+                    op = '\\binom'
+                }
             }
             ret = op + '{' + TeX(value.firstElementChild) + '}{' + TeX(value.lastElementChild) + '}'
             break;
@@ -318,32 +325,25 @@ function TeX(value, noAddParens) {
             break;
 
         case 'mo':
-            var val = value.innerHTML;
+            const opmap = {
+                '&amp;':    '&',
+                '&fa;':     '',
+                '&gt;':     '>',
+                '&lt;':     '<',
+                '&nbsp;':   ' ',
+                '\u2061':   '',
+                '⋯':        '⋅⋅⋅',
+            }
+            val = value.innerHTML
+            if (val in opmap) {
+                ret = opmap[val]
+                break
+            }
             if (!intent)
                 intent = value.getAttribute('intent')
             if (intent == ':text') {
                 ret = '\\' + val
                 break
-            }
-            if (val == '&fa;') {
-                ret = '\u2061';
-                break;
-            }
-            if (val == '&lt;') {
-                ret = '<';
-                break;
-            }
-            if (val == '&gt;') {
-                ret = '>';
-                break;
-            }
-            if (val == '&amp;') {
-                ret = '&';
-                break;
-            }
-            if (val == '\u202F' && autoBuildUp) {
-                ret = ' '
-                break;
             }
             if (val.startsWith('&#') && val.endsWith(';')) {
                 ret = value.innerHTML.substring(2, val.length - 1);
@@ -352,13 +352,13 @@ function TeX(value, noAddParens) {
                 ret = String.fromCodePoint(ret);
                 break;
             }
-            if (value.hasAttribute('title')) {
+            if (!ret && value.hasAttribute('title')) {
                 // The DLMF title attribute implies the following intents
                 // (see also for 'mi')
                 switch (value.getAttribute('title')) {
                     case 'differential':
                     case 'derivative':
-                        ret = 'ⅆ';
+                        ret = '𝑑';
                         break;
                     case 'binomial coefficient':
                         val = '';
@@ -369,13 +369,8 @@ function TeX(value, noAddParens) {
             break;
 
         case 'mi':
-            intent = value.getAttribute('intent')
-            if (isDoubleStruck(intent)) {
-                ret = intent;
-                break;
-            }
             if (value.innerHTML.length == 1) {
-                let c = value.innerHTML;
+                let c = value.innerHTML
                 if (!value.hasAttribute('mathvariant')) {
                     ret = italicizeCharacter(c);
                     break;
@@ -438,7 +433,11 @@ function TeX(value, noAddParens) {
     // TeX <mrow> children
     for (var i = 0; i < cNode; i++) {
         let node = value.children[i];
-        ret += checkSpace(i, node, ret)
+        if (i == 1 && ret == '{' && node.nodeName == 'mtable' &&
+            (value.childElementCount == 2 || !value.lastElementChild.textContent)) {
+            // \begin{cases}...\end{cases} includes opening brace
+            ret = ''
+        }
         ret += TeX(node, false, i);
     }
 
@@ -446,9 +445,6 @@ function TeX(value, noAddParens) {
         ? value.getAttribute('intent') : '';
 
     if (mrowIntent) {
-        if (mrowIntent == ':cases')
-            return '\\cases{' + ret.substring(2) + '}'
-
         if (mrowIntent == ':fenced' && value.childElementCount &&
             !value.lastElementChild.textContent) {
             return !value.firstElementChild.textContent ? '{' + ret + '}' : ret
