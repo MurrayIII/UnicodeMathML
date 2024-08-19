@@ -52,6 +52,7 @@ const dictationWords = {
 	'delta':					'δ',		// δ
 	'derivative of':			'ⅆ',		// ⅆ
 	'determinant':				'⒱(',		// \vmatrix (|array|)
+	'diffraction':				'\u3017',	// Appears sometimes instead of 'end fraction'
 	'divided by':				'/',		// Fraction
 	'does':						'\uFFFF',	// (ignore)
 	'doesn\'t':					'/',		// Treat as "not"
@@ -157,6 +158,7 @@ const dictationWords = {
 	'partial':					'∂',		// ∂
 	'phi':						'ϕ',		// ϕ
 	'pi':						'π',		// π
+	'pie':						'π',		// π
 	'plus':						'+',		// +
 	'power':					'\uFFFF',	// (ignore)
 	'prime':					'′',		// ′
@@ -431,9 +433,13 @@ function dictationToUnicodeMath(dictation) {
 					mathStyle.push(key);	// Collect math style words
 					unicodeMath = '';		// Will delete control word
 				} else if (unicodeMath == '⍁') {
-					if (ch2 == '\u3017') {
+					if (ch2 == '\u3017' || ch2 == '&') {
 						fraction--;
 						unicodeMath = '';
+						if (ch2 == '&') {	// 'and' should be 'end'
+							unicodeMath = '\u3017'
+							i--
+						}
 					} else {
 						fraction++;
 					}

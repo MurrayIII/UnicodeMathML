@@ -10,6 +10,7 @@ var output_source = document.getElementById("output_source");
 var measurements_parse = document.getElementById("measurements_parse");
 var measurements_transform = document.getElementById("measurements_transform");
 var measurements_pretty = document.getElementById("measurements_pretty");
+var dictateButton = document.getElementById('dictation')
 
 var activeTab = "source";
 var atEnd = false;                          // True if at end of output object
@@ -738,7 +739,7 @@ input.addEventListener("keydown", function (e) {
             case 'd':                       // Alt+d
                 // Toggle dictation mode on/off
                 e.preventDefault()
-                $("#mic").click()
+                startDictation()
                 return
 
             case 'Enter':                   // Alt+Enter
@@ -937,18 +938,19 @@ input.addEventListener("keydown", function (e) {
 // the input field or, if there is no cursor, append them to its value,
 // via https://stackoverflow.com/a/11077016
 function insertAtCursorPos(symbols) {
-    let sel = document.getSelection()
+    let sel = document.getSelection()       // Check if in output window
     let node = sel.anchorNode
-    if (node.nodeName == '#text')
-        node = node.parentElement
-    if (node.nodeName[0] == 'm') {
-        // Insert into output window
-        const event = new Event('keydown')
-        event.key = symbols
-        output.dispatchEvent(event)
-        return
+    if (node) {
+        if (node.nodeName == '#text')
+            node = node.parentElement
+        if (node.nodeName[0] == 'm') {
+            // Insert into output window
+            const event = new Event('keydown')
+            event.key = symbols
+            output.dispatchEvent(event)
+            return
+        }
     }
-
     if (input.selectionStart || input.selectionStart == '0') {
         var startPos = input.selectionStart;
         var endPos = input.selectionEnd;
@@ -3272,21 +3274,33 @@ $('[data-explanation]').hover(function (e) {
     showTooltip(x, y, text);
 }, hideTooltip);
 
-var recognition;
+var recognition
 try {
-    dictationToUnicodeMath('');             // Fails if dictation.js is unavailable
-    initDictation();
+    dictationToUnicodeMath('')              // Fails if dictation.js is unavailable
+    initDictation()
 }
-catch {}
+catch { }
+
+function beep(frequency) {
+    // Create an AudioContext and oscillator node
+    let audioContext = new (window.AudioContext || window.webkitAudioContext)()
+    const oscillator = audioContext.createOscillator()
+    oscillator.type = 'sine'
+    oscillator.frequency.value = frequency
+    oscillator.connect(audioContext.destination)
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 0.2); // Stop after 0.1 seconds
+}
 
 function initDictation() {
-    const SpeechRecognition = window.SpeechRecognition ||
-        window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-        return;
-    }
-    recognition = new SpeechRecognition();
-    recognition.continuous = true;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SpeechRecognition)
+        return
+
+    recognition = new SpeechRecognition()
+    recognition.lang = 'en-US'
+    recognition.continuous = true
+
     recognition.onresult = function (event) {
         if (event.results.length > 0) {
             var current = event.results[event.results.length - 1][0];
@@ -3328,7 +3342,7 @@ function initDictation() {
                         if (result.length > i + 2 && isAsciiDigit(ch) &&
                             result[i + 1] == '/' && isAsciiDigit(result[i + 2]) &&
                             !isAsciiDigit(chPrev) && (result.length == i + 3 ||
-                                !isAsciiDigit(result[i + 3]))) {
+                            !isAlphanumeric(result[i + 3]))) {
                             // Convert, e.g., 1/3 to ⅓
                             ch = getUnicodeFraction(ch, result[i + 2]);
                             i += 2;
@@ -3338,27 +3352,44 @@ function initDictation() {
                 }
             }
             insertAtCursorPos(result1);
+            speechDisplay.innerText += current.transcript
         }
     }
     recognition.onerror = function (event) {
-        mic.click();
+        startDictation()
         alert((event.error == 'network') ? 'Not connected to Internet'
             : `Dictation recognition error detected: ${event.error}`);
     }
+
+    recognition.onaudiostart = function (event) {
+        console.log('Audio start')
+        dictateButton.style.backgroundColor = 'DodgerBlue'
+        beep(1000)
+    }
+
+    recognition.onaudioend = function (event) {
+        console.log('Audio end')
+        dictateButton.style.backgroundColor = 'inherit'
+        dictateButton.style.color = 'inherit'
+        beep(900)
+    }
 }
 
-$("#mic").click(function () {
+function startDictation() {
     if (recognition == undefined) {
         alert("dictation recognition API not available");
         return;
     }
-    try {
-        $(this).removeClass("fa-microphone-slash")
-        $(this).addClass("fa-microphone blink")
-        recognition.start()
-    } catch (error) {
-        $(this).removeClass("fa-microphone blink")
-        $(this).addClass("fa-microphone-slash")
-        recognition.stop() //already started - toggle
+    let dictate = document.getElementById('dictation')
+
+    if (dictateButton.style.backgroundColor != 'DodgerBlue') {
+        try {
+            recognition.start()
+            speechDisplay.innerText = ''
+            input.value = ''
+            return
+        }
+        catch (error) { }
     }
-})
+    recognition.stop()                  // Already started
+}
