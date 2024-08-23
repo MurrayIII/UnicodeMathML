@@ -2019,7 +2019,6 @@ function checkAutoBuildUp(node, nodeP, key) {
     return null
 }
 function getArgName(node) {
-    let attrs
     let name = node.parentElement.nodeName
 
     switch (name) {
@@ -2507,6 +2506,8 @@ output.addEventListener('keydown', function (e) {
                 return
 
             case 'c':                       // Ctrl+c
+                // Microsoft Word needs xmlns
+                output.firstElementChild.setAttribute('xmlns', 'http://www.w3.org/1998/Math/MathML')
                 let mathml = ''             // Collects MathML for selected nodes
                 let range = sel.getRangeAt(0)
                 let nodeS = range.startContainer
