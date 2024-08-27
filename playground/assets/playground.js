@@ -1349,6 +1349,8 @@ function refreshDisplays(uMath, noUndo) {
         }
         setSelection(sel, nodeA, offsetA)
     } else {
+        if (nodeF.childElementCount && offsetF > nodeF.childElementCount)
+            offsetF = nodeF.childElementCount
         sel.setBaseAndExtent(nodeA, offsetA, nodeF, offsetF)
     }
 }
@@ -1840,7 +1842,7 @@ function deleteSelection(sel) {
 }
 
 function setSelAttributes(node, attr, value, attr1, value1) {
-    if (!node || node.nodeName == 'math')
+    if (!node)
         return
     if (node.nodeName == '#text')
         node = node.parentElement
@@ -2469,14 +2471,21 @@ output.addEventListener('keydown', function (e) {
     if (key.length > 1 && !inRange('\uD800', key[0], '\uDBFF')) // 'Shift', etc.
         return
 
-    e.preventDefault();
+    e.preventDefault()
+    let mathmlCurrent
+    let t
     let walker
 
     if (e.ctrlKey) {
         switch (key) {
             case 'a':                       // Ctrl+a
                 // Select math zone
-                sel = setSelection(sel, output.firstElementChild, SELECTNODE)
+                node = output.firstElementChild.firstElementChild
+                removeSelAttributes(node)
+                sel = setSelection(sel, node, SELECTNODE)
+                let offset = node.childElementCount ? node.childElementCount : 1
+                setSelAttributes(node, 'selanchor', '0', 'selfocus', offset)
+                refreshDisplays('', true)
                 return
 
             case 'b':                       // Ctrl+b
@@ -2505,9 +2514,18 @@ output.addEventListener('keydown', function (e) {
                 refreshDisplays()
                 return
 
+            case 'C':
+                // Define xmlns and use <mfenced> for Word
+                mathmlCurrent = output.innerHTML
+                uMath = getUnicodeMath(output.firstElementChild, true)
+                useMfenced = true
+                t = unicodemathml(uMath, true) // uMath → MathML
+                useMfenced = false
+                output.innerHTML = t.mathml
+                refreshDisplays('', true)
+                sel = window.getSelection()
+                                            // Fall through to case 'c'
             case 'c':                       // Ctrl+c
-                // Microsoft Word needs xmlns
-                output.firstElementChild.setAttribute('xmlns', 'http://www.w3.org/1998/Math/MathML')
                 let mathml = ''             // Collects MathML for selected nodes
                 let range = sel.getRangeAt(0)
                 let nodeS = range.startContainer
@@ -2524,13 +2542,18 @@ output.addEventListener('keydown', function (e) {
                 while (node && node !== nodeS)
                     node = walker.nextNode() // Advance walker to starting node
 
-                while (node) {
+                let done = false
+
+                while (node && !done) {
                     mathml += node.outerHTML
                     if (node === nodeE)     // Reached the ending node
                         break
                     if (!walker.nextSibling()) {
                         while (true) {      // Bypass current node
-                            walker.nextNode()
+                            if (!walker.nextNode()) {
+                                done = true
+                                break
+                            }
                             let position = walker.currentNode.compareDocumentPosition(node)
                             if (!(position & 8))
                                 break       // currentNode isn't inside node
@@ -2538,13 +2561,20 @@ output.addEventListener('keydown', function (e) {
                     }
                     node = walker.currentNode
                 }
+                if (!mathml.startsWith('<math'))
+                    mathml = `<math display="block" xmlns="http://www.w3.org/1998/Math/MathML">` + mathml + `</math>`
                 navigator.clipboard.writeText(mathml)
+                if (mathmlCurrent) {
+                    useMfenced = false
+                    output.innerHTML = mathmlCurrent
+                    refreshDisplays('', true)
+                }
                 return
 
             case 'r':                       // Ctrl+r
                 // Refresh MathML display (MathML → UnicodeMath → MathML)
                 uMath = getUnicodeMath(output.firstElementChild, true)
-                let t = unicodemathml(uMath, true) // uMath → MathML
+                t = unicodemathml(uMath, true) // uMath → MathML
                 output.innerHTML = t.mathml
                 refreshDisplays('', true)
                 return

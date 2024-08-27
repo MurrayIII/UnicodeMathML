@@ -633,7 +633,7 @@ function testAutoBuildUp() {
     testUndo('"rate"', unicodeMathPartialText)
 }
 
-const clipExpect = "<mfrac><mi selanchor=\"0\">𝑎</mi><mi>𝑏</mi></mfrac><mo>+</mo><mfrac selfocus=\"2\"><mi>𝑐</mi><mi>𝑑</mi></mfrac>"
+const clipExpect = "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mfrac><mi selanchor=\"0\">𝑎</mi><mi>𝑏</mi></mfrac><mo>+</mo><mfrac selfocus=\"2\"><mi>𝑐</mi><mi>𝑑</mi></mfrac></math>"
 const homeExpect = "Ⓐ() 𝑎/𝑏+𝑐/𝑑=0"
 const endExpect = "𝑎/𝑏+𝑐/𝑑=Ⓐ(1)0"
 
@@ -709,6 +709,8 @@ function testHotKeys() {
     buildUp('𝑎²+𝑏²=𝑐²')
     testOutputHotKey('z', '𝑎²+𝑏²=𝑐Ⓐ(1)²')
     testOutputHotKey('y', '𝑎²+𝑏²=𝑐²Ⓐ(1) ')
+
+    testOutputHotKey('a', 'Ⓐ()Ⓕ(6) 𝑎²+𝑏²=𝑐² ')
 
     // Test input Ctrl+z and Ctrl+y hot keys
     inputUndoStack = [{uMath: ''}]

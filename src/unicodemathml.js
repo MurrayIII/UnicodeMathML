@@ -3,6 +3,7 @@ var ksi = false
 var testing
 var selanchor
 var selfocus
+var useMfenced = false
 
 
 const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
@@ -3262,7 +3263,7 @@ function mtransform(dsty, puast) {
     // map transformation over lists, wrap the result in an mrow. Note: here dsty
     // is a boolean; it doesn't include an intent property
 
-    if (Array.isArray(puast)) {
+    if (Array.isArray(puast) && puast.length) {
         let val;
         if (puast[0].hasOwnProperty('script'))
             val = puast[0].script;
@@ -3305,8 +3306,10 @@ function mtransform(dsty, puast) {
         case "unicodemath":
             if (autoBuildUp)                // Used for WYSIWYG editing
                 return mtransform(dsty, value.content);
-            //var attrs = {class: "unicodemath", xmlns: "http://www.w3.org/1998/Math/MathML", display: dsty? "block" : "inline"}
-            var attrs = {display: dsty ? "block" : "inline"};
+            var attrs = getAttrs(value, '')
+            attrs.display = dsty ? "block" : "inline"
+            if (useMfenced)                 // Word needs xmlns
+                attrs.xmlns = "http://www.w3.org/1998/Math/MathML"
             if (value.eqnumber == null)
                 return {math: withAttrs(attrs, mtransform(dsty, value.content))};
 
@@ -3328,11 +3331,25 @@ function mtransform(dsty, puast) {
             return {mspace: withAttrs({linebreak: "newline"}, null)};
 
         case "expr":
-            if (Array.isArray(value) && Array.isArray(value[0]) &&
-                (value[0][0].hasOwnProperty("intent") || value[0][0].hasOwnProperty("arg"))) {
-                var c = mtransform(dsty, value[0][0]);
-                c.mrow.attributes = getAttrs(value[0][0], '');
-                return c;
+            if (Array.isArray(value) && Array.isArray(value[0])) {
+                if (value[0][0].hasOwnProperty("intent") || value[0][0].hasOwnProperty("arg")) {
+                    var c = mtransform(dsty, value[0][0]);
+                    c.mrow.attributes = getAttrs(value[0][0], '');
+                    return c;
+                }
+                if (value[0] && Array.isArray(value[0]) && value[0][0].intend &&
+                    value[0][0].intend.symbol == 'Ⓐ') {
+                    let n = value[0].length
+                    if (n == 1 || n == 2 && value[0][1].intend &&
+                        value[0][1].intend.symbol == 'Ⓕ') {
+                        let selarr = value.shift()
+                        c = mtransform(dsty, value)
+                        c.mrow.attributes.selanchor = selarr[0].intend.value
+                        if (n == 2)
+                            c.mrow.attributes.selfocus = value.length //c.mrow.selarr[1].intend.value
+                        return c
+                    }
+                }
             }
             return mtransform(dsty, value);
 
@@ -3933,6 +3950,17 @@ function mtransform(dsty, puast) {
             //if (!value.open && !value.close)
             //    return {mrow: withAttrs(getAttrs(value, ''), content)};
 
+            if (useMfenced) {
+                var attrs = getAttrs(value, '');
+                if (attrs.intent && attrs.intent[0] in symbolsIntent)
+                    attrs.intent = symbolsIntent[attrs.intent[0]] + attrs.intent.substring(1);
+                if (typeof value.open === 'string' && value.open != '(')
+                    attrs.open = value.open
+                if (typeof value.close === 'string' && value.close != ')')
+                    attrs.close = value.close
+                return [{mfenced: withAttrs(attrs, content)}]
+            }
+
             var ret = [];
             if (typeof value.open === 'string') {
                 ret.push({mo: noAttr(value.open)});
@@ -4034,6 +4062,7 @@ function pretty(mast) {
 
             return tag(key, attributes, pretty(value));
 
+        case "mfenced":
         case "msubsup":
         case "msub":
         case "msup":
@@ -4530,8 +4559,8 @@ function dump(value, noAddParens) {
             break;
     }
 
+    let selcode = ksi ? checkSelAttr(value, 'Ⓐ') + checkSelAttr(value, 'Ⓕ') : ''
     if (ret) {
-        let selcode = ksi ? checkSelAttr(value, 'Ⓐ') + checkSelAttr(value, 'Ⓕ') : ''
         if (!selcode)
             return ret
 
@@ -4548,6 +4577,12 @@ function dump(value, noAddParens) {
         let node = value.children[i];
         ret += checkSpace(i, node, ret)
         ret += dump(node, false, i);
+    }
+
+    if (selcode) {
+        if (cNode > 1)
+            selcode += ' '
+        ret = selcode + ret
     }
 
     let mrowIntent = value.nodeName == 'mrow' && value.hasAttribute('intent')
