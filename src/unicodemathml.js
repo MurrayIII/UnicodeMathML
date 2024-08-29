@@ -3322,11 +3322,9 @@ function mtransform(dsty, puast) {
             // with an mlabeledtr containing the eqnumber and content in
             // individual mtd's
             return {math: withAttrs(attrs,
-                        {mtable: noAttr({mlabeledtr: withAttrs({id: id}, [
+                        {mtable: withAttrs({displaystyle: true}, {mlabeledtr: withAttrs({id: id}, [
                             {mtd: noAttr({mtext: noAttr(value.eqnumber)})},
-                            {mtd: noAttr(mtransform(dsty, value.content))} ])})}
-                        )
-                    };
+                            {mtd: noAttr(mtransform(dsty, value.content))} ])})})};
         case "newline":
             return {mspace: withAttrs({linebreak: "newline"}, null)};
 

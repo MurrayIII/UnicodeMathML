@@ -2310,6 +2310,15 @@ output.addEventListener("click", function () {
     speechSel(sel)
 })
 
+function selectMathZone() {
+    let node = output.firstElementChild.firstElementChild
+    removeSelAttributes(node)
+    setSelection(null, node, SELECTNODE)
+    let offset = node.childElementCount ? node.childElementCount : 1
+    setSelAttributes(node, 'selanchor', '0', 'selfocus', offset)
+    refreshDisplays('', true)
+}
+
 output.addEventListener('keydown', function (e) {
     var x = document.getElementById(this.id + "autocomplete-list")
     if (handleAutocompleteKeys(x, e))
@@ -2480,12 +2489,7 @@ output.addEventListener('keydown', function (e) {
         switch (key) {
             case 'a':                       // Ctrl+a
                 // Select math zone
-                node = output.firstElementChild.firstElementChild
-                removeSelAttributes(node)
-                sel = setSelection(sel, node, SELECTNODE)
-                let offset = node.childElementCount ? node.childElementCount : 1
-                setSelAttributes(node, 'selanchor', '0', 'selfocus', offset)
-                refreshDisplays('', true)
+                selectMathZone()
                 return
 
             case 'b':                       // Ctrl+b
@@ -2527,6 +2531,8 @@ output.addEventListener('keydown', function (e) {
                                             // Fall through to case 'c'
             case 'c':                       // Ctrl+c
                 let mathml = ''             // Collects MathML for selected nodes
+                if (sel.isCollapsed)
+                    selectMathZone()
                 let range = sel.getRangeAt(0)
                 let nodeS = range.startContainer
                 if (nodeS.nodeName == '#text')
@@ -2563,6 +2569,7 @@ output.addEventListener('keydown', function (e) {
                 }
                 if (!mathml.startsWith('<math'))
                     mathml = `<math display="block" xmlns="http://www.w3.org/1998/Math/MathML">` + mathml + `</math>`
+                mathml = mathml.replace(/&nbsp;/g, ' ')
                 navigator.clipboard.writeText(mathml)
                 if (mathmlCurrent) {
                     useMfenced = false
