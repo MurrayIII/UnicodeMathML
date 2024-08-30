@@ -1387,6 +1387,38 @@ function removeSelAttributes(node) {
     }
 }
 
+function indexEndOfValue(str, i) {
+    let cQuote = 0
+    for (; i < str.length; i++) {
+        if (str[i] == '"') {
+            cQuote++
+            if (cQuote == 2)
+                return i + 1
+        }
+    }
+    return -1
+}
+
+function removeMathMlSelAttributes(mathml) {
+    let i = mathml.indexOf('selanchor')
+    if (i == -1)
+        return mathml
+
+    let j = indexEndOfValue(mathml, i + 10)
+    if (j == -1)
+        return mathml
+
+    let mml = mathml.substring(0, i - 1) + mathml.substring(j)
+    i = mml.indexOf('selfocus', i)
+    if (i == -1)
+        return mml
+
+    j = indexEndOfValue(mml, i)
+    if (j == -1)
+        return mml
+    return mml.substring(0, i - 1) + mml.substring(j)
+}
+
 function handleEndOfTextNode(node) {
     let name = node.parentElement.nodeName
     let nameT = ''
@@ -2570,6 +2602,9 @@ output.addEventListener('keydown', function (e) {
                 if (!mathml.startsWith('<math'))
                     mathml = `<math display="block" xmlns="http://www.w3.org/1998/Math/MathML">` + mathml + `</math>`
                 mathml = mathml.replace(/&nbsp;/g, ' ')
+                mathml = mathml.replace(/<malignmark><\/malignmark>/g, '<malignmark/>')
+                mathml = mathml.replace(/<maligngroup><\/maligngroup>/g, '<maligngroup/>')
+                mathml = removeMathMlSelAttributes(mathml)
                 navigator.clipboard.writeText(mathml)
                 if (mathmlCurrent) {
                     useMfenced = false

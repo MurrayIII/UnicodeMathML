@@ -2395,29 +2395,21 @@ function preprocess(dsty, uast, index, arr) {
         case "arows":
             return {arows: preprocess(dsty, value)};
         case "arow":
-
             // divide "&" into alignment marks and stretchy gaps
+            var currAcol = []
             var ret = []
-            var i = 0;
-            var currAcol = [];
-            if (value[0] == null) {  // align mark immediately at start of row
-                i = 1;
-            }
+            var i = 0
+
+            if (value[0] == null)           // align mark at start of row
+                i = 1
+
             for (; i < value.length; i++) {
-                if (i % 2 == 0) {
-                    currAcol = [{aaligngroup: null}] // alignment group
-                    currAcol.push(preprocess(dsty, value[i]));
-                } else if (i % 2 == 1) {
-                    currAcol.push({aalignmark: null});  // alignment mark
-                    currAcol.push(preprocess(dsty, value[i]));
-                    ret.push({acol: currAcol});
-                    currAcol = [];
-                }
+                currAcol.push(!(i % 2) ? {aaligngroup: null} : {aalignmark: null})
+                currAcol.push(preprocess(dsty, value[i]))
             }
-            if (currAcol.length > 0) {
-                ret.push({acol: currAcol});
-            }
-            return {arow: ret};
+            if (currAcol.length > 0)
+                ret.push({acol: currAcol})
+            return {arow: ret}
 
         case "specialMatrix":               // n×m or identity matrix
             t = value[2];
@@ -4194,7 +4186,8 @@ function dump(value, noAddParens) {
 
     let cNode = value.nodeName == '#text' ? 1 : value.childElementCount
     let intent
-    let ret = '';
+    let ret = ''
+    let firstMaligngroup
 
     switch (value.localName) {
         case 'mtable':
@@ -4222,16 +4215,16 @@ function dump(value, noAddParens) {
             break;
 
         case 'mtr':
-            ret = nary(value, '&', cNode);
+            ret = nary(value, '&', cNode)
             break;
 
         case 'mtd':
-            ret = nary(value, '', cNode);
+            ret = nary(value, '', cNode)
+            if (ret[0] == '&')
+                ret = ret.substring(1)
             break;
 
         case 'maligngroup':
-            if (value.parentElement.nodeName == 'mtd')
-                break;                  // else fall through
         case 'malignmark':
             ret = '&';
             break;
@@ -4453,6 +4446,10 @@ function dump(value, noAddParens) {
             if (val == '&fa;') {
                 ret = '\u2061';
                 break;
+            }
+            if (val == '&nbsp;') {
+                ret = '\u00A0'
+                break
             }
             if (val == '&lt;') {
                 ret = '<';

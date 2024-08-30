@@ -148,11 +148,11 @@ function TeX(value, noAddParens) {
 
         case 'mtd':
             ret = nary(value, '', cNode);
+            if (ret[0] == '&')
+                ret = ret.substring(1)
             break;
 
         case 'maligngroup':
-            if (value.parentElement.nodeName == 'mtd')
-                break;                  // else fall through
         case 'malignmark':
             ret = '&';
             break;
