@@ -26,6 +26,7 @@ var selectionEnd
 var anchorNode
 var focusNode
 var inSelChange = false
+var contextmenuNode
 
 document.onselectionchange = () => {
     if (inSelChange)
@@ -2321,6 +2322,21 @@ function moveSelection(sel, node, offset) {
     speak(atEnd ? 'at end ' + name : name)
 }
 
+output.addEventListener('contextmenu', function (e) {
+    e.preventDefault()
+    contextmenuNode = e.target
+    let contextMenu = document.createElement('div')
+    contextMenu.setAttribute("id", "contextmenu")
+    contextMenu.innerHTML = `<input type="text" id="contextmenuinput" placeholder="Enter intent here"></input>`
+    let node = contextMenu.firstElementChild
+    node.style.backgroundColor = 'black'
+    node.style.color = 'white'
+    node.style.width = '20rem'
+    node.style.border = '1px solid #d4d4d4'
+    output.appendChild(contextMenu)
+    node.focus()
+})
+
 var onac = false                        // true immediately after autocomplete click
 
 output.addEventListener("click", function () {
@@ -2356,12 +2372,28 @@ output.addEventListener('keydown', function (e) {
     if (handleAutocompleteKeys(x, e))
         return
 
+    let sel = window.getSelection()
+    x = document.getElementById('contextmenu')
+    if (x) {
+        let contextMenu = document.getElementById('contextmenu')
+        if (e.key == 'Enter') {
+            e.preventDefault()
+            let text = document.getElementById('contextmenuinput')
+            contextmenuNode.setAttribute('intent', text.value)
+            output.removeChild(contextMenu)
+            contextmenuNode = null
+            output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)))
+        } else if (e.key == 'Escape') {
+            output.removeChild(contextMenu)
+            contextmenuNode = null
+        }
+        return
+    }
     let cchCh
     let dir = ''
     let i
     let intent = ''
     let key = e.key
-    let sel = window.getSelection()
 
     let range = document.createRange()
     if (sel.type != 'None')
@@ -2553,6 +2585,8 @@ output.addEventListener('keydown', function (e) {
             case 'C':
                 // Define xmlns and use <mfenced> for Word
                 mathmlCurrent = output.innerHTML
+                if (sel.isCollapsed)
+                    selectMathZone()
                 uMath = getUnicodeMath(output.firstElementChild, true)
                 useMfenced = true
                 t = unicodemathml(uMath, true) // uMath → MathML
