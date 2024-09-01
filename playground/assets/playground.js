@@ -2323,8 +2323,16 @@ function moveSelection(sel, node, offset) {
 }
 
 output.addEventListener('contextmenu', function (e) {
+    // Create input element to receive intent for target node if selection
+    // is collapsed and for starting node of selection if selection isn't
+    // collapsed
     e.preventDefault()
     contextmenuNode = e.target
+    let sel = window.getSelection()
+    if (!sel.isCollapsed) {
+        let range = sel.getRangeAt(0)
+        contextmenuNode = range.startContainer
+    }
     let contextMenu = document.createElement('div')
     contextMenu.setAttribute("id", "contextmenu")
     contextMenu.innerHTML = `<input type="text" id="contextmenuinput" placeholder="Enter intent here"></input>`
@@ -2382,7 +2390,8 @@ output.addEventListener('keydown', function (e) {
             contextmenuNode.setAttribute('intent', text.value)
             output.removeChild(contextMenu)
             contextmenuNode = null
-            output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)))
+            if(!testing)
+                output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)))
         } else if (e.key == 'Escape') {
             output.removeChild(contextMenu)
             contextmenuNode = null

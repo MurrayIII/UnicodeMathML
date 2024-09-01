@@ -685,14 +685,14 @@ function testHotKeys() {
     input.textContent = 'Ⓐ()𝑎/𝑏+Ⓕ(2) 𝑐/𝑑=0'
     draw()
     setTimeout(function () { }, 50)    // Sleep for 50 msec
-    const event = new Event('keydown')
+    let event = new Event('keydown')
     event.key = 's'
     event.ctrlKey = true
     input.dispatchEvent(event)
     setTimeout(function () { }, 50)
     event.key = 'c'
     output.dispatchEvent(event)
-    setTimeout(function () { }, 50)
+    setTimeout(function () { }, 200)
 
     navigator.clipboard.readText()
         .then((clipText) => {
@@ -713,7 +713,21 @@ function testHotKeys() {
 
     testOutputHotKey('a', 'Ⓐ()Ⓕ(6) 𝑎²+𝑏²=𝑐² ')
 
+    // Test output context menu
+    event = new Event('contextmenu')
+    output.dispatchEvent(event)
+    let inp = document.getElementById('contextmenuinput')
+    inp.value = 'Pythagorean theorem'
+    event = new Event('keydown')
+    event.key = 'Enter'
+    output.dispatchEvent(event)
+    if (output.innerHTML != '<math display=\"block\"><mrow selanchor=\"0\" selfocus=\"6\" intent=\"Pythagorean theorem\"><msup><mi>𝑎</mi><mn>2</mn></msup><mo>+</mo><msup><mi>𝑏</mi><mn>2</mn></msup><mo>=</mo><msup><mi>𝑐</mi><mn>2</mn></msup><mo> </mo></mrow></math>')
+        console.log(output.innerHTML)
+    else
+        console.log('Context menu succeeded')
+
     // Test input Ctrl+z and Ctrl+y hot keys
+    input.focus()
     inputUndoStack = [{uMath: ''}]
     input.value = '𝑎/𝑏+𝑐/𝑑=0'
     input.selectionStart = 3                // Select 𝑏
