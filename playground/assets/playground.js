@@ -1080,14 +1080,15 @@ var commonSymbols = "αβδζθλχϕϵ⁡←∂√∞⒨■"; // 03B1 03B2 03B4
 var currentFocus = -1;
 
 function closeAutocompleteList() {
-    var x = document.getElementsByClassName("autocomplete-items");
-    if (x == undefined) return;
+    let x = document.getElementsByClassName("autocomplete-items")
+    if (x != undefined) {
+        let cItem = x.length
 
-    var cItem = x.length;
-
-    for (var i = 0; i < cItem; i++) {
-        x[i].parentNode.removeChild(x[i]);
+        for (var i = 0; i < cItem; i++) {
+            x[i].parentNode.removeChild(x[i])
+        }
     }
+    closeContextMenu()
 }
 
 function createAutoCompleteMenu(cw, id, onAutoCompleteClick) {
@@ -2322,26 +2323,44 @@ function moveSelection(sel, node, offset) {
     speak(atEnd ? 'at end ' + name : name)
 }
 
+function closeContextMenu() {
+    if (contextmenuNode) {
+        contextmenuNode = null
+        let contextMenu = document.getElementById("contextmenu")
+        output.removeChild(contextMenu)
+    }
+}
+
 output.addEventListener('contextmenu', function (e) {
     // Create input element to receive intent for target node if selection
     // is collapsed and for starting node of selection if selection isn't
     // collapsed
     e.preventDefault()
+    closeContextMenu()
     contextmenuNode = e.target
     let sel = window.getSelection()
     if (!sel.isCollapsed) {
         let range = sel.getRangeAt(0)
         contextmenuNode = range.startContainer
     }
+    if (contextmenuNode.nodeName == '#text')
+        contextmenuNode = contextmenuNode.parentElement
     let contextMenu = document.createElement('div')
     contextMenu.setAttribute("id", "contextmenu")
-    contextMenu.innerHTML = `<input type="text" id="contextmenuinput" placeholder="Enter intent here"></input>`
+    let intentCurrent = contextmenuNode.getAttribute('intent')
+    let name = names[contextmenuNode.nodeName]
+    if (!name)
+        name = getUnicodeMath(contextmenuNode, false)
+    let str = `<input type="text" id="contextmenuinput" placeholder="Enter intent for ${name}" onfocusout="closeContextMenu()""></input>`
+    contextMenu.innerHTML = str
     let node = contextMenu.firstElementChild
     node.style.backgroundColor = 'black'
     node.style.color = 'white'
-    node.style.width = '20rem'
+    node.style.width = '100%'
     node.style.border = '1px solid #d4d4d4'
     output.appendChild(contextMenu)
+    let text = document.getElementById('contextmenuinput')
+    text.value = intentCurrent          // Show current intent (if any)
     node.focus()
 })
 
@@ -2352,6 +2371,7 @@ output.addEventListener("click", function () {
         onac = false
         return
     }
+    closeContextMenu()
     //removeSelAttributes()
     let sel = window.getSelection()
     let node = sel.anchorNode
@@ -2380,21 +2400,23 @@ output.addEventListener('keydown', function (e) {
     if (handleAutocompleteKeys(x, e))
         return
 
-    let sel = window.getSelection()
     x = document.getElementById('contextmenu')
     if (x) {
         let contextMenu = document.getElementById('contextmenu')
-        if (e.key == 'Enter') {
-            e.preventDefault()
-            let text = document.getElementById('contextmenuinput')
-            contextmenuNode.setAttribute('intent', text.value)
-            output.removeChild(contextMenu)
-            contextmenuNode = null
-            if(!testing)
-                output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)))
-        } else if (e.key == 'Escape') {
-            output.removeChild(contextMenu)
-            contextmenuNode = null
+        switch (e.key) {
+            case 'Enter':
+            case 'Tab':
+                e.preventDefault()
+                let text = document.getElementById('contextmenuinput')
+                if (text.value)
+                    contextmenuNode.setAttribute('intent', text.value)
+                else
+                    contextmenuNode.removeAttribute('intent')
+                                            // Fall thru to 'Escape'
+            case 'Escape':
+                closeContextMenu()
+                if (!testing)
+                    output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)))
         }
         return
     }
@@ -2403,6 +2425,7 @@ output.addEventListener('keydown', function (e) {
     let i
     let intent = ''
     let key = e.key
+    let sel = window.getSelection()
 
     let range = document.createRange()
     if (sel.type != 'None')
