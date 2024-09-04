@@ -28,7 +28,26 @@ var focusNode
 var inSelChange = false
 var contextmenuNode
 
+function getMathJaxMathMlNode() {
+    /* MathJax output-element DOM has the form:
+       <mjx-container
+         <svg
+         <mjx-assistive-mml
+           <mjx-container
+             <svg
+             <mjx-assistive-mml
+               <math ...
+     */
+    let node = output.firstElementChild.lastElementChild.firstElementChild
+    console.log('nodename = ' + node.nodeName)
+    if (node.nodeName == 'MJX-CONTAINER')
+        node = node.lastElementChild.firstElementChild
+    return node
+}
+
 document.onselectionchange = () => {
+    if (output.firstElementChild && output.firstElementChild.nodeName == 'MJX-CONTAINER')
+        return
     if (inSelChange)
         return
     let sel = window.getSelection()
@@ -82,6 +101,21 @@ function removeSuperfluousMrow(node) {
     //    }
     //}
     return node
+}
+function getChildIndex(node, nodeP) {
+    // Return nodeP child index of child that is or contains node
+    if (!nodeP.childElementCount)
+        return -1                           // No children
+
+    for (; node && node.parentElement != nodeP; node = node.parentElement)
+        ;                                   // Move up to nodeP child
+    if (!node)
+        return -1                           // Not found
+
+    let iChild = 0
+    for (; iChild < nodeP.childElementCount && node != nodeP.children[iChild]; iChild++)
+        ;                                   // Find child index
+    return iChild
 }
 
 function setSelection(sel, node, offset, nodeFocus, offsetFocus) {
@@ -1197,6 +1231,8 @@ function removeActive(x) {
 ///////////////////////////////////
 
 function speechSel(sel) {
+    if (output.firstElementChild.nodeName == 'MJX-CONTAINER')
+        return                              // MathJax
     let node = sel.anchorNode;
 
     if (node.nodeType != 3) {
@@ -1737,11 +1773,25 @@ function checkMathSelection(sel) {
         }
         rel = 0
     }
-
     let range = sel.getRangeAt(0)
     let nodeCA = range.commonAncestorContainer
     let needSelChange = false
 
+    if (isMathMLObject(nodeCA)) {
+        if (nodeCA.childElementCount > 1) {
+            let iChildA = getChildIndex(nodeAnchor, nodeCA)
+            let iChildF = getChildIndex(nodeFocus, nodeCA)
+
+            if (iChildA != iChildF) {  // Selection across args: select MML obj
+                sel = setSelection(sel, nodeCA, SELECTNODE)
+                removeSelAttributes()
+                setSelAttributes(nodeCA, 'selanchor', 0, 'selfocus', 1)
+                console.log('iChildA = ' + iChildA + ' iChildF = ' + iChildF)
+                refreshDisplays('', true)
+            }
+        }
+        return sel
+    }
     for (node = nodeAnchor; node != nodeCA; node = node.parentElement) {
         // Walk up to common ancestor checking if MathML objects are present
         if (isMathMLObject(node)) {
@@ -2336,7 +2386,8 @@ output.addEventListener('contextmenu', function (e) {
     // is collapsed and for starting node of selection if selection isn't
     // collapsed
     e.preventDefault()
-    closeContextMenu()
+    let contextMenu = document.createElement('div')
+    contextMenu.setAttribute("id", "contextmenu")
     contextmenuNode = e.target
     let sel = window.getSelection()
     if (!sel.isCollapsed) {
@@ -2345,12 +2396,23 @@ output.addEventListener('contextmenu', function (e) {
     }
     if (contextmenuNode.nodeName == '#text')
         contextmenuNode = contextmenuNode.parentElement
-    let contextMenu = document.createElement('div')
-    contextMenu.setAttribute("id", "contextmenu")
+    if (contextmenuNode.nodeName == 'mrow' && contextmenuNode.parentElement.nodeName == 'math')
+        contextmenuNode = contextmenuNode.parentElement
+
     let intentCurrent = contextmenuNode.getAttribute('intent')
-    let name = names[contextmenuNode.nodeName]
-    if (!name)
-        name = getUnicodeMath(contextmenuNode, false)
+    if (!intentCurrent) {
+        intentCurrent = contextmenuNode.getAttribute('arg')
+        if (intentCurrent)
+            intentCurrent = 'arg=' + intentCurrent
+    }
+    let name = contextmenuNode.nodeName
+    if (name == 'math') {
+        name = 'math zone'
+    } else {
+        name = names[name]
+        if (!name)
+            name = getUnicodeMath(contextmenuNode, false)
+    }
     let str = `<input type="text" id="contextmenuinput" placeholder="Enter intent for ${name}" onfocusout="closeContextMenu()""></input>`
     contextMenu.innerHTML = str
     let node = contextMenu.firstElementChild
@@ -2396,22 +2458,49 @@ function selectMathZone() {
 }
 
 output.addEventListener('keydown', function (e) {
-    var x = document.getElementById(this.id + "autocomplete-list")
+    let key = e.key
+
+    if (output.firstElementChild.nodeName == 'MJX-CONTAINER') {
+        // MathJax is active. Copying the whole math zone is supported
+        e.preventDefault()
+        if (key.length > 1)
+            return
+        if (e.ctrlKey && key == 'c') {
+            let node = getMathJaxMathMlNode()
+            let mathml = node.outerHTML
+            if (mathml.startsWith('<math'))
+                navigator.clipboard.writeText(mathml)
+        }
+        return
+    }
+    let x = document.getElementById(this.id + "autocomplete-list")
     if (handleAutocompleteKeys(x, e))
         return
 
+    let i
     x = document.getElementById('contextmenu')
     if (x) {
-        let contextMenu = document.getElementById('contextmenu')
-        switch (e.key) {
+        switch (key) {
             case 'Enter':
             case 'Tab':
                 e.preventDefault()
-                let text = document.getElementById('contextmenuinput')
-                if (text.value)
-                    contextmenuNode.setAttribute('intent', text.value)
+                let attr = 'intent'
+                let textNode = document.getElementById('contextmenuinput')
+                let text = textNode.value
+
+                // If text is ASCII-alphabetic up to an '=', set attr equal to
+                // that ASCII-alphabetic string and set text to the substring
+                // following the '='. Enables arg = 'a', etc.
+                for (i = 0; i < text.length && isAsciiAlphabetic(text[i]); i++)
+                    ;
+                if (i < text.length && text[i] == '=') {
+                    attr = text.substring(0, i)
+                    text = text.substring(i + 1)
+                }
+                if (text)
+                    contextmenuNode.setAttribute(attr, text)
                 else
-                    contextmenuNode.removeAttribute('intent')
+                    contextmenuNode.removeAttribute(attr)
                                             // Fall thru to 'Escape'
             case 'Escape':
                 closeContextMenu()
@@ -2422,9 +2511,7 @@ output.addEventListener('keydown', function (e) {
     }
     let cchCh
     let dir = ''
-    let i
     let intent = ''
-    let key = e.key
     let sel = window.getSelection()
 
     let range = document.createRange()

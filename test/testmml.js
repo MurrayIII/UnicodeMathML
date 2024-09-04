@@ -679,6 +679,20 @@ function testInputHotKey(key, altkey, ctrlKey, expect, expectStart, expectEnd) {
     }
 }
 
+function testOutputContextMenu(intent, expect) {
+    let event = new Event('contextmenu')
+    output.dispatchEvent(event)
+    let inp = document.getElementById('contextmenuinput')
+    inp.value = intent
+    event = new Event('keydown')
+    event.key = 'Enter'
+    output.dispatchEvent(event)
+    if (output.innerHTML != expect)
+        console.log(output.innerHTML)
+    else
+        console.log('Context menu succeeded')
+}
+
 function testHotKeys() {
     // Test output Ctrl+c (copy)
     output.innerHTML = `<math display='block'><mi selanchor="0" selfocus="1">⬚</mi></math>`
@@ -714,17 +728,10 @@ function testHotKeys() {
     testOutputHotKey('a', 'Ⓐ()Ⓕ(6) 𝑎²+𝑏²=𝑐² ')
 
     // Test output context menu
-    event = new Event('contextmenu')
-    output.dispatchEvent(event)
-    let inp = document.getElementById('contextmenuinput')
-    inp.value = 'Pythagorean theorem'
-    event = new Event('keydown')
-    event.key = 'Enter'
-    output.dispatchEvent(event)
-    if (output.innerHTML != '<math display=\"block\"><mrow selanchor=\"0\" selfocus=\"6\" intent=\"Pythagorean theorem\"><msup><mi>𝑎</mi><mn>2</mn></msup><mo>+</mo><msup><mi>𝑏</mi><mn>2</mn></msup><mo>=</mo><msup><mi>𝑐</mi><mn>2</mn></msup><mo> </mo></mrow></math>')
-        console.log(output.innerHTML)
-    else
-        console.log('Context menu succeeded')
+    testOutputContextMenu('Pythagorean theorem', '<math display=\"block\" intent=\"Pythagorean theorem\"><mrow selanchor=\"0\" selfocus=\"6\"><msup><mi>𝑎</mi><mn>2</mn></msup><mo>+</mo><msup><mi>𝑏</mi><mn>2</mn></msup><mo>=</mo><msup><mi>𝑐</mi><mn>2</mn></msup><mo> </mo></mrow></math>')
+    let sel = window.getSelection()
+    setSelection(sel, output.firstElementChild, SELECTNODE)
+    testOutputContextMenu('arg=arg', '<math display=\"block\" intent=\"Pythagorean theorem\" arg=\"arg\"><mrow selanchor=\"0\" selfocus=\"6\"><msup><mi>𝑎</mi><mn>2</mn></msup><mo>+</mo><msup><mi>𝑏</mi><mn>2</mn></msup><mo>=</mo><msup><mi>𝑐</mi><mn>2</mn></msup><mo> </mo></mrow></math>')
 
     // Test input Ctrl+z and Ctrl+y hot keys
     input.focus()
