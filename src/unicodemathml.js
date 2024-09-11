@@ -4332,18 +4332,19 @@ function dump(value, noAddParens) {
             break;
 
         case 'msup':
+            let nodeLEC = value.lastElementChild
             if (isDigitArg(value)) {
                 ret = dump(value.firstElementChild) +
-                    digitSuperscripts[value.lastElementChild.textContent];
+                    digitSuperscripts[nodeLEC.textContent]
                 break;
             }
             var op = '^';
-            if (isPrime(value.lastElementChild.textContent))
+            if (nodeLEC && isPrime(nodeLEC.textContent))
                 op = '';
             ret = binary(value, op);
 
             // Check for intent='transpose'
-            if (value.lastElementChild.getAttribute('intent') == 'transpose') {
+            if (nodeLEC && nodeLEC.getAttribute('intent') == 'transpose') {
                 let cRet = ret.length;
                 let code = codeAt(ret, cRet - 2);
                 if (code != 0x22BA) {       // '⊺'

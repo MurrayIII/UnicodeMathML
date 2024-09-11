@@ -1492,6 +1492,38 @@ function handleEndOfTextNode(node) {
     return node
 }
 
+function insertNode(node, nodeNew, nodeP) {
+    if (node.textContent == '⬚') {
+        // Replace empty arg place holder symbol with key
+        nodeP.replaceChild(nodeNew, node)
+    } else if (node.nodeName == 'mrow' && atEnd) {
+        node.appendChild(nodeNew)
+    } else if (nodeP.nodeName == 'mrow') {
+        if (atEnd) {
+            if (node.nextElementSibling) {
+                nodeP.insertBefore(nodeNew, node.nextElementSibling)
+            } else {
+                if (!node.textContent)
+                    nodeP.replaceChild(nodeNew, node)
+                else
+                    nodeP.appendChild(nodeNew)
+            }
+        }
+        else
+            nodeP.insertBefore(nodeNew, node)
+    } else {
+        let nodeMrow = document.createElement('mrow')
+        nodeP.insertBefore(nodeMrow, node)
+        if (atEnd) {
+            nodeMrow.appendChild(node)
+            nodeMrow.appendChild(nodeNew)
+        } else {
+            nodeMrow.appendChild(nodeNew)
+            nodeMrow.appendChild(node)
+        }
+        atEnd = false;
+    }
+}
 function handleKeyboardInput(node, key, sel) {
     // Handle keyboard input into output window
     closeAutocompleteList()
@@ -1674,37 +1706,7 @@ function handleKeyboardInput(node, key, sel) {
     }
     nodeNew.textContent = key
     setSelAttributes(nodeNew, 'selanchor', '1')
-
-    if (node.textContent == '⬚') {
-        // Replace empty arg place holder symbol with key
-        nodeP.replaceChild(nodeNew, node)
-    } else if (node.nodeName == 'mrow' && atEnd) {
-        node.appendChild(nodeNew)
-    } else if (nodeP.nodeName == 'mrow') {
-        if (atEnd) {
-            if (node.nextElementSibling) {
-                nodeP.insertBefore(nodeNew, node.nextElementSibling)
-            } else {
-                if (!node.textContent)
-                    nodeP.replaceChild(nodeNew, node)
-                else
-                    nodeP.appendChild(nodeNew)
-            }
-        }
-        else
-            nodeP.insertBefore(nodeNew, node)
-    } else {
-        let nodeMrow = document.createElement('mrow')
-        nodeP.insertBefore(nodeMrow, node)
-        if (atEnd) {
-            nodeMrow.appendChild(node)
-            nodeMrow.appendChild(nodeNew)
-        } else {
-            nodeMrow.appendChild(nodeNew)
-            nodeMrow.appendChild(node)
-        }
-        atEnd = false;
-    }
+    insertNode(node, nodeNew, nodeP)
     nodeP.innerHTML = nodeP.innerHTML   // Force redraw
     refreshDisplays();
     return autocl
@@ -1785,7 +1787,7 @@ function checkMathSelection(sel) {
             if (iChildA != iChildF) {  // Selection across args: select MML obj
                 sel = setSelection(sel, nodeCA, SELECTNODE)
                 removeSelAttributes()
-                setSelAttributes(nodeCA, 'selanchor', 0, 'selfocus', 1)
+                setSelAttributes(nodeCA, 'selanchor', 0, 'selfocus', nodeCA.childElementCount)
                 console.log('iChildA = ' + iChildA + ' iChildF = ' + iChildF)
                 refreshDisplays('', true)
             }
@@ -1840,6 +1842,9 @@ function checkMathSelection(sel) {
 }
 
 function deleteSelection(sel) {
+    if (!sel)
+        sel = window.getSelection()
+
     if (sel.isCollapsed) {
         closeAutocompleteList()
         return false                        // Nothing selected
@@ -1885,14 +1890,14 @@ function deleteSelection(sel) {
                     nodeNext = node.nextElementSibling
                     node.remove()
                 }
-                if (!node || node.textContent) {
-                    // No element left in mrow or element wasn't deleted. If
-                    // only one child is left, replace an attribute-less mrow
-                    // by that child
-                    if (nodeP.childElementCount == 1 && !nodeP.attributes.length)
-                        nodeP.parentElement.replaceChild(node, nodeP)
-                    break;
-                }
+                //if (!node || node.textContent) {
+                //    // No element left in mrow or element wasn't deleted. If
+                //    // only one child is left, replace an attribute-less mrow
+                //    // by that child
+                //    if (nodeP.childElementCount == 1 && !nodeP.attributes.length)
+                //        nodeP.parentElement.replaceChild(node, nodeP)
+                //    break;
+                //}
                 if (isMathMLObject(nodeP))
                     nodeP.outerHTML = `<mi selanchor="0" selfocus="1">⬚</mi>`
                 else
@@ -2166,7 +2171,7 @@ function moveSelection(sel, node, offset) {
                     if (names[name])
                         name = names[name]
                     speak('end ' + name);
-                    setSelection(sel, node, 0)
+                    setSelection(sel, node, node.childElementCount ? node.childElementCount : 1)
                     return;
                 }
             }
@@ -2249,7 +2254,7 @@ function moveSelection(sel, node, offset) {
                         name = names[name];
                 }
                 speak(name)
-                setSelection(sel, node, 0);
+                setSelection(sel, node, node.childElementCount ? node.childElementCount : 1);
                 return
             }
             name = 'finish ' + name
@@ -2258,6 +2263,7 @@ function moveSelection(sel, node, offset) {
             speechSel(sel)
         else if (name != 'mtd')
             speak(name)
+        setSelection(sel, node, node.childElementCount ? node.childElementCount : 1);
         return
     }
     if (node.nodeType != 3)
@@ -2373,6 +2379,7 @@ function moveSelection(sel, node, offset) {
     speak(atEnd ? 'at end ' + name : name)
 }
 
+// Output-element context menu functions
 function closeContextMenu() {
     if (contextmenuNode) {
         contextmenuNode = null
@@ -2384,7 +2391,7 @@ function closeContextMenu() {
 output.addEventListener('contextmenu', function (e) {
     // Create input element to receive intent for target node if selection
     // is collapsed and for starting node of selection if selection isn't
-    // collapsed
+    // collapsed. Eventually add more context-menu functionality...
     e.preventDefault()
     let contextMenu = document.createElement('div')
     contextMenu.setAttribute("id", "contextmenu")
@@ -2425,6 +2432,124 @@ output.addEventListener('contextmenu', function (e) {
     text.value = intentCurrent          // Show current intent (if any)
     node.focus()
 })
+
+function handleContextMenu(e) {
+    let x = document.getElementById('contextmenu')
+    if (!x)
+        return false
+
+    switch (e.key) {
+        case 'Enter':
+        case 'Tab':
+            e.preventDefault()
+            let attr = 'intent'
+            let i
+            let textNode = document.getElementById('contextmenuinput')
+            let text = textNode.value
+
+            // If text is ASCII-alphabetic up to an '=', set attr equal to
+            // that ASCII-alphabetic string and set text to the substring
+            // following the '='. Enables arg = 'a', etc.
+            for (i = 0; i < text.length && isAsciiAlphabetic(text[i]); i++)
+                ;
+            if (i < text.length && text[i] == '=') {
+                attr = text.substring(0, i)
+                text = text.substring(i + 1)
+            }
+            if (text)
+                contextmenuNode.setAttribute(attr, text)
+            else
+                contextmenuNode.removeAttribute(attr)
+        // Fall thru to 'Escape'
+        case 'Escape':
+            closeContextMenu()
+            if (!testing)
+                output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)))
+    }
+    return true
+}
+
+function pasteMathML(clipText, node, offset) {
+    if (!isMathML(clipText))
+        return
+    let nodeNew = getMathMLDOM(clipText)
+    if (!nodeNew)
+        return
+    nodeNew = nodeNew.firstElementChild
+    if (!nodeNew || nodeNew.nodeName != 'math')
+        return
+    let i = nodeNew.childElementCount
+    if (!i)
+        return
+    let uMath = getUnicodeMath(output.firstElementChild, true)
+    if (deleteSelection()) {
+        let sel = window.getSelection()     // Update node
+        node = sel.anchorNode
+        offset = sel.anchorOffset
+        if (node.nodeName == '#text')
+            node = node.parentElement
+        if (node.parentElement.nodeName == 'math') {
+            node = node.parentElement
+            node.innerHTML = '<mrow/>'      // Make room for paste
+            node = node.firstElementChild
+            setSelection(sel, node, 0)
+        }
+    }
+
+    // Set up IP to follow pasted nodes
+    let nodeNewLEC = nodeNew.lastElementChild
+    let offsetNewLEC = nodeNewLEC.childElementCount ? nodeNewLEC.childElementCount : 1
+    removeSelAttributes()
+    nodeNewLEC.setAttribute('selanchor', offsetNewLEC)
+
+    let name = node.nodeName
+    if (name == '#text') {
+        if (offset != 0)
+            offset = 1
+        node = node.parentElement
+        name = node.nodeName
+    }
+
+    if (name == 'math' && node.firstElementChild.nodeName == 'mrow') {
+        atEnd = offset != 0
+        node = node.firstElementChild
+        name = 'mrow'
+    }
+    if (name == 'mrow' || name == 'math') {
+        let cChild = node.childElementCount
+        while (i--) {
+            if (offset || !cChild)
+                node.appendChild(nodeNew.children[0])
+            else
+                node.insertBefore(nodeNew.children[0], node.children[0])
+        }
+        refreshDisplays(uMath)
+        return
+    } else if (node.parentElement.nodeName == 'mrow') {
+        if (offset && node.nextElementSibling) {
+            node = node.nextElementSibling  // Convert to insertBefore
+            offset = 0
+        }
+        while (i--) {                       // Insert nodeNew.children
+            if (!offset)
+                node.parentElement.insertBefore(nodeNew.children[0], node)
+            else
+                node.parentElement.appendChild(nodeNew.children[0])
+        }
+    } else {
+        if (i == 1) {
+            nodeNew = nodeNew.firstElementChild
+        } else {
+            let nodeT = document.createElement('mrow')
+            while (i--)
+                nodeT.appendChild(nodeNew.children[0])
+            nodeNew = nodeT
+        }
+        insertNode(node, nodeNew, node.parentElement)
+    }
+    console.log('clipText = ' + clipText)
+    refreshDisplays(uMath)
+}
 
 var onac = false                        // true immediately after autocomplete click
 
@@ -2477,38 +2602,10 @@ output.addEventListener('keydown', function (e) {
     if (handleAutocompleteKeys(x, e))
         return
 
-    let i
-    x = document.getElementById('contextmenu')
-    if (x) {
-        switch (key) {
-            case 'Enter':
-            case 'Tab':
-                e.preventDefault()
-                let attr = 'intent'
-                let textNode = document.getElementById('contextmenuinput')
-                let text = textNode.value
-
-                // If text is ASCII-alphabetic up to an '=', set attr equal to
-                // that ASCII-alphabetic string and set text to the substring
-                // following the '='. Enables arg = 'a', etc.
-                for (i = 0; i < text.length && isAsciiAlphabetic(text[i]); i++)
-                    ;
-                if (i < text.length && text[i] == '=') {
-                    attr = text.substring(0, i)
-                    text = text.substring(i + 1)
-                }
-                if (text)
-                    contextmenuNode.setAttribute(attr, text)
-                else
-                    contextmenuNode.removeAttribute(attr)
-                                            // Fall thru to 'Escape'
-            case 'Escape':
-                closeContextMenu()
-                if (!testing)
-                    output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)))
-        }
+    if (handleContextMenu(e))
         return
-    }
+
+    let i, k
     let cchCh
     let dir = ''
     let intent = ''
@@ -2714,6 +2811,7 @@ output.addEventListener('keydown', function (e) {
                 refreshDisplays('', true)
                 sel = window.getSelection()
                                             // Fall through to case 'c'
+            case 'x':
             case 'c':                       // Ctrl+c
                 let mathml = ''             // Collects MathML for selected nodes
                 if (sel.isCollapsed)
@@ -2764,6 +2862,8 @@ output.addEventListener('keydown', function (e) {
                     output.innerHTML = mathmlCurrent
                     refreshDisplays('', true)
                 }
+                if (key == 'x')
+                    deleteSelection(sel)
                 return
 
             case 'r':                       // Ctrl+r
@@ -2772,6 +2872,16 @@ output.addEventListener('keydown', function (e) {
                 t = unicodemathml(uMath, true) // uMath → MathML
                 output.innerHTML = t.mathml
                 refreshDisplays('', true)
+                return
+
+            case 'v':                       // Ctrl+v
+                navigator.clipboard.readText()
+                    .then((clipText) => {
+                        let sel = window.getSelection()
+                        node = sel.anchorNode
+                        offset = sel.anchorOffset
+                        pasteMathML(clipText, node, offset)
+                    })
                 return
 
             case 'y':                       // Ctrl+y

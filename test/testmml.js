@@ -695,9 +695,9 @@ function testOutputContextMenu(intent, expect) {
 
 function testHotKeys() {
     // Test output Ctrl+c (copy)
-    output.innerHTML = `<math display='block'><mi selanchor="0" selfocus="1">⬚</mi></math>`
     input.textContent = 'Ⓐ()𝑎/𝑏+Ⓕ(2) 𝑐/𝑑=0'
-    draw()
+    prevInputValue = ''
+    draw(false)
     setTimeout(function () { }, 50)    // Sleep for 50 msec
     let event = new Event('keydown')
     event.key = 's'
@@ -710,10 +710,14 @@ function testHotKeys() {
 
     navigator.clipboard.readText()
         .then((clipText) => {
-            if (clipText == clipExpect)
+            if (clipText == clipExpect) {
                 console.log('Output Ctrl+c succeeded')
-            else
+                pasteMathML(clipText, output.firstElementChild.firstElementChild, 0)
+                if (output.firstElementChild.outerHTML != '<math display=\"block\"><mrow><mfrac selanchor=\"2\"><mi>𝑐</mi><mi>𝑑</mi></mfrac><mo>+</mo><mfrac><mi>𝑎</mi><mi>𝑏</mi></mfrac><mfrac><mi>𝑎</mi><mi>𝒃</mi></mfrac><mo>+</mo><mfrac><mi>𝑐</mi><mi>𝑑</mi></mfrac><mo>=</mo><mn>0</mn></mrow></math>')
+                    console.log(output.firstElementChild.outerHTML)
+            } else {
                 console.log('Output Ctrl+c failed: clipText = ' + clipText)
+            }
         })
 
     // Test output Home/End hot keys
