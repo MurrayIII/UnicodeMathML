@@ -747,7 +747,7 @@ function opAutocorrect(ip, delim) {
     }
     return false;
 }
-input.addEventListener("keydown", function (e) {
+input.addEventListener("keydown", (e) => {
     var x = document.getElementById(this.id + "autocomplete-list")
     if (handleAutocompleteKeys(x, e))
         return
@@ -1003,7 +1003,7 @@ function insertAtCursorPos(symbols) {
 function autocomplete() {
     // Try autocorrecting or autocompleting a control word when user
     // modifies UnicodeMath in input window
-    input.addEventListener("input", function (e) {
+    input.addEventListener("input", (e) => {
         var ip = input.selectionStart;      // Insertion point
 
         if (e.inputType != "insertText" && e.inputType != "deleteContentBackward" ||
@@ -2388,13 +2388,13 @@ function closeContextMenu() {
     }
 }
 
-output.addEventListener('contextmenu', function (e) {
+output.addEventListener('contextmenu', (e) => {
     // Create input element to receive intent for target node if selection
     // is collapsed and for starting node of selection if selection isn't
     // collapsed. Eventually add more context-menu functionality...
     e.preventDefault()
     let contextMenu = document.createElement('div')
-    contextMenu.setAttribute("id", "contextmenu")
+    contextMenu.setAttribute('id', 'contextmenu')
     contextmenuNode = e.target
     let sel = window.getSelection()
     if (!sel.isCollapsed) {
@@ -2433,6 +2433,29 @@ output.addEventListener('contextmenu', function (e) {
     node.focus()
 })
 
+output.addEventListener('dragstart', (e) => {
+    // Drag selection as MathML in the 'text/plain' slot
+    let mathml = getMathSelection()
+    e.dataTransfer.setData("text/plain", mathml)
+})
+
+output.addEventListener('dragenter', (e) => {
+    e.preventDefault()                      // Allow drop
+    console.log('dragenter')
+})
+
+output.addEventListener('dragover', (e) => {
+    e.preventDefault()                      // Allow drop
+    console.log('dragover')
+})
+
+output.addEventListener('drop', (e) => {
+    e.preventDefault()
+    let mathml = e.dataTransfer.getData('text/plain')
+    pasteMathML(mathml, e.target, 0)
+    console.log('drop "' + mathml + '"')
+})
+
 function handleContextMenu(e) {
     let x = document.getElementById('contextmenu')
     if (!x)
@@ -2469,9 +2492,11 @@ function handleContextMenu(e) {
     return true
 }
 
-function pasteMathML(clipText, node, offset) {
-    if (!isMathML(clipText))
-        return
+function pasteMathML(clipText, node, offset, sel) {
+    if (!isMathML(clipText)) {
+        let t = unicodemathml(clipText, true)
+        clipText = t.mathml
+    }
     let nodeNew = getMathMLDOM(clipText)
     if (!nodeNew)
         return
@@ -2482,8 +2507,7 @@ function pasteMathML(clipText, node, offset) {
     if (!i)
         return
     let uMath = getUnicodeMath(output.firstElementChild, true)
-    if (deleteSelection()) {
-        let sel = window.getSelection()     // Update node
+    if (sel && deleteSelection()) {
         node = sel.anchorNode
         offset = sel.anchorOffset
         if (node.nodeName == '#text')
@@ -2553,7 +2577,7 @@ function pasteMathML(clipText, node, offset) {
 
 var onac = false                        // true immediately after autocomplete click
 
-output.addEventListener("click", function () {
+output.addEventListener("click", () => {
     if (onac) {                         // Ignore click that follows autocomplete click
         onac = false
         return
@@ -2580,6 +2604,53 @@ function selectMathZone() {
     let offset = node.childElementCount ? node.childElementCount : 1
     setSelAttributes(node, 'selanchor', '0', 'selfocus', offset)
     refreshDisplays('', true)
+}
+
+function getMathSelection() {
+    let sel = window.getSelection()
+    if (sel.isCollapsed)
+        selectMathZone()
+    let range = sel.getRangeAt(0)
+    let nodeS = range.startContainer
+    if (nodeS.nodeName == '#text')
+        nodeS = nodeS.parentElement
+    let nodeE = range.endContainer
+    if (nodeE.nodeName == '#text')
+        nodeE = nodeE.parentElement
+    let node = range.commonAncestorContainer
+    if (node.nodeName == '#text')
+        node = node.parentElement
+    let walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, null)
+    let mathml = ''
+
+    while (node && node !== nodeS)
+        node = walker.nextNode() // Advance walker to starting node
+
+    let done = false
+
+    while (node && !done) {
+        mathml += node.outerHTML
+        if (node === nodeE)     // Reached the ending node
+            break
+        if (!walker.nextSibling()) {
+            while (true) {      // Bypass current node
+                if (!walker.nextNode()) {
+                    done = true
+                    break
+                }
+                let position = walker.currentNode.compareDocumentPosition(node)
+                if (!(position & 8))
+                    break       // currentNode isn't inside node
+            }
+        }
+        node = walker.currentNode
+    }
+    if (!mathml.startsWith('<math'))
+        mathml = `<math display="block" xmlns="http://www.w3.org/1998/Math/MathML">` + mathml + `</math>`
+    mathml = mathml.replace(/&nbsp;/g, ' ')
+    mathml = mathml.replace(/<malignmark><\/malignmark>/g, '<malignmark/>')
+    mathml = mathml.replace(/<maligngroup><\/maligngroup>/g, '<maligngroup/>')
+    return removeMathMlSelAttributes(mathml)
 }
 
 output.addEventListener('keydown', function (e) {
@@ -2811,59 +2882,24 @@ output.addEventListener('keydown', function (e) {
                 refreshDisplays('', true)
                 sel = window.getSelection()
                                             // Fall through to case 'c'
-            case 'x':
             case 'c':                       // Ctrl+c
-                let mathml = ''             // Collects MathML for selected nodes
-                if (sel.isCollapsed)
-                    selectMathZone()
-                let range = sel.getRangeAt(0)
-                let nodeS = range.startContainer
-                if (nodeS.nodeName == '#text')
-                    nodeS = nodeS.parentElement
-                let nodeE = range.endContainer
-                if (nodeE.nodeName == '#text')
-                    nodeE = nodeE.parentElement
-                node = range.commonAncestorContainer
-                if (node.nodeName == '#text')
-                    node = node.parentElement
-                walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, null)
-
-                while (node && node !== nodeS)
-                    node = walker.nextNode() // Advance walker to starting node
-
-                let done = false
-
-                while (node && !done) {
-                    mathml += node.outerHTML
-                    if (node === nodeE)     // Reached the ending node
-                        break
-                    if (!walker.nextSibling()) {
-                        while (true) {      // Bypass current node
-                            if (!walker.nextNode()) {
-                                done = true
-                                break
-                            }
-                            let position = walker.currentNode.compareDocumentPosition(node)
-                            if (!(position & 8))
-                                break       // currentNode isn't inside node
-                        }
-                    }
-                    node = walker.currentNode
-                }
-                if (!mathml.startsWith('<math'))
-                    mathml = `<math display="block" xmlns="http://www.w3.org/1998/Math/MathML">` + mathml + `</math>`
-                mathml = mathml.replace(/&nbsp;/g, ' ')
-                mathml = mathml.replace(/<malignmark><\/malignmark>/g, '<malignmark/>')
-                mathml = mathml.replace(/<maligngroup><\/maligngroup>/g, '<maligngroup/>')
-                mathml = removeMathMlSelAttributes(mathml)
+            case 'x':                       // Ctrl+x
+                let mathml = getMathSelection()
                 navigator.clipboard.writeText(mathml)
                 if (mathmlCurrent) {
                     useMfenced = false
                     output.innerHTML = mathmlCurrent
                     refreshDisplays('', true)
                 }
-                if (key == 'x')
+                if (key == 'x') {
+                    uMath = getUnicodeMath(output.firstElementChild, true)
                     deleteSelection(sel)
+                    node = sel.anchorNode
+                    if (node.nodeName == '#text')
+                        node = node.parentElement
+                    setSelAttributes(node, 'selanchor', 0)
+                    refreshDisplays(uMath, true)
+                }
                 return
 
             case 'r':                       // Ctrl+r
@@ -2880,7 +2916,7 @@ output.addEventListener('keydown', function (e) {
                         let sel = window.getSelection()
                         node = sel.anchorNode
                         offset = sel.anchorOffset
-                        pasteMathML(clipText, node, offset)
+                        pasteMathML(clipText, node, offset, sel)
                     })
                 return
 
