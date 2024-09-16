@@ -728,7 +728,6 @@ function testHotKeys() {
     buildUp('𝑎²+𝑏²=𝑐²')
     testOutputHotKey('z', '𝑎²+𝑏²=𝑐Ⓐ(1)²')
     testOutputHotKey('y', '𝑎²+𝑏²=𝑐²Ⓐ(1) ')
-
     testOutputHotKey('a', 'Ⓐ()Ⓕ(6) 𝑎²+𝑏²=𝑐² ')
 
     // Test output context menu
@@ -736,6 +735,8 @@ function testHotKeys() {
     let sel = window.getSelection()
     setSelection(sel, output.firstElementChild, SELECTNODE)
     testOutputContextMenu('arg=arg', '<math display=\"block\" intent=\"Pythagorean theorem\" arg=\"arg\"><mrow selanchor=\"0\" selfocus=\"6\"><msup><mi>𝑎</mi><mn>2</mn></msup><mo>+</mo><msup><mi>𝑏</mi><mn>2</mn></msup><mo>=</mo><msup><mi>𝑐</mi><mn>2</mn></msup><mo> </mo></mrow></math>')
+    testOutputHotKey('a', 'Ⓐ()Ⓕ(6) 𝑎²+𝑏²=𝑐² ')
+    testOutputHotKey('Delete', 'Ⓐ()Ⓕ(1)⬚')
 
     // Test input Ctrl+z and Ctrl+y hot keys
     input.focus()

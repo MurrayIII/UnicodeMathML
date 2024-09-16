@@ -102,8 +102,10 @@ function removeSuperfluousMrow(node) {
     //}
     return node
 }
+
 function getChildIndex(node, nodeP) {
-    // Return nodeP child index of child that is or contains node
+    // If nodeP isn't an ancestor of node, return -1. Else return the
+    // nodeP child index of child that is the node or contains the node.
     if (!nodeP.childElementCount)
         return -1                           // No children
 
@@ -1527,7 +1529,7 @@ function insertNode(node, nodeNew, nodeP) {
 function handleKeyboardInput(node, key, sel) {
     // Handle keyboard input into output window
     closeAutocompleteList()
-    if (deleteSelection(sel)) {
+    if (deleteSelection()) {
         sel = window.getSelection()
         node = sel.anchorNode
     }
@@ -1841,46 +1843,72 @@ function checkMathSelection(sel) {
     return sel
 }
 
-function deleteSelection(sel) {
-    if (!sel)
+function deleteSelection(range) {
+    // Delete nodes selected in range or in user selection
+    let sel
+    if (!range) {                           // No range: use window selection
         sel = window.getSelection()
-
-    if (sel.isCollapsed) {
+        range = sel.getRangeAt(0)
+    }
+    if (range.collapsed) {
         closeAutocompleteList()
         return false                        // Nothing selected
     }
-    let range = sel.getRangeAt(0)
+    let uMath = getUnicodeMath(output.firstElementChild, true)
     let nodeStart = range.startContainer
+    let singleArg = nodeStart === range.endContainer
+
+    if (singleArg) {
+        let text = nodeStart.textContent
+        if (text == '⬚')
+            return true                         // Don't delete place holder
+
+        if (nodeStart.nodeName == '#text') {
+            removeSelAttributes()
+            text = text.substring(0, range.startOffset) + text.substring(range.endOffset)
+            if (!text) {
+                nodeStart = nodeStart.parentElement
+                let nodeP = nodeStart.parentElement
+                if (isMathMLObject(nodeP) || nodeP.nodeName == 'math')
+                    nodeStart.outerHTML = `<mi selanchor="0" selfocus="1">⬚</mi>`
+                else
+                    nodeStart.remove()
+            } else {
+                nodeStart.parentElement.setAttribute('selanchor', '-' + range.startOffset)
+                nodeStart.textContent = text
+            }
+            refreshDisplays(uMath)
+            return true
+        }
+    }
 
     if (nodeStart.nodeName == '#text')
         nodeStart = nodeStart.parentElement
     if (nodeStart.nodeName == 'math') {
         outputUndoStack = ['']
         nodeStart.innerHTML = `<mi selanchor="0" selfocus="1">⬚</mi>`
-        refreshDisplays()
+        refreshDisplays(uMath)
         return true
     }
 
-    let singleArg = range.startContainer === range.endContainer
-    if (singleArg) {
-        if (nodeStart.textContent == '⬚')
-            return true                         // Don't delete place holder
-    }
     // Save current math for undo stack. If it's already on the stack top,
     // remove it since uMath will be added by checkEmpty()
-    let uMath = getUnicodeMath(output.firstElementChild, true)
     if (uMath == stackTop(outputUndoStack))
         outputUndoStack.pop()
 
-    sel.deleteFromDocument()                    // Deletes #text nodes but leaves element nodes
-    if (ummlConfig.debug)                       // Set breakpoint to see what got deleted
+    if (sel)
+        sel.deleteFromDocument()            // Deletes #text nodes but leaves
+    else                                    //  some element nodes
+        range.deleteContents()              // Ditto
+    if (!testing && ummlConfig.debug)       // (Set breakpoint to see what got deleted)
         output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
 
     let node, nodeNext, nodeP
 
     if (!singleArg) {
-        // Remove contentless elements that sel.deleteFromDocument() leaves
-        // behind except for elements needed as MathML object arguments
+        // Remove contentless elements that sel.deleteFromDocument() and
+        // range.deleteContents() leave behind except for elements needed
+        // as MathML object arguments
         for (node = nodeStart; node && !node.textContent; node = nodeNext) {
             nodeP = node.parentElement
             nodeNext = node.nextElementSibling
@@ -1890,14 +1918,14 @@ function deleteSelection(sel) {
                     nodeNext = node.nextElementSibling
                     node.remove()
                 }
-                //if (!node || node.textContent) {
-                //    // No element left in mrow or element wasn't deleted. If
-                //    // only one child is left, replace an attribute-less mrow
-                //    // by that child
-                //    if (nodeP.childElementCount == 1 && !nodeP.attributes.length)
-                //        nodeP.parentElement.replaceChild(node, nodeP)
-                //    break;
-                //}
+                if (!node || node.textContent) {
+                    // No element is left in mrow or element wasn't deleted.
+                    // If only one child is left, replace an attribute-less
+                    // mrow by that child
+                    if (nodeP.childElementCount == 1 && !nodeP.attributes.length)
+                        nodeP.parentElement.replaceChild(node, nodeP)
+                    break;
+                }
                 if (isMathMLObject(nodeP))
                     nodeP.outerHTML = `<mi selanchor="0" selfocus="1">⬚</mi>`
                 else
@@ -1909,7 +1937,19 @@ function deleteSelection(sel) {
             }
         }
     }
+    else if (!nodeStart.textContent) {
+        if (isMathMLObject(nodeStart.parentElement) ||
+            nodeStart.parentElement.nodeName == 'math') {
+            nodeStart.outerHTML = `<mi selanchor="0" selfocus="1">⬚</mi>`
+            refreshDisplays(uMath)
+            return true
+        }
+        nodeStart.remove()
+    }
     // Set up insertion point (IP)
+    if (!sel)
+        return true                         // Entered with a range
+
     node = sel.anchorNode                   // Anchor node after deletions
     let offset = 0
 
@@ -2437,22 +2477,24 @@ output.addEventListener('dragstart', (e) => {
     // Drag selection as MathML in the 'text/plain' slot
     let mathml = getMathSelection()
     e.dataTransfer.setData("text/plain", mathml)
+    console.log('drag "' + mathml + '"')
 })
 
 output.addEventListener('dragenter', (e) => {
     e.preventDefault()                      // Allow drop
-    console.log('dragenter')
 })
 
 output.addEventListener('dragover', (e) => {
     e.preventDefault()                      // Allow drop
-    console.log('dragover')
 })
 
 output.addEventListener('drop', (e) => {
     e.preventDefault()
+    let sel = window.getSelection()
+    let range = sel.getRangeAt(0)
     let mathml = e.dataTransfer.getData('text/plain')
-    pasteMathML(mathml, e.target, 0)
+    if (pasteMathML(mathml, e.target, 0) && !e.ctrlKey)
+        deleteSelection(range)
     console.log('drop "' + mathml + '"')
 })
 
@@ -2499,13 +2541,13 @@ function pasteMathML(clipText, node, offset, sel) {
     }
     let nodeNew = getMathMLDOM(clipText)
     if (!nodeNew)
-        return
+        return false
     nodeNew = nodeNew.firstElementChild
     if (!nodeNew || nodeNew.nodeName != 'math')
-        return
+        return false
     let i = nodeNew.childElementCount
     if (!i)
-        return
+        return false
     let uMath = getUnicodeMath(output.firstElementChild, true)
     if (sel && deleteSelection()) {
         node = sel.anchorNode
@@ -2548,7 +2590,7 @@ function pasteMathML(clipText, node, offset, sel) {
                 node.insertBefore(nodeNew.children[0], node.children[0])
         }
         refreshDisplays(uMath)
-        return
+        return true
     } else if (node.parentElement.nodeName == 'mrow') {
         if (offset && node.nextElementSibling) {
             node = node.nextElementSibling  // Convert to insertBefore
@@ -2573,6 +2615,7 @@ function pasteMathML(clipText, node, offset, sel) {
     }
     console.log('clipText = ' + clipText)
     refreshDisplays(uMath)
+    return true
 }
 
 var onac = false                        // true immediately after autocomplete click
@@ -2721,7 +2764,7 @@ output.addEventListener('keydown', function (e) {
 
         case 'Backspace':
             e.preventDefault()
-            if (deleteSelection(sel))
+            if (deleteSelection())
                 return
             if (node.nodeName == 'math') {
                 if (!offset)
@@ -2768,7 +2811,7 @@ output.addEventListener('keydown', function (e) {
 
         case 'Delete':
             e.preventDefault()
-            if (deleteSelection(sel))
+            if (deleteSelection())
                 return
 
             if (node.nodeName == 'math')
@@ -2893,7 +2936,7 @@ output.addEventListener('keydown', function (e) {
                 }
                 if (key == 'x') {
                     uMath = getUnicodeMath(output.firstElementChild, true)
-                    deleteSelection(sel)
+                    deleteSelection()
                     node = sel.anchorNode
                     if (node.nodeName == '#text')
                         node = node.parentElement
