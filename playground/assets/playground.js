@@ -749,7 +749,7 @@ function opAutocorrect(ip, delim) {
     }
     return false;
 }
-input.addEventListener("keydown", (e) => {
+input.addEventListener("keydown", function (e) {
     var x = document.getElementById(this.id + "autocomplete-list")
     if (handleAutocompleteKeys(x, e))
         return
@@ -1005,7 +1005,7 @@ function insertAtCursorPos(symbols) {
 function autocomplete() {
     // Try autocorrecting or autocompleting a control word when user
     // modifies UnicodeMath in input window
-    input.addEventListener("input", (e) => {
+    input.addEventListener("input", function (e) {
         var ip = input.selectionStart;      // Insertion point
 
         if (e.inputType != "insertText" && e.inputType != "deleteContentBackward" ||
@@ -1086,7 +1086,7 @@ function autocomplete() {
         if (ip - i < 3) return;
 
         let cw = input.value.substring(i + 1, ip);  // Partial control word
-        let autocl = createAutoCompleteMenu(cw, this.id, e => {
+        let autocl = createAutoCompleteMenu(cw, this.id, (e) => {
             // User clicked matching control word: insert its symbol
             let val = e.currentTarget.innerText;
             let ch = italicizeCharacter(val[val.length - 1]);
