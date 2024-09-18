@@ -104,6 +104,7 @@ const symbolSpeechStrings = {
 	'⁆': ',',								// 2046
 	'⁐': 'with',							// 2050
 	'\u2061': ' ',							// FunctionApply
+	'\u2062': 'times',						// Invisible times
 	'₁': 'tenths',							// 2081
 	'₂': 'halves',							// 2082
 	'₃': 'thirds',							// 2083

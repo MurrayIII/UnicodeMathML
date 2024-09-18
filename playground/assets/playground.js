@@ -2534,11 +2534,44 @@ function handleContextMenu(e) {
     return true
 }
 
+function readPaste() {
+    // Try to read HTML with embedded MathML from the clipboard and paste
+    // the MathML. If failure, paste plain text
+    navigator.clipboard.read().then((clipContents) => {
+        if (clipContents[0].types.includes('text/html')) {
+            clipContents[0].getType('text/html').then((blob) => {
+                blob.text().then((html) => {
+                    let i = html.indexOf('<math')
+                    if (i == -1) {
+                        readPasteText()
+                        return
+                    }
+                    let j = html.indexOf('</math', i)
+                    let mathml = html.substring(i, j + 7)
+                    let sel = window.getSelection()
+                    pasteMathML(mathml, sel.anchorNode, sel.anchorOffset, sel)
+                })
+            })
+        } else {
+            readPasteText()
+        }
+    })
+}
+
+function readPasteText() {
+    navigator.clipboard.readText().then((clipText) => {
+        let sel = window.getSelection()
+        pasteMathML(clipText, sel.anchorNode, sel.anchorOffset, sel)
+    })
+}
+
 function pasteMathML(clipText, node, offset, sel) {
     if (!isMathML(clipText)) {
         let t = unicodemathml(clipText, true)
         clipText = t.mathml
     }
+    if(!testing)
+        console.log('MathML = ' + clipText)
     let nodeNew = getMathMLDOM(clipText)
     if (!nodeNew)
         return false
@@ -2548,8 +2581,19 @@ function pasteMathML(clipText, node, offset, sel) {
     let i = nodeNew.childElementCount
     if (!i)
         return false
-    let uMath = getUnicodeMath(output.firstElementChild, true)
-    if (sel && deleteSelection()) {
+    let uMath
+    if (nodeNew.className == "ltx_Math") {
+        // Equation from Digital Library of Mathmatical Functions. Convert
+        // nodeNew to UnicodeMath and back since native MathML rendering
+        // doesn't display nodeNew for some reason...
+        uMath = getUnicodeMath(nodeNew, true)
+        let t = unicodemathml(uMath, true) // uMath → MathML
+        output.innerHTML = t.mathml
+        refreshDisplays('', true)
+        return true
+    }
+    uMath = getUnicodeMath(output.firstElementChild, true)
+    if (sel && (deleteSelection() || sel.anchorNode.textContent == '⬚')) {
         node = sel.anchorNode
         offset = sel.anchorOffset
         if (node.nodeName == '#text')
@@ -2667,29 +2711,29 @@ function getMathSelection() {
     let mathml = ''
 
     while (node && node !== nodeS)
-        node = walker.nextNode() // Advance walker to starting node
+        node = walker.nextNode()            // Advance walker to starting node
 
     let done = false
 
     while (node && !done) {
         mathml += node.outerHTML
-        if (node === nodeE)     // Reached the ending node
+        if (node === nodeE)                 // Reached the ending node
             break
         if (!walker.nextSibling()) {
-            while (true) {      // Bypass current node
+            while (true) {                  // Bypass current node
                 if (!walker.nextNode()) {
                     done = true
                     break
                 }
                 let position = walker.currentNode.compareDocumentPosition(node)
                 if (!(position & 8))
-                    break       // currentNode isn't inside node
+                    break                   // currentNode isn't inside node
             }
         }
         node = walker.currentNode
     }
     if (!mathml.startsWith('<math'))
-        mathml = `<math display="block" xmlns="http://www.w3.org/1998/Math/MathML">` + mathml + `</math>`
+        mathml = `<math display="block" xmlns="http://www.w3.org/1998/Math/MathML">${mathml}</math>`
     mathml = mathml.replace(/&nbsp;/g, ' ')
     mathml = mathml.replace(/<malignmark><\/malignmark>/g, '<malignmark/>')
     mathml = mathml.replace(/<maligngroup><\/maligngroup>/g, '<maligngroup/>')
@@ -2704,7 +2748,7 @@ output.addEventListener('keydown', function (e) {
         e.preventDefault()
         if (key.length > 1)
             return
-        if (e.ctrlKey && key == 'c') {
+        if (e.ctrlKey && key == 'c') {      // Ctrl+c
             let node = getMathJaxMathMlNode()
             let mathml = node.outerHTML
             if (mathml.startsWith('<math'))
@@ -2954,13 +2998,7 @@ output.addEventListener('keydown', function (e) {
                 return
 
             case 'v':                       // Ctrl+v
-                navigator.clipboard.readText()
-                    .then((clipText) => {
-                        let sel = window.getSelection()
-                        node = sel.anchorNode
-                        offset = sel.anchorOffset
-                        pasteMathML(clipText, node, offset, sel)
-                    })
+                readPaste()
                 return
 
             case 'y':                       // Ctrl+y

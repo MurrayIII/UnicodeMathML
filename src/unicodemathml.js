@@ -681,6 +681,7 @@ var controlWords = {
     'cong':             '≅',    	// 2245
     'contain':          '∋',	// 220B
     'coprod':           '∐',	    // 2210
+    'cross':            '⨯',	// 2A2F
     'cup':              '∪',	// 222A
     'curlyeqprec':      '⋞',    	// 22DE
     'curlyeqsucc':      '⋟',    	// 22DF
