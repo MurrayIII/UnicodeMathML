@@ -566,6 +566,7 @@ var controlWords = {
     'Downarrow':        '⇓',    	// 21D3
     'Gamma':            'Γ',	// 0393
     'Im':               'ℑ',    	// 2111
+    'Intersection':     '⋂',    	// 22C2
     'Join':             '⨝',   // 2A1D
     'Lambda':           'Λ',	// 039B
     'Langle':           '⟪',    	// 27EA
@@ -592,6 +593,7 @@ var controlWords = {
     'Supset':           '⋑',    	// 22D1
     'Theta':            'Θ',	// 0398
     'Ubar':             '̳',	// 0333
+    'Union':            '⋃',    	// 22C3
     'Uparrow':          '⇑',    	// 21D1
     'Updownarrow':      '⇕',	    // 21D5
     'Upsilon':          'Υ',	// 03A5
@@ -633,6 +635,7 @@ var controlWords = {
     'between':          '≬',    	// 226C
     'bigcap':           '⋂',    	// 22C2
     'bigcup':           '⋃',    	// 22C3
+    'bigintersection':  '⋂',    	// 22C2
     'bigodot':          '⨀',	// 2A00
     'bigoplus':         '⨁',	// 2A01
     'bigotimes':        '⨂',	// 2A02
@@ -640,6 +643,7 @@ var controlWords = {
     'bigsqcup':         '⨆',	// 2A06
     'bigudot':          '⨃',	// 2A03
     'biguplus':         '⨄',	// 2A04
+    'bigunion':         '⋃',    	// 22C3
     'bigvee':           '⋁',    	// 22C1
     'bigwedge':         '⋀',	    // 22C0
     'bmatrix':          'ⓢ',	// 24E2
@@ -787,6 +791,7 @@ var controlWords = {
     'int':              '∫',	// 222B
     'intent':           'ⓘ',   // 24D8
     'intercal':         '⊺',	    // 22BA
+    'intersection':     '∩',	// 2229
     'iota':             'ι',	// 03B9
     'iplus':            '⁤',	    // 2064
     'isep':             '⁣',	    // 2063
@@ -1061,6 +1066,7 @@ var controlWords = {
     'underline':        '▁',	// 2581
     'underparen':       '⏝',	    // 23DD
     'undershell':       '⏡',	    // 23E1
+    'union':           '∪',	    // 222A
     'uparrow':          '↑',	// 2191
     'updownarrow':      '↕',	// 2195
     'updownarrows':     '⇅',    	// 21C5
@@ -3377,7 +3383,7 @@ function mtransform(dsty, puast) {
 
         case "matrix":
             value = mtransform(dsty, value);
-            var str = ':matrix(' + value.length + ',' + value[0].mtr.content.length + ')';
+            var str = ':array(' + value.length + ',' + value[0].mtr.content.length + ')';
             var attrs = getAttrs(value, str);
             return {mtable: withAttrs(attrs, value)};
         case "mrows":

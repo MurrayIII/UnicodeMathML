@@ -1192,6 +1192,10 @@ function handleAutocompleteKeys(x, e) {
             addActive(x);
             return true;
 
+        case 'Escape':
+            closeAutocompleteList()
+            return true
+
         case " ":
         case "Enter":
         case "Tab":
@@ -2549,6 +2553,8 @@ function readPaste() {
                     let j = html.indexOf('</math', i)
                     let mathml = html.substring(i, j + 7)
                     let sel = window.getSelection()
+                    if (!testing)
+                        console.log('HTML = ' + html)
                     pasteMathML(mathml, sel.anchorNode, sel.anchorOffset, sel)
                 })
             })
@@ -2582,7 +2588,7 @@ function pasteMathML(clipText, node, offset, sel) {
     if (!i)
         return false
     let uMath
-    if (nodeNew.className == "ltx_Math") {
+    if (clipText.indexOf('DLMF') != -1 || clipText.indexOf('ltx_') != -1) {
         // Equation from Digital Library of Mathmatical Functions. Convert
         // nodeNew to UnicodeMath and back since native MathML rendering
         // doesn't display nodeNew for some reason...
