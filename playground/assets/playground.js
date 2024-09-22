@@ -1093,6 +1093,7 @@ function autocomplete() {
             let code = ch.codePointAt(0);
 
             input.value = input.value.substring(0, i) + ch + input.value.substring(ip);
+            speak(ch)
             ip = i + (code > 0xFFFF ? 2 : 1);
             input.selectionStart = input.selectionEnd = ip;
             if (code >= 0x2061 && code <= 0x2C00)
@@ -1136,6 +1137,7 @@ function createAutoCompleteMenu(cw, id, onAutoCompleteClick) {
 
     // Create a <div> element to contain matching control words
     currentFocus = -1;
+    let cwOption
     let autocl = document.createElement("div");
     autocl.setAttribute("id", id + "autocomplete-list");
     autocl.setAttribute("class", "autocomplete-items");
@@ -1143,7 +1145,7 @@ function createAutoCompleteMenu(cw, id, onAutoCompleteClick) {
     // Create a div element for each matching control word
     for (let j = 0; j < matches.length; j++) {
         let b = document.createElement("div");
-        let cwOption = matches[j];
+        cwOption = matches[j]
 
         // Bold the matching letters and insert an input field to hold
         // the current control word and symbol
@@ -1166,6 +1168,8 @@ function createAutoCompleteMenu(cw, id, onAutoCompleteClick) {
         currentFocus = 0;
         autocl.firstChild.classList.add("autocomplete-active");
     }
+    cwOption = matches[currentFocus]
+    speak(cwOption[cwOption.length - 1])
     return autocl
 }
 
@@ -1223,6 +1227,8 @@ function addActive(x) {
     // Add class "autocomplete-active" to x[currentFocus]
     console.log("x[" + currentFocus + "] = " + x[currentFocus].innerText);
     x[currentFocus].classList.add("autocomplete-active");
+    let cwOption = x[currentFocus].innerText
+    speak(cwOption[cwOption.length - 1])
 }
 
 function removeActive(x) {
@@ -2784,13 +2790,20 @@ output.addEventListener('keydown', function (e) {
     let offset = sel.anchorOffset
     let uMath
 
-    if (sel.anchorNode.nodeName == 'DIV') {
-        // No MathML in output display; insert a math zone
-        node.innerHTML = `<math display="block"><mi selanchor="0" selfocus="1">⬚</mi></math>`
+    if (node.nodeName == 'DIV') {
         node = node.firstElementChild
-        name = 'math'
-        sel = setSelection(sel, node, 0)
-        atEnd = true
+        if (!node || node.nodeName != 'math') {
+            // No MathML in output display; insert a math zone
+            node.innerHTML = `<math display="block"><mi selanchor="0" selfocus="1">⬚</mi></math>`
+            node = node.firstElementChild
+            name = 'math'
+            sel = setSelection(sel, node, 0)
+            atEnd = true
+        } else {                            // Move to first math-zone child
+            node = node.firstElementChild
+            sel = setSelection(sel, node, 0)
+            atEnd = false
+        }
     }
 
     switch (key) {
@@ -3544,6 +3557,7 @@ $('button#insert_controlword').click(function () {
     } else {
         addToHistory(symbol);
     }
+    speak(symbol)
     insertAtCursorPos(symbol);
 });
 
@@ -3715,7 +3729,7 @@ $('button').hover(function (e) {
 
 $('#codepoints').on('mouseover', '.cp', function (e) {
     var elem = this;
-    var x = $(elem).offset().left + 0.3 * $(elem).outerWidth(true);
+    var x = $(elem).offset().left + 0.3 * $(elem).outerWidth(true) + 10;
     var y = $(elem).offset().top + 0.8 * $(elem).outerHeight(true);
     var text = elem.getAttribute("data-tooltip");
     showTooltip(x, y, text);

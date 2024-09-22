@@ -132,8 +132,26 @@ const symbolSpeechStrings = {
 	'→': 'right arrow',						// 2192
 	'↓': 'down arrow',						// 2193
 	'↔': 'left right arrow',				// 2194
+	'↜': 'left wave arrow',       			// 219C
+	'↝': 'right wave arrow',					// 219D
+	'↢': 'left arrow tail',					// 21A2
+	'↣': 'right arrow tail',					// 21A3
+    '↫': 'loop arrow left',					// 21AB
+    '↬': 'loop arrow right',					// 21AC
+	'↭': 'left right wave arrow',			// 21AD
+	'↼': 'left harpoon up',					// 21BC
+	'↽': 'left harpoon down',				// 21BD
+	'⇀': 'right harpoon up',					// 21C0
+	'⇁': 'right harpoon down',				// 21C1
+	'⇄': 'right left arrows',				// 21C4
+	'⇆': 'left right arrows',				// 21C6
+	'⇇': 'left left arrows',					// 21C7
+	'⇉': 'right right arrows',     			// 21C9
+	'⇋': 'left right harpoons',				// 21CB
+	'⇌': 'right left harpoons',    			// 21CC
 	'⇒': 'implies',							// 21D2
 	'⇔': 'if and only if',					// 21D4
+	'⇜': 'left squiggle arrow',      		// 21DC
 	'⇳': 'height phantom',					// 21F3
 	'∀': 'for all',							// 2200 (All chars in 2200 block)
 	'∁': 'complement',
@@ -426,6 +444,7 @@ const symbolSpeechStrings = {
 	'Ⓘ': 'insertion point',					// 24BE
 	'Ⓢ': 'curly braced matrix',				// 24C8
 	'ⓒ': 'cardinality',						// 24D2
+	'ⓘ': 'intent',							// 24D8
 	'ⓢ': 'bracketed matrix',				// 24E2
 	'ⓣ': 'the',								// 24E3
 	'─': 'line on',							// 2500 (for partial box lead-in)
@@ -439,6 +458,7 @@ const symbolSpeechStrings = {
 	'┴': 'above',							// 2534
 	'┷': 'bottom',							// 2537 (for box 'bottom')
 	'═': 'lines',							// 2550 (for matrix array)
+	'╱': 'cancel',							// 2571
 	'▁': 'underbar',						// 2581
 	'█': 'equation array',					// 2588
 	'▒': 'of',								// 2592
@@ -454,11 +474,19 @@ const symbolSpeechStrings = {
 	'⚡': 'power',							// 26A1 (as in 𝑥^(𝑛−1))
 	'⛑': 'cap',							// 26D1 (for capital letter)
 	'✎': 'color',							// 270E
+	'⟌': 'long division',					// 27CC
+	'⟕': 'left outer join',					// 27D5
+	'⟖': 'right outer join',				// 27D6
 	'⟡': 'phantom',							// 27E1
 	'⟦': 'open white square bracket',		// 27E6
 	'⟧': 'close white square bracket',		// 27E7
 	'⟨': 'open angle bracket',				// 27E8
 	'⟩': 'close angle bracket',				// 27E9
+    '⟵': 'long left arrow',				// 27F5
+    '⟶': 'long right arrow',				// 27F6
+    '⟷' :'long left right arrow',			// 27F7
+    '⟻': 'long maps to left',				// 27FB
+    '⟼': 'long maps to',					// 27FC
 	'⨯': 'cross',							// 2A2F
 	'⼖': 'enclosing',						// 2F16
 	'⼞': 'enclosure',						// 2F1E
