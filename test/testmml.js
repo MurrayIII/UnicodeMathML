@@ -71,6 +71,7 @@ const mathML = [
     "<math display=\"block\"><msubsup><mi>𝑓</mi><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑎</mi><mo>−</mo><mn>0</mn></mrow><mo>)</mo></mrow><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑏</mi><mo>+</mo><mi>𝑐</mi></mrow><mo>)</mo></mrow></msubsup></math>",
     "<math display=\"block\"><mrow><mfrac intent=\"derivative(1,$f,𝑥)\"><mi>𝑑</mi><mrow><mi>𝑑</mi><mi>𝑥</mi></mrow></mfrac><mrow arg=\"f\"><mrow intent=\":fenced\"><mo>(</mo><mrow><msup><mi>𝑥</mi><mn>2</mn></msup><mo>+</mo><mi>𝑥</mi><mo>+</mo><mn>1</mn></mrow><mo>)</mo></mrow></mrow><mo>=</mo><mrow><mn>2</mn><mi>𝑥</mi></mrow><mo>+</mo><mn>1</mn></mrow></math>",
     "<math display=\"block\"><mrow><mi>𝑎</mi><mo selanchor=\"0\">^</mo></mrow></math>",
+    "<math display=\"block\"><mrow intent=\":determinant\"><mo>|</mo><mtable intent=\":array(2,2)\"><mtr><mtd><mi>𝑎</mi></mtd><mtd><mi>𝑏</mi></mtd></mtr><mtr><mtd><mi>𝑐</mi></mtd><mtd><mi>𝑑</mi></mtd></mtr></mtable><mo>|</mo></mrow></math>",
 ]
 
 const unicodeMath = [
@@ -143,6 +144,7 @@ const unicodeMath = [
     "𝑓_((𝑎−0))^((𝑏+𝑐))",
     "𝑑/𝑑𝑥 (𝑥²+𝑥+1)=2𝑥+1",
     "𝑎Ⓐ()^",
+    "⒱(𝑎&𝑏@𝑐&𝑑)",
 ]
 
 const mathSpeech = [
@@ -221,6 +223,7 @@ const mathSpeech = [
     "f sub open eigh minus 0 close to the open b + c close",
     "derivative of x squared + x + 1 with respect to x = 2 x + 1",
     "eigh insertion point soup",
+    "the 2 by 2 determinant , row 1 , eigh , b , row 2 , c , d , end determinant",
 ]
 
 const mathBrailles = [
@@ -293,6 +296,7 @@ const mathBrailles = [
     "⠋⠰⠷⠁⠤⠴⠾⠘⠷⠃⠬⠉⠾",
     "⠹⠙⠌⠙⠭⠼⠷⠭⠘⠆⠐⠬⠭⠬⠂⠾⠀⠨⠅⠀⠼⠆⠭⠬⠂",
     "⠁⠸⠣",
+    "⠠⠳⠁⠀⠃⣍⠉⠀⠙⠠⠳",
 ]
 
 const mathTeXs = [                          // Some cases aren't supported by TeX
@@ -365,6 +369,7 @@ const mathTeXs = [                          // Some cases aren't supported by Te
     '𝑓_(𝑎−0)^(𝑏+𝑐)',
     '\\frac{𝑑}{𝑑𝑥}(𝑥^2+𝑥+1)=2𝑥+1',
     '𝑎^',
+    '\\begin{vmatrix}𝑎&𝑏\\\\𝑐&𝑑\\end{vmatrix}',
 ]
 
 function testMathMLtoUnicodeMath() {

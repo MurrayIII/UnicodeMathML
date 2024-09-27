@@ -222,6 +222,7 @@ function checkBrackets(node) {
     let cNode = node.childElementCount
     let cBracket = 0
     let opBuildUp = false
+    let vbar = false
     let k = -1                              // Index of final child not in
                                             //  partial build up
     if (node.nodeName != 'mrow' || !cNode)
@@ -231,32 +232,40 @@ function checkBrackets(node) {
         let nodeC = node.children[i]
 
         if (nodeC.childElementCount) {
-            // Most built-up objects aren't included in partial build up but
-            // just in case msup base is a function name...
-            if (nodeC.nodeName == 'msup' &&
-                nodeC.firstElementChild.nodeName == 'mi') {
+            // Most built-up objects currently aren't included in partial
+            // build up but just in case msup base is a function name...
+            if (nodeC.nodeName == 'msup' || nodeC.nodeName == 'msub')
                 opBuildUp = true
-            } else if (k == -1) {
+            else if (k == -1)
                 k = i
-            }
-        }
-        if (nodeC.nodeName == 'mo') {
+        } else if (nodeC.nodeName == 'mo') {
             if (isOpenDelimiter(nodeC.textContent)) {
                 cBracket++
                 if (k == -1)
                     k = i
                 if (cBracket > 0)
                     break
-           } else if (isCloseDelimiter(nodeC.textContent)) {
+            } else if (isCloseDelimiter(nodeC.textContent)) {
                 cBracket--
                 if (k == -1)
                     k = i
                 opBuildUp = true
+            } else if (nodeC.textContent == '|') {
+                if (k == -1)
+                    k = i
+                if (vbar) {
+                    vbar = false
+                    opBuildUp = true
+                    break
+                }
+                vbar = true
             } else if ('_^/√⒞\u2061'.includes(nodeC.textContent)) {
                 opBuildUp = true
             }
         }
     }
+    if (vbar)
+        cBracket = 1
     if (k == cNode - 1)
         k = -1
     return [cBracket, k, opBuildUp]
@@ -3926,9 +3935,13 @@ function mtransform(dsty, puast) {
             }
 
             var content;
-            if (typeof value.open === 'string' && typeof value.close === 'string' &&
-                value.open == "|" && value.close == "|") {
-                content = mtransform(dsty, dropOutermostParens(value.content));
+            let defaultIntent = ':fenced'
+
+            if (value.open == '|' && value.close == '|') {
+                content = mtransform(dsty, dropOutermostParens(value.content))
+                defaultIntent = ':absolute-value'
+                if (content.mrow && Array.isArray(content.mrow.content) && content.mrow.content[0].mtable)
+                    defaultIntent = ':determinant'
             } else if (separator == "") {
                 content = mtransform(dsty, value.content);
             } else {
@@ -3973,7 +3986,7 @@ function mtransform(dsty, puast) {
                 var closeSize = fontSize(value.close.size);
                 ret.push({mo: withAttrs({minsize: closeSize, maxsize: closeSize}, value.close.bracket)});
             }
-            var attrs = getAttrs(value, ':fenced');
+            var attrs = getAttrs(value, defaultIntent)
             if (attrs.intent && attrs.intent[0] in symbolsIntent)
                 attrs.intent = symbolsIntent[attrs.intent[0]] + attrs.intent.substring(1);
 
@@ -4609,6 +4622,8 @@ function dump(value, noAddParens) {
             mrowIntent.endsWith('matrix') || mrowIntent.endsWith('determinant')) {
             // Remove enclosing parens for 𝑛⒞𝑘 and bracketed matrices
             let i = ret.length - 1
+            if (ret[0] == '|')              // Determinant
+                return ret.substring(1, i)
             if (ret[0] != '(')
                 return ret
             if (ret[i] == ')')

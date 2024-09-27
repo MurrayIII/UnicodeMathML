@@ -2114,7 +2114,7 @@ function checkAutoBuildUp(node, nodeP, key) {
             }
         }
     }
-    if ('+=-<> )'.includes(key) ||
+    if ('+=-<> )]|'.includes(key) ||
         key == '/' && !node.textContent.endsWith(')') || // Not end of numerator
         key == '#' && !node.textContent.endsWith('(')) { // Not hex RGB: eq-no
         // Try to build up <mrow> or trailing part of it

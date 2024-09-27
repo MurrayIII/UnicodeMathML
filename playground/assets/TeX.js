@@ -459,6 +459,8 @@ function TeX(value, noAddParens) {
             mrowIntent.endsWith('matrix') || mrowIntent.endsWith('determinant')) {
             // Remove enclosing parens for 𝑛⒞𝑘 and bracketed matrices
             let i = ret.length - 1
+            if (ret[0] == '|')              // Determinant
+                return ret.substring(1, i)
             if (ret[0] != '(')
                 return ret
             if (ret[i] == ')')
