@@ -24,8 +24,6 @@ const unicodeFractions = {
     "⅒": [1, 10]
 };
 
-const symbolsIntent = {'⒜': 'absolute-value', 'ⓒ': 'cardinality'}
-
 function getFencedOps(value) {
     let opClose = value.getAttribute('close')
     let opOpen = value.getAttribute('open')
@@ -212,6 +210,16 @@ function isTranspose(value) {
 }
 
 function isUcAscii(ch) { return /[A-Z]/.test(ch); }
+
+function checkCardinalityIntent(intent, miContent) {
+    if (intent) {
+        if (intent[0] == 'ⓒ')
+            intent = 'cardinality' + intent.substring(1)
+        if (miContent && intent.startsWith('cardinality'))
+            intent = 'cardinality(' + miContent + ')'
+    }
+    return intent
+}
 
 function checkBrackets(node) {
     // Return count of open brackets - count of close brackets. The value 0
@@ -613,7 +621,7 @@ var controlWords = {
     'Vvdash':           '⊪',	    // 22AA
     'Xi':               'Ξ',	// 039E
     'above':            '┴',	// 2534
-    'abs':              '⒜',	// 249C
+    //'abs':              '⒜',	// 249C
     'acute':            '́',	    // 0301
     'aleph':            'ℵ',    	// 2135
     'alpha':            'α',	// 03B1
@@ -2924,6 +2932,8 @@ function preprocess(dsty, uast, index, arr) {
                 var c = preprocess(dsty, v(value.content));
                 if (value.op == 'ⓘ') {
                     c.intent = value.intent.text;
+                    if (c.intent == 'cardinality')
+                        c.intent += '($a)'
                     if (arg)
                         c.arg = arg;
                 } else {
@@ -2938,6 +2948,8 @@ function preprocess(dsty, uast, index, arr) {
             switch (value.op) {
                 case 'ⓘ':
                     dsty.intent = val;
+                    if (dsty.intent == 'cardinality')
+                        dsty.intent += '($a)'
                     if (arg)
                         dsty.arg = arg;
                     break
@@ -3177,7 +3189,7 @@ function preprocess(dsty, uast, index, arr) {
                         arg = value.arg;        // Happens for derivative w bracketed order
                     if (!intent && value.intent) {
                         intent = value.intent;  // Happens for cases & absolute-value
-                        if (intent == '⒜' || intent == 'ⓒ') {
+                        if (intent == 'ⓒ') {
                             var arg0 = getAbsArg(value.content);
                             intent += '(' + arg0 + ')';
                             if (arg0 == "$a") {
@@ -3927,21 +3939,44 @@ function mtransform(dsty, puast) {
             return {mn: withAttrs(getAttrs(value, ''), value)};
 
         case "bracketed":
+            let content
+            let defaultIntent = ':fenced'
+            let miContent
+            let separator = ""
+
             // handle potential separator
-            var separator = "";
             if (value.content.hasOwnProperty("separated")) {
                 separator = value.content.separated.separator;
                 value.content = value.content.separated.of;
             }
 
-            var content;
-            let defaultIntent = ':fenced'
-
             if (value.open == '|' && value.close == '|') {
                 content = mtransform(dsty, dropOutermostParens(value.content))
-                defaultIntent = ':absolute-value'
-                if (content.mrow && Array.isArray(content.mrow.content) && content.mrow.content[0].mtable)
-                    defaultIntent = ':determinant'
+                defaultIntent = 'absolute-value($a)'
+                if (content.mrow && Array.isArray(content.mrow.content)) {
+                    let c = content.mrow
+                    if (c.content.length == 1) {
+                        c = c.content[0]
+                        if (c.mtable) {
+                            defaultIntent = 'determinant($a)'
+                            c = c.mtable
+                        } else if (c.mfrac) {
+                            c = c.mfrac
+                        } else if (c.mrow) {
+                            c = c.mrow
+                            if (c.content.length == 1) {
+                                if (c.content[0].mi) {
+                                    miContent = c.content[0].mi.content
+                                    defaultIntent = 'absolute-value(' + miContent + ')'
+                                } else if (c.content[0].mtext) {
+                                    c = c.content[0].mtext
+                                }
+                            }
+                        }
+                    }
+                    if (!miContent)
+                        c.attributes = {arg: 'a'}
+                }
             } else if (separator == "") {
                 content = mtransform(dsty, value.content);
             } else {
@@ -3961,9 +3996,10 @@ function mtransform(dsty, puast) {
             //    return {mrow: withAttrs(getAttrs(value, ''), content)};
 
             if (useMfenced) {
-                var attrs = getAttrs(value, '');
-                if (attrs.intent && attrs.intent[0] in symbolsIntent)
-                    attrs.intent = symbolsIntent[attrs.intent[0]] + attrs.intent.substring(1);
+                // (Can test using Ctrl+C in output window)
+                attrs = getAttrs(value, defaultIntent);
+                if (attrs.intent)
+                    attrs.intent = checkCardinalityIntent(attrs.intent, miContent)
                 if (typeof value.open === 'string' && value.open != '(')
                     attrs.open = value.open
                 if (typeof value.close === 'string' && value.close != ')')
@@ -3971,11 +4007,11 @@ function mtransform(dsty, puast) {
                 return [{mfenced: withAttrs(attrs, content)}]
             }
 
-            var ret = [];
+            ret = []
             if (typeof value.open === 'string') {
                 ret.push({mo: noAttr(value.open)});
             } else {
-                var openSize = fontSize(value.open.size);
+                let openSize = fontSize(value.open.size);
                 ret.push({mo: withAttrs({minsize: openSize, maxsize: openSize}, value.open.bracket)});
             }
             ret.push(content);
@@ -3983,17 +4019,17 @@ function mtransform(dsty, puast) {
             if (typeof value.close === 'string') {
                 ret.push({mo: noAttr(value.close)});
             } else {
-                var closeSize = fontSize(value.close.size);
+                let closeSize = fontSize(value.close.size);
                 ret.push({mo: withAttrs({minsize: closeSize, maxsize: closeSize}, value.close.bracket)});
             }
-            var attrs = getAttrs(value, defaultIntent)
-            if (attrs.intent && attrs.intent[0] in symbolsIntent)
-                attrs.intent = symbolsIntent[attrs.intent[0]] + attrs.intent.substring(1);
+            attrs = getAttrs(value, defaultIntent)
+            if (attrs.intent)
+                attrs.intent = checkCardinalityIntent(attrs.intent, miContent)
 
             return [{mrow: withAttrs(attrs, ret)}]
 
         case "intend":
-            // Set up next element to get selanchor via getAttrs()
+            // Set up for next element to get selanchor via getAttrs()
             if (value.symbol == 'Ⓐ')
                 selanchor = value.value
             else if (value.symbol == 'Ⓕ')
@@ -4612,11 +4648,9 @@ function dump(value, noAddParens) {
             !value.lastElementChild.textContent) {
             return !value.firstElementChild.textContent ? '〖' + ret + '〗' : ret + '┤';
         }
-        if (mrowIntent.startsWith('absolute-value') ||
-            mrowIntent.startsWith('cardinality')) {
-            let abs = mrowIntent[0] == 'a' ? '⒜' : 'ⓒ';
-            ret = ret.substring(1, ret.length - 1); // Remove '|'s
-            return needParens(ret) ? abs + '(' + ret + ')' : abs + ret + ' ';
+        if (mrowIntent.startsWith('cardinality')) {
+            ret = ret.substring(1, ret.length - 1) // Remove '|'s
+            return needParens(ret) ? 'ⓒ(' + ret + ')' : 'ⓒ' + ret + ' '
         }
         if (mrowIntent.startsWith('binomial-coefficient') ||
             mrowIntent.endsWith('matrix') || mrowIntent.endsWith('determinant')) {

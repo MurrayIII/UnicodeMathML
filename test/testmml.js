@@ -90,7 +90,7 @@ const unicodeMath = [
     "(■(𝑎&𝑏@𝑐&𝑑))",
     "|𝑥|=Ⓒ(\"if \"𝑥≥&0,&𝑥@\"if \"𝑥<&0,&−𝑥)",
     "█(10&𝑥+&3&𝑦=2@3&𝑥+&13&𝑦=4)",
-    "⒜(𝑎+𝑏)",
+    "|𝑎+𝑏|",
     "✎(#e01f32&𝛼)",
     "☁(brown&𝑎+𝑏)",
     "_𝑛 𝐶_𝑘=𝑛⒞𝑘=𝑛!/𝑘!(𝑛−𝑘)!",
@@ -129,7 +129,7 @@ const unicodeMath = [
     "ⓘ(\"$op($a)\"ⓐ(a 𝐴)^ⓐopⓘ(\"transpose\"𝑇))=0",
     "ⓘ(\":derivative\"𝑓′(𝑥))=ⓘ(\":derivative\"𝑓′(𝑥′))",
     "ⓘ(\": sup\"𝑎²)",
-    "ⓒ𝑥 ⒜(𝑥+2)=0",
+    "ⓒ𝑥 |𝑥+2|=0",
     "⒨(1&0@0&1)",
     "𝛼₂³/(𝛽₂³+𝛾₂³)",
     "[𝑎+𝑏,𝑐+𝑑]",
@@ -852,5 +852,5 @@ function testDictation() {
         }
     }
     let iFail = mathDictation.length - iSuccess;
-    console.log(iSuccess + " passes; " + iFail + " failures\n");
+    console.log('Test dictation: ' + iSuccess + " passes; " + iFail + " failures\n");
 }

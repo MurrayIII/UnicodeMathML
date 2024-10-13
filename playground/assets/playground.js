@@ -11,6 +11,8 @@ var measurements_parse = document.getElementById("measurements_parse");
 var measurements_transform = document.getElementById("measurements_transform");
 var measurements_pretty = document.getElementById("measurements_pretty");
 var dictateButton = document.getElementById('dictation')
+var modal = document.getElementById("helpModal")
+var span = document.getElementsByClassName("close")[0]
 
 var activeTab = "source";
 var atEnd = false;                          // True if at end of output object
@@ -190,6 +192,21 @@ var mappedSingle = {
     "-": "\u2212",
     "\'": "\u2032"
 };
+
+function displayHelp() {
+    modal.style.display = "block"
+}
+
+// When the user clicks on <span> (x), close the modal
+span.onclick = function () {
+    modal.style.display = "none"
+}
+
+// When the user clicks anywhere outside of the modal, close it
+window.onclick = function (event) {
+    if (event.target == modal)
+        modal.style.display = "none"
+}
 
 ////////////////////
 // DEMO FUNCTIONS //
@@ -2456,19 +2473,23 @@ output.addEventListener('contextmenu', (e) => {
     if (contextmenuNode.nodeName == 'mrow' && contextmenuNode.parentElement.nodeName == 'math')
         contextmenuNode = contextmenuNode.parentElement
 
-    let intentCurrent = contextmenuNode.getAttribute('intent')
-    if (!intentCurrent) {
-        intentCurrent = contextmenuNode.getAttribute('arg')
-        if (intentCurrent)
-            intentCurrent = 'arg=' + intentCurrent
-    }
     let name = contextmenuNode.nodeName
     if (name == 'math') {
         name = 'math zone'
     } else {
         name = names[name]
-        if (!name)
+        if (!name) {
             name = getUnicodeMath(contextmenuNode, false)
+            if (name == '|' && contextmenuNode.parentElement.nodeName == 'mrow') {
+                contextmenuNode = contextmenuNode.parentElement
+            }
+        }
+    }
+    let intentCurrent = contextmenuNode.getAttribute('intent')
+    if (!intentCurrent) {
+        intentCurrent = contextmenuNode.getAttribute('arg')
+        if (intentCurrent)
+            intentCurrent = 'arg=' + intentCurrent
     }
     let str = `<input type="text" id="contextmenuinput" placeholder="Enter intent for ${name}" onfocusout="closeContextMenu()""></input>`
     contextMenu.innerHTML = str
