@@ -1,0 +1,53 @@
+﻿<!DOCTYPE html>
+<!--
+    To get the content for <div id="helpModal" class="modal"> in index.html
+    (for the time being anyhow),
+
+    1) copy the preview of help.md
+    2) run this html file with inspect on and click on the Copy option for
+       the console.log output. This puts the html from help.md into the
+       plain-text clipboard slot
+    3) paste the plain text into an editor like notepad
+    4) change "http://browsing-file-host/" into "", e.g., get img src's like
+       src="help-images/autocl.png"
+    5) insert the video with the HTML
+        <video style="width: 80%; display: block; margin-left: auto; margin-right: auto;" controls>
+            <source src="help-images/Autobuildup.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    6) add style="background-color: white;" to the <math> tags
+    7) add the style entry "background-color: white;" to the opening <h1>
+-->
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+</head>
+<body>
+    <div id="input">
+        <textarea id="input" autocomplete="off" spellcheck="false"></textarea>
+    </div>
+    <button type="button" id="copy" onclick="copyHtmlToPlain()"><span>Copy</span></button>
+
+    <script>
+        function copyHtmlToPlain() {
+            navigator.clipboard.read().then((clipContents) => {
+                if (clipContents[0].types.includes('text/html')) {
+                    clipContents[0].getType('text/html').then((blob) => {
+                        blob.text().then((html) => {
+                            let input = document.getElementById('input')
+                            input.focus();
+                            input.value = html
+                            console.log(input.value)
+                            //navigator.clipboard.writeText(html)
+                        })
+                    })
+                } else {
+                    console.log('Clipboard has no HTML\n')
+                }
+            })
+        }
+    </script>
+</body>
+</html>
