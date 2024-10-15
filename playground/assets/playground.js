@@ -11,8 +11,6 @@ var measurements_parse = document.getElementById("measurements_parse");
 var measurements_transform = document.getElementById("measurements_transform");
 var measurements_pretty = document.getElementById("measurements_pretty");
 var dictateButton = document.getElementById('dictation')
-var modal = document.getElementById("helpModal")
-var span = document.getElementsByClassName("close")[0]
 
 var activeTab = "source";
 var atEnd = false;                          // True if at end of output object
@@ -172,41 +170,13 @@ function setSelection(sel, node, offset, nodeFocus, offsetFocus) {
     return sel
 }
 
-var mappedPair = {
-    "+-": "\u00B1",
-    "<=": "\u2264",
-    ">=": "\u2265",
-    "~=": "\u2245",
-    "~~": "\u2248",
-    "::": "\u2237",
-    ":=": "\u2254",
-    "<<": "\u226A",
-    ">>": "\u226B",
-    "−>": "\u2192",
-    "−+": "\u2213",
-    "!!": "\u203C",
-    "...": "…"
-};
-
-var mappedSingle = {
-    "-": "\u2212",
-    "\'": "\u2032"
-};
-
-function displayHelp() {
-    modal.style.display = "block"
+const mappedPair = {
+    "+-": "\u00B1", "<=": "\u2264", ">=": "\u2265", "~=": "\u2245",
+    "~~": "\u2248", "::": "\u2237", ":=": "\u2254", "<<": "\u226A",
+    ">>": "\u226B", "−>": "\u2192", "−+": "\u2213", "!!": "\u203C", "...": "…"
 }
 
-// When the user clicks on <span> (x), close the modal
-span.onclick = function () {
-    modal.style.display = "none"
-}
-
-// When the user clicks anywhere outside of the modal, close it
-window.onclick = function (event) {
-    if (event.target == modal)
-        modal.style.display = "none"
-}
+const mappedSingle = {"-": "\u2212", "\'": "\u2032"}
 
 ////////////////////
 // DEMO FUNCTIONS //
@@ -779,6 +749,10 @@ input.addEventListener("keydown", function (e) {
     }
     if (e.altKey) {
         switch (e.key) {
+            case 'a':                       // Alt+a
+                document.getElementById("about").click()
+                return
+
             case 'b':                       // Alt+b
                 // Braille MathML
                 e.preventDefault()
@@ -805,6 +779,10 @@ input.addEventListener("keydown", function (e) {
                 iExample++                 // Increment for next time
                 if (iExample > cExamples - 1)
                     iExample = 0
+                return
+
+            case 'h':                       // Alt+h
+                document.getElementById("help").click()
                 return
 
             case 'm':                       // Alt+m
@@ -3008,7 +2986,7 @@ output.addEventListener('keydown', function (e) {
                 output.innerHTML = t.mathml
                 refreshDisplays('', true)
                 sel = window.getSelection()
-                                            // Fall through to case 'c'
+            // Fall through to case 'c'
             case 'c':                       // Ctrl+c
             case 'x':                       // Ctrl+x
                 let mathml = getMathSelection()
@@ -3061,63 +3039,79 @@ output.addEventListener('keydown', function (e) {
                 setUnicodeMath(uMath)
                 return
         }                                   // switch(e.key) {}
-    } else if (e.altKey && e.key == 'x') {  // Alt+x: hex → Unicode
-        let cchSel = 0                      // Default degenerate selection
-        let str = ''                        // Collects hex string
+    } else if (e.altKey) {
+        switch (e.key) {
+            case 'a':                       // Alt+a
+            case 'b':                       // Alt+b
+            case 'h':                       // Alt+h
+            case 'm':                       // Alt+m
+            case 's':                       // Alt+s
+            case 't':                       // Alt+t
+                const event = new Event('keydown')
+                event.key = e.key
+                event.altKey = e.altKey
+                input.dispatchEvent(event)
+                return
 
-        if (!sel.isCollapsed) {             // Nondegenerate selection
-            let rg = sel.getRangeAt(0)
-            node = rg.endContainer
-            str = rg + ''
-            cchSel = str.length
-        }
-        if (node.nodeName == '#text')
-            node = node.parentElement
-        let nodeP = node.parentElement
-        if (nodeP.nodeName != 'mrow')
-            return
-        let cNode = nodeP.childElementCount
-        let iEnd = -1                       // Index of node in nodeP
-        let iStart = 0                      // Index of 1st node that might be part of hex
+            case 'x':                       // Alt+x: hex → Unicode
+                let cchSel = 0              // Default degenerate selection
+                let str = ''                // Collects hex string
 
-        // Collect span of alphanumerics ending with node
-        for (i = cNode - 1; i >= 0; i--) {
-            let nodeC = nodeP.children[i]
-            if (nodeC.nodeName != 'mi' && nodeC.nodeName != 'mn') {
-                if (iEnd > 0) {             // Index of last node is defined
-                    iStart = i + 1          // Set index of first node
-                    break
+                if (!sel.isCollapsed) {     // Nondegenerate selection
+                    let rg = sel.getRangeAt(0)
+                    node = rg.endContainer
+                    str = rg + ''
+                    cchSel = str.length
                 }
-            } else {
-                if (nodeC == node)
-                    iEnd = i                // Found node's index
-                if (iEnd > 0 && !cchSel)
-                    str = nodeC.textContent + str
-            }
-        }
-        let [ch, cchDel] = hexToUnicode(str, str.length, cchSel)
+                if (node.nodeName == '#text')
+                    node = node.parentElement
+                let nodeP = node.parentElement
+                if (nodeP.nodeName != 'mrow')
+                    return
+                let cNode = nodeP.childElementCount
+                let iEnd = -1               // Index of node in nodeP
+                let iStart = 0              // Index of 1st node that might be part of hex
 
-        // Remove cchDel codes along with emptied nodes
-        for (i = iEnd; i >= iStart && cchDel > 0; i--) {
-            let nodeC = nodeP.children[i]
-            let cch = nodeC.textContent.length
+                // Collect span of alphanumerics ending with node
+                for (i = cNode - 1; i >= 0; i--) {
+                    let nodeC = nodeP.children[i]
+                    if (nodeC.nodeName != 'mi' && nodeC.nodeName != 'mn') {
+                        if (iEnd > 0) {     // Index of last node is defined
+                            iStart = i + 1  // Set index of first node
+                            break
+                        }
+                    } else {
+                        if (nodeC == node)
+                            iEnd = i        // Found node's index
+                        if (iEnd > 0 && !cchSel)
+                            str = nodeC.textContent + str
+                    }
+                }
+                let [ch, cchDel] = hexToUnicode(str, str.length, cchSel)
 
-            if (cch > cchDel) {             // ∃ more codes than need deletion
-                nodeC.innerHTML = nodeC.innerHTML.substring(0, cch - cchDel)
-                break;
-            }
-            cchDel -= cch
-            if (nodeP.childElementCount == 1) {
-                // Leave empty child as place holder for ch
-                nodeC.innerHTML = ''
-            } else {
-                nodeC.remove()
-            }
+                // Remove cchDel codes along with emptied nodes
+                for (i = iEnd; i >= iStart && cchDel > 0; i--) {
+                    let nodeC = nodeP.children[i]
+                    let cch = nodeC.textContent.length
+
+                    if (cch > cchDel) {     // ∃ more codes than need deletion
+                        nodeC.innerHTML = nodeC.innerHTML.substring(0, cch - cchDel)
+                        break;
+                    }
+                    cchDel -= cch
+                    if (nodeP.childElementCount == 1) {
+                        // Leave empty child as place holder for ch
+                        nodeC.innerHTML = ''
+                    } else {
+                        nodeC.remove()
+                    }
+                }
+                node = nodeP.children[i >= 0 ? i : 0]
+                name = node.nodeName
+                atEnd = true
+                key = ch
+                break
         }
-        node = nodeP.children[i >= 0 ? i : 0]
-        name = node.nodeName
-        atEnd = true
-        key = ch
     }
 
     // Handle character input
@@ -3457,11 +3451,13 @@ async function draw(undo) {
 
     if (ummlConfig.forceMathJax) {
         try {
-            MathJax.typeset([output]);
+            MathJax.typeset([output])
         }
         catch { }
     }
 }
+
+input.focus()
 
 // add a symbol (or string) to history
 function addToHistory(symbols) {
@@ -3508,10 +3504,11 @@ function setActiveTab(id) {
 
 $(input).on("change keyup paste", function() {
     draw();
-});
+})
+
 $('button.tab').click(function () {
     setActiveTab(this.id);
-});
+})
 
 // because the history is updated after page load, which kills any
 // previously defined event handlers, we can't simply do
@@ -3543,7 +3540,7 @@ $(document).on('click', function (e) {
         addToHistory(e.target.innerText);
         insertAtCursorPos(str);
     }
-});
+})
 
 // custom codepoint insertion
 $('#codepoint').keypress(function (e) {
@@ -3556,7 +3553,7 @@ $('button#insert_codepoint').click(function () {
     var symbol = String.fromCodePoint("0x" + $('#codepoint').val())
     insertAtCursorPos(symbol);
     addToHistory(symbol);
-});
+})
 
 // custom control word insertion. call resolveCW() in unicodemathml.js
 $('#controlword').keydown(function (e) {
@@ -3567,7 +3564,8 @@ $('#controlword').keypress(function (e) {
     if (key == 13) {  // enter
         $('button#insert_controlword').click();
     }
-});
+})
+
 $('button#insert_controlword').click(function () {
     var cw = $('#controlword').val();
     var symbol = resolveCW(cw);
@@ -3580,7 +3578,7 @@ $('button#insert_controlword').click(function () {
     }
     speak(symbol)
     insertAtCursorPos(symbol);
-});
+})
 
 $('button#insert_dictation').click(function () {
     var dictation = $('#dictation').val();
@@ -3591,7 +3589,7 @@ $('button#insert_dictation').click(function () {
     catch {
         alert('Math dictation is unavailable');
     }
-});
+})
 
 $('#dictation').keydown(function (e) {
     if (e.key == 'Enter') {
@@ -3600,7 +3598,7 @@ $('#dictation').keydown(function (e) {
         e.preventDefault();
         $('button#insert_dictation').click();
     }
-});
+})
 
 // math font conversion (mathFonts[] is defined in unicodemathml.js)
 $('#mathchar').on("change keyup paste", function (e) {
@@ -3631,7 +3629,7 @@ $('#mathchar').on("change keyup paste", function (e) {
             $(this).addClass("disabled");
         }
     });
-});
+})
 
 function getInputSelection() {
     let s = input.selectionStart
@@ -3729,7 +3727,7 @@ $('button.mathfont').click(function () {
         input.focus();
         draw();
     }
-});
+})
 
 // button tooltips
 function showTooltip(x, y, text) {

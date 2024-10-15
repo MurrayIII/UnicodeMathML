@@ -1,23 +1,25 @@
 ﻿# Welcome to UnicodeMathML
-[UnicodeMath](https://www.unicode.org/notes/tn28/UTN28-PlainTextMath-v3.2.pdf) is a linear representation of math that resembles math notation and is easy to enter.
-For example, a/b is UnicodeMath for <math><mrow><mfrac><mi>a</mi><mi>b</mi></mfrac></mrow></math>.
+[UnicodeMath](https://www.unicode.org/notes/tn28/UTN28-PlainTextMath-v3.2.pdf) is a linear representation of math that often resembles math notation and is easy to enter.
+For example, a/b is UnicodeMath for <math><mrow><mfrac><mi>a</mi><mi>b</mi></mfrac><mo>.</mo></mrow></math>
 It works well in Microsoft desktop apps such as Word, PowerPoint, Outlook, and OneNote but it hasn't been generally available elsewhere.
-The present applet is an attempt to remedy that lack on the web.
+The present applet implements UnicodeMath on the web and is open source.
 
 You can enter equations in four ways:
 1. Enter UnicodeMath in the input (upper-left) window. The corresponding 2D built-up math displays in the output (upper-right) window and the [MathML](https://w3c.github.io/mathml/) for it displays below the output window. This option is quite reliable.
 2. Enter UnicodeMath directly into the output window. This option builds up what you enter automatically, similarly to entry in the Microsoft Office apps. This option is a work in progress.
 3. Click on the Dictate button or type Alt+d, wait for the bell, and dictate the equation in English. You need to have Internet access, and you need to enunciate clearly. This option is also a work in progress but if you get it to work it’s the fastest entry method except for:
-4. Paste MathML into the input or output window
+4. Paste MathML into the input or output window.
 
 ## See it in action
 Click on the Demo button or type Alt+p in the input window to see it in action!
 Hit the space bar to pause the demo and hit it again to continue the demo.
 The arrow keys → and ← move to the next/previous equation, respectively.
-Escape and Alt+p stop the demo.
+Escape and Alt+p stop the demo. One of the equations has the UnicodeMath 1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²), which builds up to
+
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><mfrac><mn>1</mn><mrow><mn>2</mn><mi>𝜋</mi></mrow></mfrac><mrow intent=":integral(0,$h,$naryand)"><msubsup><mo>∫</mo><mn>0</mn><mrow arg="h"><mn>2</mn><mi>𝜋</mi></mrow></msubsup><mfrac arg="naryand"><mrow><mi intent="ⅆ">𝑑</mi><mi>𝜃</mi></mrow><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi><mrow intent=":function"><mi>sin</mi><mo>⁡</mo><mi>𝜃</mi></mrow></mrow></mfrac></mrow><mo>=</mo><mfrac><mn>1</mn><msqrt><mrow><msup><mi>𝑎</mi><mn>2</mn></msup><mo>−</mo><msup><mi>𝑏</mi><mn>2</mn></msup></mrow></msqrt></mfrac></mrow></math>
 
 ## Entering symbols
-To enter a symbol, you can click on the symbol in one of the symbol galleries below the input window.
+You can enter a symbol by clicking on the symbol in one of the symbol galleries below the input window.
 But it’s faster to type the symbol’s LaTeX control word such as \alpha for α.
 After typing two letters, you get a math autocomplete dropdown with possible matches.
 This lets you enter the selected symbol (the one highlighted in blue) quickly by typing a space, Enter, or Tab.
@@ -27,7 +29,7 @@ For example, if you type \al, you see
 
 <img src="help-images/autocl.png" style="display: block; 
            margin-left: auto; margin-right: auto;
-           width: 70%;"/>
+           width: 80%;"/>
  
 Typing the space, Enter, or Tab key inserts 𝛼.
 If you want a different symbol in the dropdown, use the up/down (↑↓) arrow keys or the mouse to select the symbol you want and type the space, Enter, or Tab key, or click to enter it.
@@ -36,7 +38,7 @@ The math autocomplete menu helps you discover a LaTeX control word, and it speed
 
 <img src="help-images/autocllong.png" style="display: block; 
            margin-left: auto; margin-right: auto;
-           width: 70%;"/>
+           width: 80%;"/>
 
 The symbol dictionary includes some control-word aliases, such as \union for \cup (∪), since you might not guess \cup is the LaTeX control word for the union operator ∪.
 
@@ -53,6 +55,7 @@ In addition to generating MathML, you can click on buttons or enter a hot key to
 * braille the math in Nemeth  braille (Alt+b)
 * convert the math to Unicode LaTeX (Alt+t)
 * dictate an equation (Alt+d)
+* toggle the help display (Alt+h)
 
 The results for speech, braille and LaTeX are displayed below the input window.
 Dictation results are shown in the input, output, and MathML windows.
@@ -61,10 +64,11 @@ Dictation hint: wait for the start beep (else the first word(s) might be missing
 The math is rendered in the output window either natively or by MathJax according to a setting (click on the ⚙︎ to change it).
 MathJax’s typography resembles LaTeX’s.
 The native rendering is good although not yet as good as LaTeX.
-But an advantage of the native renderer is that you can edit built-up equations directly in the output window and copy all or parts of an equation.
-The only editing feature in the MathJax mode is Ctrl+c, which copies MathML for the whole equation to the clipboard.
+But an advantage of the native renderer is that you can edit built-up equations directly in the output window and copy all or part of an equation.
+If the selection is an insertion point, the whole equation is copied.
+The only editing feature in the MathJax mode is Ctrl+c, which copies the MathML for the whole equation to the clipboard.
 ## Intents
-UnicodeMathML works with [MathML 4](https://w3c.github.io/mathml/).
+UnicodeMathML generates [Presentation MathML 4](https://w3c.github.io/mathml/).
 A key addition in MathML 4 is the intent attribute, which allows authors to disambiguate math notation and control math speech.
 
 For example, does |𝑥| mean the absolute value of 𝑥 or the cardinality of 𝑥?
@@ -98,7 +102,7 @@ For example, clicking on the 𝐸 in 𝐸 = 𝑚𝑐², you get the input box
 
 <img src="help-images/intentbox.png" style="display: block; 
            margin-left: auto; margin-right: auto;
-           width: 50%;"/>
+           width: 60%;"/>
 
 and you can type in “energy” or whatever you want followed by the Enter key.
 If you type in “energy”, the resulting MathML is &#x003C;mrow>&#x003C;mi intent="energy">𝐸&#x003C;/mi>&#x003C;mo>=&#x003C;/mo>&#x003C;mrow>&#x003C;mi>𝑚&#x003C;/mi>&#x003C;msup>&#x003C;mi>𝑐&#x003C;/mi>&#x003C;mn>2&#x003C;/mn>&#x003C;/msup>&#x003C;/mrow>&#x003C;/mrow>.
@@ -114,9 +118,10 @@ As you type into the input window, various conversions occur:
 | Hot key | Function    |
 | ------- | ----------- |
 | Ctrl+b  | Toggle the bold attribute. For example, select 𝑎 (U+1D44E), type Ctrl+b and get 𝒂 (U+1D482) as you can verify in the codepoint window. |
-| Ctrl+i  | Toggle the italic attribute. If applied to a math italic character, this changes the character to the UnicodeMath way of representing ordinary text, i.e., put it inside quotes as in select 𝑎, Ctrl+i → “a”. |
 | Ctrl+c  | Copy the selected text to the clipboard. |
-| Ctrl+m  | Toggle between displaying 1) UnicodeMath in the input window and MathML below the output window, and 2) MathML in the input window and UnicodeMath below the output window. |
+| Alt+h   | Display the help page. |
+| Ctrl+i  | Toggle the italic attribute. If applied to a math italic character, this changes the character to the UnicodeMath way of representing ordinary text, i.e., put it inside quotes as in select 𝑎, Ctrl+i → “a”. |
+| Alt+m   | Toggle between displaying 1) UnicodeMath in the input window and MathML below the output window, and 2) MathML in the input window and UnicodeMath below the output window. |
 | Ctrl+v  | Paste plain text from the clipboard. If the text starts with <math, <m:math, or <mml:math, the text is treated as MathML and builds up. |
 | Ctrl+x  | Copy the selected text to the clipboard, then delete the selected text.|
 | Ctrl+y  | Redo |
@@ -127,18 +132,18 @@ For example, in the codepoint window, hovering over the integral symbol ∫ disp
 
 <img src="help-images/CodePointHover.png" style="display: block; 
            margin-left: auto; margin-right: auto;
-           width: 50%;"/>
+           width: 70%;"/>
  
 Hovering over the ∪ in the Operators gallery displays
 
 <img src="help-images/OperatorHover.png" style="display: block; 
            margin-left: auto; margin-right: auto;
-           width: 25%;"/>
+           width: 30%;"/>
   
 Here \cup is the standard [La]TeX control word for entering ∪ but since \union is easier to guess, it’s included too.
 
 ## Output window editing
-You can enter equations and edit the built-up display in the output window as shown in this video.
+You can enter equations and edit the built-up display in the output window as shown in this video
 
 <video src="help-images/Autobuildup.mp4" style="display: block; 
            margin-left: auto; margin-right: auto;
@@ -148,6 +153,7 @@ This "in-place" editing mimics the [math editing experience](https://devblogs.mi
 The hot keys listed above work here too, as do the symbol galleries and the math autocomplete menus.
 The copy hot key, Ctrl+c, copies the MathML for the selected content into the plain-text copy slot, rather than copying the underlying plain text.
 This enables you to paste built-up math equations into Word and other apps that interpret "plain-text" MathML as MathML rather than plain text.
+Note: math autobuildup works with native MathML rendering; if MathJax is active, only Ctrl+c works.
 
 Currently arrow-key navigation needs work and there are other glitches.
 The implementation uses JavaScript to manipulate the MathML in the browser DOM and seems very promising.

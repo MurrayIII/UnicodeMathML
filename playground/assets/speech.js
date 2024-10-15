@@ -625,8 +625,12 @@ function checkIntent(value) {
 	}
 
 	let i = intent.indexOf('(');
-	if (i <= 0)
+	if (i <= 0) {
+		// Maybe return intent? Returns 'differential d', etc., as well as
+		// user-added intents. 'differential d' should only be spoken for
+		// fine-grained and literal speech...
 		return '';							// No name
+	}
 
 	let args = [];
 	let name = intent.substring(0, i);
