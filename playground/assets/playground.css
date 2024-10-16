@@ -294,7 +294,7 @@ input[type=submit] {
     max-height: 30em;*/
     min-height: 5rem;
     background: var(--verydarkgrayish-color);
-    padding: 0.5rem !important;
+    padding-top: 0.8rem !important;
 }
 #output:empty:after {
     content: "...and MathML will render here!";

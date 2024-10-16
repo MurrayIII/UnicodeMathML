@@ -51,11 +51,12 @@ For example, type 222b Alt+x to insert ∫.
 
 ## Speech, braille, LaTeX, dictation
 In addition to generating MathML, you can click on buttons or enter a hot key to
-* speak the math in English (Alt+s)
-* braille the math in Nemeth  braille (Alt+b)
-* convert the math to Unicode LaTeX (Alt+t)
-* dictate an equation (Alt+d)
-* toggle the help display (Alt+h)
+* Speak the math in English (Alt+s)
+* Braille the math in Nemeth  braille (Alt+b)
+* Convert the math to Unicode LaTeX (Alt+t)
+* Dictate an equation (Alt+d)
+* Display the Help page (Alt+h)
+* Display the About page (Alt+a)
 
 The results for speech, braille and LaTeX are displayed below the input window.
 Dictation results are shown in the input, output, and MathML windows.
@@ -109,11 +110,13 @@ If you type in “energy”, the resulting MathML is &#x003C;mrow>&#x003C;mi int
 Typing Atl+d speaks this as "energy equals m c squared".
 
 ## UnicodeMath editing
-As you type into the input window, various conversions occur:
+As you type into the input window, various conversions occur in the input window:
 * Letters are converted to math italic unless they 1) are part of a function name or of a control word (backslash followed by letters), or 2) follow a quote. For example, a → 𝑎
 * Numeric subscripts/superscripts are converted to Unicode subscript/superscript characters, respectively. For example, a_2 → 𝑎₂ and a^2 → 𝑎².
 * Numeric fractions are converted to Unicode numeric fractions. For example, 1/2 → ½
 * Control words are converted to their symbols, e.g., \alpha → 𝛼
+
+These conversions aren't needed in the input window, but they make the input more readable.
 ## Edit hot keys:
 | Hot key | Function    |
 | ------- | ----------- |
