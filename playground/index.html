@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="assets/lib/latinmodern/1.959/webfont.css">
     <script>loadUncachedStylesheet("assets/playground.css")</script>
 </head>
-<body onresize="checkResize()">
+<body onresize="checkResize()" style="max-width:90em">
     <h1 id="heading">UnicodeMathML</h1>
     <span>  <a id="help" href="help.html" target="_blank" title="Alt+h">Help</a> </span>
     <button type="button" id="demos" onclick="startDemo()" title="Alt+p"><span> Demo</span></button>
@@ -241,11 +241,9 @@
                 <div id="speechDisplay"></div>
             </td>
             <td>
-                <form autocomplete="off" action="/action_page.php">
-                    <div class="autocomplete" style="width:100%;">
-                        <div id="output" contentEditable="true" spellcheck="false" draggable="true"></div>
-                    </div>
-                </form>
+                <div class="autocomplete" style="width:100%;">
+                    <div id="output" contentEditable="true" spellcheck="false" draggable="true"></div>
+                </div>
                 <div class="tabs">
                     <button type="button" class="tab" id="pegjs_ast">PEG.js AST <span id="measurements_parse"></span></button>
                     <button type="button" class="tab" id="preprocess_ast"><abbr title="Preprocessed">PP</abbr> AST <span id="measurements_preprocess"></span></button>

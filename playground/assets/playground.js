@@ -2765,6 +2765,20 @@ output.addEventListener('keydown', function (e) {
             if (mathml.startsWith('<math'))
                 navigator.clipboard.writeText(mathml)
         }
+        if (e.altKey) {
+            switch (e.key) {
+                case 'a':                       // Alt+a
+                case 'b':                       // Alt+b
+                case 'h':                       // Alt+h
+                case 'm':                       // Alt+m
+                case 's':                       // Alt+s
+                case 't':                       // Alt+t
+                    const event = new Event('keydown')
+                    event.key = e.key
+                    event.altKey = e.altKey
+                    input.dispatchEvent(event)
+            }
+        }
         return
     }
     let x = document.getElementById(this.id + "autocomplete-list")

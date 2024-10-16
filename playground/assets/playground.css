@@ -294,12 +294,11 @@ input[type=submit] {
     max-height: 30em;*/
     min-height: 5rem;
     background: var(--verydarkgrayish-color);
-    margin-bottom: 0.5rem;
+    padding: 0.5rem !important;
 }
 #output:empty:after {
     content: "...and MathML will render here!";
 }
-math,
 .MathJax_SVG,
 .MathJax_SVG_Display {
     font-family: var(--math-font);
