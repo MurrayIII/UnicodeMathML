@@ -130,6 +130,13 @@ These conversions aren't needed in the input window, but they make the input mor
 | Ctrl+y  | Redo |
 | Ctrl+z  | Undo |
 ## Symbol galleries
+Unicode has [most](https://www.unicode.org/reports/tr25/) math symbols in usage today.
+The symbol galleries located below the input and output windows contain the most common math symbols.
+You can enter a symbol in a gallery by clicking on it or by typing its control word as described in the _Entering symbols_ section above.
+
+Math styled letters, such as the math fraktur H (ℌ), can be entered by selecting the letter(s) and clicking on the 𝔄𝔅ℭ button or other math-style button.
+Math styled letters can also be entered using control words like \mfrakH, in which the final letter determines the math styled letter.
+
 Most symbols have LaTeX control-word tooltips.
 For example, in the codepoint window, hovering over the integral symbol ∫ displays
 
@@ -148,7 +155,7 @@ Here \cup is the standard [La]TeX control word for entering ∪ but since \union
 ## Output window editing
 You can enter equations and edit the built-up display in the output window as shown in this video
 
-<video src="help-images/Autobuildup.mp4" style="display: block; 
+<video src="help-images/Autobuildup3.mp4" style="display: block; 
            margin-left: auto; margin-right: auto;
            width: 90%;" controls/>
 
@@ -160,4 +167,21 @@ Note: math autobuildup works with native MathML rendering; if MathJax is active,
 
 Currently arrow-key navigation needs work and there are other glitches.
 The implementation uses JavaScript to manipulate the MathML in the browser DOM and seems very promising.
+## UnicodeMath selection attributes
+In the video, you may notice that the input window starts with "Ⓐ()Ⓕ(1)⬚", whereas the output window has a selected "⬚".
+The Ⓐ() defines the position of the selection _anchor_ and the Ⓕ(1) defines the position of the selection _focus_ (sometimes called the selection active end).
+
+These constructs have been added to UnicodeMath to represent the state of the user selection.
+If the selection is an insertion point (a degenerate selection), only the anchor expression Ⓐ() appears since the anchor and focus ends coincide.
+Nondegenerate selections have the focus construct as well as in the UnicodeMath "Ⓐ()Ⓕ(1)⬚" for the selected "⬚".
+
+The selection attributes are useful for accessibility and appear in the MathML with the attribute names "selanchor" and "selfocus".
+They are needed in the UnicodeMathML applet since the multilevel undo facility for the output window saves past states in UnicodeMath strings that must be able to restore the selection as well as the content when the user hits Ctrl+z.
+
+In principle, the applet doesn't need to show the user this selection information and it's likely to be hidden in a future update.
+
+__Technical stuff__: The numbers inside the parentheses give the offsets for the selection returned by the DOM [getSelection()](https://developer.mozilla.org/en-US/docs/Web/API/Window/getSelection) method.
+Negative values are used if the selection construct is followed by a text node.
+Positive values are used if the construct is followed by an element.
+If no number appears, 0 is assumed.
 
