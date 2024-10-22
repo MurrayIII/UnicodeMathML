@@ -45,6 +45,45 @@ function getMathJaxMathMlNode() {
     return node
 }
 
+function removeSelMarkers(uMath) {
+    // Return uMath without selection markers Ⓐ(...) and Ⓕ(...)
+    let index1, index2, end1, end2
+
+    for (let i = 0; i < uMath.length; i++) {
+        let ch = uMath[i]
+
+        if (ch == 'Ⓐ' || ch == 'Ⓕ') {
+            if (uMath[i + 1] != '(') {
+                console.log('Invalid selection marker' + uMath)
+                return null
+            }
+            let index = i
+            i += 2
+            let offset = uMath[i] == '-' ? uMath[i++] : ''
+            if (uMath[i] != ')')
+                offset += uMath[i++]
+            if (uMath[i] != ')') {
+                console.log('Invalid selection marker' + uMath)
+                return null
+            }
+            if (!index1) {
+                index1 = index
+                end1 = i + 1
+            } else {
+                index2 = index
+                end2 = i + 1
+            }
+        }
+    }
+    // Remove marker(s) from uMath
+    if(!index2)
+        uMath = uMath.substring(0, index1) + uMath.substring(end1)
+    else
+        uMath = uMath.substring(0, index1) + uMath.substring(end1, index2) + uMath.substring(end2)
+    //console.log('uMathNoSelAttr = ' + uMath)
+    return uMath
+}
+
 document.onselectionchange = () => {
     if (output.firstElementChild && output.firstElementChild.nodeName == 'MJX-CONTAINER')
         return
@@ -81,7 +120,7 @@ document.onselectionchange = () => {
     if (!testing) {
         output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
         console.log('uMath = ' + getUnicodeMath(output.firstElementChild, true))
-        input.innerHTML = getUnicodeMath(output.firstElementChild, true)
+        input.innerHTML = getUnicodeMath(output.firstElementChild, false)
     }
 }
 
@@ -1075,10 +1114,12 @@ function autocomplete() {
                 input.value = input.value.substring(0, i) + symbol + delim
                     + input.value.substring(ip);
                 input.selectionStart = input.selectionEnd = i + cch + (delim ? 1 : 0);
+                speak(symbol)
             }
-            return;
+            return
         }
-        if (ip - i < 3) return;
+        if (ip - i < 3)
+            return
 
         let cw = input.value.substring(i + 1, ip);  // Partial control word
         let autocl = createAutoCompleteMenu(cw, this.id, (e) => {
@@ -1195,10 +1236,8 @@ function handleAutocompleteKeys(x, e) {
             closeAutocompleteList()
             return true
 
-        case " ":
         case "Enter":
         case "Tab":
-        case "\\":
             // Simulate a click on the "active" control-word option
             if (currentFocus >= 0 && x)
                 x[currentFocus].click();
@@ -1317,7 +1356,6 @@ function refreshDisplays(uMath, noUndo) {
     let uMathCurrent = getUnicodeMath(output.firstElementChild, true)
     if (!testing)
         output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)))
-    input.innerHTML = uMathCurrent
 
     if (!noUndo) {
         if (!uMath)
@@ -1330,7 +1368,7 @@ function refreshDisplays(uMath, noUndo) {
         }
     }
 
-    input.innerHTML = uMathCurrent
+    input.innerHTML = removeSelMarkers(uMathCurrent)
     if (!testing)
         codepoints.innerHTML = getCodePoints()
 
@@ -1615,6 +1653,8 @@ function handleKeyboardInput(node, key, sel) {
         refreshDisplays()
         return
     }
+    let offset = sel.anchorOffset
+
     if (nodeName == 'mtext' && node.textContent[0] == '\\') {
         // Collect control word; offer autocompletion menu
         if (isAsciiAlphabetic(key)) {
@@ -1641,8 +1681,12 @@ function handleKeyboardInput(node, key, sel) {
         setSelAttributes(nodeNew, 'selanchor', '1')
         nodeP.replaceChild(nodeNew, node)
         node = nodeNew
+        if (key == ' ') {
+            nodeNewName = ''                // Eat ' '
+            key = symbol                    // Set up to speak symbol
+            offset = -1                     // - → + in setSelAttributes()
+        }
     }
-    let offset = sel.anchorOffset
     let isFunction
 
     switch (nodeNewName) {
@@ -1892,7 +1936,7 @@ function deleteSelection(range) {
     if (nodeStart.nodeName == 'math') {
         outputUndoStack = ['']
         nodeStart.innerHTML = `<mi selanchor="0" selfocus="1">⬚</mi>`
-        refreshDisplays(uMath)
+        refreshDisplays('', true)
         return true
     }
 
@@ -3037,7 +3081,8 @@ output.addEventListener('keydown', function (e) {
                 // Redo
                 if (!outputRedoStack.length)
                     return
-                outputUndoStack.push(input.innerHTML)
+                uMath = getUnicodeMath(output.firstElementChild, true)
+                outputUndoStack.push(uMath)
                 uMath = outputRedoStack.pop()
                 setUnicodeMath(uMath)
                 return
@@ -3045,9 +3090,10 @@ output.addEventListener('keydown', function (e) {
             case 'z':                       // Ctrl+z
                 if (!outputUndoStack.length)
                     return
-                outputRedoStack.push(input.innerHTML)
+                uMath = getUnicodeMath(output.firstElementChild, true)
+                outputRedoStack.push(uMath)
                 let undoTop = stackTop(outputUndoStack)
-                if (input.innerHTML == undoTop)
+                if (uMath == undoTop)
                     outputUndoStack.pop()
                 uMath = outputUndoStack.pop()
                 setUnicodeMath(uMath)

@@ -22,23 +22,22 @@ Escape and Alt+p stop the demo. One of the equations has the UnicodeMath 1/2𝜋
 You can enter a symbol by clicking on the symbol in one of the symbol galleries below the input window.
 But it’s faster to type the symbol’s LaTeX control word such as \alpha for α.
 After typing two letters, you get a math autocomplete dropdown with possible matches.
-This lets you enter the selected symbol (the one highlighted in blue) quickly by typing a space, Enter, or Tab.
-I use the space key since it’s so convenient.
+This lets you enter the selected symbol (the one highlighted in blue) quickly by typing Enter or Tab.
 
 For example, if you type \al, you see
 
 <img src="help-images/autocl.png" style="display: block; 
            margin-left: auto; margin-right: auto;
-           width: 80%;"/>
+           width: 25em"/>
  
-Typing the space, Enter, or Tab key inserts 𝛼.
-If you want a different symbol in the dropdown, use the up/down (↑↓) arrow keys or the mouse to select the symbol you want and type the space, Enter, or Tab key, or click to enter it.
+Typing the Enter or Tab key inserts 𝛼.
+If you want a different symbol in the dropdown, you can click on it, or you can use the up/down (↑↓) arrow keys to select the symbol you want and type the Enter or Tab key to enter it.
 
 The math autocomplete menu helps you discover a LaTeX control word, and it speeds entry especially for long control words such as those in the dropdown
 
 <img src="help-images/autocllong.png" style="display: block; 
            margin-left: auto; margin-right: auto;
-           width: 80%;"/>
+           width: 25em"/>
 
 The symbol dictionary includes some control-word aliases, such as \union for \cup (∪), since you might not guess \cup is the LaTeX control word for the union operator ∪.
 
@@ -103,7 +102,7 @@ For example, clicking on the 𝐸 in 𝐸 = 𝑚𝑐², you get the input box
 
 <img src="help-images/intentbox.png" style="display: block; 
            margin-left: auto; margin-right: auto;
-           width: 60%;"/>
+           width: 15em"/>
 
 and you can type in “energy” or whatever you want followed by the Enter key.
 If you type in “energy”, the resulting MathML is &#x003C;mrow>&#x003C;mi intent="energy">𝐸&#x003C;/mi>&#x003C;mo>=&#x003C;/mo>&#x003C;mrow>&#x003C;mi>𝑚&#x003C;/mi>&#x003C;msup>&#x003C;mi>𝑐&#x003C;/mi>&#x003C;mn>2&#x003C;/mn>&#x003C;/msup>&#x003C;/mrow>&#x003C;/mrow>.
@@ -142,20 +141,20 @@ For example, in the codepoint window, hovering over the integral symbol ∫ disp
 
 <img src="help-images/CodePointHover.png" style="display: block; 
            margin-left: auto; margin-right: auto;
-           width: 70%;"/>
+           width: 20em;"/>
  
 Hovering over the ∪ in the Operators gallery displays
 
 <img src="help-images/OperatorHover.png" style="display: block; 
            margin-left: auto; margin-right: auto;
-           width: 30%;"/>
+           width: 8em;"/>
   
 Here \cup is the standard [La]TeX control word for entering ∪ but since \union is easier to guess, it’s included too.
 
 ## Output window editing
 You can enter equations and edit the built-up display in the output window as shown in this video
 
-<video src="help-images/Autobuildup3.mp4" style="display: block; 
+<video src="help-images/Autobuildup4.mp4" style="display: block; 
            margin-left: auto; margin-right: auto;
            width: 90%;" controls/>
 
@@ -168,20 +167,23 @@ Note: math autobuildup works with native MathML rendering; if MathJax is active,
 Currently arrow-key navigation needs work and there are other glitches.
 The implementation uses JavaScript to manipulate the MathML in the browser DOM and seems very promising.
 ## UnicodeMath selection attributes
-In the video, you may notice that the input window starts with "Ⓐ()Ⓕ(1)⬚", whereas the output window has a selected "⬚".
-The Ⓐ() defines the position of the selection _anchor_ and the Ⓕ(1) defines the position of the selection _focus_ (sometimes called the selection active end).
+__Technical stuff__:
+When you edit the output window, the resulting MathML includes attributes that represent the state of the user selection.
+These attributes have been added partly because they are [useful for making editing accessible](https://devblogs.microsoft.com/math-in-office/mathml-and-omml-user-selection-attributes/).
+The attribute "selanchor" defines the selection "anchor" end (nonmoving end) and "selfocus" defines the selection active end, e.g., the end that moves with Shift+→.
+The attribute values define the offsets for the selection [setBaseAndExtent](https://developer.mozilla.org/en-US/docs/Web/API/Selection/setBaseAndExtent) method.
+If the selection is an insertion point (a degenerate selection), only selanchor is included since the anchor and focus ends coincide.
 
-These constructs have been added to UnicodeMath to represent the state of the user selection.
-If the selection is an insertion point (a degenerate selection), only the anchor expression Ⓐ() appears since the anchor and focus ends coincide.
-Nondegenerate selections have the focus construct as well as in the UnicodeMath "Ⓐ()Ⓕ(1)⬚" for the selected "⬚".
+Corresponding constructs have been added to UnicodeMath to represent the selection state.
+They are needed for the multilevel undo facility, which saves back states by caching the back-state UnicodeMath strings.
+The enclosure Ⓐ(_offset_) defines the position of the selection _anchor_ and the enclosure Ⓕ(_offset_) defines the position of the selection _focus_.
+If no _offset_ appears, 0 is assumed.
+To increase readability, these enclosures are not included in the UnicodeMath displayed in the input window.
+Nondegenerate selections have the focus enclosure as well as in the UnicodeMath "Ⓐ()Ⓕ(1)⬚" for the selected "⬚".
 
-The selection attributes are useful for accessibility and appear in the MathML with the attribute names "selanchor" and "selfocus".
-They are needed in the UnicodeMathML applet since the multilevel undo facility for the output window saves past states in UnicodeMath strings that must be able to restore the selection as well as the content when the user hits Ctrl+z.
-
-In principle, the applet doesn't need to show the user this selection information and it's likely to be hidden in a future update.
-
-__Technical stuff__: The numbers inside the parentheses give the offsets for the selection returned by the DOM [getSelection()](https://developer.mozilla.org/en-US/docs/Web/API/Window/getSelection) method.
-Negative values are used if the selection construct is followed by a text node.
-Positive values are used if the construct is followed by an element.
-If no number appears, 0 is assumed.
+A negative offset is used if the selection construct refers to a text node.
+The absolute value of a negative offset gives the offset into a string.
+For example, &#x003C;mi selanchor="-1">sin&#x003C;/mi> sets the anchor to the "i" in "sin".
+Positive attribute values give the index of a child element.
+So, &#x003C;mi selanchor="1">sin&#x003C;/mi> places the anchor immediately following "sin".
 

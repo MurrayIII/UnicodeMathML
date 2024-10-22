@@ -4667,8 +4667,6 @@ function dump(value, noAddParens) {
             // ')' follows the '⒞' and matches the opening '(', remove them.
             let binomial
             let cParen = 1
-            let k = 0
-
             for (i = 1; i < ret.length - 1; i++) {
                 switch (ret[i]) {
                     case '(':
@@ -4676,18 +4674,15 @@ function dump(value, noAddParens) {
                         break;
                     case ')':
                         cParen--
-                        if (!cParen) {
-                            if (!binomial)
-                                return ret  // E.g., (𝑘−𝑧)⒞𝑧
-                            k = i
-                        }
+                        if (!cParen)
+                            return binomial ? ret.substring(1, i) + ret.substring(i + 1) : ret
                         break;
                     case '⒞':
                         binomial = true
                         break;
                 }
             }
-            return k ? ret.substring(1, k) + ret.substring(k + 1) : ret
+            return ret
         }
         if (mrowIntent == ':function' && value.previousElementSibling &&
             value.firstElementChild &&      // (in case empty)
@@ -4729,7 +4724,7 @@ function getUnicodeMath(doc, keepSelInfo) {
             unicodeMath = unicodeMath.substring(0, i);
             break;
         }
-        if ('=+−/ ⒶⒻ)]}〗'.includes(unicodeMath[i + 1])) {
+        if ('=+−/ )]}〗'.includes(unicodeMath[i + 1])) {
             let j = 1;                      // Delete 1 space
             if (unicodeMath[i + 1] == ' ' && i < unicodeMath.length - 2 &&
                 '=+−/)]}'.includes(unicodeMath[i + 2])) {
