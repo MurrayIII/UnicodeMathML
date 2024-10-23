@@ -1,7 +1,7 @@
 ﻿[UnicodeMath](https://www.unicode.org/notes/tn28/UTN28-PlainTextMath-v3.2.pdf) is a linear representation of math that often resembles math notation and is easy to enter.
 For example, a/b is UnicodeMath for <math><mrow><mfrac><mi>a</mi><mi>b</mi></mfrac><mo>.</mo></mrow></math>
 It works well in Microsoft desktop apps such as Word, PowerPoint, Outlook, and OneNote but it hasn't been generally available elsewhere.
-The present applet implements UnicodeMath on the web and is open source.
+This open-source applet implements UnicodeMath on the web.
 
 ## Entering equations
 You can enter equations in four ways:
@@ -116,7 +116,7 @@ As you type into the input window, various conversions occur in the input window
 * Control words are converted to their symbols, e.g., \alpha → 𝛼
 
 These conversions aren't needed in the input window, but they make the input more readable.
-## Edit hot keys:
+## Editing hot keys:
 | Hot key | Function    |
 | ------- | ----------- |
 | Ctrl+b  | Toggle the bold attribute. For example, select 𝑎 (U+1D44E), type Ctrl+b and get 𝒂 (U+1D482) as you can verify in the codepoint window. |
@@ -129,7 +129,7 @@ These conversions aren't needed in the input window, but they make the input mor
 | Ctrl+y  | Redo |
 | Ctrl+z  | Undo |
 ## Symbol galleries
-Unicode has [most](https://www.unicode.org/reports/tr25/) math symbols in usage today.
+Unicode has [almost all math symbols](https://www.unicode.org/reports/tr25/) in use today.
 The symbol galleries located below the input and output windows contain the most common math symbols.
 You can enter a symbol in a gallery by clicking on it or by typing its control word as described in the _Entering symbols_ section above.
 
@@ -161,15 +161,15 @@ You can enter equations and edit the built-up display in the output window as sh
 This "in-place" editing mimics the [math editing experience](https://devblogs.microsoft.com/math-in-office/officemath/) in desktop Microsoft Word, Outlook, PowerPoint, and OneNote.
 The hot keys listed above work here too, as do the symbol galleries and the math autocomplete menus.
 The copy hot key, Ctrl+c, copies the MathML for the selected content into the plain-text copy slot, rather than copying the underlying plain text.
-This enables you to paste built-up math equations into Word and other apps that interpret "plain-text" MathML as MathML rather than plain text.
+This enables you to paste built-up math equations into Word and other apps that interpret "plain-text" MathML as MathML rather than as plain text.
 Note: math autobuildup works with native MathML rendering; if MathJax is active, only Ctrl+c works.
 
 Currently arrow-key navigation needs work and there are other glitches.
-The implementation uses JavaScript to manipulate the MathML in the browser DOM and seems very promising.
+The implementation uses JavaScript to manipulate the MathML in the browser DOM.
 ## UnicodeMath selection attributes
 __Technical stuff__:
 When you edit the output window, the resulting MathML includes attributes that represent the state of the user selection.
-These attributes have been added partly because they are [useful for making editing accessible](https://devblogs.microsoft.com/math-in-office/mathml-and-omml-user-selection-attributes/).
+These attributes have been added partly because they are [needed to make editing accessible](https://devblogs.microsoft.com/math-in-office/mathml-and-omml-user-selection-attributes/).
 The attribute "selanchor" defines the selection "anchor" end (the nonmoving end) and "selfocus" defines the selection active end, e.g., the end that moves with Shift+→.
 The attribute values define the offsets for the selection [setBaseAndExtent](https://developer.mozilla.org/en-US/docs/Web/API/Selection/setBaseAndExtent) method.
 If the selection is an insertion point (a degenerate selection), only selanchor is included since the anchor and focus ends coincide.
