@@ -1,9 +1,9 @@
-﻿# Welcome to UnicodeMathML
-[UnicodeMath](https://www.unicode.org/notes/tn28/UTN28-PlainTextMath-v3.2.pdf) is a linear representation of math that often resembles math notation and is easy to enter.
+﻿[UnicodeMath](https://www.unicode.org/notes/tn28/UTN28-PlainTextMath-v3.2.pdf) is a linear representation of math that often resembles math notation and is easy to enter.
 For example, a/b is UnicodeMath for <math><mrow><mfrac><mi>a</mi><mi>b</mi></mfrac><mo>.</mo></mrow></math>
 It works well in Microsoft desktop apps such as Word, PowerPoint, Outlook, and OneNote but it hasn't been generally available elsewhere.
 The present applet implements UnicodeMath on the web and is open source.
 
+## Entering equations
 You can enter equations in four ways:
 1. Enter UnicodeMath in the input (upper-left) window. The corresponding 2D built-up math displays in the output (upper-right) window and the [MathML](https://w3c.github.io/mathml/) for it displays below the output window. This option is quite reliable.
 2. Enter UnicodeMath directly into the output window. This option builds up what you enter automatically, similarly to entry in the Microsoft Office apps. This option is a work in progress.
@@ -170,7 +170,7 @@ The implementation uses JavaScript to manipulate the MathML in the browser DOM a
 __Technical stuff__:
 When you edit the output window, the resulting MathML includes attributes that represent the state of the user selection.
 These attributes have been added partly because they are [useful for making editing accessible](https://devblogs.microsoft.com/math-in-office/mathml-and-omml-user-selection-attributes/).
-The attribute "selanchor" defines the selection "anchor" end (nonmoving end) and "selfocus" defines the selection active end, e.g., the end that moves with Shift+→.
+The attribute "selanchor" defines the selection "anchor" end (the nonmoving end) and "selfocus" defines the selection active end, e.g., the end that moves with Shift+→.
 The attribute values define the offsets for the selection [setBaseAndExtent](https://developer.mozilla.org/en-US/docs/Web/API/Selection/setBaseAndExtent) method.
 If the selection is an insertion point (a degenerate selection), only selanchor is included since the anchor and focus ends coincide.
 
@@ -179,7 +179,7 @@ They are needed for the multilevel undo facility, which saves back states by cac
 The enclosure Ⓐ(_offset_) defines the position of the selection _anchor_ and the enclosure Ⓕ(_offset_) defines the position of the selection _focus_.
 If no _offset_ appears, 0 is assumed.
 To increase readability, these enclosures are not included in the UnicodeMath displayed in the input window.
-Nondegenerate selections have the focus enclosure as well as in the UnicodeMath "Ⓐ()Ⓕ(1)⬚" for the selected "⬚".
+Nondegenerate selections have the focus enclosure as well, as in the UnicodeMath "Ⓐ()Ⓕ(1)⬚" for the selected "⬚".
 
 A negative offset is used if the selection construct refers to a text node.
 The absolute value of a negative offset gives the offset into a string.
