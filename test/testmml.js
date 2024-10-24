@@ -447,7 +447,7 @@ function ctrlZ(key) {
     event.key = key
     event.ctrlKey = true
     output.dispatchEvent(event)
-    setTimeout(function () { }, 50)    // Sleep for 200 msec
+    setTimeout(function () { }, 50)         // Sleep for 50 msec
 }
 
 function buildUp(uMath, uMathPartial) {
@@ -464,9 +464,9 @@ function buildUp(uMath, uMathPartial) {
         if (i < uMath.length)
             event.key = getCh(uMath, i)
         output.dispatchEvent(event)
-        setTimeout(function () { }, 50) // Sleep for 200 msec
+        setTimeout(function () { }, 50)     // Sleep for 50 msec
         if (event.key.length == 2)
-            i++                         // Bypass trail surrogate
+            i++                             // Bypass trail surrogate
         if (uMathPartial) {
             let result = getUnicodeMath(output.firstElementChild, true)
             if (result != uMathPartial[j]) {
@@ -578,7 +578,7 @@ function testAutoBuildUp() {
         if (unicodeMath[k].indexOf('Ⓐ') != -1 ||
             unicodeMath[k][0] == 'ⓘ') {
             iSuccess++
-            continue                    // Users don't enter sel info
+            continue                        // Users don't enter sel info
         }
         buildUp(unicodeMath[k])
         let result = getUnicodeMath(output.firstElementChild, false).trimEnd()
@@ -596,9 +596,9 @@ function testAutoBuildUp() {
 
     // Test undo of autobuildup of 𝑎/𝑏+𝑐/𝑑=0, 1/√(𝑎²-𝑏²), \alpha , "rate"
     const unicodeMathPartialFractions = [
-        '𝑎/𝑏+𝑐/𝑑=Ⓐ(1)0',                  // Insertion point after '0'
+        '𝑎/𝑏+𝑐/𝑑=Ⓐ(1)0',                // Insertion point after '0'
         '𝑎/𝑏+𝑐/𝑑 Ⓐ(1)=',
-        '𝑎/𝑏+𝑐\\/Ⓐ(1)𝑑',                  // \/ implies build up did not occur
+        '𝑎/𝑏+𝑐\\/Ⓐ(1)𝑑',                // \/ implies build up did not occur
         '𝑎/𝑏+𝑐Ⓐ(1)\\/',
         '𝑎/𝑏+Ⓐ(1)𝑐',
         '𝑎/𝑏 Ⓐ(1)+',
@@ -660,13 +660,16 @@ function testOutputHotKey(key, expect) {
     }
 }
 
-function testInputHotKey(key, altkey, ctrlKey, expect, expectStart, expectEnd) {
-    const event = new Event('keydown')
+function testInputHotKey(key, altKey, ctrlKey, expect, expectStart, expectEnd) {
+    let hotKey = altKey || ctrlKey
+    const event = new Event(hotKey ? 'keydown' : 'input')
     event.key = key
-    if (altkey)
+    if (altKey)
         event.altKey = true
     if (ctrlKey)
         event.ctrlKey = true
+    if (!hotKey)
+        event.inputType = 'insertText'
     input.dispatchEvent(event)
     setTimeout(function () { }, 50)
     if (event.altKey)
@@ -703,7 +706,7 @@ function testHotKeys() {
     input.textContent = 'Ⓐ()𝑎/𝑏+Ⓕ(2) 𝑐/𝑑=0'
     prevInputValue = ''
     draw(false)
-    setTimeout(function () { }, 50)    // Sleep for 50 msec
+    setTimeout(function () { }, 50)         // Sleep for 50 msec
     let event = new Event('keydown')
     event.key = 's'
     event.ctrlKey = true
@@ -768,6 +771,11 @@ function testHotKeys() {
     // Test input Alt+x hot key
     input.value = '𝑎+222b'
     testInputHotKey('x', true, false, '𝑎+∫', 4, 4)
+
+    // Test '1/2=' → '½='
+    input.value = '1/2='
+    input.selectionStart = input.selectionEnd = 4
+    testInputHotKey('=', false, false, '½=', 2, 2)
 }
 
 const mathDictation = [

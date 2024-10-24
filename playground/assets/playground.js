@@ -759,17 +759,19 @@ function opAutocorrect(ip, delim) {
         input.selectionStart = input.selectionEnd = ip;
         return false;
     }
-    if (ip >= 4 && ' +-='.includes(delim) && input.value[ip - 3] == '/') {
+    if (ip >= 4 && ' +-='.includes(delim) && input.value[ip - 3] == '/' &&
+        (ip == 4 || !isAlphanumeric(input.value[ip - 5]))) {
         // Convert linear numeric fraction to Unicode fraction, e.g., 1/3 to ⅓
         let chNum = input.value[ip - 4];
         let chDenom = input.value[ip - 2];
 
         if (isAsciiDigit(chNum) && isAsciiDigit(chDenom)) {
             let ch = getUnicodeFraction(chNum, chDenom);
-            if (ch != undefined) {
+            if (ch && ch.length == 1) {
                 let iRem = (delim == ' ') ? ip : ip - 1;
                 input.value = input.value.substring(0, ip - 4) + ch + input.value.substring(iRem);
-                input.selectionStart = input.selectionEnd = ip - 3;
+                ip = (delim == ' ') ? ip - 3 : ip - 2
+                input.selectionStart = input.selectionEnd = ip
             }
         }
     }
