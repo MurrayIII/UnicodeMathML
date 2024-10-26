@@ -73,21 +73,41 @@ A key addition in MathML 4 is the intent attribute, which allows authors to disa
 
 For example, does |𝑥| mean the absolute value of 𝑥 or the cardinality of 𝑥?
 Absolute value is assumed by default since absolute value is more common than cardinality.
-The default MathML for |x| is &#x003C;mrow intent="absolute-value(𝑥)">&#x003C;mo>|&#x003C;/mo>&#x003C;mi>𝑥&#x003C;/mi>&#x003C;mo>|&#x003C;/mo>&#x003C;/mrow>.
-
+The default MathML for |x| is
+```html
+<mrow intent="absolute-value(𝑥)">
+  <mo>|</mo><mi>𝑥</mi><mo>|</mo></mrow>.
+```
 To specify cardinality, enter \card(x) (or ⓒ(x)).
-These inputs produce the MathML &#x003C;mrow intent="cardinality(𝑥)">&#x003C;mo>|&#x003C;/mo>&#x003C;mi>𝑥&#x003C;/mi>&#x003C;mo>|&#x003C;/mo>&#x003C;/mrow>.
-
+These inputs produce the MathML
+```html
+<mrow intent="cardinality(𝑥)">
+  <mo>|</mo><mi>𝑥</mi><mo>|</mo></mrow>.
+```
 If you enter an absolute value or cardinality containing more than one symbol as in |a+b|, the MathML intent contains an argument reference $a.
-For |a+b|, the MathML is &#x003C;mrow intent="absolute-value($a)">&#x003C;mo>|&#x003C;/mo>&#x003C;mrow arg="a">&#x003C;mi>𝑎&#x003C;/mi>&#x003C;mo>+&#x003C;/mo>&#x003C;mi>𝑏&#x003C;/mi>&#x003C;/mrow>&#x003C;mo>|&#x003C;/mo>&#x003C;/mrow>.
-
+For |a+b|, the MathML is
+```html
+<mrow intent="absolute-value($a)">
+  <mo>|</mo>
+    <mrow arg="a">
+      <mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow>
+  <mo>|</mo></mrow>
+```
 A matrix enclosed in vertical bars is treated as a determinant.
 For example, the UnicodeMath |■(a&b@c&d)| builds up to
 
 <math display="block"><mrow intent="determinant($a)"><mo>|</mo><mtable arg="a"><mtr><mtd><mi>𝑎</mi></mtd><mtd><mi>𝑏</mi></mtd></mtr><mtr><mtd><mi>𝑐</mi></mtd><mtd><mi>𝑑</mi></mtd></mtr></mtable><mo>|</mo></mrow></math>
 
-which has the MathML &#x003C;mrow intent="determinant($a)">&#x003C;mo>|&#x003C;/mo>&#x003C;mtable arg="a">&#x003C;mtr>&#x003C;mtd>&#x003C;mi>𝑎&#x003C;/mi>&#x003C;/mtd>&#x003C;mtd>&#x003C;mi>𝑏&#x003C;/mi>&#x003C;/mtd>&#x003C;/mtr>&#x003C;mtr>&#x003C;mtd>&#x003C;mi>𝑐&#x003C;/mi>&#x003C;/mtd>&#x003C;mtd>&#x003C;mi>𝑑&#x003C;/mi>&#x003C;/mtd>&#x003C;/mtr>&#x003C;/mtable>&#x003C;mo>|&#x003C;/mo>&#x003C;/mrow>.
-
+which has the MathML
+```html
+<mrow intent="determinant($a)">
+  <mo>|</mo>
+    <mtable arg="a">
+      <mtr>
+        <mtd><mi>𝑎</mi></mtd><mtd><mi>𝑏</mi></mtd></mtr>
+      <mtr><mtd><mi>𝑐</mi></mtd><mtd><mi>𝑑</mi></mtd></mtr></mtable>
+  <mo>|</mo></mrow>.
+```
 The program infers intent attributes for absolute value and determinant, so only cardinality needs to be input without vertical bars.
 Note that the ambiguous expression |𝑎|𝑏+𝑐|𝑑| is assumed to be (|𝑎|)𝑏+𝑐(|𝑑|).
 If you want |𝑎(|𝑏+𝑐|)𝑑|, enter |(𝑎|𝑏+𝑐|𝑑)| and the parentheses will be removed.
@@ -105,7 +125,18 @@ For example, clicking on the 𝐸 in 𝐸 = 𝑚𝑐², you get the input box
            width: 15em"/>
 
 and you can type in “energy” or whatever you want followed by the Enter key.
-If you type in “energy”, the resulting MathML is &#x003C;mrow>&#x003C;mi intent="energy">𝐸&#x003C;/mi>&#x003C;mo>=&#x003C;/mo>&#x003C;mrow>&#x003C;mi>𝑚&#x003C;/mi>&#x003C;msup>&#x003C;mi>𝑐&#x003C;/mi>&#x003C;mn>2&#x003C;/mn>&#x003C;/msup>&#x003C;/mrow>&#x003C;/mrow>.
+If you type in “energy”, the resulting MathML is
+
+```html
+<mrow>
+  <mi intent="energy">𝐸</mi>
+  <mo>=</mo>
+  <mrow>
+    <mi>𝑚</mi>
+    <msup><mi>𝑐</mi>
+    <mn>2</mn></msup></mrow></mrow>
+```
+
 Typing Atl+d speaks this as "energy equals m c squared".
 
 ## UnicodeMath editing
@@ -183,7 +214,7 @@ Nondegenerate selections have the focus enclosure as well, as in the UnicodeMath
 
 A negative offset is used if the selection construct refers to a text node.
 The absolute value of a negative offset gives the offset into a string.
-For example, &#x003C;mi selanchor="-1">sin&#x003C;/mi> sets the anchor to the "i" in "sin".
+For example, &lt;mi selanchor="-1">sin&lt;/mi> sets the anchor to the "i" in "sin".
 Positive attribute values give the index of a child element.
-So, &#x003C;mi selanchor="1">sin&#x003C;/mi> places the anchor immediately following "sin".
+So, &lt;mi selanchor="1">sin&lt;/mi> places the anchor immediately following "sin".
 
