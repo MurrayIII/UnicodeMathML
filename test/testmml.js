@@ -152,7 +152,7 @@ const mathSpeech = [
     //"bold del  cross bold cap E = minus partial  bold cap B over partial  t",
     "bold del cross bold cap E = minus partial-derivative of bold cap B with respect to t",
     //"i h bar , partial  psi  open x comma t close over partial  t = open bracket minus fraction h bar squared over 2 m , end fraction , partial  squared over partial  x squared + cap V open x comma t close close bracket psi open x comma t close",
-    "i h bar partial-derivative of psi of x comma t with respect to t = open bracket minus fraction h bar squared over 2 m , end fraction second partial-derivative with respect to x + cap V of x comma t , close bracket psi of x comma t",
+    "i h bar partial-derivative of psi of x comma t with respect to t = open bracket minus h bar squared over 2 m second partial-derivative with respect to x + cap V of x comma t , close bracket psi of x comma t",
     "open eigh + b close to the n , = sum from k = 0 to n of n choose k eigh to the k , b to the n minus k power",
     "x = fraction minus b plus or minus square root , b squared minus 4 eigh c , end square root over 2 eigh , end fraction",
     "sine squared theta + cosine squared theta = 1",

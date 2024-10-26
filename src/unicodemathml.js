@@ -144,7 +144,7 @@ function inRange(ch0, ch, ch1) {
 }
 
 function isAlphanumeric(ch) {
-    return /[\w]/.test(ch) || ch >= '\u3018' || isGreek(ch) || isDoubleStruck(ch);
+    return /[\w]/.test(ch) || ch >= '\u3018' || isGreek(ch) || inRange('ℂ', ch, 'ⅉ');
 }
 
 function isAsciiAlphabetic(ch) { return /[A-Za-z]/.test(ch); }
@@ -787,7 +787,8 @@ var controlWords = {
     'gtreqless':        '⋛',    	// 22DB
     'gtrless':          '≷',    	// 2277
     'gtrsim':           '≳',    	// 2273
-    'hairsp':           ' ',	    // 200A
+    'hairsp': ' ',	    // 200A
+    'half':             '½',    // 00BD
     'hat':              '̂',	    // 0302
     'hbar':             'ℏ',    	// 210F
     'heartsuit':        '♡',    	// 2661
@@ -986,6 +987,7 @@ var controlWords = {
     'qdrt':             '∜',	    // 221C
     'qed':              '∎',	    // 220E
     'quad':             ' ',	// 2003
+    'quarter':          '¼',    // 00BC
     'rangle':           '⟩',	    // 27E9
     'ratio':            '∶',	// 2236
     'rbbrack':          '⟧',	    // 27E7
@@ -1062,6 +1064,7 @@ var controlWords = {
     'theta':            'θ',	// 03B8
     'thicksp':          ' ',	// 2005
     'thinsp':           ' ',	    // 2009
+    'third':            '⅓',    // 2153
     'three':            '3',    // 0033
     'tilde':            '̃',	    // 0303
     'times':            '×',	// 00D7
@@ -4860,5 +4863,6 @@ root.negs = negs;
 root.resolveCW = resolveCW;
 root.unicodemathml = unicodemathml;
 root.getUnicodeMath = getUnicodeMath
+root.controlWords = controlWords
 
 })(this);

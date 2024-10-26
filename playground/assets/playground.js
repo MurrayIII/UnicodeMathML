@@ -1,32 +1,34 @@
 'use strict';
 
-var input = document.getElementById("input");
+var dictateButton = document.getElementById('dictation')
 var codepoints = document.getElementById("codepoints");
+var input = document.getElementById("input");
+var measurements_parse = document.getElementById("measurements_parse");
+var measurements_pretty = document.getElementById("measurements_pretty");
+var measurements_transform = document.getElementById("measurements_transform");
 var output = document.getElementById("output");
+var output_mathml_ast = document.getElementById("output_mathml_ast");
 var output_pegjs_ast = document.getElementById("output_pegjs_ast");
 var output_preprocess_ast = document.getElementById("output_preprocess_ast");
-var output_mathml_ast = document.getElementById("output_mathml_ast");
 var output_source = document.getElementById("output_source");
-var measurements_parse = document.getElementById("measurements_parse");
-var measurements_transform = document.getElementById("measurements_transform");
-var measurements_pretty = document.getElementById("measurements_pretty");
-var dictateButton = document.getElementById('dictation')
 
 var activeTab = "source";
-var atEnd = false;                          // True if at end of output object
-var hist = [];
-var prevInputValue = "";
-const SELECTNODE = -1024
-var inputUndoStack = [{uMath: ''}]
-var inputRedoStack = []
-var outputUndoStack = ['']
-var outputRedoStack = ['']
-var selectionStart
-var selectionEnd
 var anchorNode
-var focusNode
-var inSelChange = false
+var atEnd = false;                          // True if at end of output object
 var contextmenuNode
+var focusNode
+var hist = [];
+var inputRedoStack = []
+var inputUndoStack = [{uMath: ''}]
+var inSelChange = false
+var outputRedoStack = ['']
+var outputUndoStack = ['']
+var prevInputValue = "";
+var selectionEnd                            // Used when editing input
+var selectionStart                          // Used when editing input
+var shadedArgNode                           // Used for IP when editing output
+
+const SELECTNODE = -1024
 
 function getMathJaxMathMlNode() {
     /* MathJax output-element DOM has the form:
@@ -85,6 +87,10 @@ function removeSelMarkers(uMath) {
 }
 
 document.onselectionchange = () => {
+    if (shadedArgNode) {
+        shadedArgNode.removeAttribute('mathbackground')
+        shadedArgNode = null
+    }
     if (output.firstElementChild && output.firstElementChild.nodeName == 'MJX-CONTAINER')
         return
     if (inSelChange)
@@ -122,6 +128,7 @@ document.onselectionchange = () => {
         console.log('uMath = ' + getUnicodeMath(output.firstElementChild, true))
         input.innerHTML = getUnicodeMath(output.firstElementChild, false)
     }
+    shadeArgNode()
 }
 
 function removeSuperfluousMrow(node) {
@@ -140,6 +147,22 @@ function removeSuperfluousMrow(node) {
     //    }
     //}
     return node
+}
+
+function shadeArgNode() {
+    // Shade MathML argument node containing the IP
+    let sel = window.getSelection()
+    if (sel.isCollapsed) {
+        for (let node = sel.anchorNode.parentElement;
+            node && node.nodeName[0] == 'm' && node.nodeName != 'math';
+            node = node.parentElement) {
+            if (names[node.parentElement.nodeName]) {
+                node.setAttribute('mathbackground', '#555')
+                shadedArgNode = node
+                return
+            }
+        }
+    }
 }
 
 function getChildIndex(node, nodeP) {
@@ -331,6 +354,9 @@ function setUnicodeMath(uMath) {
     }
     refreshDisplays('', true)
 }
+
+var symbolNames = {}
+Object.entries(controlWords).forEach(([key, value]) => { symbolNames[value] = key })
 
 // escape mathml tags and entities, via https://stackoverflow.com/a/13538245
 function escapeMathMLSpecialChars(str) {
@@ -977,6 +1003,11 @@ input.addEventListener("keydown", function (e) {
     if (e.shiftKey && e.key == 'Enter') {   // Shift+Enter
         //e.preventDefault()
         //insertAtCursorPos('\u200B')       // Want VT for math paragraph
+    }
+    if (e.key == 'F1') {
+        e.preventDefault()
+        document.getElementById("help").click()
+        return
     }
     if (demoID) {
         var demoEq = document.getElementById('demos')
@@ -3299,7 +3330,7 @@ let s = setSpeech();
 s.then(v => voiceZira = v.filter(val => val.name.startsWith('Microsoft Zira'))[0])
 
 function getCodePoints() {
-    // display code points corresponding to the characters
+    // display code points and symbol names for the input characters
     if (window.innerHeight < 1000)
         input.style.height = "200px";
     input.style.fontSize = "1.5rem";
@@ -3330,12 +3361,23 @@ function getCodePoints() {
             }
         }
 
-        // lookup tooltip data as previously defined for the on-screen buttons
-        // and prepend it
-        if (!testing && symbolTooltips[c] != undefined && symbolTooltips[c] != "") {
-            tooltip = symbolTooltips[c] + "<hr>" + tooltip;
+        // Prepend tooltip symbol names defined for the on-screen buttons,
+        // or derived from controlWords or from math alphanumerics
+        if (!testing) {
+            let symbol = symbolTooltips[c]
+            if (!symbol) {
+                symbol = symbolNames[c]     // From controlWords
+                if (symbol) {
+                    symbol = '\\' + symbol
+                } else if(isAlphanumeric(c)) { // Get math-alphanumeric control word 
+                    let [anCode, chFolded] = foldMathAlphanumeric(c.codePointAt(0), c)
+                    if (anCode)
+                        symbol = '\\' + anCode + chFolded
+                }
+            }
+            if (symbol)
+                tooltip = symbol + "<hr>" + tooltip
         }
-
         codepoints_HTML += '<div class="cp' + (invisibleChar ? ' invisible-char' : '') + '" data-tooltip="' + tooltip + '"><div class="p">' + cp + '</div><div class="c">' + c + '</div></div>'
 
         if (c == "\n") {
