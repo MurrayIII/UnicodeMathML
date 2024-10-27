@@ -893,7 +893,7 @@ var controlWords = {
     'napprox':          '≉',    	// 2249
     'naryand':          '▒',	// 2592
     'nasymp':           '≭',	    // 226D
-    'nbsp':             ' ',	// 00A0
+    'nbsp':            '\u00A0',// 00A0
     'ncong':            '≇',    	// 2247
     'ndiv':             '⊘',	    // 2298
     'ne':               '≠',	// 2260
@@ -1062,7 +1062,7 @@ var controlWords = {
     'tau':              'τ',	// 03C4
     'therefore':        '∴',	// 2234
     'theta':            'θ',	// 03B8
-    'thicksp':          ' ',	// 2005
+    'thicksp':         '\u2005',// 2005
     'thinsp':           ' ',	    // 2009
     'third':            '⅓',    // 2153
     'three':            '3',    // 0033

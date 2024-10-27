@@ -153,8 +153,10 @@ function shadeArgNode() {
     // Shade MathML argument node containing the IP
     let sel = window.getSelection()
     if (sel.isCollapsed) {
-        for (let node = sel.anchorNode.parentElement;
-            node && node.nodeName[0] == 'm' && node.nodeName != 'math';
+        let node = sel.anchorNode
+        if (node.nodeName == '#text')
+            node = node.parentElement
+        for (; node && node.nodeName[0] == 'm' && node.nodeName != 'math';
             node = node.parentElement) {
             if (names[node.parentElement.nodeName]) {
                 node.setAttribute('mathbackground', '#555')
@@ -356,7 +358,13 @@ function setUnicodeMath(uMath) {
 }
 
 var symbolNames = {}
-Object.entries(controlWords).forEach(([key, value]) => { symbolNames[value] = key })
+
+Object.entries(controlWords).forEach(([key, value]) => {
+    if (symbolNames[value])
+        symbolNames[value] += ', \\' + key
+    else
+        symbolNames[value] = key
+})
 
 // escape mathml tags and entities, via https://stackoverflow.com/a/13538245
 function escapeMathMLSpecialChars(str) {
@@ -2357,6 +2365,7 @@ function moveSelection(sel, node, offset) {
             fixedNumberArgs = true
             name = names[name]
         }
+        offset = 0
         if (atEnd) {
             if (name == 'mrow') {
                 if (node.attributes.arg && node.attributes.arg.nodeValue == 'naryand')
@@ -2376,16 +2385,18 @@ function moveSelection(sel, node, offset) {
                         name = names[name];
                 }
                 speak(name)
-                setSelection(sel, node, node.childElementCount ? node.childElementCount : 1);
+                offset = node.childElementCount ? node.childElementCount : 1
+                setSelection(sel, node, offset);
                 return
             }
             name = 'finish ' + name
+            offset = node.childElementCount ? node.childElementCount : 1
         }
         if (name == '#text')
             speechSel(sel)
         else if (name != 'mtd')
             speak(name)
-        setSelection(sel, node, node.childElementCount ? node.childElementCount : 1);
+        setSelection(sel, node, offset);
         return
     }
     if (node.nodeType != 3)
@@ -2410,7 +2421,7 @@ function moveSelection(sel, node, offset) {
 
     if (name != 'mrow') {
         node = handleEndOfTextNode(node)
-        setSelection(sel, node, 0);
+        setSelection(sel, node, 1);
         return
     }
     atEnd = false;
@@ -3369,20 +3380,20 @@ function getCodePoints() {
                 symbol = symbolNames[c]     // From controlWords
                 if (symbol) {
                     symbol = '\\' + symbol
-                } else if(isAlphanumeric(c)) { // Get math-alphanumeric control word 
+                } else if (isAlphanumeric(c)) { // Get math-alphanumeric control word 
                     let [anCode, chFolded] = foldMathAlphanumeric(c.codePointAt(0), c)
                     if (anCode)
                         symbol = '\\' + anCode + chFolded
+                } else {
+                    symbol = c
                 }
             }
-            if (symbol)
-                tooltip = symbol + "<hr>" + tooltip
+            tooltip = symbol + "<hr>" + tooltip
         }
         codepoints_HTML += '<div class="cp' + (invisibleChar ? ' invisible-char' : '') + '" data-tooltip="' + tooltip + '"><div class="p">' + cp + '</div><div class="c">' + c + '</div></div>'
 
-        if (c == "\n") {
-            codepoints_HTML += "<br>";
-        }
+        if (c == "\n")
+            codepoints_HTML += "<br>"
     });
     return codepoints_HTML
 }
