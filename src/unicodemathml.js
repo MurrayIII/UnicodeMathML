@@ -3166,14 +3166,18 @@ function preprocess(dsty, uast, index, arr) {
             if (value.content.hasOwnProperty("separated")) {
                 value.content = {separated: {separator: value.content.separated.separator, of: preprocess(dsty, value.content.separated.of)}};
             } else {
-                if (value.intent && value.intent.endsWith("interval") && emitDefaultIntents &&
+                if (value.intent && value.intent.endsWith("interval") &&
                     Array.isArray(value.content) && value.content.length == 3) {
                     // Arrange interval endpoint arguments and content
                     var arg0 = getIntervalArg(value.content, 0);
                     var arg1 = getIntervalArg(value.content, 2);
-                    value.intent += '(' + arg0 + ',' + arg1 + ')';
-                    if (!intent)
-                        intent = value.intent;
+                    if (emitDefaultIntents) {
+                        value.intent += '(' + arg0 + ',' + arg1 + ')';
+                        if (!intent)
+                            intent = value.intent;
+                    } else {
+                        intent = value.intent = ''
+                    }
                     value.content = {expr:
                             [getIntervalEndPoint(arg0, value.content[0]),
                              {operator: ','},

@@ -158,7 +158,7 @@ function shadeArgNode() {
             node = node.parentElement
         for (; node && node.nodeName[0] == 'm' && node.nodeName != 'math';
             node = node.parentElement) {
-            if (names[node.parentElement.nodeName]) {
+            if (isMathMLObject(node.parentElement)) {
                 node.setAttribute('mathbackground', '#555')
                 shadedArgNode = node
                 return
