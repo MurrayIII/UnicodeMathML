@@ -2468,43 +2468,49 @@ function moveSelection(sel, node, offset) {
                 name = names[name];
         }
     } else {                                // No next sibling
-        node = node.parentElement;          // Up to <mrow>
         atEnd = true;                       // At end of <mrow>
-        name = getArgName(node)
+        name = getArgName(node.parentElement)
+        if (name) {                         // End of argument
+            // Set selection to follow last child
+            setSelection(sel, node, 1)
+            speak('at end ' + name)
+            return
+        }
+        node = node.parentElement;          // Up to <mrow>
 
-        if (!name) {
-            if (node.parentElement.nodeName == 'mtd') {
-                if (node.nextElementSibling) {
+        if (node.parentElement.nodeName == 'mtd') {
+            if (node.nextElementSibling) {
+                node = node.nextElementSibling;
+                if (!node.childElementCount)  // 'malignmark' or 'maligngroup'
                     node = node.nextElementSibling;
-                    if (!node.childElementCount)  // 'malignmark' or 'maligngroup'
-                        node = node.nextElementSibling;
+                if (node.firstElementChild) {
                     node = node.firstElementChild
                     atEnd = false;
-                    if (!node.childElementCount && node.childNodes.length)
-                        node = node.firstChild;
+                }
+                if (!node.childElementCount && node.childNodes.length)
+                    node = node.firstChild;
+                setSelection(sel, node, 0);
+                speechSel(sel)
+                return
+            }
+            node = node.parentElement;
+            name = node.nodeName;
+        } else if (node.parentElement.nodeName == 'mrow') {
+            if (node.nextElementSibling) {
+                node = node.nextElementSibling;
+                name = node.nodeName
+                atEnd = false;
+                if (!node.childElementCount) {
+                    node = node.firstChild;
                     setSelection(sel, node, 0);
                     speechSel(sel)
-                    return
+                    return;
                 }
-                node = node.parentElement;
-                name = node.nodeName;
-            } else if (node.parentElement.nodeName == 'mrow') {
-                if (node.nextElementSibling) {
-                    node = node.nextElementSibling;
-                    name = node.nodeName
-                    atEnd = false;
-                    if (!node.childElementCount) {
-                        node = node.firstChild;
-                        setSelection(sel, node, 0);
-                        speechSel(sel)
-                        return;
-                    }
-                } else if (node.attributes.intent)
-                    name = node.attributes.intent.value
-            }
+            } else if (node.attributes.intent)
+                name = node.attributes.intent.value
         }
     }
-    sel = setSelection(sel, node, atEnd ? 1 : 0);
+    sel = setSelection(sel, node, atEnd ? node.childElementCount : 0);
     if (checkSimpleSup(node))
         return;
     if (!name)
