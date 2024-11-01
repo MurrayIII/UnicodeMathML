@@ -566,13 +566,13 @@ function hexToUnicode(input, offsetEnd, cchSel) {
             ch = n.toString(16);
         } else {
             offsetStart--;
-            for (var d = 1; d < n; d <<= 4)	// Get d = smallest power of 16 > n
+            for (let d = 1; d < n; d <<= 4)	// Get d = smallest power of 16 > n
                 ;
             if (n && d > n)
                 d >>= 4;
             for (; d; d >>= 4) {
-                var quot = n / d;
-                var rem = n % d;
+                let quot = n / d;
+                let rem = n % d;
                 n = quot + 0x0030;
                 if (n > 0x0039)
                     n += 0x0041 - 0x0039 - 1;
@@ -584,7 +584,7 @@ function hexToUnicode(input, offsetEnd, cchSel) {
         if (n <= 0xFFFF) {
             ch = String.fromCharCode(n);
             if (isTrailSurrogate(n) && offsetStart > 5) {
-                var chPrev = input[offsetStart - 1];
+                let chPrev = input[offsetStart - 1];
                 if (chPrev == ' ' || chPrev == ',') {
                     [m, i] = GetCodePoint(input, offsetStart - 1, 8);
                     if (isLeadSurrogate(m)) {
@@ -1388,7 +1388,8 @@ function checkSimpleSup(node) {
 const names = {
     'msup': 'superscript', 'msub': 'subscript', 'msubsup': 'subsoup',
     'munder': 'modify below', 'mover': 'modify above', 'munderover': 'below above',
-    'mfrac': 'fraction', 'msqrt': 'square root',
+    'mfrac': 'fraction', 'msqrt': 'square root', 'mtd': 'element',
+    'mtable': 'matrix'
 }
 
 function refreshDisplays(uMath, noUndo) {
@@ -1897,7 +1898,8 @@ function checkMathSelection(sel) {
         nodeFocus = nodeAnchor
     } else {
         for (node = nodeFocus; node != nodeCA; node = node.parentElement) {
-            if (isMathMLObject(node)) {
+            if (isMathMLObject(node) &&
+                (node != range.endContainer || range.endOffset)) {
                 nodeFocus = node
                 needSelChange = true
             }
@@ -2281,14 +2283,17 @@ function getArgName(node) {
     return name
 }
 
-function moveSelection(sel, node, offset) {
+function moveSelection(sel, node, offset, shiftKey) {
     // Move selection forward in the MathML DOM and describe what's there
     let intent
     let name
 
+    if (offset && node.childElementCount == offset)
+        atEnd = true
+
     if (node.nodeType == 1) {               // Starting at an element...
         if (node.nodeName == 'math')
-            return
+            return [null, null]
         if (!node.childElementCount) {      // mi, mo, mn, or mtext
             // Move to start of next element in tree
             if (!node.nextElementSibling && node.parentElement)
@@ -2301,12 +2306,11 @@ function moveSelection(sel, node, offset) {
                     if (names[name])
                         name = names[name]
                     speak('end ' + name);
-                    setSelection(sel, node, node.childElementCount ? node.childElementCount : 1)
-                    return;
+                    return [node, node.childElementCount ? node.childElementCount : 1]
                 }
             }
             if (!node.nextElementSibling)
-                return;
+                return [null, null]
             atEnd = false;
             node = node.nextElementSibling;
             if (node.nodeName == 'mrow') {
@@ -2344,22 +2348,32 @@ function moveSelection(sel, node, offset) {
             }
         } else {
             // Element with element children: move down to first child
-            if (!node.childNodes.length)    // 'malignmark' or 'maligngroup'
+            if (!node.childNodes.length) {  // 'malignmark' or 'maligngroup'
                 node = node.nextElementSibling;
+            } else if (!offset && shiftKey) {
+                offset = node.childElementCount
+                if (node.nextElementSibling) {
+                    node = node.nextElementSibling
+                    offset = 0
+                }
+                speak(node.nodeName)
+                return [node, offset]
+            }
             node = node.firstElementChild;
             if (!node.childNodes.length)    // 'malignmark' or 'maligngroup'
                 node = node.nextElementSibling;
             if (node.nodeName == 'mrow')
                 node = node.firstElementChild;
         }
+        if (node.nodeName == 'mtd')
+            node = node.firstElementChild
         name = node.nodeName;
         if (node.nodeType == 3 || !node.childElementCount && node.childNodes.length) {
             node = node.firstChild;
             name = node.nodeName;
         }
-        sel = setSelection(sel, node, 0)
         if (!atEnd && checkSimpleSup(node)) // E.g., say "b squared" if at 𝑏²
-            return;
+            return [node, 0]
         let fixedNumberArgs = false
         if (names[name]) {
             fixedNumberArgs = true
@@ -2386,43 +2400,39 @@ function moveSelection(sel, node, offset) {
                 }
                 speak(name)
                 offset = node.childElementCount ? node.childElementCount : 1
-                setSelection(sel, node, offset);
-                return
+                return [node, offset]
             }
             name = 'finish ' + name
             offset = node.childElementCount ? node.childElementCount : 1
         }
         if (name == '#text')
-            speechSel(sel)
+            speak(node.data)
         else if (name != 'mtd')
             speak(name)
-        setSelection(sel, node, offset);
-        return
+        return [node, offset]
     }
     if (node.nodeType != 3)
-        return
+        return [null, null]
 
     // Text node: child of <mi>, <mo>, <mn>, or <mtext>
-    if (offset < sel.anchorNode.length) {
+    if (offset < node.length) {
         // Move through, e.g., for 'sin'
         let code = node.data.codePointAt(offset);
-        offset += code > 0xFFFF ? 2 : 1;
-        if (offset < sel.anchorNode.length) {
-            sel = setSelection(sel, node, offset);
-            speechSel(sel)
-            return                          // Not at end yet
+        let cch = code > 0xFFFF ? 2 : 1;
+        if (offset + cch < node.length) {
+            speak(node.data[offset])
+            return [node, offset]           // Not at end yet
         }
     }
 
     // At end of text node: move up to <mi>, <mo>, <mn>, <mtext>. Then move
     // to next sibling if in same <mrow>
-    node = sel.anchorNode.parentElement;
+    node = node.parentElement;
     name = node.parentElement.nodeName
 
     if (name != 'mrow') {
         node = handleEndOfTextNode(node)
-        setSelection(sel, node, 1);
-        return
+        return [node, 1]
     }
     atEnd = false;
     if (node.nextElementSibling) {
@@ -2439,8 +2449,7 @@ function moveSelection(sel, node, offset) {
             if (intent == ':cases')
                 name = 'case'
             speak(name + '1');
-            setSelection(sel, node.firstElementChild, 0);
-            return;
+            return [node.firstElementChild, 0]
         } else if (node.nodeName == 'mrow') {
             let ch = getNaryOp(node);
             if (ch) {
@@ -2472,9 +2481,8 @@ function moveSelection(sel, node, offset) {
         name = getArgName(node.parentElement)
         if (name) {                         // End of argument
             // Set selection to follow last child
-            setSelection(sel, node, 1)
             speak('at end ' + name)
-            return
+            return [node, 1]
         }
         node = node.parentElement;          // Up to <mrow>
 
@@ -2489,9 +2497,8 @@ function moveSelection(sel, node, offset) {
                 }
                 if (!node.childElementCount && node.childNodes.length)
                     node = node.firstChild;
-                setSelection(sel, node, 0);
-                speechSel(sel)
-                return
+                speak(node.textContent)
+                return [node, 0]
             }
             node = node.parentElement;
             name = node.nodeName;
@@ -2502,20 +2509,22 @@ function moveSelection(sel, node, offset) {
                 atEnd = false;
                 if (!node.childElementCount) {
                     node = node.firstChild;
-                    setSelection(sel, node, 0);
-                    speechSel(sel)
-                    return;
+                    speak(node.data)
+                    return [node, 0]
                 }
             } else if (node.attributes.intent)
                 name = node.attributes.intent.value
         }
     }
-    sel = setSelection(sel, node, atEnd ? node.childElementCount : 0);
-    if (checkSimpleSup(node))
-        return;
-    if (!name)
-        name = node.nodeName
-    speak(atEnd ? 'at end ' + name : name)
+    offset = 0
+    if (atEnd)
+        offset = node.childElementCount ? node.childElementCount : node.length
+    if (!checkSimpleSup(node)) {
+        if (!name)
+            name = node.nodeName
+        speak(atEnd ? 'at end ' + name : name)
+    }
+    return [node, offset]
 }
 
 // Output-element context menu functions
@@ -2892,9 +2901,11 @@ output.addEventListener('keydown', function (e) {
     if (sel.type != 'None')
         range = sel.getRangeAt(0)           // Save entry selection
 
-    let node = sel.anchorNode
+    let anchorNode = sel.anchorNode
+    let anchorOffset = sel.anchorOffset
+    let node = sel.focusNode
     let name = node.nodeName
-    let offset = sel.anchorOffset
+    let offset = sel.focusOffset
     let uMath
 
     if (node.nodeName == 'DIV') {
@@ -2916,17 +2927,19 @@ output.addEventListener('keydown', function (e) {
     switch (key) {
         case 'ArrowRight':
             e.preventDefault()
-            dir = '→'
-            moveSelection(sel, node, offset)
-            if (e.shiftKey) {
-                sel = window.getSelection()
-                sel.setBaseAndExtent(range.startContainer, range.startOffset, sel.anchorNode, sel.anchorOffset)
-                sel = window.getSelection()
-                console.log(
-                    "sel.anchorNode.nodeName = " + sel.anchorNode.nodeName + ', ' + sel.anchorOffset + '\n' +
-                    "sel.focusNode.nodeName = " + sel.focusNode.nodeName + ', ' + sel.focusOffset)
-            }
-            return;
+            dir = '→';
+            [node, offset] = moveSelection(sel, node, offset, e.shiftKey)
+            if (!node)
+                return
+            if (e.shiftKey)
+                sel.setBaseAndExtent(anchorNode, anchorOffset, node, offset)
+            else
+                setSelection(sel, node, offset)
+            sel = window.getSelection()
+            console.log(
+                "sel.anchorNode.nodeName = " + sel.anchorNode.nodeName + ', ' + sel.anchorOffset + '\n' +
+                "sel.focusNode.nodeName = " + sel.focusNode.nodeName + ', ' + sel.focusOffset)
+            return
 
         case 'ArrowLeft':
             dir = '←'
@@ -3636,13 +3649,13 @@ $('button.tab').click(function () {
 // "$('.button').click(...)"
 $(document).on('click', function (e) {
     if ($(e.target).hasClass('unicode')) {
-        var str = e.target.innerText;
+        let str = e.target.innerText;
 
         if (str.length > 4) {
             // Must be an example. Determine index of example for use with
             // next Alt + Enter hot key
-            var x = document.getElementById('Examples').childNodes[0];
-            var cExamples = x.childNodes.length;
+            let x = document.getElementById('Examples').childNodes[0];
+            let cExamples = x.childNodes.length;
 
             for (iExample = 0; iExample < cExamples; iExample++) {
                 if (str == x.childNodes[iExample].innerText)
@@ -3665,13 +3678,13 @@ $(document).on('click', function (e) {
 
 // custom codepoint insertion
 $('#codepoint').keypress(function (e) {
-    var key = e.which;
+    let key = e.which;
     if (key == 13) {  // enter
         $('button#insert_codepoint').click();
     }
 });
 $('button#insert_codepoint').click(function () {
-    var symbol = String.fromCodePoint("0x" + $('#codepoint').val())
+    let symbol = String.fromCodePoint("0x" + $('#codepoint').val())
     insertAtCursorPos(symbol);
     addToHistory(symbol);
 })
@@ -3681,7 +3694,7 @@ $('#controlword').keydown(function (e) {
     $('#controlword').css('color', 'black');
 });
 $('#controlword').keypress(function (e) {
-    var key = e.which;
+    let key = e.which;
     if (key == 13) {  // enter
         $('button#insert_controlword').click();
     }
