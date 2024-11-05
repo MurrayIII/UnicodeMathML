@@ -642,6 +642,11 @@ function testAutoBuildUp() {
 const clipExpect = "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mfrac><mi>𝑎</mi><mi>𝑏</mi></mfrac><mo>+</mo><mfrac><mi>𝑐</mi><mi>𝑑</mi></mfrac></math>"
 const homeExpect = "Ⓐ() 𝑎/𝑏+𝑐/𝑑=0"
 const endExpect = "𝑎/𝑏+𝑐/𝑑=Ⓐ(1)0"
+const rightArrowExpect = ['Ⓐ()𝑎/𝑏+𝑐/𝑑=0', 'Ⓐ(1)𝑎/𝑏+𝑐/𝑑=0', '𝑎/Ⓐ()𝑏+𝑐/𝑑=0',
+    '𝑎/Ⓐ(1)𝑏+𝑐/𝑑=0', '𝑎/𝑏 Ⓐ()+𝑐/𝑑=0', '𝑎/𝑏+Ⓐ() 𝑐/𝑑=0', '𝑎/𝑏+Ⓐ()𝑐/𝑑=0',
+    '𝑎/𝑏+Ⓐ(1)𝑐/𝑑=0', '𝑎/𝑏+𝑐/Ⓐ()𝑑=0', '𝑎/𝑏+𝑐/Ⓐ(1)𝑑=0', '𝑎/𝑏+𝑐/𝑑 Ⓐ()=0',
+    '𝑎/𝑏+𝑐/𝑑=Ⓐ()0', 'Ⓐ(5) 𝑎/𝑏+𝑐/𝑑=0',
+]
 
 function testOutputHotKey(key, expect) {
     const event = new Event('keydown')
@@ -729,8 +734,10 @@ function testHotKeys() {
         })
 
     // Test output Home/End hot keys
-    testOutputHotKey('Home', homeExpect)
     testOutputHotKey('End', endExpect)
+    testOutputHotKey('Home', homeExpect)
+    for (let i = 0; i < rightArrowExpect.length; i++)
+        testOutputHotKey('ArrowRight', rightArrowExpect[i])
 
     // Test output Ctrl+z and Ctrl+y hot keys
     buildUp('𝑎²+𝑏²=𝑐²')

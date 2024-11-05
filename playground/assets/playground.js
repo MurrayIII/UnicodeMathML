@@ -2283,17 +2283,23 @@ function getArgName(node) {
     return name
 }
 
-function moveSelection(sel, node, offset, shiftKey) {
-    // Move selection forward in the MathML DOM and describe what's there
+function moveSelection(sel, e) {
+    // Starting with the focus node-offset pair, find the next pair implied by
+    // a [Shift+]→ command. Speak what's there and return the pair so found.
+    let anchorNode = sel.anchorNode
+    let anchorOffset = sel.anchorOffset
     let intent
     let name
+    let node = sel.focusNode
+    let offset = sel.focusOffset
+    let shiftKey = e.shiftKey
 
     if (offset && node.childElementCount == offset)
         atEnd = true
 
     if (node.nodeType == 1) {               // Starting at an element...
         if (node.nodeName == 'math')
-            return [null, null]
+            return [null]
         if (!node.childElementCount) {      // mi, mo, mn, or mtext
             // Move to start of next element in tree
             if (!node.nextElementSibling && node.parentElement)
@@ -2306,11 +2312,12 @@ function moveSelection(sel, node, offset, shiftKey) {
                     if (names[name])
                         name = names[name]
                     speak('end ' + name);
-                    return [node, node.childElementCount ? node.childElementCount : 1]
+                    return [node, node.childElementCount ? node.childElementCount : 1,
+                            anchorNode, anchorOffset]
                 }
             }
             if (!node.nextElementSibling)
-                return [null, null]
+                return [null]
             atEnd = false;
             node = node.nextElementSibling;
             if (node.nodeName == 'mrow') {
@@ -2344,7 +2351,12 @@ function moveSelection(sel, node, offset, shiftKey) {
                     node = checkTable(node)
                 }
             } else {
-                node = node.parentElement;
+                node = node.parentElement
+                if (shiftKey && (anchorNode.parentElement == node ||
+                        anchorNode.parentElement.parentElement == node)) {
+                        // Select node
+                    return [node, node.childElementCount, node, 0]
+                }
             }
         } else {
             // Element with element children: move down to first child
@@ -2357,7 +2369,7 @@ function moveSelection(sel, node, offset, shiftKey) {
                     offset = 0
                 }
                 speak(node.nodeName)
-                return [node, offset]
+                return [node, offset, anchorNode, anchorOffset]
             }
             node = node.firstElementChild;
             if (!node.childNodes.length)    // 'malignmark' or 'maligngroup'
@@ -2373,7 +2385,7 @@ function moveSelection(sel, node, offset, shiftKey) {
             name = node.nodeName;
         }
         if (!atEnd && checkSimpleSup(node)) // E.g., say "b squared" if at 𝑏²
-            return [node, 0]
+            return [node, 0, anchorNode, anchorOffset]
         let fixedNumberArgs = false
         if (names[name]) {
             fixedNumberArgs = true
@@ -2400,7 +2412,7 @@ function moveSelection(sel, node, offset, shiftKey) {
                 }
                 speak(name)
                 offset = node.childElementCount ? node.childElementCount : 1
-                return [node, offset]
+                return [node, offset, anchorNode, anchorOffset]
             }
             name = 'finish ' + name
             offset = node.childElementCount ? node.childElementCount : 1
@@ -2409,19 +2421,19 @@ function moveSelection(sel, node, offset, shiftKey) {
             speak(node.data)
         else if (name != 'mtd')
             speak(name)
-        return [node, offset]
+        return [node, offset, anchorNode, anchorOffset]
     }
     if (node.nodeType != 3)
-        return [null, null]
+        return [null]
 
     // Text node: child of <mi>, <mo>, <mn>, or <mtext>
     if (offset < node.length) {
         // Move through, e.g., for 'sin'
         let code = node.data.codePointAt(offset);
-        let cch = code > 0xFFFF ? 2 : 1;
-        if (offset + cch < node.length) {
-            speak(node.data[offset])
-            return [node, offset]           // Not at end yet
+        let offset1 = offset + (code > 0xFFFF ? 2 : 1)
+        if (offset1 < node.length) {
+            speak(node.data[offset1])
+            return [node, offset1, anchorNode, anchorOffset] // Not at end yet
         }
     }
 
@@ -2432,7 +2444,7 @@ function moveSelection(sel, node, offset, shiftKey) {
 
     if (name != 'mrow') {
         node = handleEndOfTextNode(node)
-        return [node, 1]
+        return [node, 1, anchorNode, anchorOffset]
     }
     atEnd = false;
     if (node.nextElementSibling) {
@@ -2449,7 +2461,7 @@ function moveSelection(sel, node, offset, shiftKey) {
             if (intent == ':cases')
                 name = 'case'
             speak(name + '1');
-            return [node.firstElementChild, 0]
+            return [node.firstElementChild, 0, anchorNode, anchorOffset]
         } else if (node.nodeName == 'mrow') {
             let ch = getNaryOp(node);
             if (ch) {
@@ -2482,7 +2494,7 @@ function moveSelection(sel, node, offset, shiftKey) {
         if (name) {                         // End of argument
             // Set selection to follow last child
             speak('at end ' + name)
-            return [node, 1]
+            return [node, 1, anchorNode, anchorOffset]
         }
         node = node.parentElement;          // Up to <mrow>
 
@@ -2498,7 +2510,7 @@ function moveSelection(sel, node, offset, shiftKey) {
                 if (!node.childElementCount && node.childNodes.length)
                     node = node.firstChild;
                 speak(node.textContent)
-                return [node, 0]
+                return [node, 0, anchorNode, anchorOffset]
             }
             node = node.parentElement;
             name = node.nodeName;
@@ -2510,7 +2522,7 @@ function moveSelection(sel, node, offset, shiftKey) {
                 if (!node.childElementCount) {
                     node = node.firstChild;
                     speak(node.data)
-                    return [node, 0]
+                    return [node, 0, anchorNode, anchorOffset]
                 }
             } else if (node.attributes.intent)
                 name = node.attributes.intent.value
@@ -2524,7 +2536,11 @@ function moveSelection(sel, node, offset, shiftKey) {
             name = node.nodeName
         speak(atEnd ? 'at end ' + name : name)
     }
-    return [node, offset]
+    if (anchorNode.parentElement == node) {
+        anchorNode = node
+        anchorOffset = 0
+    }
+    return [node, offset, anchorNode, anchorOffset]
 }
 
 // Output-element context menu functions
@@ -2893,7 +2909,6 @@ output.addEventListener('keydown', function (e) {
 
     let i, k
     let cchCh
-    let dir = ''
     let intent = ''
     let sel = window.getSelection()
 
@@ -2901,8 +2916,6 @@ output.addEventListener('keydown', function (e) {
     if (sel.type != 'None')
         range = sel.getRangeAt(0)           // Save entry selection
 
-    let anchorNode = sel.anchorNode
-    let anchorOffset = sel.anchorOffset
     let node = sel.focusNode
     let name = node.nodeName
     let offset = sel.focusOffset
@@ -2927,14 +2940,23 @@ output.addEventListener('keydown', function (e) {
     switch (key) {
         case 'ArrowRight':
             e.preventDefault()
-            dir = '→';
-            [node, offset] = moveSelection(sel, node, offset, e.shiftKey)
+            let anchorOffset
+            [node, offset, anchorNode, anchorOffset] = moveSelection(sel, e)
             if (!node)
                 return
-            if (e.shiftKey)
+            removeSelAttributes()
+            if (e.shiftKey && anchorNode) {
+                if (testing)                // (else done by onSelectionChange())
+                    setSelAttributes(anchorNode, 'selanchor', anchorOffset,
+                        node, 'selfocus', offset)
                 sel.setBaseAndExtent(anchorNode, anchorOffset, node, offset)
-            else
+            } else {
+                if (testing)
+                    setSelAttributes(node, 'selanchor', offset)
                 setSelection(sel, node, offset)
+            }
+            if (testing)
+                return
             sel = window.getSelection()
             console.log(
                 "sel.anchorNode.nodeName = " + sel.anchorNode.nodeName + ', ' + sel.anchorOffset + '\n' +
@@ -2942,7 +2964,6 @@ output.addEventListener('keydown', function (e) {
             return
 
         case 'ArrowLeft':
-            dir = '←'
             return;                     // Do default for now
 
         case 'Backspace':
