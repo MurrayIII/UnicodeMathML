@@ -752,6 +752,12 @@ function testHotKeys() {
     testOutputContextMenu('arg=arg', '<math display=\"block\" intent=\"Pythagorean theorem\" arg=\"arg\"><mrow selanchor=\"0\" selfocus=\"6\"><msup><mi>𝑎</mi><mn>2</mn></msup><mo>+</mo><msup><mi>𝑏</mi><mn>2</mn></msup><mo>=</mo><msup><mi>𝑐</mi><mn>2</mn></msup><mo> </mo></mrow></math>')
     testOutputHotKey('a', 'Ⓐ()Ⓕ(6) 𝑎²+𝑏²=𝑐² ')
     testOutputHotKey('Delete', 'Ⓐ()Ⓕ(1)⬚')
+    let t = unicodemathml('𝑎/𝑏 Ⓐ(-0)+Ⓕ(2) 𝑐/𝑑=0', true)
+    output.innerHTML = t.mathml
+    refreshDisplays('', true)
+    testOutputHotKey('Delete', '𝑎/𝑏 Ⓐ()=0')
+    testOutputHotKey('z', '𝑎/𝑏 Ⓐ(-0)+Ⓕ(2) 𝑐/𝑑=0')
+    testOutputHotKey('q', '𝑎/𝑏 Ⓐ(1)𝑞=0')
 
     // Test input Ctrl+z and Ctrl+y hot keys
     input.focus()

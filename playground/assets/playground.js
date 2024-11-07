@@ -1579,14 +1579,19 @@ function handleEndOfTextNode(node) {
     return node
 }
 
-function insertNode(node, nodeNew, nodeP) {
+function insertNode(node, offset, nodeNew, nodeP) {
     if (node.textContent == '⬚') {
         // Replace empty arg place holder symbol with key
         nodeP.replaceChild(nodeNew, node)
-    } else if (node.nodeName == 'mrow' && atEnd) {
-        node.appendChild(nodeNew)
+    } else if (node.nodeName == 'mrow') {
+        if (atEnd || offset && offset == node.childElementCount)
+            node.appendChild(nodeNew)
+        else
+            node.insertBefore(nodeNew, node.children[offset])
+    } else if (!offset && !atEnd && node.nodeType == 1) {
+        nodeP.insertBefore(nodeNew, node)
     } else if (nodeP.nodeName == 'mrow') {
-        if (atEnd) {
+        if (atEnd && offset) {
             if (node.nextElementSibling) {
                 nodeP.insertBefore(nodeNew, node.nextElementSibling)
             } else {
@@ -1799,7 +1804,7 @@ function handleKeyboardInput(node, key, sel) {
     }
     nodeNew.textContent = key
     setSelAttributes(nodeNew, 'selanchor', '1')
-    insertNode(node, nodeNew, nodeP)
+    insertNode(node, offset, nodeNew, nodeP)
     nodeP.innerHTML = nodeP.innerHTML   // Force redraw
     refreshDisplays();
     return autocl
@@ -1988,6 +1993,7 @@ function deleteSelection(range) {
     if (uMath == stackTop(outputUndoStack))
         outputUndoStack.pop()
 
+    removeSelAttributes()
     if (sel)
         sel.deleteFromDocument()            // Deletes #text nodes but leaves
     else                                    //  some element nodes
@@ -2014,7 +2020,7 @@ function deleteSelection(range) {
                     // No element is left in mrow or element wasn't deleted.
                     // If only one child is left, replace an attribute-less
                     // mrow by that child
-                    if (nodeP.childElementCount == 1 && !nodeP.attributes.length)
+                    if (node && nodeP.childElementCount == 1 && !nodeP.attributes.length)
                         nodeP.parentElement.replaceChild(node, nodeP)
                     break;
                 }
@@ -2043,20 +2049,21 @@ function deleteSelection(range) {
         return true                         // Entered with a range
 
     node = sel.anchorNode                   // Anchor node after deletions
-    let offset = 0
+    let offset = sel.anchorOffset
+    if (!offset)
+        atEnd = false
 
     if (node.childElementCount) {
         let i = sel.anchorOffset            // Child index
 
-        if (i == node.childElementCount) {  // Follows last child
+        offset = 0                          // Start at child unless
+        if (i == node.childElementCount) {  //  follows last child
             i--                             // Index of last child
             offset = 1                      // IP will follow last child
         }
         node = node.children[i]
         if (offset && node.childElementCount)
             offset = node.childElementCount // At end of last child
-    } else {                                // mi, mo, mn, mtext
-        offset = sel.anchorOffset           // 0 or 1
     }
     checkEmpty(node, offset, uMath)
     return true
@@ -2785,7 +2792,7 @@ function pasteMathML(clipText, node, offset, sel) {
                 nodeT.appendChild(nodeNew.children[0])
             nodeNew = nodeT
         }
-        insertNode(node, nodeNew, node.parentElement)
+        insertNode(node, 0, nodeNew, node.parentElement)
     }
     console.log('clipText = ' + clipText)
     refreshDisplays(uMath)
