@@ -21,6 +21,7 @@ var hist = [];
 var inputRedoStack = []
 var inputUndoStack = [{uMath: ''}]
 var inSelChange = false
+var keydownLast
 var outputRedoStack = ['']
 var outputUndoStack = ['']
 var prevInputValue = "";
@@ -95,6 +96,7 @@ document.onselectionchange = () => {
         return
     if (inSelChange)
         return
+
     let sel = window.getSelection()
     inSelChange = true
     sel = checkMathSelection(sel)
@@ -159,7 +161,7 @@ function shadeArgNode() {
         for (; node && node.nodeName[0] == 'm' && node.nodeName != 'math';
             node = node.parentElement) {
             if (isMathMLObject(node.parentElement)) {
-                node.setAttribute('mathbackground', '#555')
+                node.setAttribute('mathbackground', '#666')
                 shadedArgNode = node
                 return
             }
@@ -315,7 +317,6 @@ function mathTeX() {
     let LaTeX = TeX(output.firstElementChild)
     console.log('Math TeX = ' + LaTeX)
     speechDisplay.innerText += '\n' + LaTeX
-
 }
 
 function speak(s) {
@@ -327,6 +328,7 @@ function speak(s) {
         utterance.voice = voiceZira
     if (speechSynthesis.pending)        // Inter-utterance pause is too long
         speechSynthesis.cancel()
+    //utterance.rate = 2
     speechSynthesis.speak(utterance)
 }
 
@@ -1371,7 +1373,7 @@ function getNaryOp(node) {
 }
 
 function getIntent(node) {
-    return node.attributes.intent ? node.attributes.intent.value : '';
+    return node.getAttribute('intent')
 }
 
 function checkSimpleSup(node) {
@@ -1846,11 +1848,68 @@ function checkMathSelection(sel) {
         nodeAnchor.innerHTML = `<math display='block'><mi selanchor="0" selfocus="1">⬚</mi></math>`
         return setSelection(sel, nodeAnchor, SELECTNODE)
     }
-    let node = nodeAnchor
+    let node = sel.focusNode
+    let offset = sel.focusOffset
+
     if (node.nodeName == '#text')
         node = node.parentElement
     if (node.nodeName[0] != 'm')
         return null                         // Not MathML ⇒ not output window
+
+    let selanchor = node.getAttribute('selanchor')
+    if (selanchor && sel.isCollapsed) {
+        let nodeT = node
+        if (selanchor[0] == '-') {
+            selanchor = selanchor[1]
+            nodeT = node.firstChild
+        }
+        if (selanchor == sel.anchorOffset && node == sel.anchorNode)
+            return sel                      // Already set
+    }
+    let name
+    console.log('node, offset = ' + node.nodeName + ', ' + offset)
+
+    if (node.childElementCount) {
+        name = names[node.nodeName]
+    } else if (offset == sel.focusNode.textContent.length) {
+        if (node.parentElement.nodeName == 'mrow') {
+            if (node.nextElementSibling) {
+                // Remove extra stop between childless-element siblings
+                if (keydownLast == 'ArrowRight')
+                    node = node.nextElementSibling
+                else if (node.textContent.length > getCh(node.textContent, 0).length)
+                    return sel
+                if (node.nodeName == 'mrow')
+                    node = node.firstElementChild
+                if (offset != sel.anchorOffset) // Nondegenerate selection
+                    setAnchorAndFocus(sel, sel.anchorNode, sel.anchorOffset, node, 0)
+                else
+                    setAnchorAndFocus(sel, node, 0, node, 0)
+                name = getCh(node.textContent, 0)
+                let intent = node.getAttribute('intent')
+                if (isDoubleStruck(intent))
+                    name = intent
+            } else {
+                node = node.parentElement
+                if (isMathMLObject(node.parentElement)) {
+                    name = getArgName(node)
+                    if (name)
+                        name = 'end of ' + name
+                }
+            }
+        } else if (isMathMLObject(node.parentElement)) {
+            name = getArgName(node)
+            if (name)
+                name = 'end of ' + name
+        }
+    } else if (offset < sel.focusNode.textContent.length) {
+        name = resolveSymbols(getCh(node.textContent, offset))
+    }
+    let intent = node.getAttribute('intent')
+    if (isDoubleStruck(intent))
+        name = intent
+    if (name)
+        speak(name)
 
     if (sel.isCollapsed)
         return sel                          // All insertion points are valid
@@ -2257,7 +2316,7 @@ function getArgName(node) {
             if (!node.previousElementSibling)
                 name = 'base';
             else if (node.nextElementSibling)
-                name = isNary(node.previousElementSibling.textContent) ? 'lowwer limit' : 'subscript';
+                name = isNary(node.previousElementSibling.textContent) ? 'lower limit' : 'subscript';
             else
                 name = isNary(node.parentElement.firstElementChild.textContent) ? 'upper limit' : 'superscript';
             break;
@@ -2300,6 +2359,27 @@ function moveSelection(sel, e) {
     let node = sel.focusNode
     let offset = sel.focusOffset
     let shiftKey = e.shiftKey
+
+    if (e.key == 'ArrowLeft') {
+        if (node.nodeType == 3) {
+            if (offset) {
+                speak(getCh(node.textContent, offset - 1))
+                return [null]               // Use system default
+            }
+            node = node.parentElement       // Up to mi, mn, mtext
+        }
+        if (!node.childElementCount) {      // mi, mn, mtext
+            if (offset) {
+                speak(getCh(node.textContent, offset - 1))
+                return [null]
+            }
+            if (node.previousElementSibling) {
+                node = node.previousElementSibling
+                speak(getCh(node.textContent, 0))
+            }
+            return [null]                   // Use system default for now
+        }
+    }
 
     if (offset && node.childElementCount == offset)
         atEnd = true
@@ -2439,7 +2519,7 @@ function moveSelection(sel, e) {
         let code = node.data.codePointAt(offset);
         let offset1 = offset + (code > 0xFFFF ? 2 : 1)
         if (offset1 < node.length) {
-            speak(node.data[offset1])
+            speak(getCh(node.data, offset1))
             return [node, offset1, anchorNode, anchorOffset] // Not at end yet
         }
     }
@@ -2801,12 +2881,13 @@ function pasteMathML(clipText, node, offset, sel) {
 
 var onac = false                        // true immediately after autocomplete click
 
-output.addEventListener("click", () => {
+output.addEventListener("click", (e) => {
     if (onac) {                         // Ignore click that follows autocomplete click
         onac = false
         return
     }
     closeContextMenu()
+    inSelChange = false
     //removeSelAttributes()
     let sel = window.getSelection()
     let node = sel.anchorNode
@@ -2818,7 +2899,7 @@ output.addEventListener("click", () => {
     if (sel.isCollapsed && node.nodeName == '#text' && node.textContent == '⬚')
         setSelection(sel, node, SELECTNODE)
     checkSimpleSup(node.parentElement.parentElement)
-    speechSel(sel)
+    //speechSel(sel)
 })
 
 function selectMathZone() {
@@ -2879,6 +2960,7 @@ function getMathSelection() {
 
 output.addEventListener('keydown', function (e) {
     let key = e.key
+    keydownLast = key
 
     if (output.firstElementChild.nodeName == 'MJX-CONTAINER') {
         // MathJax is active. Copying the whole math zone is supported
@@ -2946,32 +3028,92 @@ output.addEventListener('keydown', function (e) {
 
     switch (key) {
         case 'ArrowRight':
-            e.preventDefault()
-            let anchorOffset
-            [node, offset, anchorNode, anchorOffset] = moveSelection(sel, e)
-            if (!node)
-                return
-            removeSelAttributes()
-            if (e.shiftKey && anchorNode) {
-                if (testing)                // (else done by onSelectionChange())
-                    setSelAttributes(anchorNode, 'selanchor', anchorOffset,
-                        node, 'selfocus', offset)
-                sel.setBaseAndExtent(anchorNode, anchorOffset, node, offset)
+            // Most math-zone fix-ups are made in checkMathSelection(). Some
+            // need to be done here before or instead of the default behavior.
+            // The default behavior moves to an element with a visible glyph,
+            // e.g., an <mi>, <mo>, <mn>, or <mtext> (childless elements).
+            // But for editing, we need to stop before elements with children
+            // like <mfrac>, <msup>, etc. And we need to stop at the ends of
+            // the children, such as the end of a numerator.
+            // Note: more code is needed to handle the pseudo-MathML function
+            // and n-ary objects which are emulated by <mrow> with intent
+            // properties).
+            if (offset) {
+                if (node.nodeName == '#text') {
+                    if (offset < node.textContent.length)
+                        return              // Run default behavior
+                    node = node.parentElement
+                }
+                if (offset == node.childElementCount) {
+                    if (node.nextElementSibling) {
+                        node = node.nextElementSibling
+                    } else {
+                        // Comes here for 'ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)' when IP follows sin⁡𝜃
+                        // TODO: should speak 'end of denominator'
+                        e.preventDefault()
+                        node = node.parentElement
+                        if (e.shiftKey)
+                            setAnchorAndFocus(sel, sel.anchorNode, sel.anchorOffset, node, node.childElementCount)
+                        else
+                            sel = setSelection(sel, node, node.childElementCount)
+                    }
+                }
+                if (isMathMLObject(node.parentElement)) {
+                    if (!node.nextElementSibling)
+                        node = node.parentElement
+                    if (node.nextElementSibling) {
+                        e.preventDefault()
+                        node = node.nextElementSibling
+                        if (node.nodeName == 'mrow')
+                            node = node.firstElementChild
+                        if (e.shiftKey)
+                            setAnchorAndFocus(sel, sel.anchorNode, sel.anchorOffset, node, 1)
+                        else
+                            sel = setSelection(sel, node, 0)
+                    }
+                }
             } else {
-                if (testing)
-                    setSelAttributes(node, 'selanchor', offset)
-                setSelection(sel, node, offset)
+                if (!node.childElementCount) {
+                    if (node.nodeName == '#text')
+                        node = node.parentElement
+                    if (!node.nextElementSibling) {
+                        if (node.parentElement.nodeName == 'mrow') {
+                            node = node.parentElement
+                            let intent = node.getAttribute('intent')
+                            if (intent == ':function') {
+                                e.preventDefault()
+                                speak('end of function')
+                                if (e.shiftKey)
+                                    setAnchorAndFocus(sel, sel.anchorNode, sel.anchorOffset, node, node.childElementCount)
+                                else
+                                    sel = setSelection(sel, node, node.childElementCount)
+                            }
+                        }
+                    } else if (!isMathMLObject(node.parentElement) &&
+                        isMathMLObject(node.nextElementSibling)) {
+                        // Moving from childless element to MathML element
+                        // as for moving past '=' in '=1/√(𝑎²−𝑏²)'
+                        e.preventDefault()
+                        node = node.nextElementSibling
+                        if (e.shiftKey)
+                            setAnchorAndFocus(sel, sel.anchorNode, sel.anchorOffset, node, 0)
+                        else
+                            sel = setSelection(sel, node, 0)
+                    }
+                } else if (isMathMLObject(node)) {
+                    // Happens moving into square root, e.g., for '√(𝑎²−𝑏²)'.
+                    // Default moves to '𝑎' but should only move to '𝑎²'
+                    e.preventDefault()
+                    removeSelAttributes()
+                    node = node.firstElementChild
+                    if (node.nodeName == 'mrow')
+                        node = node.firstElementChild
+                    sel = setSelection(sel, node, 0)
+                }
             }
-            if (testing)
-                return
-            sel = window.getSelection()
-            console.log(
-                "sel.anchorNode.nodeName = " + sel.anchorNode.nodeName + ', ' + sel.anchorOffset + '\n' +
-                "sel.focusNode.nodeName = " + sel.focusNode.nodeName + ', ' + sel.focusOffset)
             return
-
         case 'ArrowLeft':
-            return;                     // Do default for now
+            return                          // TODO: fix-ups
 
         case 'Backspace':
             e.preventDefault()

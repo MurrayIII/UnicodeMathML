@@ -483,6 +483,8 @@ function getCch(chars, i) {
 function getCh(str, i) {
     // Get BMP character or surrogate pair at offset i
     let m = str.codePointAt(i);
+    if (isTrailSurrogate(m))
+        m = str.codePointAt(i - 1)
     return String.fromCodePoint(m);
 }
 
