@@ -454,7 +454,8 @@ function isMathMLObject(value, ignoreIntent) {
             // Conversions to speech, braille, and UnicodeMath ignore
             // parenthesizing due to <mrow> intent values
             let intent = value.getAttribute('intent')
-            if (intent == ':function' || intent == ':fenced' || intent.startsWith(':integral'))
+            if (intent == ':function' || intent == ':fenced' || intent.startsWith(':integral') ||
+                intent.startsWith('binomial-coefficient'))
                 return true
         }
         if (value.childElementCount == 1)
@@ -3326,6 +3327,7 @@ function mtransform(dsty, puast) {
             ? ret[0] : {mrow: withAttrs(arg, ret)}
     }
 
+    let i
     var key = k(puast);
     var value = v(puast);
     if (value && !value.arg && puast.hasOwnProperty("arg"))
@@ -3417,10 +3419,12 @@ function mtransform(dsty, puast) {
             var attrs = getAttrs(value, str);
             return {mtable: withAttrs(attrs, value)};
         case "mrows":
-            return value.map(r => ({mtr: noAttr(mtransform(dsty, r))}));
+            i = 1
+            return value.map(r => ({mtr: withAttrs({row: i++}, mtransform(dsty, r))}));
         case "mrow":
             // note that this is a matrix row, not a mathml <mrow>
-            return value.map(c => ({mtd: noAttr(mtransform(dsty, c))}));
+            i = 1
+            return value.map(c => ({mtd: withAttrs({col: i++}, mtransform(dsty, c))}));
         case "mcol":
             return mtransform(dsty, value);
 

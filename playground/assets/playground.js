@@ -186,6 +186,14 @@ function getChildIndex(node, nodeP) {
     return iChild
 }
 
+function setSelectionEx(sel, node, offset, e) {
+    e.preventDefault()
+    if (e.shiftKey)
+        sel.setBaseAndExtent(sel.anchorNode, sel.anchorOffset, node, offset)
+    else
+        sel.setBaseAndExtent(node, offset, node, offset)
+}
+
 function setSelection(sel, node, offset, nodeFocus, offsetFocus) {
     if (!sel)
         sel = window.getSelection()
@@ -1346,15 +1354,29 @@ function speechSel(sel) {
         speak(ch[sel.anchorOffset])
 }
 
-function checkTable(node) {
-    let unit = 'row'
-    let intent = getIntent(node.parentElement);
+function getTableRowName(node) {
+    let name = 'row'
+    let intent = node.parentElement.getAttribute('intent')
+
     if (intent == ':equations') {
-        intent = getIntent(node.parentElement.parentElement)
-        unit = intent == ':cases' ? 'case' : 'equation';
+        intent = node.parentElement.parentElement.getAttribute('intent')
+        name = intent == ':cases' ? 'case' : 'equation'
+    }
+    return name
+}
+
+function checkTable(node) {
+    // On entry, node is an <mtr>. Speak the kind of table row and return
+    // the row's first element child
+    let unit = 'row'
+    let intent = node.parentElement.getAttribute('intent')
+
+    if (intent == ':equations') {
+        intent = node.parentElement.parentElement.getAttribute('intent')
+        unit = intent == ':cases' ? 'case' : 'equation'
     }
     speak('next ' + unit)
-    return node.firstElementChild;
+    return node.firstElementChild
 }
 
 function getNaryOp(node) {
@@ -1871,44 +1893,54 @@ function checkMathSelection(sel) {
 
     if (node.childElementCount) {
         name = names[node.nodeName]
-    } else if (offset == sel.focusNode.textContent.length) {
-        if (node.parentElement.nodeName == 'mrow') {
-            if (node.nextElementSibling) {
-                // Remove extra stop between childless-element siblings
-                if (keydownLast == 'ArrowRight')
-                    node = node.nextElementSibling
-                else if (node.textContent.length > getCh(node.textContent, 0).length)
-                    return sel
-                if (node.nodeName == 'mrow')
-                    node = node.firstElementChild
-                if (offset != sel.anchorOffset) // Nondegenerate selection
-                    setAnchorAndFocus(sel, sel.anchorNode, sel.anchorOffset, node, 0)
-                else
-                    setAnchorAndFocus(sel, node, 0, node, 0)
-                name = getCh(node.textContent, 0)
-                let intent = node.getAttribute('intent')
-                if (isDoubleStruck(intent))
-                    name = intent
-            } else {
-                node = node.parentElement
-                if (isMathMLObject(node.parentElement)) {
+    } else {
+        if (sel.focusNode.nodeName == '#text') {
+            if (offset == sel.focusNode.textContent.length) {
+                if (node.parentElement.nodeName == 'mrow') {
+                    if (node.nextElementSibling) {
+                        // Remove extra stop between childless-element siblings
+                        if (keydownLast == 'ArrowRight')
+                            node = node.nextElementSibling
+                        else if (node.textContent.length > getCh(node.textContent, 0).length)
+                            return sel
+                        if (node.nodeName == 'mrow')
+                            node = node.firstElementChild
+                        if (offset != sel.anchorOffset) // Nondegenerate selection
+                            setAnchorAndFocus(sel, sel.anchorNode, sel.anchorOffset, node, 0)
+                        else
+                            setAnchorAndFocus(sel, node, 0, node, 0)
+                        name = getCh(node.textContent, 0)
+                        let intent = node.getAttribute('intent')
+                        if (isDoubleStruck(intent))
+                            name = intent
+                    } else {
+                        node = node.parentElement
+                        if (isMathMLObject(node.parentElement)) {
+                            name = getArgName(node)
+                            if (name)
+                                name = 'end of ' + name
+                        }
+                    }
+                } else if (isMathMLObject(node.parentElement)) {
                     name = getArgName(node)
                     if (name)
                         name = 'end of ' + name
                 }
+            } else {
+                name = resolveSymbols(getCh(node.textContent, offset))
             }
-        } else if (isMathMLObject(node.parentElement)) {
-            name = getArgName(node)
-            if (name)
-                name = 'end of ' + name
+        } else if (!offset) {               // Childless element
+            // If offset is at end of childless element, speech occurs
+            // earlier, e.g., for end of numerator
+            let text = node.textContent
+            if (text)
+                name = resolveSymbols(getCh(text, 0))
         }
-    } else if (offset < sel.focusNode.textContent.length) {
-        name = resolveSymbols(getCh(node.textContent, offset))
     }
     let intent = node.getAttribute('intent')
     if (isDoubleStruck(intent))
         name = intent
-    if (name)
+    if (name && name != 'matrix')
         speak(name)
 
     if (sel.isCollapsed)
@@ -2349,6 +2381,162 @@ function getArgName(node) {
     return name
 }
 
+function moveRight(sel, node, offset, e) {
+    // Some right-arrow fix-ups are made in checkMathSelection(). Some need
+    // to be made here before or instead of the default right-arrow behavior.
+    // The default behavior moves to an element with a visible glyph, e.g.,
+    // an <mi>, <mo>, <mn>, or <mtext> (childless elements). But for editing,
+    // we need to stop before elements with children like <mfrac>, <msup>,
+    // etc. And we need to stop at the ends of the children, such as at the
+    // end of a numerator.
+    let intent, name
+
+    if (offset) {
+        if (node.nodeName == '#text') {
+            if (offset < node.textContent.length)
+                return              // Run default behavior
+            node = node.parentElement
+        }
+        if (offset == node.childElementCount) {
+            if (node.nextElementSibling) {
+                node = node.nextElementSibling
+            } else {
+                // Comes here for 'ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)' when IP follows sin⁡𝜃.
+                // Should say 'end of denominator'
+                node = node.parentElement
+                name = getArgName(node)
+                if (name)
+                    speak('end of ' + name)
+                setSelectionEx(sel, node, node.childElementCount, e)
+            }
+        }
+        name = node.parentElement.nodeName
+        if (isMathMLObject(node.parentElement) ||
+            name == 'mrow' && isMathMLObject(node.parentElement.parentElement)) {
+            if (name == 'mrow')
+                node = node.parentElement
+            if (!node.nextElementSibling)
+                node = node.parentElement
+            if (node.nextElementSibling) {
+                intent = node.parentElement.getAttribute('intent')
+                node = node.nextElementSibling
+                let arg = node.getAttribute('arg')
+                if (arg == 'naryand') {
+                    name = 'n aryand'
+                    if (intent) {
+                        if (intent.indexOf('integral') != -1)
+                            name = 'int-agrand' // Convince speech to say integrand
+                        else if (intent.indexOf('sum') != -1)
+                            name = 'summand'
+                    }
+                    speak(name)
+                } else if (node.nodeName == 'mrow') {
+                    node = node.firstElementChild
+                }
+                setSelectionEx(sel, node, 0, e)
+            }
+        }
+    } else {
+        if (!node.childElementCount) {
+            if (node.nodeName == '#text')
+                node = node.parentElement
+            if (!node.nextElementSibling) {
+                if (node.parentElement.nodeName == 'mrow') {
+                    node = node.parentElement
+                    let intent = node.getAttribute('intent')
+                    if (intent == ':function') {
+                        speak('end of function')
+                        setSelectionEx(sel, node, node.childElementCount, e)
+                        return
+                    }
+                }
+                let nodeP = node.parentElement
+                if (nodeP.nodeName == 'mtd') {
+                    name = 'element'
+                    let nameT = getTableRowName(nodeP.parentElement)
+                    if (nameT == 'row') {
+                        let col = nodeP.getAttribute('col')
+                        let row = nodeP.parentElement.getAttribute('row')
+                        name += ' ' + row + ' ' + col
+                    } else if (!nodeP.nextElementSibling) {
+                        name = nameT
+                    }
+                    offset = node.childElementCount ? node.childElementCount : 1
+                    speak('end ' + name)
+                    setSelectionEx(sel, node, offset, e)
+                }
+            } else if ((!isMathMLObject(node.parentElement) || node.parentElement.nodeName == 'mrow') &&
+                isMathMLObject(node.nextElementSibling)) {
+                // Moving from childless element to MathML element with
+                // children as for moving past '=' in '=1/√(𝑎²−𝑏²)'
+                node = node.nextElementSibling
+                if (node.nodeName == 'mrow') {
+                    intent = node.getAttribute('intent')
+                    if (intent) {
+                        name = ''
+                        if (intent == ':function')
+                            name = 'function'
+                        else if (intent.startsWith('binomial-coefficient'))
+                            name = 'binomial-coefficient'
+                        else if (intent == ':fenced')
+                            name = 'fenced'
+                        if (name)
+                            speak(name)
+                    }
+                }
+                setSelectionEx(sel, node, 0, e)
+            } else if (node.nextElementSibling.nodeName == 'mtable') {
+                node = node.nextElementSibling
+                intent = node.getAttribute('intent')
+                if (!intent)
+                    intent = 'array'
+                else if (intent[0] == ':') {
+                    intent = intent.substring(1)
+                    let i = intent.indexOf('(')
+                    let prefix = ''
+                    if (i != -1) {
+                        prefix = intent.substring(i + 1, intent.length - 1)
+                        prefix = prefix.replace(',', ' by ')
+                        intent = prefix + ' ' + intent.substring(0, i)
+                    }
+                }
+                speak(intent)
+                setTimeout(function () { }, 1000)
+                setSelectionEx(sel, node, 0, e)
+            } else if (!node.childNodes.length) {   // 'malignmark' or 'maligngroup'
+                speak('ampersand')
+                node = node.nextElementSibling
+            }
+        } else if (isMathMLObject(node) || node.nodeName == 'mrow' ||
+            node.nodeName == 'mtable') {
+            // Happens moving into square root, e.g., for '√(𝑎²−𝑏²)'.
+            // Default moves to '𝑎' but should only move to '𝑎²'
+            e.preventDefault()
+            removeSelAttributes()
+            node = node.firstElementChild
+            if (node.nodeName == 'mrow') {
+                intent = node.getAttribute('intent')
+                if (intent) {
+                    if (intent.startsWith('binomial-coefficient'))
+                        name = 'binomial coefficient'
+                    else if (intent == ':fenced')
+                        name = 'fenced'
+                    if (name)
+                        speak(name)
+                    setTimeout(function () { }, 1000)
+                }
+                node = node.firstElementChild
+            } else if (node.nodeName == 'mtr') {
+                node = node.firstElementChild.firstElementChild
+                if (!node.childNodes.length) {   // 'malignmark' or 'maligngroup'
+                    node = node.nextElementSibling
+                    speak('ampersand')
+                }
+            }
+            sel = setSelection(sel, node, 0)
+        }
+    }
+}
 function moveSelection(sel, e) {
     // Starting with the focus node-offset pair, find the next pair implied by
     // a [Shift+]→ command. Speak what's there and return the pair so found.
@@ -3028,89 +3216,7 @@ output.addEventListener('keydown', function (e) {
 
     switch (key) {
         case 'ArrowRight':
-            // Most math-zone fix-ups are made in checkMathSelection(). Some
-            // need to be done here before or instead of the default behavior.
-            // The default behavior moves to an element with a visible glyph,
-            // e.g., an <mi>, <mo>, <mn>, or <mtext> (childless elements).
-            // But for editing, we need to stop before elements with children
-            // like <mfrac>, <msup>, etc. And we need to stop at the ends of
-            // the children, such as the end of a numerator.
-            // Note: more code is needed to handle the pseudo-MathML function
-            // and n-ary objects which are emulated by <mrow> with intent
-            // properties).
-            if (offset) {
-                if (node.nodeName == '#text') {
-                    if (offset < node.textContent.length)
-                        return              // Run default behavior
-                    node = node.parentElement
-                }
-                if (offset == node.childElementCount) {
-                    if (node.nextElementSibling) {
-                        node = node.nextElementSibling
-                    } else {
-                        // Comes here for 'ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)' when IP follows sin⁡𝜃
-                        // TODO: should speak 'end of denominator'
-                        e.preventDefault()
-                        node = node.parentElement
-                        if (e.shiftKey)
-                            setAnchorAndFocus(sel, sel.anchorNode, sel.anchorOffset, node, node.childElementCount)
-                        else
-                            sel = setSelection(sel, node, node.childElementCount)
-                    }
-                }
-                if (isMathMLObject(node.parentElement)) {
-                    if (!node.nextElementSibling)
-                        node = node.parentElement
-                    if (node.nextElementSibling) {
-                        e.preventDefault()
-                        node = node.nextElementSibling
-                        if (node.nodeName == 'mrow')
-                            node = node.firstElementChild
-                        if (e.shiftKey)
-                            setAnchorAndFocus(sel, sel.anchorNode, sel.anchorOffset, node, 1)
-                        else
-                            sel = setSelection(sel, node, 0)
-                    }
-                }
-            } else {
-                if (!node.childElementCount) {
-                    if (node.nodeName == '#text')
-                        node = node.parentElement
-                    if (!node.nextElementSibling) {
-                        if (node.parentElement.nodeName == 'mrow') {
-                            node = node.parentElement
-                            let intent = node.getAttribute('intent')
-                            if (intent == ':function') {
-                                e.preventDefault()
-                                speak('end of function')
-                                if (e.shiftKey)
-                                    setAnchorAndFocus(sel, sel.anchorNode, sel.anchorOffset, node, node.childElementCount)
-                                else
-                                    sel = setSelection(sel, node, node.childElementCount)
-                            }
-                        }
-                    } else if (!isMathMLObject(node.parentElement) &&
-                        isMathMLObject(node.nextElementSibling)) {
-                        // Moving from childless element to MathML element
-                        // as for moving past '=' in '=1/√(𝑎²−𝑏²)'
-                        e.preventDefault()
-                        node = node.nextElementSibling
-                        if (e.shiftKey)
-                            setAnchorAndFocus(sel, sel.anchorNode, sel.anchorOffset, node, 0)
-                        else
-                            sel = setSelection(sel, node, 0)
-                    }
-                } else if (isMathMLObject(node)) {
-                    // Happens moving into square root, e.g., for '√(𝑎²−𝑏²)'.
-                    // Default moves to '𝑎' but should only move to '𝑎²'
-                    e.preventDefault()
-                    removeSelAttributes()
-                    node = node.firstElementChild
-                    if (node.nodeName == 'mrow')
-                        node = node.firstElementChild
-                    sel = setSelection(sel, node, 0)
-                }
-            }
+            moveRight(sel, node, offset, e)
             return
         case 'ArrowLeft':
             return                          // TODO: fix-ups
