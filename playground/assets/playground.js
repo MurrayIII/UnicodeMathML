@@ -160,7 +160,8 @@ function shadeArgNode() {
             node = node.parentElement
         for (; node && node.nodeName[0] == 'm' && node.nodeName != 'math';
             node = node.parentElement) {
-            if (isMathMLObject(node.parentElement)) {
+            if (isMathMLObject(node.parentElement) || !node.childElementCount &&
+                node.textContent.length > getCch(node.textContent, 0)) {
                 node.setAttribute('mathbackground', '#666')
                 shadedArgNode = node
                 return
@@ -1889,7 +1890,8 @@ function checkMathSelection(sel) {
             return sel                      // Already set
     }
     let name
-    console.log('node, offset = ' + node.nodeName + ', ' + offset)
+    if(!testing)
+        console.log('node, offset = ' + node.nodeName + ', ' + offset)
 
     if (node.childElementCount) {
         name = names[node.nodeName]
@@ -3681,6 +3683,8 @@ function getCodePoints() {
                         symbol = '\\' + anCode + chFolded
                 } else {
                     symbol = c
+                    if (c == '"')
+                        symbol = '&#x0022'
                 }
             }
             tooltip = symbol + "<hr>" + tooltip

@@ -573,6 +573,7 @@ var controlWords = {
     // with the Microsoft math autocorrect list. For a more complete list, see
     // https://ctan.math.utah.edu/ctan/tex-archive/macros/unicodetex/latex/unicode-math/unimath-symbols.pdf
                                 // Unicode code point
+    'Angstrom':         'Å',   // 212B
     'Bar':              '̿',	// 033F
     'Bmatrix':          'Ⓢ',	// 24C8
     'Bumpeq':           '≎',    	// 224E
@@ -4116,9 +4117,38 @@ function pretty(mast) {
                 // where a set number of nodes on one level is required
                 return pretty({mrow: {attributes: attributes, content: value[0]}});
             }
-            if (!Array.isArray(value) && Object.keys(attributes).length == 0)
+            if (Array.isArray(value) && (!attributes.intent ||
+                    attributes.intent != ':fenced')) {
+                // Unless this mrow has the ':fenced' attribute, move the
+                // children of attributeless-mrow children up into this mrow
+                // after removing the parents.
+                for (let j = 0; j < value.length; j++) {
+                    let node = value[j]
+                    if (node.mrow) {
+                        let attrs = a(node)
+                        if (!Object.keys(attrs).length) {
+                            // No attributes: replace mrow by its children
+                            let c = node.mrow.content.length // Count of grandchildren
+                            let arr = value.splice(j, 1)     // Grandchildren
+                            let jT = -2
+                            for (let i = 0; i < c; i++) {
+                                let nodeG = arr[0].mrow.content[i]
+                                value.splice(j++, 0, nodeG)  // Insert next grandchild
+                                if (jT == -2 && nodeG.mrow) {
+                                    attrs = a(nodeG)         // Attributeless mrow?
+                                    if (!Object.keys(attrs).length)
+                                        jT = j - 1           // Index of mrow to check
+                                }
+                            }
+                            j--             // Added c children after deleting 1 mrow
+                            if (jT != -2)   // At least 1 mrow grandchild moved up
+                                j = jT - 1  // Continue with first one
+                        }
+                    }
+                }
+            } else if (!Object.keys(attributes).length) {
                 return pretty(value);
-
+            }
             return tag(key, attributes, pretty(value));
 
         case "mfenced":
