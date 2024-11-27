@@ -3420,12 +3420,10 @@ function mtransform(dsty, puast) {
             var attrs = getAttrs(value, str);
             return {mtable: withAttrs(attrs, value)};
         case "mrows":
-            i = 1
-            return value.map(r => ({mtr: withAttrs({row: i++}, mtransform(dsty, r))}));
+            return value.map(r => ({mtr: noAttr(mtransform(dsty, r))}));
         case "mrow":
             // note that this is a matrix row, not a mathml <mrow>
-            i = 1
-            return value.map(c => ({mtd: withAttrs({col: i++}, mtransform(dsty, c))}));
+            return value.map(c => ({mtd: noAttr(mtransform(dsty, c))}));
         case "mcol":
             return mtransform(dsty, value);
 

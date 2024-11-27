@@ -160,8 +160,8 @@ function shadeArgNode() {
             node = node.parentElement
         for (; node && node.nodeName[0] == 'm' && node.nodeName != 'math';
             node = node.parentElement) {
-            if (isMathMLObject(node.parentElement) || !node.childElementCount &&
-                node.textContent.length > getCch(node.textContent, 0)) {
+            if (isMathMLObject(node.parentElement) || node.parentElement.nodeName == 'mtd' ||
+                !node.childElementCount && node.textContent.length > getCch(node.textContent, 0)) {
                 node.setAttribute('mathbackground', '#666')
                 shadedArgNode = node
                 return
@@ -2457,8 +2457,9 @@ function moveRight(sel, node, offset, e) {
                     name = 'element'
                     let nameT = getTableRowName(nodeP.parentElement)
                     if (nameT == 'row') {
-                        let col = nodeP.getAttribute('col')
-                        let row = nodeP.parentElement.getAttribute('row')
+                        let nodePP = nodeP.parentElement
+                        let col = getChildIndex(nodeP, nodePP) + 1
+                        let row = getChildIndex(nodePP, nodePP.parentElement) + 1
                         name += ' ' + row + ' ' + col
                     } else if (!nodeP.nextElementSibling) {
                         name = nameT
