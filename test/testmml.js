@@ -471,7 +471,7 @@ function buildUp(uMath, uMathPartial) {
             let result = getUnicodeMath(output.firstElementChild, true)
             if (result != uMathPartial[j]) {
                 console.log('test ' + j + ': key = \'' + event.key + '\', expect: ' + unicodeMathPartial[j] + '\n');
-                console.log("Result: " + result + '\n\n')
+                console.log("Result: " + result + '\n')
             } else {
                 iSuccess++
             }
@@ -505,7 +505,7 @@ const unicodeMathPartial = [                            // test
     "1Ⓐ(1)\\/",                                        // 1
     "1\\/Ⓐ(1)2",                                       // 2
     "1\\/2Ⓐ(1)𝜋",                                      // 3
-    "Ⓐ(2) 1/2𝜋",                                       // 4
+    "1/2𝜋 Ⓐ()",                                        // 4
     "1/2𝜋 Ⓐ(1)∫",                                      // 5
     "1/2𝜋 ∫Ⓐ(1)_",                                     // 6
     "1/2𝜋 ∫_Ⓐ(1)0",                                    // 7
@@ -513,7 +513,7 @@ const unicodeMathPartial = [                            // test
     "1/2𝜋 ∫_0^Ⓐ(1)2",                                  // 9
     "1/2𝜋 ∫_0^2Ⓐ(1)⬌",                                // 10
     "1/2𝜋 ∫_0^2⬌Ⓐ(1)𝜋",                               // 11
-    "1/2𝜋 Ⓐ(3)∫_0^2⬌𝜋",                               // 12
+    "1/2𝜋 ∫_0^2⬌𝜋 Ⓐ()",                               // 12
     "1/2𝜋 ∫_0^2⬌𝜋 Ⓐ(1)ⅆ",                             // 13
     "1/2𝜋 ∫_0^2⬌𝜋 ⅆⒶ(1)𝜃",                            // 14
     "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃Ⓐ(1)\\/",                         // 15
@@ -641,7 +641,7 @@ function testAutoBuildUp() {
 
 const clipExpect = "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mfrac><mi>𝑎</mi><mi>𝑏</mi></mfrac><mo>+</mo><mfrac><mi>𝑐</mi><mi>𝑑</mi></mfrac></math>"
 const homeExpect = "Ⓐ() 𝑎/𝑏+𝑐/𝑑=0"
-const endExpect = "𝑎/𝑏+𝑐/𝑑=Ⓐ(1)0"
+const endExpect = "𝑎/𝑏+𝑐/𝑑=0 Ⓐ()"
 const rightArrowExpect = ['Ⓐ()𝑎/𝑏+𝑐/𝑑=0', 'Ⓐ(1)𝑎/𝑏+𝑐/𝑑=0', '𝑎/Ⓐ()𝑏+𝑐/𝑑=0',
     '𝑎/Ⓐ(1)𝑏+𝑐/𝑑=0', '𝑎/𝑏 Ⓐ()+𝑐/𝑑=0', '𝑎/𝑏+Ⓐ() 𝑐/𝑑=0', '𝑎/𝑏+Ⓐ()𝑐/𝑑=0',
     '𝑎/𝑏+Ⓐ(1)𝑐/𝑑=0', '𝑎/𝑏+𝑐/Ⓐ()𝑑=0', '𝑎/𝑏+𝑐/Ⓐ(1)𝑑=0', '𝑎/𝑏+𝑐/𝑑 Ⓐ()=0',
@@ -718,15 +718,17 @@ function testHotKeys() {
     input.dispatchEvent(event)
     setTimeout(function () { }, 50)
     event.key = 'c'
+    useMfenced = true
     output.dispatchEvent(event)
+    useMfenced = false
     setTimeout(function () { }, 200)
 
     navigator.clipboard.readText()
         .then((clipText) => {
             if (clipText == clipExpect) {
                 console.log('Output Ctrl+c succeeded')
-                pasteMathML(clipText, output.firstElementChild.firstElementChild, 0)
-                if (output.firstElementChild.outerHTML != '<math display=\"block\"><mrow><mfrac selanchor=\"2\"><mi>𝑐</mi><mi>𝑑</mi></mfrac><mo>+</mo><mfrac><mi>𝑎</mi><mi>𝑏</mi></mfrac><mfrac><mi>𝑎</mi><mi>𝒃</mi></mfrac><mo>+</mo><mfrac><mi>𝑐</mi><mi>𝑑</mi></mfrac><mo>=</mo><mn>0</mn></mrow></math>')
+                pasteMathML(clipText, output.firstElementChild, 0)
+                if (output.firstElementChild.outerHTML != '<math display=\"block\"><mfrac selanchor=\"2\"><mi>𝑐</mi><mi>𝑑</mi></mfrac><mo>+</mo><mfrac><mi>𝑎</mi><mi>𝑏</mi></mfrac><mfrac><mi>𝑎</mi><mi>𝒃</mi></mfrac><mo>+</mo><mfrac><mi>𝑐</mi><mi>𝑑</mi></mfrac><mo>=</mo><mn>0</mn></math>')
                     console.log(output.firstElementChild.outerHTML)
             } else {
                 console.log('Output Ctrl+c failed: clipText = ' + clipText)
@@ -749,10 +751,10 @@ function testHotKeys() {
     testOutputHotKey('a', 'Ⓐ()Ⓕ(6) 𝑎²+𝑏²=𝑐² ')
 
     // Test output context menu
-    testOutputContextMenu('Pythagorean theorem', '<math display=\"block\" intent=\"Pythagorean theorem\"><mrow selanchor=\"0\" selfocus=\"6\"><msup><mi>𝑎</mi><mn>2</mn></msup><mo>+</mo><msup><mi>𝑏</mi><mn>2</mn></msup><mo>=</mo><msup><mi>𝑐</mi><mn>2</mn></msup><mo> </mo></mrow></math>')
+    testOutputContextMenu('Pythagorean theorem', '<math display=\"block\" selanchor=\"0\" selfocus=\"6\" intent=\"Pythagorean theorem\"><msup><mi>𝑎</mi><mn>2</mn></msup><mo>+</mo><msup><mi>𝑏</mi><mn>2</mn></msup><mo>=</mo><msup><mi>𝑐</mi><mn>2</mn></msup><mo> </mo></math>')
     let sel = window.getSelection()
     setSelection(sel, output.firstElementChild, SELECTNODE)
-    testOutputContextMenu('arg=arg', '<math display=\"block\" intent=\"Pythagorean theorem\" arg=\"arg\"><mrow selanchor=\"0\" selfocus=\"6\"><msup><mi>𝑎</mi><mn>2</mn></msup><mo>+</mo><msup><mi>𝑏</mi><mn>2</mn></msup><mo>=</mo><msup><mi>𝑐</mi><mn>2</mn></msup><mo> </mo></mrow></math>')
+    testOutputContextMenu('arg=arg', '<math display=\"block\" selanchor=\"0\" selfocus=\"6\" intent=\"Pythagorean theorem\" arg=\"arg\"><msup><mi>𝑎</mi><mn>2</mn></msup><mo>+</mo><msup><mi>𝑏</mi><mn>2</mn></msup><mo>=</mo><msup><mi>𝑐</mi><mn>2</mn></msup><mo> </mo></math>')
     testOutputHotKey('a', 'Ⓐ()Ⓕ(6) 𝑎²+𝑏²=𝑐² ')
     testOutputHotKey('Delete', 'Ⓐ()Ⓕ(1)⬚')
     let t = unicodemathml('𝑎/𝑏 Ⓐ(-0)+Ⓕ(2) 𝑐/𝑑=0', true)

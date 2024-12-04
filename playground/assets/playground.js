@@ -133,24 +133,6 @@ document.onselectionchange = () => {
     shadeArgNode()
 }
 
-function removeSuperfluousMrow(node) {
-    // The following doesn't work reliably when selection attributes are
-    // involved. Might be fixable...
-    //if (node && node.nodeName == 'mrow' && node.childElementCount == 1 &&
-    //    !node.attributes.length && node.firstElementChild.nodeName == 'mrow' &&
-    //    !node.firstElementChild.hasAttribute('intent')) {
-    //    let nodeP = node.parentElement
-
-    //    if (nodeP) {
-    //        // node is an attributeless mrow with a single child that's also
-    //        // an mrow. Replace the superfluous mrow node with its mrow child
-    //        nodeP.replaceChild(node.firstElementChild, node)
-    //        return nodeP.firstElementChild
-    //    }
-    //}
-    return node
-}
-
 function shadeArgNode() {
     // Shade MathML argument node containing the IP
     let sel = window.getSelection()
@@ -1608,14 +1590,15 @@ function insertNode(node, offset, nodeNew, nodeP) {
     if (node.textContent == '⬚') {
         // Replace empty arg place holder symbol with key
         nodeP.replaceChild(nodeNew, node)
-    } else if (node.nodeName == 'mrow') {
+    } else if (isMrowLike(node) && (node.nodeName != 'mrow' ||
+            !node.hasAttribute('intent'))) {
         if (atEnd || offset && offset == node.childElementCount)
             node.appendChild(nodeNew)
         else
             node.insertBefore(nodeNew, node.children[offset])
     } else if (!offset && !atEnd && node.nodeType == 1) {
         nodeP.insertBefore(nodeNew, node)
-    } else if (nodeP.nodeName == 'mrow') {
+    } else if (isMrowLike(nodeP)) {
         if (atEnd && offset) {
             if (node.nextElementSibling) {
                 nodeP.insertBefore(nodeNew, node.nextElementSibling)
@@ -1780,7 +1763,7 @@ function handleKeyboardInput(node, key, sel) {
             }
             break
         case 'mo':
-            if (nodeName == 'mi' && nodeP.nodeName == 'mrow') {
+            if (nodeName == 'mi' && isMrowLike(nodeP)) {
                 isFunction = checkFunction(nodeP)
             } else if (nodeName == 'mrow' && node.lastElementChild) {
                 if (node.lastElementChild.nodeName == 'mi') {
@@ -2076,6 +2059,7 @@ function deleteSelection(range) {
         nodeStart = nodeStart.parentElement
     if (nodeStart.nodeName == 'math') {
         outputUndoStack = ['']
+        removeSelAttributes(nodeStart)
         nodeStart.innerHTML = `<mi selanchor="0" selfocus="1">⬚</mi>`
         refreshDisplays('', true)
         return true
@@ -2270,7 +2254,7 @@ function checkEmpty(node, offset, uMath) {
 
 function checkAutoBuildUp(node, nodeP, key) {
     // Return new node if formula auto build up succeeds; else null
-    if (nodeP.nodeName != 'mrow' ||
+    if (!isMrowLike(nodeP) ||
         node.nodeName == 'mtext' && node.textContent[0] == '\\')
         return null
 
@@ -2335,7 +2319,7 @@ function checkAutoBuildUp(node, nodeP, key) {
                     let doc = parser.parseFromString(t.mathml, "application/xml");
                     nodeP.appendChild(doc.firstElementChild)
                 }
-                return removeSuperfluousMrow(nodeP)
+                return nodeP
             }
         }
     }
@@ -3094,7 +3078,7 @@ output.addEventListener("click", (e) => {
 })
 
 function selectMathZone() {
-    let node = output.firstElementChild.firstElementChild
+    let node = output.firstElementChild
     removeSelAttributes(node)
     setSelection(null, node, SELECTNODE)
     let offset = node.childElementCount ? node.childElementCount : 1
@@ -3313,18 +3297,11 @@ output.addEventListener('keydown', function (e) {
             node = output.firstElementChild
             if (node.nodeName != 'math' || node.firstElementChild.textContent == '⬚')
                 return
-            node = node.firstElementChild
             if (key == 'End') {
-                atEnd = true
-                while (node.nodeName == 'mrow') // UnicodeMath doesn't use <mrow>'s
-                    node = node.lastElementChild
-                offset = node.childElementCount ? node.childElementCount : 1
+                offset = node.childElementCount
             } else {
                 key = 'Start'
-                atEnd = false
                 offset = 0
-                while (node.nodeName == 'mrow')
-                    node = node.firstElementChild
             }
             if(!testing)
                 speak(key + ' of math zone')
@@ -3539,6 +3516,7 @@ output.addEventListener('keydown', function (e) {
                 node.setAttribute('selanchor', cChild ? cChild : 1)
             }
         } else {
+            setSelection(sel, node, node.childElementCount ? node.childElementCount : 1)
             handleKeyboardInput(node, key, sel)
         }
         refreshDisplays('', true)

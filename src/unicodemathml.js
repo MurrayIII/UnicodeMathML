@@ -191,6 +191,11 @@ function isMathML(unicodemath) {
            unicodemath.startsWith("<m:math");
 }
 
+function isMrowLike(node) {
+    return ['math', 'menclose', 'merror', 'mpadded', 'mphantom', 'mrow',
+        'mscarry', 'msqrt', 'mstyle', 'mtd'].includes(node.nodeName)
+}
+
 function isNary(op) {
     return '∑⅀⨊∏∐⨋∫∬∭⨌∮∯∰∱⨑∲∳⨍⨎⨏⨕⨖⨗⨘⨙⨚⨛⨜⨒⨓⨔⋀⋁⋂⋃⨃⨄⨅⨆⨀⨁⨂⨉⫿'.includes(op);
 }
@@ -233,7 +238,7 @@ function checkBrackets(node) {
     let vbar = false
     let k = -1                              // Index of final child not in
                                             //  partial build up
-    if (node.nodeName != 'mrow' || !cNode)
+    if (!isMrowLike(node) || !cNode)
         return 0
 
     for (let i = cNode - 1; i >= 0; i--) {
@@ -1217,7 +1222,6 @@ var cKeys = keys.length;
 
 function getPartialMatches(cw) {
     // Get array of control-word partial matches for autocomplete drop down
-    var cchCw = cw.length;
     var iMax = cKeys - 1;
     var iMid;
     var iMin = 0;
@@ -2407,8 +2411,6 @@ function preprocess(dsty, uast, index, arr) {
     if (!intent)
         intent = uast.intent;
     dsty.intent = dsty.arg = '';
-    let selanchor = ''
-    let selfocus = ''
 
     switch (key) {
         case "unicodemath":
@@ -3328,7 +3330,6 @@ function mtransform(dsty, puast) {
             ? ret[0] : {mrow: withAttrs(arg, ret)}
     }
 
-    let i
     var key = k(puast);
     var value = v(puast);
     if (value && !value.arg && puast.hasOwnProperty("arg"))
@@ -4102,8 +4103,6 @@ function pretty(mast) {
     var value = c(mast);
 
     switch (key) {
-        case "math":
-            return tag(key, attributes, pretty(value));
         case "mrow":
             // mrow elimination: ignore superfluous mrows, i.e. ones that
             // contain only a single child and have no attributes
@@ -4149,6 +4148,20 @@ function pretty(mast) {
             }
             return tag(key, attributes, pretty(value));
 
+        case "math":
+        case "menclose":
+        case "merror":
+        case "mphantom":
+        case "mpadded":
+        case "msqrt":
+        case "mscarry":
+        case "mstyle":
+        case "mtd":
+            let arg = pretty(value)
+            if (!Array.isArray(value) && arg.startsWith('<mrow>') && arg.endsWith('</mrow>'))
+                arg = arg.substring(6, arg.length - 7)
+            return tag(key, attributes, arg);
+
         case "mfenced":
         case "msubsup":
         case "msub":
@@ -4157,16 +4170,10 @@ function pretty(mast) {
         case "munder":
         case "mover":
         case "mfrac":
-        case "msqrt":
         case "mroot":
-        case "menclose":
-        case "mtd":
         case "mtr":
         case "mlabeledtr":
         case "mtable":
-        case "mphantom":
-        case "mpadded":
-        case "mstyle":
         case "mmultiscripts":
         case "mprescripts":
         case "none":
@@ -4192,10 +4199,16 @@ function pretty(mast) {
 ///////////////////////////
 
 function unary(node, op) {
-    let ret = dump(node.firstElementChild);
-    if (node.firstElementChild && node.firstElementChild.nodeName == 'mfrac')
-        ret = '(' + ret + ')';
-    return op + ret;
+    // unary elements have the implied-mrow property
+    let cNode = node.childElementCount
+    let ret = nary(node, '', cNode)
+
+    if (!op) {
+        ret = removeOuterParens(ret)
+    } else if (cNode > 1 || cNode == 1 && node.firstElementChild.nodeName == 'mfrac') {
+        ret = '(' + ret + ')'
+    }
+    return op + ret
 }
 
 function binary(node, op) {
@@ -4268,6 +4281,25 @@ function checkSelAttr(value, op) {
     return op + '(' + selattr + ')'
 }
 
+function removeOuterParens(ret) {
+    if (ret[0] == '(') {
+        // Remove outermost parens if they match one another. Needed
+        // to remove parentheses enclosing, e.g., 𝑎+𝑏 in ▭(2&𝑎+𝑏)
+        let cParen = 1
+        for (let i = 1; i < ret.length - 1; i++) {
+            if (ret[i] == '(')
+                cParen++
+            else if (ret[i] == ')')
+                cParen--
+            if (!cParen)
+                break                   // Balanced before final char
+        }
+        if (cParen == 1 && ret[ret.length - 1] == ')')
+            ret = ret.substring(1, ret.length - 1)
+    }
+    return ret
+}
+
 function isDigitArg(node) {
     if (!node || !node.lastElementChild)
         return false
@@ -4284,7 +4316,6 @@ function dump(value, noAddParens) {
     let cNode = value.nodeName == '#text' ? 1 : value.childElementCount
     let intent
     let ret = ''
-    let firstMaligngroup
 
     switch (value.localName) {
         case 'mtable':
@@ -4304,7 +4335,7 @@ function dump(value, noAddParens) {
                 value.firstElementChild.childElementCount == 2 &&
                 value.firstElementChild.firstElementChild.firstElementChild.nodeName == 'mtext') {
                 // Numbered equation: convert to UnicodeMath like 𝐸=𝑚𝑐²#(20)
-                ret = dump(value.firstElementChild.lastElementChild.firstElementChild) +
+                ret = dump(value.firstElementChild.lastElementChild) +
                     '#' + value.firstElementChild.firstElementChild.firstElementChild.textContent;
                 break;
             }
@@ -4348,7 +4379,7 @@ function dump(value, noAddParens) {
                     }
                 }
                 if (mask) {
-                    ret = dump(value.firstElementChild, true);
+                    ret = unary(value, '')
                     ret = '▭(' + (mask ^ 15) + '&' + ret + ')';
                     break;
                 }
@@ -4376,20 +4407,25 @@ function dump(value, noAddParens) {
                     op = '⇳';               // fPhantomZeroWidth
                 else if (mask == 12)
                     op = '⬄';              // fPhantomZeroAscent | fPhantomZeroDescent
-                ret = op ? op + dump(value.firstElementChild).substring(1)
-                    : '⟡(' + mask + '&' + dump(value.firstElementChild.firstElementChild, true) + ')';
-                break;
+                ret = dump(value.firstElementChild).substring(1)
+                ret = op ? op + ret
+                    : '⟡(' + mask + '&' + removeOuterParens(ret) + ')'
+                break
             }
             const opsShow = {2: '⬌', 4: '⬆', 8: '⬇', 12: '⬍'};
             op = opsShow[mask];
             mask |= 1;                      // fPhantomShow
 
-            ret = op ? unary(value, op)
-                : '⟡(' + mask + '&' + dump(value.firstElementChild, true) + ')';
-            break;
+            if (op) {
+                ret = unary(value, op)
+            } else {
+                ret = removeOuterParens(nary(value, '', cNode))
+                ret = '⟡(' + mask + '&' + ret + ')'
+            }
+            break
 
         case 'mstyle':
-            ret = dump(value.firstElementChild);
+            ret = nary(value, '', cNode)
             val = value.getAttribute('mathcolor')
             if(val)
                 ret = '✎(' + val + '&' + ret + ')';
@@ -4673,9 +4709,14 @@ function dump(value, noAddParens) {
     }
 
     if (selcode) {
-        if (cNode > 1)
-            selcode += ' '
-        ret = selcode + ret
+        if (value.localName == 'math' && selcode.length == 4 &&
+            selcode[2] == value.childElementCount) {
+            ret = ret + ' Ⓐ()'             // Insertion point at math-zone end
+        } else {
+            if (cNode > 1)
+                selcode += ' '
+            ret = selcode + ret
+        }
     }
 
     let mrowIntent = value.nodeName == 'mrow' && value.hasAttribute('intent')
