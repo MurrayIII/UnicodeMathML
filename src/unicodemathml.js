@@ -4081,6 +4081,35 @@ function tag(tagname, attribs, ...vals) {
     return `<${tagname}${attributes}>${values}</${tagname}>`;
 }
 
+function promoteAttributelessMrowChildren(value) {
+    // Move children of attributeless-mrow children up into this mrow-like
+    // element after removing the parents.
+    for (let j = 0; j < value.length; j++) {
+        let node = value[j]
+        if (node.mrow) {
+            let attrs = a(node)
+            if (!Object.keys(attrs).length) {
+                // No attributes: replace mrow by its children
+                let c = node.mrow.content.length // Count of grandchildren
+                let arr = value.splice(j, 1)     // Grandchildren
+                let jT = -2
+                for (let i = 0; i < c; i++) {
+                    let nodeG = arr[0].mrow.content[i]
+                    value.splice(j++, 0, nodeG)  // Insert next grandchild
+                    if (jT == -2 && nodeG.mrow) {
+                        attrs = a(nodeG)         // Attributeless mrow?
+                        if (!Object.keys(attrs).length)
+                            jT = j - 1           // Index of mrow to check
+                    }
+                }
+                j--                 // Added c children after deleting 1 mrow
+                if (jT != -2)       // At least 1 mrow grandchild moved up
+                    j = jT - 1      // Continue with first one
+            }
+        }
+    }
+}
+
 // pretty-print MathML AST
 function pretty(mast) {
 
@@ -4119,30 +4148,7 @@ function pretty(mast) {
                 // Unless this mrow has the ':fenced' attribute, move the
                 // children of attributeless-mrow children up into this mrow
                 // after removing the parents.
-                for (let j = 0; j < value.length; j++) {
-                    let node = value[j]
-                    if (node.mrow) {
-                        let attrs = a(node)
-                        if (!Object.keys(attrs).length) {
-                            // No attributes: replace mrow by its children
-                            let c = node.mrow.content.length // Count of grandchildren
-                            let arr = value.splice(j, 1)     // Grandchildren
-                            let jT = -2
-                            for (let i = 0; i < c; i++) {
-                                let nodeG = arr[0].mrow.content[i]
-                                value.splice(j++, 0, nodeG)  // Insert next grandchild
-                                if (jT == -2 && nodeG.mrow) {
-                                    attrs = a(nodeG)         // Attributeless mrow?
-                                    if (!Object.keys(attrs).length)
-                                        jT = j - 1           // Index of mrow to check
-                                }
-                            }
-                            j--             // Added c children after deleting 1 mrow
-                            if (jT != -2)   // At least 1 mrow grandchild moved up
-                                j = jT - 1  // Continue with first one
-                        }
-                    }
-                }
+                promoteAttributelessMrowChildren(value)
             } else if (!Object.keys(attributes).length) {
                 return pretty(value);
             }
@@ -4157,8 +4163,12 @@ function pretty(mast) {
         case "mscarry":
         case "mstyle":
         case "mtd":
+            if (Array.isArray(value)) {
+                promoteAttributelessMrowChildren(value)
+                return tag(key, attributes, pretty(value))
+            }
             let arg = pretty(value)
-            if (!Array.isArray(value) && arg.startsWith('<mrow>') && arg.endsWith('</mrow>'))
+            if (arg.startsWith('<mrow>') && arg.endsWith('</mrow>'))
                 arg = arg.substring(6, arg.length - 7)
             return tag(key, attributes, arg);
 

@@ -351,6 +351,8 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Ctrl+v pastes MathML (in text/plain slot) at the current output-window selection
 * Initial drag and drop capability copies the current output-window selection to the drop target
 * Help button pops up help for app
+* Shade MathML argument containing the insertion point
+* Eliminate more superfluous mrows and support mrow-like elements, such as math and msqrt, with multiple children without an enclosing mrow
 
 ## MathML intent-attribute support:
 * Derivative and partial-derivative intent attributes are defined for Leipzig and Euler derivative notations.
