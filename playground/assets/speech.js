@@ -9,7 +9,7 @@
 const symbolSpeechStrings = {
 	// This list includes speech strings for math symbols. In addition, it has
 	// some nonmath symbols used to represent connecting words like 'from' and
-	// 'to'. It is the principal list that needs to be localized. See also
+	// 'to'. It is the largest list that needs to be localized. See also
 	// ordinals and functions.
 	' ': 'space',
 	'!': 'factorial',
@@ -18,6 +18,7 @@ const symbolSpeechStrings = {
 	'(': 'open',
 	')': 'close',
 	',': 'comma',
+	'.': 'period',
 	'/': 'over',
 	'<': 'less than',
 	'>': 'greater than',

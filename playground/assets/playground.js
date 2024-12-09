@@ -250,7 +250,7 @@ function startDemo() {
         return;
     }
     nextEq();
-    demoID = setInterval(nextEq, 2000);     // Display next equation every 2 seconds
+    demoID = setInterval(nextEq, 3000);     // Display next equation every 3 seconds
     demoPause = false;                      // Not paused (pause by entering ' ')
     var demoEq = document.getElementById('demos');
     demoEq.style.backgroundColor = 'DodgerBlue'; // Show user demo mode is active
@@ -270,7 +270,7 @@ function nextEq() {
     const event = new Event('keydown');
     event.key = 'Enter';
     event.altKey = true;
-    input.dispatchEvent(event);
+    document.dispatchEvent(event);
     outputUndoStack = ['']
     draw();
 }
@@ -804,6 +804,7 @@ function opAutocorrect(ip, delim) {
     }
     return false;
 }
+
 input.addEventListener("keydown", function (e) {
     var x = document.getElementById(this.id + "autocomplete-list")
     if (handleAutocompleteKeys(x, e))
@@ -816,95 +817,16 @@ input.addEventListener("keydown", function (e) {
         undoTop.selStart = input.selectionStart
     }
     if (e.altKey) {
-        switch (e.key) {
-            case 'a':                       // Alt+a
-                document.getElementById("about").click()
-                return
-
-            case 'b':                       // Alt+b
-                // Braille MathML
-                e.preventDefault()
-                let mathML = isMathML(input.value)
-                    ? input.value
-                    : document.getElementById('output_source').innerText
-                let braille = MathMLtoBraille(mathML)
-                console.log('Math braille = ' + braille)
-                speechDisplay.innerText += '\n' + braille
-                return
-
-            case 'd':                       // Alt+d
-                // Toggle dictation mode on/off
-                e.preventDefault()
-                startDictation()
-                return
-
-            case 'Enter':                   // Alt+Enter
-                // Enter Examples[iExample] (see also Demo mode)
-                x = document.getElementById('Examples').childNodes[0]
-                input.value = x.childNodes[iExample].innerText
-                var cExamples = x.childNodes.length
-
-                iExample++                 // Increment for next time
-                if (iExample > cExamples - 1)
-                    iExample = 0
-                return
-
-            case 'h':                       // Alt+h
-                document.getElementById("help").click()
-                return
-
-            case 'm':                       // Alt+m
-                // Toggle Unicode and MathML in input display
-                e.preventDefault()
-                ksi = true
-                input.value = isMathML(input.value)
-                    ? MathMLtoUnicodeMath(input.value, true)
-                    : document.getElementById('output_source').innerText
-                draw()
-                return
-
-            case 'p':                       // Alt+p
-                // Presentation: toggle demo mode on/off
-                e.preventDefault()
-                startDemo()
-                return
-
-            case 's':                       // Alt+s
-                // Speak MathML
-                e.preventDefault()
-                if (speechSynthesis.speaking) {
-                    speechSynthesis.cancel()
-                } else {
-                    let mathML = isMathML(input.value)
-                        ? input.value
-                        : document.getElementById('output_source').innerText
-                    let speech = MathMLtoSpeech(mathML)
-                    console.log('Math speech = ' + speech)
-                    speechDisplay.innerText = '\n' + speech
-                    let utterance = new SpeechSynthesisUtterance(speech)
-                    if (voiceZira)
-                        utterance.voice = voiceZira
-                    speechSynthesis.speak(utterance)
-                }
-                return
-
-            case 't':                       // Alt+t
-                // MathML to Unicode [La]TeX
-                e.preventDefault()
-                mathTeX()
-                return
-
-            case 'x':                       // Alt+x
-                // Toggle between char code and char
-                e.preventDefault()
-                let cchSel = input.selectionEnd - input.selectionStart
-                let [ch, cchDel] = hexToUnicode(input.value, input.selectionEnd, cchSel)
-                let offsetStart = input.selectionEnd - cchDel
-                input.value = input.value.substring(0, offsetStart) + ch +
-                    input.value.substring(input.selectionEnd)
-                input.selectionStart = input.selectionEnd = offsetStart + ch.length
-                return
+        if (e.key == 'x') {                 // Alt+x: toggle between char code
+            e.preventDefault()              //  and char
+            let cchSel = input.selectionEnd - input.selectionStart
+            let [ch, cchDel] = hexToUnicode(input.value, input.selectionEnd, cchSel)
+            let offsetStart = input.selectionEnd - cchDel
+            input.value = input.value.substring(0, offsetStart) + ch +
+                input.value.substring(input.selectionEnd)
+            input.selectionStart = input.selectionEnd = offsetStart + ch.length
         }
+        return
     }
     if (e.ctrlKey) {
         switch (e.key) {
@@ -1393,10 +1315,10 @@ function checkSimpleSup(node) {
 }
 
 const names = {
-    'msup': 'superscript', 'msub': 'subscript', 'msubsup': 'subsoup',
-    'munder': 'modify below', 'mover': 'modify above', 'munderover': 'below above',
-    'mfrac': 'fraction', 'msqrt': 'square root', 'mtd': 'element',
-    'mtable': 'matrix'
+    'math': 'math', 'mfrac': 'fraction', 'mover': 'modify above',
+    'msub': 'subscript', 'msubsup': 'subsoup', 'msup': 'superscript',
+    'msqrt': 'square root', 'mtable': 'matrix', 'mtd': 'element',
+    'munder': 'modify below', 'munderover': 'below above',
 }
 
 function refreshDisplays(uMath, noUndo) {
@@ -1658,6 +1580,15 @@ function handleKeyboardInput(node, key, sel) {
     let nodeNewName = getMmlTag(key)
 
     if (node.nodeName == 'math') {
+        if (!sel.anchorOffset) {
+            removeSelAttributes(node)
+            let nodeNew = document.createElement(nodeNewName)
+            nodeNew.textContent = key
+            setSelAttributes(nodeNew, 'selanchor', '1')
+            node.insertBefore(nodeNew, node.firstElementChild)
+            refreshDisplays()
+            return
+        }
         if(!testing)
             console.log('Input at end of math zone')
         if (node.lastElementChild)
@@ -1872,16 +1803,30 @@ function checkMathSelection(sel) {
         if (selanchor == sel.anchorOffset && node == sel.anchorNode)
             return sel                      // Already set
     }
-    let name
+    let name = ''
     if(!testing)
         console.log('node, offset = ' + node.nodeName + ', ' + offset)
 
     if (node.childElementCount) {
-        name = names[node.nodeName]
+        if (node.nodeName == 'mrow') {
+            let intent = node.getAttribute('intent')
+            if (intent == ':function') {
+                name = 'function'
+            } else if (node.nextElementSibling) {
+                node = node.nextElementSibling
+                setSelection(sel, node, 0)
+                name = node.childElementCount
+                     ? names[node.nodeName] : node.textContent
+            }
+        } else {
+            name = names[node.nodeName]
+        }
+        if (name && offset == node.childElementCount)
+            name = 'end of ' + name
     } else {
         if (sel.focusNode.nodeName == '#text') {
             if (offset == sel.focusNode.textContent.length) {
-                if (node.parentElement.nodeName == 'mrow') {
+                if (isMrowLike(node.parentElement)) {
                     if (node.nextElementSibling) {
                         // Remove extra stop between childless-element siblings
                         if (keydownLast == 'ArrowRight')
@@ -1894,10 +1839,14 @@ function checkMathSelection(sel) {
                             setAnchorAndFocus(sel, sel.anchorNode, sel.anchorOffset, node, 0)
                         else
                             setAnchorAndFocus(sel, node, 0, node, 0)
-                        name = getCh(node.textContent, 0)
-                        let intent = node.getAttribute('intent')
-                        if (isDoubleStruck(intent))
-                            name = intent
+                        if (node.childElementCount) {
+                            name = names[node.nodeName]
+                        } else {
+                            name = getCh(node.textContent, 0)
+                            let intent = node.getAttribute('intent')
+                            if (isDoubleStruck(intent))
+                                name = intent
+                        }
                     } else {
                         node = node.parentElement
                         if (isMathMLObject(node.parentElement)) {
@@ -1923,9 +1872,19 @@ function checkMathSelection(sel) {
         }
     }
     let intent = node.getAttribute('intent')
-    if (isDoubleStruck(intent))
+    if (isDoubleStruck(intent)) {
         name = intent
-    if (name && name != 'matrix')
+    } else if (name) {
+        if (name == 'matrix')
+            name = ''
+        else if (name == 'math') {
+            if (keydownLast == 'ArrowLeft')
+                name = 'start of ' + name
+            else if (offset)
+                name = 'end of ' + name
+        }
+    }
+    if (name)
         speak(name)
 
     if (sel.isCollapsed)
@@ -2367,6 +2326,29 @@ function getArgName(node) {
     return name
 }
 
+function moveLeft(sel, node, offset, e) {
+    // Some left-arrow fix-ups are made in checkMathSelection(). Some need
+    // to be made here before or instead of the default left-arrow behavior.
+    // The default behavior moves to an element with a visible glyph, e.g.,
+    // an <mi>, <mo>, <mn>, or <mtext> (childless elements). But for editing,
+    // we need to stop before elements with children like <mfrac>, <msup>,
+    // etc. And we need to stop at the start of the children, such as at the
+    // end of a denominator. For now only enable going to start of math zone.
+    if (offset)
+        return
+    if (node.nodeName == '#text')
+        node = node.parentElement
+    if (node.previousElementSibling)
+        return                              // Use default
+    while (!node.previousElementSibling) {
+        node = node.parentElement
+        if (node.nodeName == 'math') {
+            setSelectionEx(sel, node, 0, e)
+            return
+        }
+    }
+}
+
 function moveRight(sel, node, offset, e) {
     // Some right-arrow fix-ups are made in checkMathSelection(). Some need
     // to be made here before or instead of the default right-arrow behavior.
@@ -2382,11 +2364,15 @@ function moveRight(sel, node, offset, e) {
             if (offset < node.textContent.length)
                 return              // Run default behavior
             node = node.parentElement
+            offset = 1
         }
-        if (offset == node.childElementCount) {
+        if (offset == node.childElementCount) { // (Excludes mi, mo, etc.)
             if (node.nextElementSibling) {
                 node = node.nextElementSibling
             } else {
+                if (node.nodeName == 'math')
+                    return                  // Already at end of math
+
                 // Comes here for 'ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)' when IP follows sin⁡𝜃.
                 // Should say 'end of denominator'
                 node = node.parentElement
@@ -2394,6 +2380,7 @@ function moveRight(sel, node, offset, e) {
                 if (name)
                     speak('end of ' + name)
                 setSelectionEx(sel, node, node.childElementCount, e)
+                return
             }
         }
         name = node.parentElement.nodeName
@@ -2401,127 +2388,135 @@ function moveRight(sel, node, offset, e) {
             name == 'mrow' && isMathMLObject(node.parentElement.parentElement)) {
             if (name == 'mrow')
                 node = node.parentElement
-            if (!node.nextElementSibling)
+            while (!node.nextElementSibling) {
                 node = node.parentElement
-            if (node.nextElementSibling) {
-                intent = node.parentElement.getAttribute('intent')
-                node = node.nextElementSibling
-                let arg = node.getAttribute('arg')
-                if (arg == 'naryand') {
-                    name = 'n aryand'
-                    if (intent) {
-                        if (intent.indexOf('integral') != -1)
-                            name = 'int-agrand' // Convince speech to say integrand
-                        else if (intent.indexOf('sum') != -1)
-                            name = 'summand'
-                    }
-                    speak(name)
-                } else if (node.nodeName == 'mrow') {
-                    node = node.firstElementChild
+                if (isMrowLike(node)) {
+                    setSelectionEx(sel, node, node.childElementCount, e)
+                    return
                 }
-                setSelectionEx(sel, node, 0, e)
             }
+            intent = node.parentElement.getAttribute('intent')
+            node = node.nextElementSibling
+            let arg = node.getAttribute('arg')
+            if (arg == 'naryand') {
+                name = 'n aryand'
+                if (intent) {
+                    if (intent.indexOf('integral') != -1)
+                        name = 'int-agrand' // Convince speech to say integrand
+                    else if (intent.indexOf('sum') != -1)
+                        name = 'summand'
+                }
+                speak(name)
+            } else if (node.nodeName == 'mrow') {
+                node = node.firstElementChild
+            }
+            setSelectionEx(sel, node, 0, e)
         }
-    } else {
-        if (!node.childElementCount) {
-            if (node.nodeName == '#text')
+        return
+    }   // if (offset) {}
+
+    if (!node.childElementCount) {
+        if (node.nodeName == '#text')
+            node = node.parentElement
+        if (!node.nextElementSibling) {
+            if (node.parentElement.nodeName == 'math') {
                 node = node.parentElement
-            if (!node.nextElementSibling) {
-                if (node.parentElement.nodeName == 'mrow') {
-                    node = node.parentElement
-                    let intent = node.getAttribute('intent')
-                    if (intent == ':function') {
-                        speak('end of function')
-                        setSelectionEx(sel, node, node.childElementCount, e)
-                        return
-                    }
-                }
-                let nodeP = node.parentElement
-                if (nodeP.nodeName == 'mtd') {
-                    name = 'element'
-                    let nameT = getTableRowName(nodeP.parentElement)
-                    if (nameT == 'row') {
-                        let nodePP = nodeP.parentElement
-                        let col = getChildIndex(nodeP, nodePP) + 1
-                        let row = getChildIndex(nodePP, nodePP.parentElement) + 1
-                        name += ' ' + row + ' ' + col
-                    } else if (!nodeP.nextElementSibling) {
-                        name = nameT
-                    }
-                    offset = node.childElementCount ? node.childElementCount : 1
-                    speak('end ' + name)
-                    setSelectionEx(sel, node, offset, e)
-                }
-            } else if ((!isMathMLObject(node.parentElement) || node.parentElement.nodeName == 'mrow') &&
-                isMathMLObject(node.nextElementSibling)) {
-                // Moving from childless element to MathML element with
-                // children as for moving past '=' in '=1/√(𝑎²−𝑏²)'
-                node = node.nextElementSibling
-                if (node.nodeName == 'mrow') {
-                    intent = node.getAttribute('intent')
-                    if (intent) {
-                        name = ''
-                        if (intent == ':function')
-                            name = 'function'
-                        else if (intent.startsWith('binomial-coefficient'))
-                            name = 'binomial-coefficient'
-                        else if (intent == ':fenced')
-                            name = 'fenced'
-                        if (name)
-                            speak(name)
-                    }
-                }
-                setSelectionEx(sel, node, 0, e)
-            } else if (node.nextElementSibling.nodeName == 'mtable') {
-                node = node.nextElementSibling
-                intent = node.getAttribute('intent')
-                if (!intent)
-                    intent = 'array'
-                else if (intent[0] == ':') {
-                    intent = intent.substring(1)
-                    let i = intent.indexOf('(')
-                    let prefix = ''
-                    if (i != -1) {
-                        prefix = intent.substring(i + 1, intent.length - 1)
-                        prefix = prefix.replace(',', ' by ')
-                        intent = prefix + ' ' + intent.substring(0, i)
-                    }
-                }
-                speak(intent)
-                setTimeout(function () { }, 1000)
-                setSelectionEx(sel, node, 0, e)
-            } else if (!node.childNodes.length) {   // 'malignmark' or 'maligngroup'
-                speak('ampersand')
-                node = node.nextElementSibling
+                setSelectionEx(sel, node, node.childElementCount, e)
+                return
             }
-        } else if (isMathMLObject(node) || node.nodeName == 'mrow' ||
-            node.nodeName == 'mtable') {
-            // Happens moving into square root, e.g., for '√(𝑎²−𝑏²)'.
-            // Default moves to '𝑎' but should only move to '𝑎²'
-            e.preventDefault()
-            removeSelAttributes()
-            node = node.firstElementChild
+            if (node.parentElement.nodeName == 'mrow') {
+                node = node.parentElement
+                let intent = node.getAttribute('intent')
+                if (intent == ':function') {
+                    speak('end of function')
+                    setSelectionEx(sel, node, node.childElementCount, e)
+                }
+            }
+            let nodeP = node.parentElement
+            if (nodeP.nodeName == 'mtd') {
+                name = 'element'
+                let nameT = getTableRowName(nodeP.parentElement)
+                if (nameT == 'row') {
+                    let nodePP = nodeP.parentElement
+                    let col = getChildIndex(nodeP, nodePP) + 1
+                    let row = getChildIndex(nodePP, nodePP.parentElement) + 1
+                    name += ' ' + row + ' ' + col
+                } else if (!nodeP.nextElementSibling) {
+                    name = nameT
+                }
+                offset = node.childElementCount ? node.childElementCount : 1
+                speak('end ' + name)
+                setSelectionEx(sel, node, offset, e)
+            }
+        } else if ((!isMathMLObject(node.parentElement) || node.parentElement.nodeName == 'mrow') &&
+            isMathMLObject(node.nextElementSibling)) {
+            // Moving from childless element to MathML element with
+            // children as for moving past '=' in '=1/√(𝑎²−𝑏²)'
+            node = node.nextElementSibling
             if (node.nodeName == 'mrow') {
                 intent = node.getAttribute('intent')
                 if (intent) {
-                    if (intent.startsWith('binomial-coefficient'))
-                        name = 'binomial coefficient'
+                    name = ''
+                    if (intent == ':function')
+                        name = 'function'
+                    else if (intent.startsWith('binomial-coefficient'))
+                        name = 'binomial-coefficient'
                     else if (intent == ':fenced')
                         name = 'fenced'
                     if (name)
                         speak(name)
-                    setTimeout(function () { }, 1000)
-                }
-                node = node.firstElementChild
-            } else if (node.nodeName == 'mtr') {
-                node = node.firstElementChild.firstElementChild
-                if (!node.childNodes.length) {   // 'malignmark' or 'maligngroup'
-                    node = node.nextElementSibling
-                    speak('ampersand')
                 }
             }
-            sel = setSelection(sel, node, 0)
+            setSelectionEx(sel, node, 0, e)
+        } else if (node.nextElementSibling.nodeName == 'mtable') {
+            node = node.nextElementSibling
+            intent = node.getAttribute('intent')
+            if (!intent)
+                intent = 'array'
+            else if (intent[0] == ':') {
+                intent = intent.substring(1)
+                let i = intent.indexOf('(')
+                let prefix = ''
+                if (i != -1) {
+                    prefix = intent.substring(i + 1, intent.length - 1)
+                    prefix = prefix.replace(',', ' by ')
+                    intent = prefix + ' ' + intent.substring(0, i)
+                }
+            }
+            speak(intent)
+            setTimeout(function () { }, 1000)
+            setSelectionEx(sel, node, 0, e)
+        } else if (!node.childNodes.length) {   // 'malignmark' or 'maligngroup'
+            speak('ampersand')
+            node = node.nextElementSibling
         }
+    } else if (isMathMLObject(node) || node.nodeName == 'mrow' ||
+        node.nodeName == 'mtable') {
+        // Happens moving into square root, e.g., for '√(𝑎²−𝑏²)'.
+        // Default moves to '𝑎' but should only move to '𝑎²'
+        e.preventDefault()
+        removeSelAttributes()
+        node = node.firstElementChild
+        if (node.nodeName == 'mrow') {
+            intent = node.getAttribute('intent')
+            if (intent) {
+                if (intent.startsWith('binomial-coefficient'))
+                    name = 'binomial coefficient'
+                else if (intent == ':fenced')
+                    name = 'fenced'
+                if (name)
+                    speak(name)
+                setTimeout(function () { }, 1000)
+            }
+            node = node.firstElementChild
+        } else if (node.nodeName == 'mtr') {
+            node = node.firstElementChild.firstElementChild
+            if (!node.childNodes.length) {   // 'malignmark' or 'maligngroup'
+                node = node.nextElementSibling
+                speak('ampersand')
+            }
+        }
+        sel = setSelection(sel, node, 0)
     }
 }
 function moveSelection(sel, e) {
@@ -3133,6 +3128,89 @@ function getMathSelection() {
     return removeMathMlSelAttributes(mathml)
 }
 
+document.addEventListener('keydown', function (e) {
+    if (e.altKey) {
+        switch (e.key) {
+            case 'a':                       // Alt+a
+                document.getElementById("about").click()
+                return
+
+            case 'b':                       // Alt+b
+                // Braille MathML
+                e.preventDefault()
+                let mathML = isMathML(input.value)
+                    ? input.value
+                    : document.getElementById('output_source').innerText
+                let braille = MathMLtoBraille(mathML)
+                console.log('Math braille = ' + braille)
+                speechDisplay.innerText += '\n' + braille
+                return
+
+            case 'd':                       // Alt+d
+                // Toggle dictation mode on/off
+                e.preventDefault()
+                startDictation()
+                return
+
+            case 'Enter':                   // Alt+Enter
+                // Enter Examples[iExample] (see also Demo mode)
+                let x = document.getElementById('Examples').childNodes[0]
+                input.value = x.childNodes[iExample].innerText
+                var cExamples = x.childNodes.length
+
+                iExample++                 // Increment for next time
+                if (iExample > cExamples - 1)
+                    iExample = 0
+                return
+
+            case 'h':                       // Alt+h
+                document.getElementById("help").click()
+                return
+
+            case 'm':                       // Alt+m
+                // Toggle Unicode and MathML in input display
+                e.preventDefault()
+                ksi = true
+                input.value = isMathML(input.value)
+                    ? MathMLtoUnicodeMath(input.value, true)
+                    : document.getElementById('output_source').innerText
+                draw()
+                return
+
+            case 'p':                       // Alt+p
+                // Presentation: toggle demo mode on/off
+                e.preventDefault()
+                startDemo()
+                return
+
+            case 's':                       // Alt+s
+                // Speak MathML
+                e.preventDefault()
+                if (speechSynthesis.speaking) {
+                    speechSynthesis.cancel()
+                } else {
+                    let mathML = isMathML(input.value)
+                        ? input.value
+                        : document.getElementById('output_source').innerText
+                    let speech = MathMLtoSpeech(mathML)
+                    console.log('Math speech = ' + speech)
+                    speechDisplay.innerText = '\n' + speech
+                    let utterance = new SpeechSynthesisUtterance(speech)
+                    if (voiceZira)
+                        utterance.voice = voiceZira
+                    speechSynthesis.speak(utterance)
+                }
+                return
+
+            case 't':                       // Alt+t
+                // MathML to Unicode [La]TeX
+                e.preventDefault()
+                mathTeX()
+                return
+        }
+    }
+})
+
 output.addEventListener('keydown', function (e) {
     let key = e.key
     keydownLast = key
@@ -3147,20 +3225,6 @@ output.addEventListener('keydown', function (e) {
             let mathml = node.outerHTML
             if (mathml.startsWith('<math'))
                 navigator.clipboard.writeText(mathml)
-        }
-        if (e.altKey) {
-            switch (e.key) {
-                case 'a':                       // Alt+a
-                case 'b':                       // Alt+b
-                case 'h':                       // Alt+h
-                case 'm':                       // Alt+m
-                case 's':                       // Alt+s
-                case 't':                       // Alt+t
-                    const event = new Event('keydown')
-                    event.key = e.key
-                    event.altKey = e.altKey
-                    input.dispatchEvent(event)
-            }
         }
         return
     }
@@ -3205,8 +3269,10 @@ output.addEventListener('keydown', function (e) {
         case 'ArrowRight':
             moveRight(sel, node, offset, e)
             return
+
         case 'ArrowLeft':
-            return                          // TODO: fix-ups
+            moveLeft(sel, node, offset, e)
+            return
 
         case 'Backspace':
             e.preventDefault()
@@ -3304,7 +3370,7 @@ output.addEventListener('keydown', function (e) {
                 offset = 0
             }
             if(!testing)
-                speak(key + ' of math zone')
+                speak(key + ' of math')
             removeSelAttributes()
             setSelAttributes(node, 'selanchor', offset)
             refreshDisplays('', true)
@@ -3418,79 +3484,66 @@ output.addEventListener('keydown', function (e) {
                 setUnicodeMath(uMath)
                 return
         }                                   // switch(e.key) {}
-    } else if (e.altKey) {
-        switch (e.key) {
-            case 'a':                       // Alt+a
-            case 'b':                       // Alt+b
-            case 'h':                       // Alt+h
-            case 'm':                       // Alt+m
-            case 's':                       // Alt+s
-            case 't':                       // Alt+t
-                const event = new Event('keydown')
-                event.key = e.key
-                event.altKey = e.altKey
-                input.dispatchEvent(event)
-                return
+    } else if (e.altKey) {                  // Alt+x: hex → Unicode
+        if (e.key != 'x')
+            return
+        let cchSel = 0                      // Default degenerate selection
+        let str = ''                        // Collects hex string
 
-            case 'x':                       // Alt+x: hex → Unicode
-                let cchSel = 0              // Default degenerate selection
-                let str = ''                // Collects hex string
-
-                if (!sel.isCollapsed) {     // Nondegenerate selection
-                    let rg = sel.getRangeAt(0)
-                    node = rg.endContainer
-                    str = rg + ''
-                    cchSel = str.length
-                }
-                if (node.nodeName == '#text')
-                    node = node.parentElement
-                let nodeP = node.parentElement
-                if (nodeP.nodeName != 'mrow')
-                    return
-                let cNode = nodeP.childElementCount
-                let iEnd = -1               // Index of node in nodeP
-                let iStart = 0              // Index of 1st node that might be part of hex
-
-                // Collect span of alphanumerics ending with node
-                for (i = cNode - 1; i >= 0; i--) {
-                    let nodeC = nodeP.children[i]
-                    if (nodeC.nodeName != 'mi' && nodeC.nodeName != 'mn') {
-                        if (iEnd > 0) {     // Index of last node is defined
-                            iStart = i + 1  // Set index of first node
-                            break
-                        }
-                    } else {
-                        if (nodeC == node)
-                            iEnd = i        // Found node's index
-                        if (iEnd > 0 && !cchSel)
-                            str = nodeC.textContent + str
-                    }
-                }
-                let [ch, cchDel] = hexToUnicode(str, str.length, cchSel)
-
-                // Remove cchDel codes along with emptied nodes
-                for (i = iEnd; i >= iStart && cchDel > 0; i--) {
-                    let nodeC = nodeP.children[i]
-                    let cch = nodeC.textContent.length
-
-                    if (cch > cchDel) {     // ∃ more codes than need deletion
-                        nodeC.innerHTML = nodeC.innerHTML.substring(0, cch - cchDel)
-                        break;
-                    }
-                    cchDel -= cch
-                    if (nodeP.childElementCount == 1) {
-                        // Leave empty child as place holder for ch
-                        nodeC.innerHTML = ''
-                    } else {
-                        nodeC.remove()
-                    }
-                }
-                node = nodeP.children[i >= 0 ? i : 0]
-                name = node.nodeName
-                atEnd = true
-                key = ch
-                break
+        if (!sel.isCollapsed) {             // Nondegenerate selection
+            let rg = sel.getRangeAt(0)
+            node = rg.endContainer
+            str = rg + ''
+            cchSel = str.length
         }
+        if (node.nodeName == '#text')
+            node = node.parentElement
+        let nodeP = node.parentElement
+        if (nodeP.nodeName != 'mrow')
+            return
+        let cNode = nodeP.childElementCount
+        let iEnd = -1                       // Index of node in nodeP
+        let iStart = 0                      // Index of 1st node that
+                                            //  might be part of hex
+        // Collect span of alphanumerics ending with node
+        for (i = cNode - 1; i >= 0; i--) {
+            let nodeC = nodeP.children[i]
+            if (nodeC.nodeName != 'mi' && nodeC.nodeName != 'mn') {
+                if (iEnd > 0) {     // Index of last node is defined
+                    iStart = i + 1  // Set index of first node
+                    break
+                }
+            } else {
+                if (nodeC == node)
+                    iEnd = i        // Found node's index
+                if (iEnd > 0 && !cchSel)
+                    str = nodeC.textContent + str
+            }
+        }
+        let [ch, cchDel] = hexToUnicode(str, str.length, cchSel)
+
+        // Remove cchDel codes along with emptied nodes
+        for (i = iEnd; i >= iStart && cchDel > 0; i--) {
+            let nodeC = nodeP.children[i]
+            let cch = nodeC.textContent.length
+
+            if (cch > cchDel) {     // ∃ more codes than need deletion
+                nodeC.innerHTML = nodeC.innerHTML.substring(0, cch - cchDel)
+                break;
+            }
+            cchDel -= cch
+            if (nodeP.childElementCount == 1) {
+                // Leave empty child as place holder for ch
+                nodeC.innerHTML = ''
+            } else {
+                nodeC.remove()
+            }
+        }
+        node = nodeP.children[i >= 0 ? i : 0]
+        name = node.nodeName
+        atEnd = true
+        key = ch
+        return
     }
 
     // Handle character input

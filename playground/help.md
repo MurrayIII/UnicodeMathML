@@ -10,7 +10,7 @@ You can enter equations in four ways:
 3. Click on the Dictate button or type Alt+d, wait for the bell, and dictate the equation in English. You need to have Internet access, and you need to enunciate clearly. This option is also a work in progress but if you get it to work it’s the fastest entry method except for:
 4. Paste MathML into the input or output window.
 
-## See it in action
+## See and/or hear it in action
 Click on the Demo button or type Alt+p in the input window to see it in action!
 Hit the space bar to pause the demo and hit it again to continue the demo.
 The arrow keys → and ← move to the next/previous equation, respectively.
@@ -18,6 +18,7 @@ Escape and Alt+p stop the demo. One of the equations has the UnicodeMath 1/2𝜋
 
 <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><mfrac><mn>1</mn><mrow><mn>2</mn><mi>𝜋</mi></mrow></mfrac><mrow intent=":integral(0,$h,$naryand)"><msubsup><mo>∫</mo><mn>0</mn><mrow arg="h"><mn>2</mn><mi>𝜋</mi></mrow></msubsup><mfrac arg="naryand"><mrow><mi intent="ⅆ">𝑑</mi><mi>𝜃</mi></mrow><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi><mrow intent=":function"><mi>sin</mi><mo>⁡</mo><mi>𝜃</mi></mrow></mrow></mfrac></mrow><mo>=</mo><mfrac><mn>1</mn><msqrt><mrow><msup><mi>𝑎</mi><mn>2</mn></msup><mo>−</mo><msup><mi>𝑏</mi><mn>2</mn></msup></mrow></msqrt></mfrac></mrow></math>
 
+To speak the equations, type the space bar to pause the demo, type Alt+s to speak the current equation, and then type the right arrow key to advance to the next equation. Alternatively, type Alt+Enter to enter the current Examples equation (and advance the Examples equation ID), and type Alt+s to speak the equation. In these ways, you can cycle through the equations speaking each one.
 ## Entering symbols
 You can enter a symbol by clicking on the symbol in one of the symbol galleries below the input window.
 But it’s faster to type the symbol’s LaTeX control word such as \alpha for α.
@@ -56,6 +57,7 @@ In addition to generating MathML, you can click on buttons or enter a hot key to
 * Dictate an equation (Alt+d)
 * Display the Help page (Alt+h)
 * Display the About page (Alt+a)
+* Enter the current Example equation and advance the Example equation ID (Alt+Enter)
 
 The results for speech, braille and LaTeX are displayed below the input window.
 Dictation results are shown in the input, output, and MathML windows.
