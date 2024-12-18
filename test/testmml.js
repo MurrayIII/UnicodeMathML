@@ -470,7 +470,7 @@ function buildUp(uMath, uMathPartial) {
         if (uMathPartial) {
             let result = getUnicodeMath(output.firstElementChild, true)
             if (result != uMathPartial[j]) {
-                console.log('test ' + j + ': key = \'' + event.key + '\', expect: ' + unicodeMathPartial[j] + '\n');
+                console.log('test ' + j + ': key = \'' + event.key + '\'\nExpect: ' + unicodeMathPartial[j] + '\n');
                 console.log("Result: " + result + '\n')
             } else {
                 iSuccess++
@@ -539,7 +539,7 @@ const unicodeMathPartial = [                            // test
     "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√(𝑎²−Ⓐ(1)𝑏",      // 35
     "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√(𝑎²−𝑏Ⓐ(1)²",     // 36
     "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1\\/√(𝑎²−𝑏²Ⓐ(1))",    // 37
-    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=Ⓐ(2) 1/√(𝑎²−𝑏²)",     // 38
+    "1/2𝜋 ∫_0^2⬌𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²) Ⓐ()",      // 38
 ]
 
 function testAutoBuildUp() {

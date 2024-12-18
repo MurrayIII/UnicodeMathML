@@ -243,6 +243,7 @@ function checkBrackets(node) {
 
     for (let i = cNode - 1; i >= 0; i--) {
         let nodeC = node.children[i]
+        let text = nodeC.textContent
 
         if (nodeC.childElementCount) {
             // Most built-up objects currently aren't included in partial
@@ -251,19 +252,19 @@ function checkBrackets(node) {
                 opBuildUp = true
             else if (k == -1)
                 k = i
-        } else if (nodeC.nodeName == 'mo') {
-            if (isOpenDelimiter(nodeC.textContent)) {
+        } else if (nodeC.localName == 'mo') { // Sometimes nodeName is capitalized...
+            if (isOpenDelimiter(text)) {
                 cBracket++
                 if (k == -1)
                     k = i
                 if (cBracket > 0)
                     break
-            } else if (isCloseDelimiter(nodeC.textContent)) {
+            } else if (isCloseDelimiter(text)) {
                 cBracket--
                 if (k == -1)
                     k = i
                 opBuildUp = true
-            } else if (nodeC.textContent == '|') {
+            } else if (text == '|') {
                 if (k == -1)
                     k = i
                 if (vbar) {
@@ -272,7 +273,7 @@ function checkBrackets(node) {
                     break
                 }
                 vbar = true
-            } else if ('_^/√⒞\u2061'.includes(nodeC.textContent)) {
+            } else if ('_^/√⒞\u2061'.includes(text)) {
                 opBuildUp = true
             }
         }
