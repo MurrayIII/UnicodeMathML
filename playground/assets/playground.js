@@ -292,7 +292,7 @@ function mathBraille() {
     const event = new Event('keydown');
     event.key = 'b';
     event.altKey = true;
-    input.dispatchEvent(event);
+    document.dispatchEvent(event);
 }
 
 function mathSpeak() {
@@ -301,7 +301,7 @@ function mathSpeak() {
     const event = new Event('keydown');
     event.key = 's';
     event.altKey = true;
-    input.dispatchEvent(event);
+    document.dispatchEvent(event);
 }
 
 function mathTeX() {
