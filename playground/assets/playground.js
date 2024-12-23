@@ -3217,10 +3217,9 @@ output.addEventListener('keydown', function (e) {
                 mathmlCurrent = output.innerHTML
                 if (sel.isCollapsed)
                     selectMathZone()
-                uMath = getUnicodeMath(output.firstElementChild, true)
-                useMfenced = true
+                uMath = getUnicodeMath(output.firstElementChild, false)
+                useMfenced = 1                 // Get Word-friendly MathML
                 t = unicodemathml(uMath, true) // uMath → MathML
-                useMfenced = false
                 output.innerHTML = t.mathml
                 refreshDisplays('', true)
                 sel = window.getSelection()
@@ -3230,7 +3229,6 @@ output.addEventListener('keydown', function (e) {
                 let mathml = getMathSelection()
                 navigator.clipboard.writeText(mathml)
                 if (mathmlCurrent) {
-                    useMfenced = false
                     output.innerHTML = mathmlCurrent
                     refreshDisplays('', true)
                 }

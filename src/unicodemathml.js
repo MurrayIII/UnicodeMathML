@@ -3,7 +3,7 @@ var ksi = false
 var testing
 var selanchor
 var selfocus
-var useMfenced = false
+var useMfenced = 0
 
 
 const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
@@ -2424,7 +2424,7 @@ function preprocess(dsty, uast, index, arr) {
             return {element: preprocess(dsty, value)};
 
         case "array":
-            // TODO pad columns (also for matrices), required/helpful for latex output
+            // TODO pad columns (also for matrices)
             return {array: preprocess(dsty, value)};
         case "arows":
             return {arows: preprocess(dsty, value)};
@@ -3211,7 +3211,9 @@ function preprocess(dsty, uast, index, arr) {
                             }
                         }
                     }
-                }
+                    if (value.intent == ':cases' && useMfenced != 1)
+                        useMfenced = 2          // Don't add 'float:right'
+               }
             }
             return {bracketed: {open: value.open, close: value.close, arg: arg,
                                 intent: intent, content: value.content}};
@@ -3342,7 +3344,7 @@ function mtransform(dsty, puast) {
                 return mtransform(dsty, value.content);
             var attrs = getAttrs(value, '')
             attrs.display = dsty ? "block" : "inline"
-            if (useMfenced)                 // Word needs xmlns
+            if (useMfenced == 1)            // Word needs xmlns
                 attrs.xmlns = "http://www.w3.org/1998/Math/MathML"
             if (value.eqnumber == null)
                 return {math: withAttrs(attrs, mtransform(dsty, value.content))};
@@ -3403,7 +3405,7 @@ function mtransform(dsty, puast) {
         case "array":                       // Equation array
             value = mtransform(dsty, value);
             var attrs = getAttrs(value, ':equations');
-            attrs.columnalign = 'right';
+            attrs.columnspacing = '0pt'     // MathJax needs this
             return {mtable: withAttrs(attrs, value)};
         case "arows":
             return value.map(r => ({mtr: noAttr(mtransform(dsty, r))}));
@@ -4009,7 +4011,7 @@ function mtransform(dsty, puast) {
             //if (!value.open && !value.close)
             //    return {mrow: withAttrs(getAttrs(value, ''), content)};
 
-            if (useMfenced) {
+            if (useMfenced == 1) {          // Word needs mfenced
                 // (Can test using Ctrl+C in output window)
                 attrs = getAttrs(value, defaultIntent);
                 if (attrs.intent)
@@ -4193,11 +4195,17 @@ function pretty(mast) {
         case "mn":
         case "mo":
         case "mtext":
+        case "mspace":
             return tag(key, attributes, value);
         case "malignmark":
         case "maligngroup":
-        case "mspace":
-            return tag(key, attributes, value);
+            if (useMfenced == 1)            // Word needs malignmark, maligngroup
+                return tag(key, attributes, value);
+            if (key == 'malignmark')
+                return `</mtd><mtd style='text-align:left;'>`
+            if (useMfenced == 2)
+                return `</mtd><mtd style='text-align:right'>`
+            return `</mtd><mtd style='text-align:right;float:right'>`
         case "␢":
             return "";
         default:
@@ -4355,6 +4363,8 @@ function dump(value, noAddParens) {
 
         case 'mtr':
             ret = nary(value, '&', cNode)
+            if (ret[0] == '&')
+                ret = ret.substring(1)
             break;
 
         case 'mtd':
@@ -4886,6 +4896,8 @@ function unicodemathml(unicodemath, displaystyle) {
         var t4s = performance.now();
         var mathml = pretty(mast);
         var t4e = performance.now();
+        useMfenced = 0
+        mathml = mathml.replace(/<mtd><\/mtd>/g, '')
 
         debugGroup();
         return {
@@ -4917,6 +4929,7 @@ function unicodemathml(unicodemath, displaystyle) {
         //}
 
         autoBuildUp = false                 // If called for autobuildup, return failure
+        useMfenced = 0
         debugGroup();
         return {
             //mathml: `<math class="unicodemath" xmlns="http://www.w3.org/1998/Math/MathML"><merror><mrow><mtext>⚠ [${escapeHTMLSpecialChars(unicodemath)}] ${escapeHTMLSpecialChars(strError)}</mtext></mrow></merror></math>`,
