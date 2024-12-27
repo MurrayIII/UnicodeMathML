@@ -14,7 +14,7 @@ const symbolSpeechStrings = {
 	' ': 'space',
 	'!': 'factorial',
 	'#': ', equation',
-	'&': 'and',
+	'&': 'and',								// (see also FF06 ＆)
 	'(': 'open',
 	')': 'close',
 	',': 'comma',
@@ -501,6 +501,7 @@ const symbolSpeechStrings = {
 	'⮵': 'to the',							// 2BB5
 	'〖': ', ',								// 3016
 	'〗': ', ',								// 3017
+	'＆': 'ampersand',						// FF06
 }
 
 const functions = {
@@ -1150,10 +1151,10 @@ function speech(value, noAddParens) {
 				ret = 'Ⓐ' + ret
 			} else if (selattra[0] == '-') {
 				ret = value.textContent
-				i = +selattra[1]
+				i = selattra[1]
 				ret = ret.substring(0, i) + 'Ⓐ' + ret.substring(i)
 			} else {
-				ret = 'Ⓐ' + selattra + ret
+				ret = 'Ⓐ' + ret
 			}
 		}
 
@@ -1161,7 +1162,7 @@ function speech(value, noAddParens) {
 			if (selAttrF == '-0' || selAttrF == '0') {
 				ret = 'Ⓕ' + ret
 			} else if (selAttrF[0] == '-') {
-				let j = +selAttrF[1]
+				let j = selAttrF[1]
 				if (i && j > i)
 					j++
 				ret = ret.substring(0, j) + 'Ⓕ' + ret.substring(j)
@@ -1169,7 +1170,7 @@ function speech(value, noAddParens) {
 				if (selAttrF == argCounts[value.nodeName])
 					ret += 'Ⓕ'
 				else
-					ret = 'Ⓕ' + selAttrF + ret
+					ret = 'Ⓕ' + ret
 			}
 		}
 		return ret

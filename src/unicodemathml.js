@@ -3211,8 +3211,6 @@ function preprocess(dsty, uast, index, arr) {
                             }
                         }
                     }
-                    if (value.intent == ':cases' && useMfenced != 1)
-                        useMfenced = 2          // Don't add 'float:right'
                }
             }
             return {bracketed: {open: value.open, close: value.close, arg: arg,
@@ -4115,15 +4113,22 @@ function promoteAttributelessMrowChildren(value) {
 
 // pretty-print MathML AST
 function pretty(mast) {
-
-    // unwrap singleton lists
-    //if (Array.isArray(mast) && mast.length == 1) {
-    //    return pretty(mast[0]);
-    //}
-
     // map over lists and concat results
     if (Array.isArray(mast)) {
-        return mast.map(e => pretty(e)).join("");
+        let ret = ''
+
+        for (let i = 0; i < mast.length; i++) {
+            if (useMfenced != 1 && k(mast[i]) == 'maligngroup') {
+                // Float right if align group has only one element
+                if (i + 2 > mast.length - 1 || k(mast[i + 2]) == 'malignmark')
+                    ret += `</mtd><mtd style='text-align:right;float:right'>`
+                else
+                    ret += `</mtd><mtd style='text-align:right'>`
+            } else {
+                ret += pretty(mast[i])
+            }
+        }
+        return ret
     }
 
     if (typeof mast !== 'object') {
@@ -4197,15 +4202,11 @@ function pretty(mast) {
         case "mtext":
         case "mspace":
             return tag(key, attributes, value);
-        case "malignmark":
         case "maligngroup":
+        case "malignmark":
             if (useMfenced == 1)            // Word needs malignmark, maligngroup
                 return tag(key, attributes, value);
-            if (key == 'malignmark')
-                return `</mtd><mtd style='text-align:left;'>`
-            if (useMfenced == 2)
-                return `</mtd><mtd style='text-align:right'>`
-            return `</mtd><mtd style='text-align:right;float:right'>`
+            return `</mtd><mtd style='text-align:left;'>`
         case "␢":
             return "";
         default:
