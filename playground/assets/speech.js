@@ -734,7 +734,16 @@ function checkLagrangeDerivative(node) {
 
 function speech(value, noAddParens) {
 	function unary(node, op) {
-		return op + speech(node.firstElementChild);
+		// Unary elements have the implied-mrow property
+		let cNode = node.childElementCount
+		let ret = nary(node, '', cNode)
+
+		if (!op) {
+			ret = removeOuterParens(ret)
+		} else if (cNode > 1 || cNode == 1 && node.firstElementChild.nodeName == 'mfrac') {
+			ret = '(' + ret + ')'
+		}
+		return op + ret
 	}
 
 	function binary(node, op) {
@@ -844,7 +853,7 @@ function speech(value, noAddParens) {
 			break
 
 		case 'menclose':
-			ret = speech(value.firstElementChild, true)
+			ret = unary(value, '')
 
 			let notation = value.getAttribute('notation')
 			if (!notation)
@@ -865,7 +874,7 @@ function speech(value, noAddParens) {
 
 		case 'mphantom':
 			// Full size, no display
-			ret = '⟡' + speech(value.firstElementChild, true) + '¶⟡'
+			ret = '⟡' + unary(value, '') + '¶⟡'
 			break
 
 		case 'mpadded':
@@ -896,7 +905,7 @@ function speech(value, noAddParens) {
 			break
 
 		case 'mstyle':
-			ret = speech(value.firstElementChild)
+			ret = nary(value, '', cNode)
 			let color = value.getAttribute('mathcolor')
 			if (color) {
 				if (color[0] == '#')
@@ -912,7 +921,7 @@ function speech(value, noAddParens) {
 			break
 
 		case 'msqrt':
-			ret = speech(value.firstElementChild, true);
+			ret = unary(value, '')
 			ret = needParens(ret) ? '√⏳' + ret + '¶√' : '√⏳' + ret
 			break
 

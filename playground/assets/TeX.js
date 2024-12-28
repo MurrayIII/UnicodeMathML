@@ -71,7 +71,14 @@ function TeX(value, noAddParens) {
         return ''
 
     function unary(node, op) {
-        return op + '{' + TeX(node.firstElementChild) + '}'
+        // Unary elements have the implied-mrow property
+        let cNode = node.childElementCount
+        let ret = nary(node, '', cNode)
+
+        if (!op)
+            ret = removeOuterParens(ret)
+
+        return op + '{' + ret + '}'
     }
 
     function binary(node, op) {

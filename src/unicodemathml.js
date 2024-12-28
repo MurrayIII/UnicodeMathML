@@ -216,6 +216,25 @@ function isTranspose(value) {
 
 function isUcAscii(ch) { return /[A-Z]/.test(ch); }
 
+function removeOuterParens(ret) {
+    if (ret[0] == '(') {
+        // Remove outermost parens if they match one another. Needed
+        // to remove parentheses enclosing, e.g., 𝑎+𝑏 in ▭(2&𝑎+𝑏)
+        let cParen = 1
+        for (let i = 1; i < ret.length - 1; i++) {
+            if (ret[i] == '(')
+                cParen++
+            else if (ret[i] == ')')
+                cParen--
+            if (!cParen)
+                break                   // Balanced before final char
+        }
+        if (cParen == 1 && ret[ret.length - 1] == ')')
+            ret = ret.substring(1, ret.length - 1)
+    }
+    return ret
+}
+
 function checkCardinalityIntent(intent, miContent) {
     if (intent) {
         if (intent[0] == 'ⓒ')
@@ -4219,7 +4238,7 @@ function pretty(mast) {
 ///////////////////////////
 
 function unary(node, op) {
-    // unary elements have the implied-mrow property
+    // Unary elements have the implied-mrow property
     let cNode = node.childElementCount
     let ret = nary(node, '', cNode)
 
@@ -4299,25 +4318,6 @@ function checkSelAttr(value, op) {
     if (selattr == '0')
         selattr = ''
     return op + '(' + selattr + ')'
-}
-
-function removeOuterParens(ret) {
-    if (ret[0] == '(') {
-        // Remove outermost parens if they match one another. Needed
-        // to remove parentheses enclosing, e.g., 𝑎+𝑏 in ▭(2&𝑎+𝑏)
-        let cParen = 1
-        for (let i = 1; i < ret.length - 1; i++) {
-            if (ret[i] == '(')
-                cParen++
-            else if (ret[i] == ')')
-                cParen--
-            if (!cParen)
-                break                   // Balanced before final char
-        }
-        if (cParen == 1 && ret[ret.length - 1] == ')')
-            ret = ret.substring(1, ret.length - 1)
-    }
-    return ret
 }
 
 function isDigitArg(node) {

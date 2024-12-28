@@ -636,7 +636,16 @@ function braille(value, noAddParens, subsup) {
 	// Function called recursively to convert MathML to Nemeth math braille
 
 	function unary(node, op) {
-		return op + braille(node.firstElementChild);
+		// Unary elements have the implied-mrow property
+		let cNode = node.childElementCount
+		let ret = nary(node, '', cNode)
+
+		if (!op) {
+			ret = removeOuterParens(ret)
+		} else if (cNode > 1 || cNode == 1 && node.firstElementChild.nodeName == 'mfrac') {
+			ret = '(' + ret + ')'
+		}
+		return op + ret
 	}
 
 	function binary(node, op) {
@@ -711,7 +720,7 @@ function braille(value, noAddParens, subsup) {
 
 		case 'menclose':
 			let notation = value.getAttribute('notation')
-			ret = braille(value.firstElementChild, true);
+			ret = unary(value, '')
 
 			if (!notation)
 				return '⠫⠗⠸⠫' + ret + '⠻';
@@ -743,10 +752,11 @@ function braille(value, noAddParens, subsup) {
 			return braille(value.firstElementChild);
 
 		case 'mroot':
-			ret = '⠣' + braille(value.lastElementChild, true);
-											// Fall through to 'msqrt'
+			return '⠣' + braille(value.lastElementChild, true) + '⠜' +
+				braille(value.firstElementChild, true) + '⠻'
+
 		case 'msqrt':
-			return ret += '⠜' + braille(value.firstElementChild, true) + '⠻';
+			return ret += '⠜' + unary(value, '') + '⠻'
 
 		case 'mfrac':
 			let num = braille(value.firstElementChild, true);

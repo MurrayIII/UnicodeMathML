@@ -72,6 +72,8 @@ const mathML = [
     "<math display=\"block\"><mrow><mfrac intent=\"derivative(1,$f,𝑥)\"><mi>𝑑</mi><mrow><mi>𝑑</mi><mi>𝑥</mi></mrow></mfrac><mrow arg=\"f\"><mrow intent=\":fenced\"><mo>(</mo><mrow><msup><mi>𝑥</mi><mn>2</mn></msup><mo>+</mo><mi>𝑥</mi><mo>+</mo><mn>1</mn></mrow><mo>)</mo></mrow></mrow><mo>=</mo><mrow><mn>2</mn><mi>𝑥</mi></mrow><mo>+</mo><mn>1</mn></mrow></math>",
     "<math display=\"block\"><mrow><mi>𝑎</mi><mo selanchor=\"0\">^</mo></mrow></math>",
     "<math display=\"block\"><mrow intent=\":determinant\"><mo>|</mo><mtable intent=\":array(2,2)\"><mtr><mtd><mi>𝑎</mi></mtd><mtd><mi>𝑏</mi></mtd></mtr><mtr><mtd><mi>𝑐</mi></mtd><mtd><mi>𝑑</mi></mtd></mtr></mtable><mo>|</mo></mrow></math>",
+    "<math display=\"block\"><mi>𝑥</mi><mo>=</mo><mfrac><mrow><mo>−</mo><mi>𝑏</mi><mo>±</mo><msqrt><msup><mi>𝑏</mi><mn>2</mn></msup><mo>−</mo><mn>4</mn><mi>𝑎</mi><mi>𝑐</mi></msqrt></mrow><mrow><mn>2</mn><mi>𝑎</mi></mrow></mfrac></math>",
+    "<math display=\"block\"><menclose notation=\"box\"><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></menclose></math>",
 ]
 
 const unicodeMath = [
@@ -145,6 +147,8 @@ const unicodeMath = [
     "𝑑/𝑑𝑥 (𝑥²+𝑥+1)=2𝑥+1",
     "𝑎Ⓐ()^",
     "⒱(𝑎&𝑏@𝑐&𝑑)",
+    "𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎",
+    "▭(𝑎+𝑏)",
 ]
 
 const mathSpeech = [
@@ -224,6 +228,8 @@ const mathSpeech = [
     "derivative of x squared + x + 1 with respect to x = 2 x + 1",
     "eigh insertion point soup",
     "the 2 by 2 determinant , row 1 , eigh , b , row 2 , c , d , end determinant",
+    "x = fraction minus b plus or minus square root , b squared minus 4 eigh c , end square root over 2 eigh , end fraction",
+    "box eigh + b , end box",
 ]
 
 const mathBrailles = [
@@ -297,6 +303,8 @@ const mathBrailles = [
     "⠹⠙⠌⠙⠭⠼⠷⠭⠘⠆⠐⠬⠭⠬⠂⠾⠀⠨⠅⠀⠼⠆⠭⠬⠂",
     "⠁⠸⠣",
     "⠠⠳⠁⠀⠃⣍⠉⠀⠙⠠⠳",
+    "⠭⠀⠨⠅⠀⠹⠤⠃⠬⠤⠜⠃⠘⠆⠐⠤⠲⠁⠉⠻⠌⠆⠁⠼",
+    "⠫⠗⠸⠫⠁⠬⠃⠻",
 ]
 
 const mathTeXs = [                          // Some cases aren't supported by TeX
@@ -370,6 +378,8 @@ const mathTeXs = [                          // Some cases aren't supported by Te
     '\\frac{𝑑}{𝑑𝑥}(𝑥^2+𝑥+1)=2𝑥+1',
     '𝑎^',
     '\\begin{vmatrix}𝑎&𝑏\\\\𝑐&𝑑\\end{vmatrix}',
+    '𝑥=\\frac{−𝑏±\\sqrt{𝑏^2−4𝑎𝑐}}{2𝑎}',
+    '\\boxed{𝑎+𝑏}',
 ]
 
 function testMathMLtoUnicodeMath() {
