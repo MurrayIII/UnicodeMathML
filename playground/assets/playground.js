@@ -175,6 +175,8 @@ function setSelectionEx(sel, node, offset, e) {
         sel.setBaseAndExtent(sel.anchorNode, sel.anchorOffset, node, offset)
     else
         sel.setBaseAndExtent(node, offset, node, offset)
+    if (testing)
+        document.onselectionchange()
 }
 
 function setSelection(sel, node, offset, nodeFocus, offsetFocus) {
@@ -1271,6 +1273,11 @@ function getTableRowName(node) {
     return name
 }
 
+function getName(node) {
+    let name = names[node.nodeName]
+    return name ? name : resolveSymbols(node.textContent)
+}
+
 function checkTable(node) {
     // On entry, node is an <mtr>. Speak the kind of table row and return
     // the row's first element child
@@ -1900,14 +1907,14 @@ function checkMathSelection(sel) {
                         name = 'end of ' + name
                 }
             } else {
-                name = resolveSymbols(getCh(node.textContent, offset))
+                name = symbolSpeech(getCh(node.textContent, offset))
             }
         } else if (!offset) {               // Childless element
             // If offset is at end of childless element, speech occurs
             // earlier, e.g., for end of numerator
             let text = node.textContent
             if (text)
-                name = resolveSymbols(getCh(text, 0))
+                name = symbolSpeech(getCh(text, 0))
         }
     }
     let intent = node.getAttribute('intent')
@@ -1917,10 +1924,16 @@ function checkMathSelection(sel) {
         if (name == 'matrix')
             name = ''
         else if (name == 'math') {
-            if (keydownLast == 'ArrowLeft')
+            if (keydownLast == 'ArrowLeft') {
                 name = 'start of ' + name
-            else if (offset)
+                node = node.firstElementChild
+                if (node.nodeName == 'mrow')
+                    node = node.firstElementChild
+                name += ', ' + getName(node)
+                setSelection(sel, node, 0)
+            } else if (offset) {
                 name = 'end of ' + name
+            }
         }
     }
     if (name)
@@ -2412,24 +2425,36 @@ function moveRight(sel, node, offset, e) {
 
     if (offset) {
         if (node.nodeName == '#text') {
-            if (offset < node.textContent.length)
-                return                      // Run default behavior
-            node = node.parentElement
-            if (offset == node.textContent.length) {
-                if (node.nextElementSibling) {
-                    node = node.nextElementSibling
-                    if (node.nodeName == 'mrow')
-                        node = node.firstElementChild
-                    setSelectionEx(sel, node, 0, e)
-                    return
-                }
-                if (node.parentElement.nodeName == 'math') {
-                    node = node.parentElement
-                    setSelectionEx(sel, node, node.childElementCount, e)
-                    return
-                }
+            let text = node.textContent
+            let cchCh = getCch(text, offset)
+            offset += cchCh
+
+            if (offset < text.length ||
+                offset == text.length && !node.parentElement.nextElementSibling) {
+                setSelectionEx(sel, node, offset, e)
+                return
             }
-            offset = 1
+            node = node.parentElement
+            if (node.nextElementSibling) {
+                node = node.nextElementSibling
+                if (node.nodeName == 'mrow')
+                    node = node.firstElementChild
+                setSelectionEx(sel, node, 0, e)
+                return
+            }
+            node = node.parentElement
+            if (node.nextElementSibling) {
+                node = node.nextElementSibling
+                if (node.nodeName == 'mrow')
+                    node = node.firstElementChild
+                setSelectionEx(sel, node, 0, e)
+                return
+            }
+            if (node.nodeName != 'mrow') {
+                setSelectionEx(sel, node, node.childElementCount, e)
+                return
+            }
+            offset = node.childElementCount
         }
         if (offset == node.childElementCount) { // (Excludes mi, mo, etc.)
             if (node.nextElementSibling) {
@@ -2444,7 +2469,10 @@ function moveRight(sel, node, offset, e) {
             if (node.nodeName == 'mrow' && !node.nextElementSibling) {
                 node = node.parentElement
                 if (node.nextElementSibling) {
-                    setSelectionEx(sel, node.nextElementSibling, 0, e)
+                    node = node.nextElementSibling
+                    if (node.nodeName == 'mrow')
+                        node = node.firstElementChild
+                    setSelectionEx(sel, node, 0, e)
                     return
                 }
                 name = getArgName(node)
@@ -2452,6 +2480,15 @@ function moveRight(sel, node, offset, e) {
                     speak('end of ' + name)
             } else {
                 node = node.parentElement
+                if (node.nodeName == 'mrow') {
+                    if (node.nextElementSibling) {
+                        // E.g., when leaving ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃) move to
+                        // nextElementSibling
+                        node = node.nextElementSibling
+                        setSelectionEx(sel, node, 0, e)
+                        return
+                    }
+                }
             }
             setSelectionEx(sel, node, node.childElementCount, e)
             return
@@ -2486,37 +2523,53 @@ function moveRight(sel, node, offset, e) {
         }
     }   // if (offset) {}
 
+    if (node.nodeName == 'mtd') {
+        setSelectionEx(sel, node.firstElementChild, 0, e)
+        return
+    }
+    if (node.nodeName == 'math')
+        node = node.firstElementChild
+
     if (!node.childElementCount) {          // mi, mn, mtext, #text
-        if (node.textContent.length > getCch(node.textContent, 0))
-            return                          // Do default
-        if (node.nodeName == '#text')
-            node = node.parentElement
-        if (node.nodeName == 'mtd') {
-            setSelectionEx(sel, node.firstElementChild, 0, e)
+        let text = node.textContent
+        let cchCh = getCch(text, 0)
+
+        if (text.length > cchCh) {
+            if (node.nodeName != '#text')
+                node = node.firstChild
+            setSelectionEx(sel, node, cchCh, e)
             return
         }
+        if (node.nodeName == '#text')
+            node = node.parentElement
+
         if (!node.nextElementSibling) {
             if (node.parentElement.nodeName == 'math') {
                 node = node.parentElement
                 setSelectionEx(sel, node, node.childElementCount, e)
                 return
             }
-            if (node.parentElement.nodeName == 'mrow') {
-                node = node.parentElement
-                let intent = node.getAttribute('intent')
+            if (isMathMLObject(node.parentElement) && node.parentElement.nodeName != 'mrow') {
+                setSelectionEx(sel, node, 1, e)
+                speak('end of ' + getArgName(node))
+                return
+            }
+            let nodeP = node.parentElement
+            if (nodeP.nodeName == 'mrow') {
+                let intent = nodeP.getAttribute('intent')
                 if (intent == ':function') {
                     name = 'function'
                 } else {
-                    intent = node.parentElement.getAttribute('intent')
+                    intent = nodeP.parentElement.getAttribute('intent')
                     name = checkNaryand(node, intent)
                 }
-                if (name) {
+                if (!name)
+                    name = getArgName(nodeP)
+                if (name)
                     speak('end of ' + name)
-                    setSelectionEx(sel, node, node.childElementCount, e)
-                    return
-                }
+                setSelectionEx(sel, node, 1, e)
+                return
             }
-            let nodeP = node.parentElement
             if (nodeP.nodeName == 'mtd') {
                 name = 'element'
                 let nameT = getTableRowName(nodeP.parentElement)
@@ -2539,7 +2592,7 @@ function moveRight(sel, node, offset, e) {
                 speak('end ' + name)
                 setSelectionEx(sel, node, offset, e)
             }
-        } else if ((!isMathMLObject(node.parentElement) || node.parentElement.nodeName == 'mrow') &&
+        } else if ((!isMathMLObject(node.parentElement) || isMrowLike(node.parentElement)) &&
             isMathMLObject(node.nextElementSibling)) {
             // Moving from childless element to MathML element with
             // children as for moving past '=' in '=1/√(𝑎²−𝑏²)'
@@ -2562,6 +2615,10 @@ function moveRight(sel, node, offset, e) {
             //}
             setSelectionEx(sel, node, 0, e)
             return
+        } else if (isMathMLObject(node.parentElement) && node.parentElement.nodeName != 'mrow') {
+            setSelectionEx(sel, node, 1, e)
+            speak('end of ' + getArgName(node))
+            return
         } else if (node.nextElementSibling.nodeName == 'mtable') {
             node = node.nextElementSibling
             intent = node.getAttribute('intent')
@@ -2583,12 +2640,13 @@ function moveRight(sel, node, offset, e) {
         } else if (!node.childNodes.length) {   // 'malignmark' or 'maligngroup'
             speak('＆')
             node = node.nextElementSibling
+        } else {
+            setSelectionEx(sel, node.nextElementSibling, 0, e)
+            return
         }
-    } else if (isMathMLObject(node) || node.nodeName == 'mrow' ||
-        node.nodeName == 'mtd' || node.nodeName == 'mtable') {
+    } else if (isMathMLObject(node) || node.nodeName == 'mrow') {
         // Happens moving into square root, e.g., for '√(𝑎²−𝑏²)'.
         // Default moves to '𝑎' but should only move to '𝑎²'
-        e.preventDefault()
         removeSelAttributes()
         node = node.firstElementChild
         if (node.nodeName == 'mrow') {
@@ -2610,7 +2668,7 @@ function moveRight(sel, node, offset, e) {
                 speak('＆')
             }
         }
-        sel = setSelection(sel, node, 0)
+        setSelectionEx(sel, node, 0, e)
     }
 }
 
@@ -3179,12 +3237,16 @@ output.addEventListener('keydown', function (e) {
                 return
             if (key == 'End') {
                 offset = node.childElementCount
+                name = 'end of math'
             } else {
-                key = 'Start'
+                node = node.firstElementChild
+                if (node.nodeName == 'mrow')
+                    node = node.firstElementChild
+                name = 'Start of math , ' + getName(node)
                 offset = 0
             }
             if(!testing)
-                speak(key + ' of math')
+                speak(name)
             removeSelAttributes()
             setSelAttributes(node, 'selanchor', offset)
             refreshDisplays('', true)

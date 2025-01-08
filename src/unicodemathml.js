@@ -4195,8 +4195,21 @@ function pretty(mast) {
                 return tag(key, attributes, pretty(value))
             }
             let arg = pretty(value)
-            if (arg.startsWith('<mrow>') && arg.endsWith('</mrow>'))
-                arg = arg.substring(6, arg.length - 7)
+            let i = 0
+            if (arg.startsWith('<mrow') && arg.endsWith('</mrow>')) {
+                if (arg.startsWith('<mrow selanchor="0"')) {
+                    i = 20
+                } else if (arg[5] == '>') {
+                    i = 6
+                }
+            }
+            if (i) {
+                arg = arg.substring(i, arg.length - 7)
+                if (i == 20) {
+                    i = arg.indexOf('>')
+                    arg = arg.substring(0, i) + ' selanchor="0"' + arg.substring(i)
+                }
+            }
             return tag(key, attributes, arg);
 
         case "mfenced":
