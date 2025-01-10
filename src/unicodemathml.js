@@ -4154,9 +4154,10 @@ function pretty(mast) {
         return mast;
     }
 
-    var key = k(mast);
-    var attributes = a(mast);
-    var value = c(mast);
+    let key = k(mast)
+    let attributes = a(mast)
+    let value = c(mast)
+    let arg, i
 
     switch (key) {
         case "mrow":
@@ -4194,8 +4195,8 @@ function pretty(mast) {
                 promoteAttributelessMrowChildren(value)
                 return tag(key, attributes, pretty(value))
             }
-            let arg = pretty(value)
-            let i = 0
+            arg = pretty(value)
+            i = 0
             if (arg.startsWith('<mrow') && arg.endsWith('</mrow>')) {
                 if (arg.startsWith('<mrow selanchor="0"')) {
                     i = 20
@@ -4210,15 +4211,37 @@ function pretty(mast) {
                     arg = arg.substring(0, i) + ' selanchor="0"' + arg.substring(i)
                 }
             }
-            return tag(key, attributes, arg);
+            return tag(key, attributes, arg)
+
+        case "mover":
+        case "msub":
+        case "msubsup":
+        case "msup":
+        case "munder":
+        case "munderover":
+            // Move selection attribute(s) to first child. Selection attributes
+            // for these elements are supplied via a parent mrow
+            //let argT = ''
+            //let attrA = attributes.selanchor
+            //let attrF = attributes.selfocus
+
+            //if (attrA) {
+            //    delete attributes.selanchor
+            //    argT = ' selanchor="' + attrA + '"'
+            //}
+            //if (attrF) {
+            //    argT += ' selfocus="' + attrF + '"'
+            //    delete attributes.selfocus
+            //}
+            //arg = pretty(value)
+            //if (argT) {
+            //    let keyChild = k(value[0])
+            //    i = keyChild.length + 1
+            //    arg = arg.substring(0, i) + argT + arg.substring(i)
+            //}
+            //return tag(key, attributes, arg)
 
         case "mfenced":
-        case "msubsup":
-        case "msub":
-        case "msup":
-        case "munderover":
-        case "munder":
-        case "mover":
         case "mfrac":
         case "mroot":
         case "mtr":
@@ -4333,6 +4356,10 @@ function checkSelAttr(value, op) {
     return op + '(' + selattr + ')'
 }
 
+function getSelectionCodes(value) {
+    return ksi ? checkSelAttr(value, 'Ⓐ') + checkSelAttr(value, 'Ⓕ') : ''
+}
+
 function isDigitArg(node) {
     if (!node || !node.lastElementChild)
         return false
@@ -4348,6 +4375,7 @@ function dump(value, noAddParens) {
 
     let cNode = value.nodeName == '#text' ? 1 : value.childElementCount
     let intent
+    let nodeLEC                             // node.lastElementChild
     let ret = ''
 
     switch (value.localName) {
@@ -4500,13 +4528,13 @@ function dump(value, noAddParens) {
             break;
 
         case 'msup':
-            let nodeLEC = value.lastElementChild
-            if (isDigitArg(value)) {
+            nodeLEC = value.lastElementChild
+            if (isDigitArg(value) && !getSelectionCodes(nodeLEC)) {
                 ret = dump(value.firstElementChild) +
                     digitSuperscripts[nodeLEC.textContent]
-                break;
+                break
             }
-            var op = '^';
+            op = '^';
             if (nodeLEC && isPrime(nodeLEC.textContent))
                 op = '';
             ret = binary(value, op);
@@ -4545,10 +4573,11 @@ function dump(value, noAddParens) {
             break;
 
         case 'msub':
-            if (isDigitArg(value)) {
+            nodeLEC = value.lastElementChild
+            if (isDigitArg(value) && !getSelectionCodes(nodeLEC)) {
                 ret = dump(value.firstElementChild) +
-                    digitSubscripts[value.lastElementChild.textContent];
-                break;
+                    digitSubscripts[nodeLEC.textContent];
+                break
             }
             ret = binary(value, '_');
             break;
@@ -4561,7 +4590,8 @@ function dump(value, noAddParens) {
             }
                                             // Fall through to msubsup
         case 'msubsup':
-            if (isDigitArg(value)) {
+            if (isDigitArg(value) && !getSelectionCodes(value.children[1]) &&
+                !getSelectionCodes(value.children[2])) {
                 ret = dump(value.firstElementChild) +
                     digitSubscripts[value.children[1].textContent];
                 if (isAsciiDigit(value.lastElementChild.textContent)) {
@@ -4723,14 +4753,18 @@ function dump(value, noAddParens) {
             break;
     }
 
-    let selcode = ksi ? checkSelAttr(value, 'Ⓐ') + checkSelAttr(value, 'Ⓕ') : ''
+    let selcode = getSelectionCodes(value)
     if (ret) {
         if (!selcode)
             return ret
 
-        if (value.nodeName == 'mfrac') {
-            // Insert ' ' between the selection code(s) and fraction so that
-            // the code(s) apply to the fraction and not just the numerator
+        const needPreSpace = ['mfrac', 'mover', 'msub', 'msubsup', 'msup',
+            'munder', 'munderover']
+
+        if (needPreSpace.includes(value.nodeName)) {
+            // Insert ' ' between the selection code(s) and certain MathML
+            // elements so that the code(s) apply to the element and not its
+            // first child
             selcode += ' '
         }
         return selcode + ret

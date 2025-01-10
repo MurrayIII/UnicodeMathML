@@ -2641,7 +2641,10 @@ function moveRight(sel, node, offset, e) {
             speak('＆')
             node = node.nextElementSibling
         } else {
-            setSelectionEx(sel, node.nextElementSibling, 0, e)
+            node = node.nextElementSibling
+            if (node.nodeName == 'mrow')
+                node = node.firstElementChild
+            setSelectionEx(sel, node, 0, e)
             return
         }
     } else if (isMathMLObject(node) || node.nodeName == 'mrow') {
