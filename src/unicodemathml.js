@@ -2422,6 +2422,7 @@ function preprocess(dsty, uast, index, arr) {
         }
     }
 
+    let base
     var key = k(uast);
     var value = v(uast);
     var intent = dsty.intent;
@@ -2761,7 +2762,14 @@ function preprocess(dsty, uast, index, arr) {
 
             switch (value.type) {
                 case "subsup":
-                    var base = dropSingletonLists(value.base);
+                    base = dropSingletonLists(value.base)
+                    if (index > 0) {
+                        let intend = arr[index - 1].intend
+                        if (intend && intend.symbol == 'Ⓐ') {
+                            base.selanchor = intend.value
+                            ret.base = base
+                        }
+                    }
                     if (base.hasOwnProperty('intend') && base.intend.op == 'Ⓐ') {
                         // If the selanchor is applied to the base, make the
                         // selanchor apply to the sub/superscript object to
@@ -2800,24 +2808,25 @@ function preprocess(dsty, uast, index, arr) {
                     // If base contains more than one char and isn't a function
                     // name, make the subsup base be the end char. E.g., for
                     // 𝐸 = 𝑚𝑐², make 𝑐 be the base, not 𝑚𝑐.
-                    var n = base.atoms.length;
+                    let n = base.atoms.length;
                     if (n == undefined)
                         break;
-                    var str = base.atoms[n - 1].chars;
+                    let str = base.atoms[n - 1].chars;
                     if (str == undefined)
                         break;
-                    var cch = str.length;
-                    var fn = foldMathItalics(str);
+                    let cch = str.length;
+                    let fn = foldMathItalics(str);
                     if (isFunctionName(fn)) {
                         if (fn.length < cch)
                             ret.base.atoms[0].chars = fn;
                         break;
                     }
-                    var cchCh = (str[cch - 1] >= '\DC00') ? 2 : 1;
+                    let cchCh = (str[cch - 1] >= '\uDC00') ? 2 : 1
 
                     if (cch > cchCh) {
                         // Return leading chars followed by scripted end char
                         ret.base.atoms[0].chars = str.substring(cch - cchCh);
+                        delete ret.base.selanchor
                         return [{atoms: {chars: str.substring(0, cch - cchCh)}},
                                 {script: ret}];
                     }
@@ -2911,6 +2920,13 @@ function preprocess(dsty, uast, index, arr) {
                     break;
 
                 case "abovebelow":
+                    if (index > 0) {
+                        let intend = arr[index - 1].intend
+                        if (intend && intend.symbol == 'Ⓐ') {
+                            console.log("intend.value = " + intend.value)
+                            ret.base.selanchor = intend.value
+                        }
+                    }
                     if ("low" in value) {
                         ret.low = preprocess(dsty, value.low);
                     }
@@ -3083,7 +3099,7 @@ function preprocess(dsty, uast, index, arr) {
             // rule relies on this
             if (value.arg)
                 arg = value.arg;
-            var base = preprocess(dsty, value.base);
+            base = preprocess(dsty, value.base);
             if (!uast.hasOwnProperty('inscript') && base.hasOwnProperty('atoms') &&
                 Array.isArray(base.atoms) && base.atoms[0].hasOwnProperty('chars')) {
                 let chars = base.atoms[0].chars;
@@ -3350,6 +3366,7 @@ function mtransform(dsty, puast) {
             ? ret[0] : {mrow: withAttrs(arg, ret)}
     }
 
+    let selanchor1
     var key = k(puast);
     var value = v(puast);
     if (value && !value.arg && puast.hasOwnProperty("arg"))
@@ -3395,10 +3412,12 @@ function mtransform(dsty, puast) {
                         value[0][1].intend.symbol == 'Ⓕ') {
                         let selarr = value.shift()
                         c = mtransform(dsty, value)
-                        c.mrow.attributes.selanchor = selarr[0].intend.value
-                        if (n == 2)
-                            c.mrow.attributes.selfocus = value.length //c.mrow.selarr[1].intend.value
-                        return c
+                        if (c && c.mrow) {
+                            c.mrow.attributes.selanchor = selarr[0].intend.value
+                            if (n == 2)
+                                c.mrow.attributes.selfocus = value.length //c.mrow.selarr[1].intend.value
+                            return c
+                        }
                     }
                 }
             }
@@ -3550,7 +3569,14 @@ function mtransform(dsty, puast) {
 
             switch (value.type) {
                 case "subsup":
+                    selanchor1 = value.base.selanchor
                     value.base = mtransform(dsty, value.base);
+                    if (selanchor1) {
+                        // Move selanchor to base. TODO: handle other bases too
+                        // along with selfocus for all bases
+                        value.base.mi.attributes.selanchor = selanchor1
+                        delete attrs.selanchor
+                    }
                     if ("low" in value) {
                         value.low = getScriptArg(dsty, value.low);
                     }
@@ -3596,7 +3622,14 @@ function mtransform(dsty, puast) {
 
                     return {mmultiscripts: noAttr(ret)};
                 case "abovebelow":
+                    selanchor1 = value.base.selanchor
                     value.base = mtransform(dsty, dropOutermostParens(value.base));
+                    if (selanchor1) {
+                        // Move selanchor to base. TODO: handle other bases too
+                        // along with selfocus for all bases
+                        value.base.mi.attributes.selanchor = selanchor1
+                        delete attrs.selanchor
+                    }
                     if ("low" in value) {
                         value.low = getScriptArg(dsty, value.low);
                     }
@@ -4138,7 +4171,11 @@ function pretty(mast) {
 
         for (let i = 0; i < mast.length; i++) {
             if (useMfenced != 1 && k(mast[i]) == 'maligngroup') {
-                // Float right if align group has only one element
+                // Float right if align group has only one element. This
+                // doesn't fix columns with multiple-element groups of
+                // different lengths. Firefox displays the groups correctly
+                // without the float:right attribute, so Chromium needs
+                // a bug fix after which this code can be removed.
                 if (i + 2 > mast.length - 1 || k(mast[i + 2]) == 'malignmark')
                     ret += `</mtd><mtd style='text-align:right;float:right'>`
                 else
@@ -4219,27 +4256,6 @@ function pretty(mast) {
         case "msup":
         case "munder":
         case "munderover":
-            // Move selection attribute(s) to first child. Selection attributes
-            // for these elements are supplied via a parent mrow
-            //let argT = ''
-            //let attrA = attributes.selanchor
-            //let attrF = attributes.selfocus
-
-            //if (attrA) {
-            //    delete attributes.selanchor
-            //    argT = ' selanchor="' + attrA + '"'
-            //}
-            //if (attrF) {
-            //    argT += ' selfocus="' + attrF + '"'
-            //    delete attributes.selfocus
-            //}
-            //arg = pretty(value)
-            //if (argT) {
-            //    let keyChild = k(value[0])
-            //    i = keyChild.length + 1
-            //    arg = arg.substring(0, i) + argT + arg.substring(i)
-            //}
-            //return tag(key, attributes, arg)
 
         case "mfenced":
         case "mfrac":
