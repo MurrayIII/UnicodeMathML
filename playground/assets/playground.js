@@ -1859,6 +1859,8 @@ function checkMathSelection(sel) {
                     ? names[node.nodeName] : node.textContent
             } else if (node.parentElement.nodeName == 'math') {
                 name = 'math'
+            } else {
+                name = getArgName(node)
             }
         } else {
             if (offset || !checkSimpleSup(node) && node.nodeName != 'mtd') {
@@ -1870,6 +1872,13 @@ function checkMathSelection(sel) {
         }
         if (name && offset == node.childElementCount)
             name = 'end of ' + name
+    } else if (offset == 1 && node.nextElementSibling &&
+        sel.focusNode.nodeName != '#text' &&
+        !mmlElemFixedArgs.includes(node.parentNode.nodeName)) {
+        // Moving from childless element to MathML element with
+        // children as for moving past '-' in '√(𝑎²−𝑏²)'
+        if (!checkSimpleSup(node.nextElementSibling))
+            name = names[node.nextElementSibling.nodeName]
     } else {
         if (sel.focusNode.nodeName == '#text') {
             if (offset == sel.focusNode.textContent.length) {
@@ -2508,6 +2517,12 @@ function moveRight(sel, node, offset, e) {
             setSelectionEx(sel, node, node.childElementCount, e)
             return
         }
+        if (isMrowLike(node.parentElement) && node.nextElementSibling &&
+            node.nextElementSibling.childElementCount) {
+            // E.g., moving into √ from end of ± in 𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎
+            setSelectionEx(sel, node.nextElementSibling.firstElementChild, 0, e)
+            return
+        }
         name = node.parentElement.nodeName
         if (isMathMLObject(node.parentElement) || name == 'mtd' ||
             name == 'mrow' && isMathMLObject(node.parentElement.parentElement)) {
@@ -2611,24 +2626,13 @@ function moveRight(sel, node, offset, e) {
             isMathMLObject(node.nextElementSibling)) {
             // Moving from childless element to MathML element with
             // children as for moving past '=' in '=1/√(𝑎²−𝑏²)'
-            node = node.nextElementSibling
-            //if (node.nodeName == 'mrow') {
-            //    intent = node.getAttribute('intent')
-            //    if (intent) {
-            //        name = ''
-            //        if (intent == ':function')
-            //            name = 'function'
-            //        else if (intent.startsWith('binomial-coefficient'))
-            //            name = 'binomial-coefficient'
-            //        else if (intent == ':fenced')
-            //            name = 'fenced'
-            //        if (name)
-            //            speak(name)
-            //    } else {
-            //        node = node.firstElementChild
-            //    }
-            //}
-            setSelectionEx(sel, node, 0, e)
+            offset = 1
+            if (node.nextElementSibling.nodeName == 'mrow') {
+                // E.g., for intent = ':function'
+                node = node.nextElementSibling
+                offset = 0
+            }
+            setSelectionEx(sel, node, offset, e)
             return
         } else if (mmlElemFixedArgs.includes(node.parentElement.nodeName)) {
             setSelectionEx(sel, node, 1, e)
