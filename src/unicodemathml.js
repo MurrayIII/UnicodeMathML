@@ -4481,7 +4481,8 @@ function dump(value, noAddParens) {
             if (value.getAttribute('depth') === '0')
                 mask |= 8;                  // fPhantomZeroDescent
 
-            if (value.firstElementChild.nodeName == 'mphantom') { // No display
+            if (value.firstElementChild &&
+                value.firstElementChild.nodeName == 'mphantom') { // No display
                 if (mask == 2)
                     op = '⇳';               // fPhantomZeroWidth
                 else if (mask == 12)

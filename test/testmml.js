@@ -657,6 +657,11 @@ const rightArrowExpect = ['Ⓐ()𝑎/𝑏+𝑐/𝑑=0', 'Ⓐ(1)𝑎/𝑏+𝑐/�
     '𝑎/𝑏+Ⓐ(1)𝑐/𝑑=0', '𝑎/𝑏+𝑐/Ⓐ()𝑑=0', '𝑎/𝑏+𝑐/Ⓐ(1)𝑑=0', '𝑎/𝑏+𝑐/𝑑 Ⓐ()=0',
     '𝑎/𝑏+𝑐/𝑑=Ⓐ()0', '𝑎/𝑏+𝑐/𝑑=0 Ⓐ()',
 ]
+const rightArrowQExpect = ['Ⓐ(1)𝑞𝑎/𝑏+𝑐/𝑑=0', '𝑎Ⓐ(1)𝑞/𝑏+𝑐/𝑑=0', '𝑎/Ⓐ(1)𝑞𝑏+𝑐/𝑑=0',
+    '𝑎/𝑏Ⓐ(1)𝑞+𝑐/𝑑=0', '𝑎/𝑏 Ⓐ(1)𝑞+𝑐/𝑑=0', '𝑎/𝑏+Ⓐ(1)𝑞 𝑐/𝑑=0', '𝑎/𝑏+Ⓐ(1)𝑞𝑐/𝑑=0',
+    '𝑎/𝑏+𝑐Ⓐ(1)𝑞/𝑑=0', '𝑎/𝑏+𝑐/Ⓐ(1)𝑞𝑑=0', '𝑎/𝑏+𝑐/𝑑Ⓐ(1)𝑞=0', '𝑎/𝑏+𝑐/𝑑 Ⓐ(1)𝑞=0',
+    '𝑎/𝑏+𝑐/𝑑=Ⓐ(1)𝑞0', '𝑎/𝑏+𝑐/𝑑=0Ⓐ(1)𝑞',
+]
 const homeExpect1 = 'Ⓐ() 1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)'
 const rightArrowExpect1 = [
     'Ⓐ()1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)',      // 1
@@ -799,15 +804,30 @@ function testHotKeys() {
     // Test output Home/End hot keys
     testOutputHotKey('End', endExpect)
     testOutputHotKey('Home', homeExpect)
-    for (let i = 0; i < rightArrowExpect.length; i++)
+
+    for (let i = 0; i < rightArrowExpect.length; i++) {
         testOutputHotKey('ArrowRight', rightArrowExpect[i])
+        let uMath = getUnicodeMath(output.firstElementChild, true)
+        outputUndoStack.push(uMath)
+        const event = new Event('keydown')
+        event.key = 'q'
+        output.dispatchEvent(event)
+        setTimeout(function () { }, 500) // Sleep for 50 msec
+        uMath = outputUndoStack.pop()
+        if (uMath == rightArrowQExpect[i]) {
+            console.log('Output q succeeded')
+        } else {
+            console.log('Output q failed. result: ' + uMath + " expect: " + rightArrowQExpect[i])
+        }
+        ctrlZ()
+    }
 
     buildUp('1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)')
     testOutputHotKey('Home', homeExpect1)
 
-    for (let i = 0; i < rightArrowExpect1.length; i++)
+    for (let i = 0; i < rightArrowExpect1.length; i++) {
         testOutputHotKey('ArrowRight', rightArrowExpect1[i])
-
+    }
     // Test output Ctrl+z and Ctrl+y hot keys
     buildUp('𝑎²+𝑏²=𝑐²')
     testOutputHotKey('z', '𝑎²+𝑏²=𝑐Ⓐ(1)²')

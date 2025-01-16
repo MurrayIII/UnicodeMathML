@@ -1314,7 +1314,7 @@ function getIntent(node) {
 function checkSimpleSup(node) {
     if (node.nodeName == 'msup' || node.nodeName == 'msqrt') {
         let s = speech(node)
-        if (s.length <= 3) {
+        if (s.length <= 6) {
             speak(resolveSymbols(s))
             return true
         }
@@ -1324,10 +1324,14 @@ function checkSimpleSup(node) {
 
 const names = {
     'math': 'math', 'mfrac': 'fraction', 'mover': 'modify above',
-    'msub': 'subscript', 'msubsup': 'subsoup', 'msup': 'superscript',
-    'msqrt': 'square root', 'mtable': 'matrix', 'mtd': 'element',
-    'munder': 'modify below', 'munderover': 'below above',
+    'mroot': 'root', 'msqrt': 'square root', 'msub': 'subscript',
+    'msubsup': 'subsoup', 'msup': 'superscript', 'mtable': 'matrix',
+    'mtd': 'element', 'munder': 'modify below', 'munderover': 'below above'
 }
+
+const mmlElemFixedArgs = [
+    'mfrac', 'mover', 'mroot', 'msub', 'msubsup', 'msup', 'munder', 'munderover'
+]
 
 function refreshDisplays(uMath, noUndo) {
     // Update MathML, UnicodeMath, and code-point displays; push current content
@@ -1557,32 +1561,27 @@ function insertNode(node, offset, nodeNew, nodeP) {
         node.insertBefore(nodeNew, node.children[offset])
         return
     }
-    if (!offset && node.nodeType == 1) {
-        nodeP.insertBefore(nodeNew, node)
-    } else if (isMrowLike(nodeP)) {
-        if (atEnd && offset) {
-            if (node.nextElementSibling) {
-                nodeP.insertBefore(nodeNew, node.nextElementSibling)
-            } else {
-                if (!node.textContent)
-                    nodeP.replaceChild(nodeNew, node)
-                else
-                    nodeP.appendChild(nodeNew)
-            }
-        } else {
-            nodeP.insertBefore(nodeNew, node)
-        }
-    } else {
+    if (mmlElemFixedArgs.includes(nodeP.nodeName)) {
         let nodeMrow = document.createElement('mrow')
         nodeP.insertBefore(nodeMrow, node)
-        if (atEnd) {
+        if (offset) {
             nodeMrow.appendChild(node)
             nodeMrow.appendChild(nodeNew)
         } else {
             nodeMrow.appendChild(nodeNew)
             nodeMrow.appendChild(node)
         }
-        atEnd = false;
+    } else {                                // nodeP is mrow-like
+        if (!offset) {
+            nodeP.insertBefore(nodeNew, node)
+        } else if (node.nextElementSibling) {
+            nodeP.insertBefore(nodeNew, node.nextElementSibling)
+        } else {
+            if (!node.textContent)
+                nodeP.replaceChild(nodeNew, node)
+            else
+                nodeP.appendChild(nodeNew)
+        }
     }
 }
 
@@ -1862,8 +1861,12 @@ function checkMathSelection(sel) {
                 name = 'math'
             }
         } else {
-            if (offset || !checkSimpleSup(node) && node.nodeName != 'mtd')
-                name = names[node.nodeName]
+            if (offset || !checkSimpleSup(node) && node.nodeName != 'mtd') {
+                if (offset == node.childElementCount && !node.nextElementSibling)
+                    name = getArgName(node)
+                if (!name)
+                    name = names[node.nodeName]
+            }
         }
         if (name && offset == node.childElementCount)
             name = 'end of ' + name
@@ -1927,8 +1930,11 @@ function checkMathSelection(sel) {
             if (keydownLast == 'ArrowLeft') {
                 name = 'start of ' + name
                 node = node.firstElementChild
-                if (node.nodeName == 'mrow')
-                    node = node.firstElementChild
+                if (node.nodeName == 'mrow') {
+                    let intent = node.getAttribute('intent')
+                    if (!intent)
+                        node = node.firstElementChild
+                }
                 name += ', ' + getName(node)
                 setSelection(sel, node, 0)
             } else if (offset) {
@@ -2348,6 +2354,10 @@ function checkAutoBuildUp(node, nodeP, key) {
 }
 function getArgName(node) {
     let name = node.parentElement.nodeName
+    while (name == 'mrow') {
+        node = node.parentElement
+        name = node.parentElement.nodeName
+    }
     if (name[0] == 'M')
         console.log('Upper-case element name: ' + name)
 
@@ -2458,7 +2468,10 @@ function moveRight(sel, node, offset, e) {
         }
         if (offset == node.childElementCount) { // (Excludes mi, mo, etc.)
             if (node.nextElementSibling) {
-                setSelectionEx(sel, node.nextElementSibling, 0, e)
+                node = node.nextElementSibling
+                if (node.nodeName == 'mrow' && !node.getAttribute('intent'))
+                    node = node.firstElementChild
+                setSelectionEx(sel, node, 0, e)
                 return
             }
             if (node.nodeName == 'math')
@@ -2485,6 +2498,8 @@ function moveRight(sel, node, offset, e) {
                         // E.g., when leaving ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃) move to
                         // nextElementSibling
                         node = node.nextElementSibling
+                        if (node.nodeName == 'mrow' && !node.getAttribute('intent'))
+                            node = node.firstElementChild
                         setSelectionEx(sel, node, 0, e)
                         return
                     }
@@ -2615,7 +2630,7 @@ function moveRight(sel, node, offset, e) {
             //}
             setSelectionEx(sel, node, 0, e)
             return
-        } else if (isMathMLObject(node.parentElement) && node.parentElement.nodeName != 'mrow') {
+        } else if (mmlElemFixedArgs.includes(node.parentElement.nodeName)) {
             setSelectionEx(sel, node, 1, e)
             speak('end of ' + getArgName(node))
             return
@@ -2936,6 +2951,11 @@ output.addEventListener("click", (e) => {
     //removeSelAttributes()
     let sel = window.getSelection()
     let node = sel.anchorNode
+    if (!node) {
+        node = document.createElement('math')
+        node.textContent = '⬚'
+        output.appendChild(node)
+    }
     console.log('getSelection anchorNode = ' + node.nodeName)
 
     if (node.nodeName == 'DIV')
@@ -3243,8 +3263,11 @@ output.addEventListener('keydown', function (e) {
                 name = 'end of math'
             } else {
                 node = node.firstElementChild
-                if (node.nodeName == 'mrow')
-                    node = node.firstElementChild
+                if (node.nodeName == 'mrow') {
+                    let intent = node.getAttribute('intent')
+                    if(!intent)
+                        node = node.firstElementChild
+                }
                 name = 'Start of math , ' + getName(node)
                 offset = 0
             }

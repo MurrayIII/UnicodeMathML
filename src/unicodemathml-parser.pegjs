@@ -376,7 +376,7 @@ opTt = "ￗ"
     / opCommentOpen
     / opCommentClose
     / opTt*/
-opBuildup = [█⒜Ⓒ⍁■@&([{⟨〖⌈⌊├)}⟩〗⌉⌋┤|│∣⏜⏝⏞⏟⏠⏡⎴⎵¯∑⅀⨊∏∐⨋∫∬∭⨌∮∯∰∱⨑∲∳⨍⨎⨏⨕⨖⨗⨘⨙⨚⨛⨜⨒⨓⨔⋀⋁⋂⋃⨃⨄⨅⨆⨀⨁⨂⨉⫿▒ⅅⅆⅇⅈⅉ¦⒞/\u2044\u2215\u2298▭̄▁▢○⟌⃧⬭#⟡⬄⇳⬍⬆⬇⬌□√∛∜_^┬┴Ⅎ✎☁⫷⫸ￗ╱╲╳] / "]"  // ⚡ performance optimization
+opBuildup = [█⒜Ⓒ⍁■@&([{⟨〖⌈⌊├)}⟩〗⌉⌋┤|│∣⏜⏝⏞⏟⏠⏡⎴⎵¯∑⅀⨊∏∐⨋∫∬∭⨌∮∯∰∱⨑∲∳⨍⨎⨏⨕⨖⨗⨘⨙⨚⨛⨜⨒⨓⨔⋀⋁⋂⋃⨃⨄⨅⨆⨀⨁⨂⨉⫿▒ⅅⅆⅇⅈⅉ¦⒞/\u2044\u2215\u2298▭̄▁▢○⟌⃧⬭#⟡⬄⇳⬍⬆⬇⬌□√∛∜_^┬┴Ⅎ✎☁⫷⫸ￗ╱╲╳ⒶⒻ] / "]"  // ⚡ performance optimization
 other = !(_ / αn / nn / diacritic / unicodeFraction / opBuildup / "\n") char
 
 
