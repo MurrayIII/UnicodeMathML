@@ -28,6 +28,7 @@ var prevInputValue = "";
 var selectionEnd                            // Used when editing input
 var selectionStart                          // Used when editing input
 var shadedArgNode                           // Used for IP when editing output
+var speechCurrent = ''
 
 const SELECTNODE = -1024
 
@@ -316,12 +317,16 @@ function speak(s) {
     if(!testing)
         console.log(s)
     s = symbolSpeech(s)
-    let utterance = new SpeechSynthesisUtterance(s)
+    if (!speechSynthesis.pending) {
+        speechCurrent = ''
+    } else {
+        speechCurrent += ', '
+        speechSynthesis.cancel()
+    }
+    speechCurrent += s
+    let utterance = new SpeechSynthesisUtterance(speechCurrent)
     if (voiceZira)
         utterance.voice = voiceZira
-    if (speechSynthesis.pending)        // Inter-utterance pause is too long
-        speechSynthesis.cancel()
-    //utterance.rate = 2
     speechSynthesis.speak(utterance)
 }
 
@@ -1275,7 +1280,9 @@ function getTableRowName(node) {
 
 function getName(node) {
     let name = names[node.nodeName]
-    return name ? name : resolveSymbols(node.textContent)
+    if (!name)
+        name = resolveSymbols(getCh(node.textContent, 0))
+    return name
 }
 
 function checkTable(node) {
@@ -1421,12 +1428,13 @@ function refreshDisplays(uMath, noUndo) {
     }
 }
 
-function checkNaryand(node, intent) {
+function checkNaryand(node) {
     let arg = node.getAttribute('arg')
     if (arg != 'naryand')
         return ''
 
     let name = 'n aryand'
+    let intent = node.parentElement.getAttribute('intent')
     if (intent) {
         if (intent.indexOf('integral') != -1)
             name = 'int-agrand' // Convince speech to say integrand
@@ -1852,11 +1860,6 @@ function checkMathSelection(sel) {
                     name = 'binomial-coefficient'
                 else if (intent == ':fenced')
                     name = 'fenced'
-            } else if (node.nextElementSibling) {
-                node = node.nextElementSibling
-                setSelection(sel, node, 0)
-                name = node.childElementCount
-                    ? names[node.nodeName] : node.textContent
             } else if (node.parentElement.nodeName == 'math') {
                 name = 'math'
             } else {
@@ -2520,7 +2523,10 @@ function moveRight(sel, node, offset, e) {
         if (isMrowLike(node.parentElement) && node.nextElementSibling &&
             node.nextElementSibling.childElementCount) {
             // E.g., moving into √ from end of ± in 𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎
-            setSelectionEx(sel, node.nextElementSibling.firstElementChild, 0, e)
+            node = node.nextElementSibling.firstElementChild
+            if (node.nodeName == 'mrow')
+                node = node.firstElementChild
+            setSelectionEx(sel, node, 0, e)
             return
         }
         name = node.parentElement.nodeName
@@ -2530,8 +2536,18 @@ function moveRight(sel, node, offset, e) {
                 node = node.parentElement
             while (!node.nextElementSibling) {
                 node = node.parentElement
+                if (!node.nextElementSibling && node.parentElement.nodeName == 'math')
+                    node = node.parentElement
                 if (isMrowLike(node)) {
-                    setSelectionEx(sel, node, node.childElementCount, e)
+                    name = checkNaryand(node)
+                    offset = node.childElementCount
+                    if (name) {
+                        speak('end of ' + name)
+                    } else if (node.nodeName == 'mrow' && node.nextElementSibling) {
+                        node = node.nextElementSibling
+                        offset = 0
+                    }
+                    setSelectionEx(sel, node, offset, e)
                     return
                 }
             }
@@ -2541,9 +2557,8 @@ function moveRight(sel, node, offset, e) {
                 setSelectionEx(sel, node.firstElementChild.firstElementChild, 0, e)
                 return
             }
-            intent = node.parentElement.getAttribute('intent')
             node = node.nextElementSibling
-            name = checkNaryand(node, intent)
+            name = checkNaryand(node)
             if (name)
                 speak(name)
             else if (node.nodeName == 'mrow' || node.nodeName == 'mtd')
@@ -2590,8 +2605,7 @@ function moveRight(sel, node, offset, e) {
                 if (intent == ':function') {
                     name = 'function'
                 } else {
-                    intent = nodeP.parentElement.getAttribute('intent')
-                    name = checkNaryand(node, intent)
+                    name = checkNaryand(nodeP)
                 }
                 if (!name)
                     name = getArgName(nodeP)
@@ -2969,6 +2983,8 @@ output.addEventListener("click", (e) => {
         setSelection(sel, node, SELECTNODE)
     checkSimpleSup(node.parentElement.parentElement)
     //speechSel(sel)
+    if (outputUndoStack.length < 2)
+        outputUndoStack.push(getUnicodeMath(output.firstElementChild, true))
 })
 
 function selectMathZone() {
