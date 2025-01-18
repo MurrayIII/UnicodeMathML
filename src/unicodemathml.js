@@ -479,8 +479,9 @@ function isMathMLObject(value, ignoreIntent) {
             // Conversions to speech, braille, and UnicodeMath ignore
             // parenthesizing due to <mrow> intent values
             let intent = value.getAttribute('intent')
-            if (intent == ':function' || intent == ':fenced' || intent.startsWith(':integral') ||
-                intent.startsWith('binomial-coefficient'))
+            if (intent == ':function' || intent == ':fenced' ||
+                intent.indexOf('integral') != -1 ||
+                intent.startsWith(':n-ary') || intent.startsWith('binomial-coefficient'))
                 return true
         }
         if (value.childElementCount == 1)
@@ -1455,7 +1456,7 @@ const narys = {
     '∰': ':volume integral',
     '⨌': ':quadruple integral',
     '∱': ':clockwise integral',
-    '∱': ':clockwise contour integral',
+    '∲': ':clockwise contour integral',
     '∳': ':anticlockwise contour integral',
     '∐': ':coproduct',
 };
@@ -4200,7 +4201,7 @@ function pretty(mast) {
         case "mrow":
             // mrow elimination: ignore superfluous mrows, i.e. ones that
             // contain only a single child and have no attributes
-            if (Array.isArray(value) && value.length == 1) {
+            if (Array.isArray(value) && value.length == 1 && !attributes.arg) {
                 // insert a dummy mrow around the singleton array value to fix
                 // bug occurring if this singleton array value is again an array,
                 // which the pretty() function would then simply map over,

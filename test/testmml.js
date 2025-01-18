@@ -74,6 +74,7 @@ const mathML = [
     "<math display=\"block\"><mrow intent=\":determinant\"><mo>|</mo><mtable intent=\":array(2,2)\"><mtr><mtd><mi>𝑎</mi></mtd><mtd><mi>𝑏</mi></mtd></mtr><mtr><mtd><mi>𝑐</mi></mtd><mtd><mi>𝑑</mi></mtd></mtr></mtable><mo>|</mo></mrow></math>",
     "<math display=\"block\"><mi>𝑥</mi><mo>=</mo><mfrac><mrow><mo>−</mo><mi>𝑏</mi><mo>±</mo><msqrt><msup><mi>𝑏</mi><mn>2</mn></msup><mo>−</mo><mn>4</mn><mi>𝑎</mi><mi>𝑐</mi></msqrt></mrow><mrow><mn>2</mn><mi>𝑎</mi></mrow></mfrac></math>",
     "<math display=\"block\"><menclose notation=\"box\"><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></menclose></math>",
+    "<math display=\"block\"><mrow intent=\":clockwise contour integral(𝑐,,$naryand)\"><msub><mo>∲</mo><mi>𝑐</mi></msub><mrow arg=\"naryand\"><mi>𝑑</mi><mi>𝜙</mi></mrow></mrow><mo>≠</mo><mrow intent=\":sum(𝑐,,$naryand)\"><munder><mo>∑</mo><mi>𝑐</mi></munder><mrow arg=\"naryand\"><mi>𝑑</mi><mi>𝑥</mi></mrow></mrow><mo>=</mo><mn>0</mn></math>",
 ]
 
 const unicodeMath = [
@@ -149,6 +150,7 @@ const unicodeMath = [
     "⒱(𝑎&𝑏@𝑐&𝑑)",
     "𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎",
     "▭(𝑎+𝑏)",
+    "∲_𝑐 𝑑𝜙≠∑┬𝑐 𝑑𝑥=0",
 ]
 
 const mathSpeech = [
@@ -230,6 +232,7 @@ const mathSpeech = [
     "the 2 by 2 determinant , row 1 , eigh , b , row 2 , c , d , end determinant",
     "x = fraction minus b plus or minus square root , b squared minus 4 eigh c , end square root over 2 eigh , end fraction",
     "box eigh + b , end box",
+    "clockwise contour integral over c of d phi not equal sum over c of d x = 0",
 ]
 
 const mathBrailles = [
@@ -305,6 +308,7 @@ const mathBrailles = [
     "⠠⠳⠁⠀⠃⣍⠉⠀⠙⠠⠳",
     "⠭⠀⠨⠅⠀⠹⠤⠃⠬⠤⠜⠃⠘⠆⠐⠤⠲⠁⠉⠻⠌⠆⠁⠼",
     "⠫⠗⠸⠫⠁⠬⠃⠻",
+    "⠮⠈⠫⠪⠢⠔⠻⠰⠉⠐⠙⠨⠋⠀⠌⠨⠅⠀⠐⠨⠠⠎⠩⠉⠻⠙⠭⠀⠨⠅⠀⠼⠴",
 ]
 
 const mathTeXs = [                          // Some cases aren't supported by TeX
@@ -380,6 +384,7 @@ const mathTeXs = [                          // Some cases aren't supported by Te
     '\\begin{vmatrix}𝑎&𝑏\\\\𝑐&𝑑\\end{vmatrix}',
     '𝑥=\\frac{−𝑏±\\sqrt{𝑏^2−4𝑎𝑐}}{2𝑎}',
     '\\boxed{𝑎+𝑏}',
+    '∲_𝑐𝑑𝜙≠∑_𝑐𝑑𝑥=0',
 ]
 
 function testMathMLtoUnicodeMath() {

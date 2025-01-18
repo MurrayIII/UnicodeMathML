@@ -778,10 +778,17 @@ function speech(value, noAddParens) {
 	}
 
 	function Nary(node) {
-		// symbol 'from' lower-limit 'to' upper-limit 'of'
-		return speech(node.firstElementChild) + '☟' +	// 'from'
-			speech(node.children[1], true) + '☝' +		// 'to'
-			speech(node.lastElementChild, true) + '▒';	// 'of'
+		if (node.childElementCount == 3) {
+			// symbol 'from' lower-limit 'to' upper-limit 'of'
+			return speech(node.firstElementChild) + '☟' +	// 'from'
+				speech(node.children[1], true) + '☝' +		// 'to'
+				speech(node.lastElementChild, true) + '▒';	// 'of'
+		}
+		if (node.childElementCount == 2) {
+			// symbol 'from' lower-limit 'to' upper-limit 'of'
+			return speech(node.firstElementChild) + '/' +	// 'over'
+				speech(node.lastElementChild, true) + '▒';	// 'of'
+		}
 	}
 
 	// Function called recursively to convert MathML to speech
@@ -1006,6 +1013,8 @@ function speech(value, noAddParens) {
 					speech(value.lastElementChild, true) + '▒'
 			} else if (value.hasAttribute('accentunder')) {
 				ret = binary(value, '')
+			} else if (isNary(value.firstElementChild.innerHTML)) {
+				ret = Nary(value)
 			} else {
 				ret = 'modified ' + speech(value.firstElementChild, true) +
 					'⁐' + speech(value.lastElementChild, true) + '┬' // 'with' ... 'below'
@@ -1013,7 +1022,8 @@ function speech(value, noAddParens) {
 			break
 
 		case 'msub':
-			ret = binary(value, '_')
+			ret = isNary(value.firstElementChild.innerHTML)
+				? Nary(value) : binary(value, '_')
 			break
 
 		case 'munderover':
