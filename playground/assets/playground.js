@@ -320,7 +320,8 @@ function speak(s) {
     if (!speechSynthesis.pending) {
         speechCurrent = ''
     } else {
-        speechCurrent += ', '
+        if (speechCurrent)
+            speechCurrent += ', '
         speechSynthesis.cancel()
     }
     speechCurrent += s
@@ -1429,16 +1430,21 @@ function refreshDisplays(uMath, noUndo) {
 }
 
 function checkNaryand(node) {
+    let intent = node.getAttribute('intent')
+    if (intent && intent.startsWith(':nary'))
+        return symbolSpeech(node.firstElementChild.firstElementChild.textContent) + 'expression'
+
     let arg = node.getAttribute('arg')
     if (arg != 'naryand')
         return ''
 
     let name = 'n aryand'
-    let intent = node.parentElement.getAttribute('intent')
-    if (intent) {
-        if (intent.indexOf('integral') != -1)
+    intent = node.parentElement.getAttribute('intent')
+    if (intent.startsWith(':nary')) {
+        let text = node.parentElement.firstElementChild.firstElementChild.textContent
+        if (isIntegral(text))
             name = 'int-agrand' // Convince speech to say integrand
-        else if (intent.indexOf('sum') != -1)
+        else if (text == '∑')
             name = 'summand'
     }
     return name
@@ -2675,8 +2681,13 @@ function moveRight(sel, node, offset, e) {
             node = node.nextElementSibling
         } else {
             node = node.nextElementSibling
-            if (node.nodeName == 'mrow')
-                node = node.firstElementChild
+            if (node.nodeName == 'mrow') {
+                intent = node.getAttribute('intent')
+                if (intent.startsWith(':nary'))
+                    speak(symbolSpeech(node.firstElementChild.firstElementChild.textContent) + 'expression')
+                else
+                    node = node.firstElementChild
+            }
             setSelectionEx(sel, node, 0, e)
             return
         }

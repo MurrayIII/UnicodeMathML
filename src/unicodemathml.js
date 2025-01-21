@@ -1445,22 +1445,6 @@ const mathFonts = {
     '9': {'mbf': '𝟗', 'Bbb': '𝟡', 'msans': '𝟫', 'mbfsans': '𝟵', 'mtt': '𝟿'},
 };
 
-const narys = {
-    '∏': ':product',
-    '∑': ':sum',
-    '∫': ':integral',
-    '∬': ':double integral',
-    '∭': ':triple integral',
-    '∮': ':contour integral',
-    '∯': ':surface integral',
-    '∰': ':volume integral',
-    '⨌': ':quadruple integral',
-    '∱': ':clockwise integral',
-    '∲': ':clockwise contour integral',
-    '∳': ':anticlockwise contour integral',
-    '∐': ':coproduct',
-};
-
 function isFunctionName(fn) {
     if (!fn.length)
         return false
@@ -2582,16 +2566,9 @@ function preprocess(dsty, uast, index, arr) {
             value.limits = preprocess(dsty, value.limits);
 
             if (!intent && emitDefaultIntents) {
-                intent = narys[value.limits.script.base.opnary];
-                if (intent == undefined) {
-                    if (value.limits.script.base.hasOwnProperty('script'))
-                        intent = narys[value.limits.script.base.script.base.opnary];
-                    if(intent == undefined)
-                        intent = ':n-ary';
-                }
-                var arg0 = getScript(value.limits.script.low, '$l');
-                var arg1 = getScript(value.limits.script.high, '$h');
-                intent += '(' + arg0 + ',' + arg1 + ',$naryand)';
+                let arg0 = getScript(value.limits.script.low, '$l')
+                let arg1 = getScript(value.limits.script.high, '$h')
+                intent = ':nary(' + arg0 + ',' + arg1 + ',$naryand)'
                 value.naryand.arg = 'naryand';
                 if (arg0 == '$l')
                     value.limits.script.low.arg = arg0.substring(1);
@@ -4602,7 +4579,7 @@ function dump(value, noAddParens) {
 
         case 'munderover':
             intent = value.parentElement.getAttribute('intent')
-            if (!intent || !intent.startsWith(':sum')) {
+            if (!intent || !intent.startsWith(':nary')) {
                 ret = ternary(value, '┬', '┴');
                 break;
             }

@@ -292,7 +292,7 @@ function TeX(value, noAddParens) {
 
         case 'munderover':
             intent = value.parentElement.getAttribute('intent')
-            if (!intent || !intent.startsWith(':sum')) {
+            if (!intent || !intent.startsWith(':nary')) {
                 ret = ternary(value, '┬', '┴');
                 break;
             }
