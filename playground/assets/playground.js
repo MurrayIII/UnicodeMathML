@@ -25,6 +25,7 @@ var keydownLast
 var outputRedoStack = ['']
 var outputUndoStack = ['']
 var prevInputValue = "";
+var Safari = navigator.userAgent.indexOf('Macintosh') != -1
 var selectionEnd                            // Used when editing input
 var selectionStart                          // Used when editing input
 var shadedArgNode                           // Used for IP when editing output
@@ -176,7 +177,7 @@ function setSelectionEx(sel, node, offset, e) {
         sel.setBaseAndExtent(sel.anchorNode, sel.anchorOffset, node, offset)
     else
         sel.setBaseAndExtent(node, offset, node, offset)
-    if (testing)
+    if (testing || Safari)
         document.onselectionchange()
 }
 
