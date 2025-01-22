@@ -1333,7 +1333,7 @@ function checkSimpleSup(node) {
 const names = {
     'math': 'math', 'mfrac': 'fraction', 'mover': 'modify above',
     'mroot': 'root', 'msqrt': 'square root', 'msub': 'subscript',
-    'msubsup': 'subsoup', 'msup': 'superscript', 'mtable': 'matrix',
+    'msubsup': 'sub soup', 'msup': 'superscript', 'mtable': 'matrix',
     'mtd': 'element', 'munder': 'modify below', 'munderover': 'below above'
 }
 
