@@ -177,7 +177,7 @@ function setSelectionEx(sel, node, offset, e) {
         sel.setBaseAndExtent(sel.anchorNode, sel.anchorOffset, node, offset)
     else
         sel.setBaseAndExtent(node, offset, node, offset)
-    if (testing || Safari)
+    if (testing)
         document.onselectionchange()
 }
 
