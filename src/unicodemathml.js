@@ -651,7 +651,7 @@ var controlWords = {
     'Vvdash':           '⊪',	    // 22AA
     'Xi':               'Ξ',	// 039E
     'above':            '┴',	// 2534
-    //'abs':              '⒜',	// 249C
+    'abs':              '⒜',	// 249C
     'acute':            '́',	    // 0301
     'aleph':            'ℵ',    	// 2135
     'alpha':            'α',	// 03B1

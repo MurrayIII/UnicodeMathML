@@ -26,6 +26,7 @@ var outputRedoStack = ['']
 var outputUndoStack = ['']
 var prevInputValue = "";
 var Safari = navigator.userAgent.indexOf('Macintosh') != -1
+var selectionChangeEventPending
 var selectionEnd                            // Used when editing input
 var selectionStart                          // Used when editing input
 var shadedArgNode                           // Used for IP when editing output
@@ -89,7 +90,15 @@ function removeSelMarkers(uMath) {
     return uMath
 }
 
+function checkSelectionChangeEvent() {
+    if (selectionChangeEventPending) {
+        // Safari didn't fire selection-change event
+        document.onselectionchange()
+    }
+}
+
 document.onselectionchange = () => {
+    selectionChangeEventPending = false
     if (shadedArgNode) {
         shadedArgNode.removeAttribute('mathbackground')
         shadedArgNode = null
@@ -179,6 +188,10 @@ function setSelectionEx(sel, node, offset, e) {
         sel.setBaseAndExtent(node, offset, node, offset)
     if (testing)
         document.onselectionchange()
+    else if (Safari) {
+        setTimeout(checkSelectionChangeEvent, 100)
+        selectionChangeEventPending = true
+    }
 }
 
 function setSelection(sel, node, offset, nodeFocus, offsetFocus) {
@@ -2675,7 +2688,6 @@ function moveRight(sel, node, offset, e) {
                 }
             }
             speak(intent)
-            setTimeout(function () { }, 1000)
             setSelectionEx(sel, node, 0, e)
         } else if (!node.childNodes.length) {   // 'malignmark' or 'maligngroup'
             speak('＆')
@@ -3056,13 +3068,24 @@ function getMathSelection() {
 }
 
 document.addEventListener('keydown', function (e) {
+    // Include cases for Mac ASCII letter hot keys
+    //   Alt + a	å
+    //   Alt + b	∫
+    //   Alt + d	∂
+    //   Alt + h	˙
+    //   Alt + m	µ
+    //   Alt + p	π
+    //   Alt + s	ß
+    //   Alt + t	†
     if (e.altKey) {
         switch (e.key) {
             case 'a':                       // Alt+a
+            case 'å':
                 document.getElementById("about").click()
                 return
 
             case 'b':                       // Alt+b
+            case '∫':
                 // Braille MathML
                 e.preventDefault()
                 let mathML = isMathML(input.value)
@@ -3074,6 +3097,7 @@ document.addEventListener('keydown', function (e) {
                 return
 
             case 'd':                       // Alt+d
+            case '∂':
                 // Toggle dictation mode on/off
                 e.preventDefault()
                 startDictation()
@@ -3091,10 +3115,12 @@ document.addEventListener('keydown', function (e) {
                 return
 
             case 'h':                       // Alt+h
+            case '˙':
                 document.getElementById("help").click()
                 return
 
             case 'm':                       // Alt+m
+            case 'µ':
                 // Toggle Unicode and MathML in input display
                 e.preventDefault()
                 ksi = true
@@ -3105,12 +3131,14 @@ document.addEventListener('keydown', function (e) {
                 return
 
             case 'p':                       // Alt+p
+            case 'π':
                 // Presentation: toggle demo mode on/off
                 e.preventDefault()
                 startDemo()
                 return
 
             case 's':                       // Alt+s
+            case 'ß':
                 // Speak MathML
                 e.preventDefault()
                 if (speechSynthesis.speaking) {
@@ -3130,6 +3158,7 @@ document.addEventListener('keydown', function (e) {
                 return
 
             case 't':                       // Alt+t
+            case '†':
                 // MathML to Unicode [La]TeX
                 e.preventDefault()
                 mathTeX()
