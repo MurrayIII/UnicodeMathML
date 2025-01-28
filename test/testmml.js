@@ -656,11 +656,11 @@ function testAutoBuildUp() {
 
 const clipExpect = "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mfrac><mi>𝑎</mi><mi>𝑏</mi></mfrac><mo>+</mo><mfrac><mi>𝑐</mi><mi>𝑑</mi></mfrac></math>"
 const homeExpect = "Ⓐ() 𝑎/𝑏+𝑐/𝑑=0"
-const endExpect = "𝑎/𝑏+𝑐/𝑑=0 Ⓐ()"
+const endExpect = "𝑎/𝑏+𝑐/𝑑=Ⓐ(1)0"
 const rightArrowExpect = ['Ⓐ()𝑎/𝑏+𝑐/𝑑=0', 'Ⓐ(1)𝑎/𝑏+𝑐/𝑑=0', '𝑎/Ⓐ()𝑏+𝑐/𝑑=0',
     '𝑎/Ⓐ(1)𝑏+𝑐/𝑑=0', '𝑎/𝑏 Ⓐ()+𝑐/𝑑=0', '𝑎/𝑏 Ⓐ(1)+𝑐/𝑑=0', '𝑎/𝑏+Ⓐ()𝑐/𝑑=0',
     '𝑎/𝑏+Ⓐ(1)𝑐/𝑑=0', '𝑎/𝑏+𝑐/Ⓐ()𝑑=0', '𝑎/𝑏+𝑐/Ⓐ(1)𝑑=0', '𝑎/𝑏+𝑐/𝑑 Ⓐ()=0',
-    '𝑎/𝑏+𝑐/𝑑=Ⓐ()0', '𝑎/𝑏+𝑐/𝑑=0 Ⓐ()',
+    '𝑎/𝑏+𝑐/𝑑=Ⓐ()0', '𝑎/𝑏+𝑐/𝑑=Ⓐ(1)0',
 ]
 const speechExpect = ['eigh ', 'end of numerator', 'b ', 'end of denominator',
     '+', 'fraction', 'c ', 'end of numerator', 'd ', 'end of denominator',
@@ -720,12 +720,12 @@ const rightArrowExpect1 = [
     '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−Ⓐ(1)𝑏²)',    // 43
     '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏^Ⓐ()2)',    // 44
     '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏^Ⓐ(1)2)',   // 45
+    '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−Ⓐ(2) 𝑏²)',   // 46
     '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/Ⓐ(3)√(𝑎²−𝑏²)',    // 46
     '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=Ⓐ(2) 1/√(𝑎²−𝑏²)',   // 47
-    'Ⓐ(4) 1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)',   // 48
 ]
 const speechExpect1 = ['1', 'end of numerator', '2', 'pi ',
-    'end of denominator', 'integral expression', 'subsoup', 'integral ', 'end of base', '0',
+    'end of denominator', 'integral expression', 'sub soup', 'integral ', 'end of base', '0',
     'end of lower limit', '2', 'pi ', 'end of upper limit', 'int-agrand, fraction',
     'differential d ', 'theta ', 'end of numerator', 'eigh ', '+', 'b ',
     'function', 's', 'i', 'n', 'function apply ', 'theta ',
@@ -733,7 +733,7 @@ const speechExpect1 = ['1', 'end of numerator', '2', 'pi ',
     'fraction', '1', 'end of numerator', 'square root', 'eigh squared',
     'eigh ', 'end of base', '2', 'end of superscript', 'minus ',
     'b squared', 'b ', 'end of base', '2', 'end of superscript',
-    'end of denominator', 'end of fraction', 'end of math'
+    'end of square root', 'end of denominator', 'end of math'
 ]
 
 const homeExpect2 = 'Ⓐ()𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎'
@@ -744,7 +744,7 @@ const rightArrowExpect2 = [
     '𝑥=(−𝑏±√(𝑏^Ⓐ()2−4𝑎𝑐))/2𝑎', '𝑥=(−𝑏±√(𝑏^Ⓐ(1)2−4𝑎𝑐))/2𝑎', '𝑥=(−𝑏±√(𝑏²Ⓐ()−4𝑎𝑐))/2𝑎',
     '𝑥=(−𝑏±√(𝑏²−Ⓐ()4𝑎𝑐))/2𝑎', '𝑥=(−𝑏±√(𝑏²−4Ⓐ()𝑎𝑐))/2𝑎', '𝑥=(−𝑏±√(𝑏²−4𝑎Ⓐ()𝑐))/2𝑎',
     '𝑥=(−𝑏±√(𝑏²−4𝑎Ⓐ(1)𝑐))/2𝑎', '𝑥=(−𝑏±Ⓐ(5)√(𝑏²−4𝑎𝑐))/2𝑎', '𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/Ⓐ()2𝑎',
-    '𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2Ⓐ()𝑎', '𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2Ⓐ(1)𝑎', '𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎 Ⓐ()',
+    '𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2Ⓐ()𝑎', '𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2Ⓐ(1)𝑎', '𝑥=Ⓐ(2) (−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎',
 ]
 const speechExpect2 = ['=', 'fraction', 'minus ', 'b ', 'plus or minus ',
     'square root', 'b squared', 'b ', 'end of base', '2', 'end of superscript',
@@ -859,6 +859,7 @@ function testHotKeys() {
         if (uMath != rightArrowQExpect[i])
             console.log('Output q failed. result: ' + uMath + " expect: " + rightArrowQExpect[i])
         ctrlZ()
+        speechSynthesis.cancel()
     }
 
     buildUp('1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)')
@@ -869,6 +870,7 @@ function testHotKeys() {
         if (speechCurrent != speechExpect1[i])
             console.log('Speech1 failed. result: ' + speechCurrent + " expect: " + speechExpect1[i])
         speechCurrent = ''
+        speechSynthesis.cancel()
     }
 
     buildUp('𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎')
@@ -879,6 +881,7 @@ function testHotKeys() {
         if (speechCurrent != speechExpect2[i])
             console.log('Speech2 failed. result: ' + speechCurrent + " expect: " + speechExpect2[i])
         speechCurrent = ''
+        speechSynthesis.cancel()
     }
 
     // Test output Ctrl+z and Ctrl+y hot keys

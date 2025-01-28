@@ -66,7 +66,7 @@ function removeSelMarkers(uMath) {
             let index = i
             i += 2
             let offset = uMath[i] == '-' ? uMath[i++] : ''
-            if (uMath[i] != ')')
+            while (isAsciiDigit(uMath[i]))
                 offset += uMath[i++]
             if (uMath[i] != ')') {
                 console.log('Invalid selection marker' + uMath)
@@ -92,7 +92,7 @@ function removeSelMarkers(uMath) {
 
 function checkSelectionChangeEvent() {
     if (selectionChangeEventPending) {
-        // Safari didn't fire selection-change event
+        // Safari didn't fire selectionchange event
         document.onselectionchange()
     }
 }
@@ -331,7 +331,8 @@ function speak(s) {
     if(!testing)
         console.log(s)
     s = symbolSpeech(s)
-    if (!speechSynthesis.pending) {
+    if (!speechSynthesis.pending && (!testing || speechCurrent == 'q')) {
+        // Some build-up tests insert 'q'; if so, delete 'q'
         speechCurrent = ''
     } else {
         if (speechCurrent)
@@ -1871,7 +1872,10 @@ function checkMathSelection(sel) {
         console.log('node, offset = ' + node.nodeName + ', ' + offset)
 
     if (node.childElementCount) {
-        if (node.nodeName == 'mrow') {
+        if (node.parentElement.nodeName == 'math' && !node.nextElementSibling &&
+            offset == node.childElementCount) {
+            name = 'math'
+        } else if (node.nodeName == 'mrow') {
             let intent = node.getAttribute('intent')
             if (intent) {
                 if (intent == ':function')
@@ -1880,8 +1884,6 @@ function checkMathSelection(sel) {
                     name = 'binomial-coefficient'
                 else if (intent == ':fenced')
                     name = 'fenced'
-            } else if (node.parentElement.nodeName == 'math') {
-                name = 'math'
             } else {
                 name = getArgName(node)
             }
@@ -1950,6 +1952,8 @@ function checkMathSelection(sel) {
             let text = node.textContent
             if (text)
                 name = symbolSpeech(getCh(text, 0))
+        } else if (node.parentElement.nodeName == 'math') {
+            name = 'math'
         }
     }
     let intent = node.getAttribute('intent')
@@ -2368,7 +2372,12 @@ function checkAutoBuildUp(node, nodeP, key) {
                     output_preprocess_ast.innerHTML = highlightJson(preprocess_ast) + "\n";
                 }
                 if (!cParen) {          // Full build up of nodeP
-                    nodeP.innerHTML = t.mathml
+                    let mml = t.mathml
+                    if (isMrowLike(nodeP) && mml.startsWith('<mrow>') &&
+                        mml.endsWith('</mrow>')) {
+                        mml = mml.substring(6, mml.length - 7)
+                    }
+                    nodeP.innerHTML = mml
                 } else {                // Build up of trailing children
                     // Remove children[k + 1]...children[cNode - 1] and
                     // append their built-up counterparts
@@ -2485,6 +2494,8 @@ function moveRight(sel, node, offset, e) {
                 return
             }
             node = node.parentElement
+            if (node.nodeName == 'math')
+                return                      // Stay within math zone
             if (node.nextElementSibling) {
                 node = node.nextElementSibling
                 if (node.nodeName == 'mrow')
@@ -2506,7 +2517,7 @@ function moveRight(sel, node, offset, e) {
                 setSelectionEx(sel, node, 0, e)
                 return
             }
-            if (node.nodeName == 'math')
+            if (node.parentElement.nodeName == 'math')
                 return                  // Already at end of math
 
             // Comes here for 'ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)' when IP follows sin⁡𝜃.
@@ -2556,8 +2567,10 @@ function moveRight(sel, node, offset, e) {
                 node = node.parentElement
             while (!node.nextElementSibling) {
                 node = node.parentElement
-                if (!node.nextElementSibling && node.parentElement.nodeName == 'math')
-                    node = node.parentElement
+                if (!node.nextElementSibling && isMathMLObject(node)) {
+                    setSelectionEx(sel, node, node.childElementCount, e)
+                    return
+                }
                 if (isMrowLike(node)) {
                     name = checkNaryand(node)
                     offset = node.childElementCount
@@ -2586,6 +2599,7 @@ function moveRight(sel, node, offset, e) {
             setSelectionEx(sel, node, 0, e)
             return
         }
+        return
     }   // if (offset) {}
 
     if (node.nodeName == 'mtd') {
@@ -2610,8 +2624,7 @@ function moveRight(sel, node, offset, e) {
 
         if (!node.nextElementSibling) {
             if (node.parentElement.nodeName == 'math') {
-                node = node.parentElement
-                setSelectionEx(sel, node, node.childElementCount, e)
+                setSelectionEx(sel, node, 1, e)
                 return
             }
             if (isMathMLObject(node.parentElement) && node.parentElement.nodeName != 'mrow') {
@@ -2696,7 +2709,7 @@ function moveRight(sel, node, offset, e) {
             node = node.nextElementSibling
             if (node.nodeName == 'mrow') {
                 intent = node.getAttribute('intent')
-                if (intent.startsWith(':nary'))
+                if (intent && intent.startsWith(':nary'))
                     speak(symbolSpeech(node.firstElementChild.firstElementChild.textContent) + 'expression')
                 else
                     node = node.firstElementChild
@@ -3320,7 +3333,8 @@ output.addEventListener('keydown', function (e) {
             if (node.nodeName != 'math' || node.firstElementChild.textContent == '⬚')
                 return
             if (key == 'End') {
-                offset = node.childElementCount
+                node = node.lastElementChild
+                offset = node.childElementCount ? node.childElementCount : 1
                 name = 'end of math'
             } else {
                 node = node.firstElementChild
