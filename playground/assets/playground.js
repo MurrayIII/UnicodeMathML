@@ -2648,16 +2648,30 @@ function moveRight(sel, node, offset, e) {
             let nodeP = node.parentElement
             if (nodeP.nodeName == 'mrow') {
                 let intent = nodeP.getAttribute('intent')
-                name = intent == ':function'
-                     ? 'function' : checkNaryand(nodeP)
-                if (!name)
-                    name = getArgName(nodeP)
-                if (name)
-                    speak('end of ' + name)
-                offset = 1
-                if (intent == ':cases') {
-                    node = nodeP
-                    offset = node.childElementCount
+                if (intent == ':fenced') {
+                    if (nodeP.nextElementSibling) {
+                        node = nodeP.nextElementSibling
+                        offset = 0          // 𝑍(𝜔Ⓐ())=0 comes here
+                    } else {
+                        node = nodeP        // 𝑍(𝜔Ⓐ()) comes here
+                        offset = node.childElementCount
+                    }
+                } else {
+                    offset = 1
+                    name = intent == ':function'
+                        ? 'function' : checkNaryand(nodeP)
+                    if (!name)
+                        name = getArgName(nodeP)
+                    if (name)
+                        speak('end of ' + name)
+                    if (intent == ':cases') {
+                        node = nodeP
+                        offset = node.childElementCount
+                    }
+                    if (!intent && nodeP.parentElement.getAttribute('intent') == ':fenced') {
+                        node = nodeP.parentElement.lastElementChild
+                        offset = 0
+                    }
                 }
                 setSelectionEx(sel, node, offset, e)
                 return

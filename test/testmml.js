@@ -672,6 +672,7 @@ const rightArrowQExpect = ['Ⓐ(1)𝑞𝑎/𝑏+𝑐/𝑑=0', '𝑎Ⓐ(1)𝑞/�
     '𝑎/𝑏+𝑐/𝑑=Ⓐ(1)𝑞0', '𝑎/𝑏+𝑐/𝑑=0Ⓐ(1)𝑞',
 ]
 
+const uMath1 = '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)'
 const homeExpect1 = 'Ⓐ() 1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)'
 const rightArrowExpect1 = [
     'Ⓐ()1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)',      // 1
@@ -736,6 +737,7 @@ const speechExpect1 = ['1', 'end of numerator', '2', 'pi ',
     'end of square root', 'end of denominator', 'end of math'
 ]
 
+const uMath2 = '𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎'
 const homeExpect2 = 'Ⓐ()𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎'
 const rightArrowExpect2 = [
     '𝑥Ⓐ()=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎', '𝑥Ⓐ(1)=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎', '𝑥=(Ⓐ()−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎',
@@ -750,6 +752,17 @@ const speechExpect2 = ['=', 'fraction', 'minus ', 'b ', 'plus or minus ',
     'square root', 'b squared', 'b ', 'end of base', '2', 'end of superscript',
     'minus ', '4', 'eigh ', 'c ', 'end of square root', 'end of numerator',
     '2', 'eigh ', 'end of denominator', 'end of math',
+]
+
+const uMath3 = '𝑍(𝜔)≠𝑍(𝜔+1)'
+const homeExpect3 = 'Ⓐ()𝑍(𝜔)≠𝑍(𝜔+1)'
+const rightArrowExpect3 = ['𝑍Ⓐ() (𝜔)≠𝑍(𝜔+1)', '𝑍Ⓐ()(𝜔)≠𝑍(𝜔+1)', '𝑍(Ⓐ()𝜔)≠𝑍(𝜔+1)',
+    '𝑍(𝜔Ⓐ())≠𝑍(𝜔+1)', '𝑍(𝜔)Ⓐ()≠𝑍(𝜔+1)', '𝑍(𝜔)≠Ⓐ()𝑍(𝜔+1)', '𝑍(𝜔)≠𝑍Ⓐ() (𝜔+1)',
+    '𝑍(𝜔)≠𝑍Ⓐ()(𝜔+1)', '𝑍(𝜔)≠𝑍(Ⓐ()𝜔+1)', '𝑍(𝜔)≠𝑍(𝜔Ⓐ()+1)', '𝑍(𝜔)≠𝑍(𝜔+Ⓐ()1)',
+    '𝑍(𝜔)≠𝑍(𝜔+1Ⓐ())', '𝑍(𝜔)≠𝑍Ⓐ(3) (𝜔+1)',
+]
+const speechExpect3 = ['fenced', 'open ', 'omega ', 'close ', 'not equal ', 'cap Z ',
+    'fenced', 'open ', 'omega ', '+', '1', 'close ', 'end of math',
 ]
 
 function testOutputHotKey(key, expect) {
@@ -793,6 +806,19 @@ function testInputHotKey(key, altKey, ctrlKey, expect, expectStart, expectEnd) {
     if (input.selectionStart != expectStart || input.selectionEnd != expectEnd) {
         console.log('Selection failed. result: ' + input.selectionStart + ', ' +
             input.selectionEnd + " expect: " + expectStart + ', ' + expectEnd)
+    }
+}
+
+function testRightArrow(uMath, homeExpect, rightArrowExpect, speechExpect) {
+    buildUp(uMath)
+    testOutputHotKey('Home', homeExpect)
+    speechCurrent = ''
+    for (let i = 0; i < rightArrowExpect.length; i++) {
+        testOutputHotKey('ArrowRight', rightArrowExpect[i])
+        if (speechCurrent != speechExpect[i])
+            console.log(uMath + 'Speech failed. result: ' + speechCurrent + " expect: " + speechExpect[i])
+        speechCurrent = ''
+        speechSynthesis.cancel()
     }
 }
 
@@ -862,27 +888,9 @@ function testHotKeys() {
         speechSynthesis.cancel()
     }
 
-    buildUp('1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)')
-    testOutputHotKey('Home', homeExpect1)
-    speechCurrent = ''
-    for (let i = 0; i < rightArrowExpect1.length; i++) {
-        testOutputHotKey('ArrowRight', rightArrowExpect1[i])
-        if (speechCurrent != speechExpect1[i])
-            console.log('Speech1 failed. result: ' + speechCurrent + " expect: " + speechExpect1[i])
-        speechCurrent = ''
-        speechSynthesis.cancel()
-    }
-
-    buildUp('𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎')
-    testOutputHotKey('Home', homeExpect2)
-    speechCurrent = ''
-    for (let i = 0; i < rightArrowExpect2.length; i++) {
-        testOutputHotKey('ArrowRight', rightArrowExpect2[i])
-        if (speechCurrent != speechExpect2[i])
-            console.log('Speech2 failed. result: ' + speechCurrent + " expect: " + speechExpect2[i])
-        speechCurrent = ''
-        speechSynthesis.cancel()
-    }
+    testRightArrow(uMath1, homeExpect1, rightArrowExpect1, speechExpect1)
+    testRightArrow(uMath2, homeExpect2, rightArrowExpect2, speechExpect2)
+    testRightArrow(uMath3, homeExpect3, rightArrowExpect3, speechExpect3)
 
     // Test output Ctrl+z and Ctrl+y hot keys
     buildUp('𝑎²+𝑏²=𝑐²')
@@ -903,6 +911,7 @@ function testHotKeys() {
     testOutputHotKey('Delete', '𝑎/𝑏 Ⓐ()=0')
     testOutputHotKey('z', '𝑎/𝑏 Ⓐ(-0)+Ⓕ(2) 𝑐/𝑑=0')
     testOutputHotKey('q', '𝑎/𝑏 Ⓐ(1)𝑞=0')
+    speechSynthesis.cancel()
 
     // Test input Ctrl+z and Ctrl+y hot keys
     input.focus()
