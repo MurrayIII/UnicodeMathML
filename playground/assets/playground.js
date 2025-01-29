@@ -2567,9 +2567,17 @@ function moveRight(sel, node, offset, e) {
                 node = node.parentElement
             while (!node.nextElementSibling) {
                 node = node.parentElement
-                if (!node.nextElementSibling && isMathMLObject(node)) {
-                    setSelectionEx(sel, node, node.childElementCount, e)
-                    return
+                if (!node.nextElementSibling) {
+                    if (isMathMLObject(node)) {
+                        setSelectionEx(sel, node, node.childElementCount, e)
+                        return
+                    }
+                    if (node.nodeName == 'mtr' &&
+                        node.parentElement.getAttribute('intent') == ':equations') {
+                        speak('end of equations')
+                        setSelectionEx(sel, node, node.childElementCount, e)
+                        return              // Place to add new equation
+                    }
                 }
                 if (isMrowLike(node)) {
                     name = checkNaryand(node)
@@ -2592,6 +2600,11 @@ function moveRight(sel, node, offset, e) {
             }
             node = node.nextElementSibling
             name = checkNaryand(node)
+            if (!name && node.textContent == '\u200B') {
+                let intent = node.parentElement.getAttribute('intent')
+                if (intent == ':cases')     // ZWSP used for selection attrs
+                    name = 'end of cases'
+            }
             if (name)
                 speak(name)
             else if (node.nodeName == 'mrow' || node.nodeName == 'mtd')
@@ -2635,16 +2648,18 @@ function moveRight(sel, node, offset, e) {
             let nodeP = node.parentElement
             if (nodeP.nodeName == 'mrow') {
                 let intent = nodeP.getAttribute('intent')
-                if (intent == ':function') {
-                    name = 'function'
-                } else {
-                    name = checkNaryand(nodeP)
-                }
+                name = intent == ':function'
+                     ? 'function' : checkNaryand(nodeP)
                 if (!name)
                     name = getArgName(nodeP)
                 if (name)
                     speak('end of ' + name)
-                setSelectionEx(sel, node, 1, e)
+                offset = 1
+                if (intent == ':cases') {
+                    node = nodeP
+                    offset = node.childElementCount
+                }
+                setSelectionEx(sel, node, offset, e)
                 return
             }
             if (nodeP.nodeName == 'mtd') {

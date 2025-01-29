@@ -4022,6 +4022,8 @@ function mtransform(dsty, puast) {
                         c.attributes = {arg: 'a'}
                 }
             } else if (separator == "") {
+                if (value.open == '{' && !value.close)
+                    value.close = '\u200B'  // Need non0 char for inline editing
                 content = mtransform(dsty, value.content);
             } else {
 
@@ -4153,7 +4155,7 @@ function pretty(mast) {
                 // doesn't fix columns with multiple-element groups of
                 // different lengths. Firefox displays the groups correctly
                 // without the float:right attribute, so Chromium needs
-                // a bug fix after which this code can be removed.
+                // a bug fix after which this condition can be removed.
                 if (i + 2 > mast.length - 1 || k(mast[i + 2]) == 'malignmark')
                     ret += `</mtd><mtd style='text-align:right;float:right'>`
                 else
@@ -4631,6 +4633,8 @@ function dump(value, noAddParens) {
 
         case 'mo':
             var val = value.innerHTML;
+            if (val == '\u200B' && value.parentElement.getAttribute('intent') == ':cases')
+                return ''                   // Discard ZWSP (used for in-line editing)
             if (!intent)
                 intent = value.getAttribute('intent')
             if (intent == ':text') {
