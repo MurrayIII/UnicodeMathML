@@ -504,6 +504,12 @@ const symbolSpeechStrings = {
 	'＆': 'ampersand',						// FF06
 }
 
+function getFunctionName(name) {
+	if (name in functions)
+		return functions[name]
+	return 'function'
+}
+
 const functions = {
 	'cos': 'cosine',
 	'cot': 'cotangent',

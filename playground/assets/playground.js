@@ -1295,7 +1295,9 @@ function getTableRowName(node) {
 }
 
 function getName(node) {
-    let name = names[node.nodeName]
+    let name = checkSimpleSup(node)
+    if (!name)
+        names[node.nodeName]
     if (!name)
         name = resolveSymbols(getCh(node.textContent, 0))
     return name
@@ -1337,12 +1339,10 @@ function getIntent(node) {
 function checkSimpleSup(node) {
     if (node.nodeName == 'msup' || node.nodeName == 'msqrt') {
         let s = speech(node)
-        if (s.length <= 6) {
-            speak(resolveSymbols(s))
-            return true
-        }
+        if (s.length <= 6)
+            return resolveSymbols(s)
     }
-    return false
+    return ''
 }
 
 const names = {
@@ -1444,17 +1444,30 @@ function refreshDisplays(uMath, noUndo) {
     }
 }
 
-function checkNaryand(node) {
+function checkEmulationIntent(node) {
+    // Get names for nary, function, and fenced emulated elements. These
+    // elements are mrow's with special intent properties
     let intent = node.getAttribute('intent')
-    if (intent && intent.startsWith(':nary'))
-        return symbolSpeech(node.firstElementChild.firstElementChild.textContent) + 'expression'
+    if (!intent)
+        return ''
 
+    let name = ''
+    if (intent.startsWith(':nary'))
+        name = symbolSpeech(node.firstElementChild.firstElementChild.textContent) + 'expression'
+    else if (intent == ':function')
+        name = getFunctionName(node.firstElementChild.textContent)
+    else if (intent == ':fenced')
+        name = 'fenced'
+    return name
+}
+
+function checkNaryand(node) {
     let arg = node.getAttribute('arg')
     if (arg != 'naryand')
         return ''
 
     let name = 'n aryand'
-    intent = node.parentElement.getAttribute('intent')
+    let intent = node.parentElement.getAttribute('intent')
     if (intent.startsWith(':nary')) {
         let text = node.parentElement.firstElementChild.firstElementChild.textContent
         if (isIntegral(text))
@@ -1879,7 +1892,7 @@ function checkMathSelection(sel) {
             let intent = node.getAttribute('intent')
             if (intent) {
                 if (intent == ':function')
-                    name = 'function'
+                    name = getFunctionName(node.firstElementChild.textContent)
                 else if (intent.startsWith('binomial-coefficient'))
                     name = 'binomial-coefficient'
                 else if (intent == ':fenced')
@@ -1902,7 +1915,8 @@ function checkMathSelection(sel) {
         !mmlElemFixedArgs.includes(node.parentNode.nodeName)) {
         // Moving from childless element to MathML element with
         // children as for moving past '-' in '√(𝑎²−𝑏²)'
-        if (!checkSimpleSup(node.nextElementSibling))
+        name = checkSimpleSup(node.nextElementSibling)
+        if (!name)
             name = names[node.nextElementSibling.nodeName]
     } else {
         if (sel.focusNode.nodeName == '#text') {
@@ -2557,6 +2571,9 @@ function moveRight(sel, node, offset, e) {
             node = node.nextElementSibling.firstElementChild
             if (node.nodeName == 'mrow')
                 node = node.firstElementChild
+            name = checkSimpleSup(node)
+            if (name)
+                speak(name)
             setSelectionEx(sel, node, 0, e)
             return
         }
@@ -2590,6 +2607,22 @@ function moveRight(sel, node, offset, e) {
                     }
                     setSelectionEx(sel, node, offset, e)
                     return
+                } else if (node.nextElementSibling) {
+                    name = checkEmulationIntent(node.nextElementSibling)
+                    if (name) {
+                        speak(name)
+                        setSelectionEx(sel, node.nextElementSibling, 0, e)
+                        return
+                    }
+                    name = checkNaryand(node.nextElementSibling)
+                    if (name) {
+                        speak(name)
+                        node = node.nextElementSibling
+                        if (node.nodeName == 'mrow')
+                            node = node.firstElementChild
+                        setSelectionEx(sel, node, 0, e)
+                        return
+                    }
                 }
             }
             if (node.nodeName == 'mtr') {
@@ -2731,15 +2764,15 @@ function moveRight(sel, node, offset, e) {
             }
             speak(intent)
             setSelectionEx(sel, node, 0, e)
-        } else if (!node.childNodes.length) {   // 'malignmark' or 'maligngroup'
+        } else if (!node.childNodes.length) { // 'malignmark' or 'maligngroup'
             speak('＆')
             node = node.nextElementSibling
         } else {
             node = node.nextElementSibling
             if (node.nodeName == 'mrow') {
-                intent = node.getAttribute('intent')
-                if (intent && intent.startsWith(':nary'))
-                    speak(symbolSpeech(node.firstElementChild.firstElementChild.textContent) + 'expression')
+                let name = checkEmulationIntent(node)
+                if (name)
+                    speak(name)
                 else
                     node = node.firstElementChild
             }
@@ -2770,6 +2803,9 @@ function moveRight(sel, node, offset, e) {
                 speak('＆')
             }
         }
+        name = checkSimpleSup(node)
+        if (name)
+            speak(name)
         setSelectionEx(sel, node, 0, e)
     }
 }
@@ -3047,8 +3083,9 @@ output.addEventListener("click", (e) => {
     atEnd = node.length == sel.anchorOffset
     if (sel.isCollapsed && node.nodeName == '#text' && node.textContent == '⬚')
         setSelection(sel, node, SELECTNODE)
-    checkSimpleSup(node.parentElement.parentElement)
-    //speechSel(sel)
+    let name = checkSimpleSup(node.parentElement.parentElement)
+    if (name)
+        speak(name)
     if (outputUndoStack.length < 2)
         outputUndoStack.push(getUnicodeMath(output.firstElementChild, true))
 })
@@ -3367,12 +3404,15 @@ output.addEventListener('keydown', function (e) {
                 name = 'end of math'
             } else {
                 node = node.firstElementChild
+                name = ''
                 if (node.nodeName == 'mrow') {
-                    let intent = node.getAttribute('intent')
-                    if(!intent)
+                    name = checkEmulationIntent(node)
+                    if(!name)
                         node = node.firstElementChild
                 }
-                name = 'Start of math , ' + getName(node)
+                if (!name)
+                    name = getName(node)
+                name = 'Start of math , ' + name
                 offset = 0
             }
             if(!testing)
