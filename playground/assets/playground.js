@@ -180,6 +180,16 @@ function getChildIndex(node, nodeP) {
     return iChild
 }
 
+function getFunctionName(node) {
+    // node is an <mrow intent=':function'>
+    node = node.firstElementChild
+    if (node.nodeName == 'mi' || (node.nodeName == 'msup' &&
+            isAsciiDigit(node.lastElementChild.textContent))) {
+        return resolveSymbols(speech(node))
+    }
+    return 'function'
+}
+
 function setSelectionEx(sel, node, offset, e) {
     e.preventDefault()
     if (e.shiftKey)
@@ -1446,7 +1456,7 @@ function refreshDisplays(uMath, noUndo) {
 
 function checkEmulationIntent(node) {
     // Get names for nary, function, and fenced emulated elements. These
-    // elements are mrow's with special intent properties
+    // elements are <mrow>'s with special intent properties
     let intent = node.getAttribute('intent')
     if (!intent)
         return ''
@@ -1455,7 +1465,7 @@ function checkEmulationIntent(node) {
     if (intent.startsWith(':nary'))
         name = symbolSpeech(node.firstElementChild.firstElementChild.textContent) + 'expression'
     else if (intent == ':function')
-        name = getFunctionName(node.firstElementChild.textContent)
+        name = getFunctionName(node)
     else if (intent == ':fenced')
         name = 'fenced'
     return name
@@ -1892,7 +1902,7 @@ function checkMathSelection(sel) {
             let intent = node.getAttribute('intent')
             if (intent) {
                 if (intent == ':function')
-                    name = getFunctionName(node.firstElementChild.textContent)
+                    name = getFunctionName(node)
                 else if (intent.startsWith('binomial-coefficient'))
                     name = 'binomial-coefficient'
                 else if (intent == ':fenced')
@@ -2500,6 +2510,14 @@ function moveRight(sel, node, offset, e) {
                 return
             }
             node = node.parentElement
+            if (isMathMLObject(node.parentElement) &&
+                node.parentElement.nodeName != 'mrow') {
+                name = getArgName(node)
+                if (name)
+                    speak('end of ' + name)
+                setSelectionEx(sel, node, 1, e)
+                return
+            }
             if (node.nextElementSibling) {
                 node = node.nextElementSibling
                 if (node.nodeName == 'mrow')

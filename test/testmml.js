@@ -492,6 +492,9 @@ function buildUp(uMath, uMathPartial) {
             }
         }
     }
+    let node = output.firstElementChild.lastElementChild
+    if (node.textContent == '\u202F' && uMath[uMath.length - 1] == '1')
+        node.remove()                       // Remove unused build-up ' '
     return iSuccess
 }
 
@@ -660,17 +663,14 @@ const endExpect = "𝑎/𝑏+𝑐/𝑑=Ⓐ(1)0"
 const rightArrowExpect = ['Ⓐ()𝑎/𝑏+𝑐/𝑑=0', 'Ⓐ(1)𝑎/𝑏+𝑐/𝑑=0', '𝑎/Ⓐ()𝑏+𝑐/𝑑=0',
     '𝑎/Ⓐ(1)𝑏+𝑐/𝑑=0', '𝑎/𝑏 Ⓐ()+𝑐/𝑑=0', '𝑎/𝑏 Ⓐ(1)+𝑐/𝑑=0', '𝑎/𝑏+Ⓐ()𝑐/𝑑=0',
     '𝑎/𝑏+Ⓐ(1)𝑐/𝑑=0', '𝑎/𝑏+𝑐/Ⓐ()𝑑=0', '𝑎/𝑏+𝑐/Ⓐ(1)𝑑=0', '𝑎/𝑏+𝑐/𝑑 Ⓐ()=0',
-    '𝑎/𝑏+𝑐/𝑑=Ⓐ()0', '𝑎/𝑏+𝑐/𝑑=Ⓐ(1)0',
-]
+    '𝑎/𝑏+𝑐/𝑑=Ⓐ()0', '𝑎/𝑏+𝑐/𝑑=Ⓐ(1)0',]
 const speechExpect = ['eigh ', 'end of numerator', 'b ', 'end of denominator',
     '+', 'fraction', 'c ', 'end of numerator', 'd ', 'end of denominator',
-    '=', '0', 'end of math',
-]
+    '=', '0', 'end of math',]
 const rightArrowQExpect = ['Ⓐ(1)𝑞𝑎/𝑏+𝑐/𝑑=0', '𝑎Ⓐ(1)𝑞/𝑏+𝑐/𝑑=0', '𝑎/Ⓐ(1)𝑞𝑏+𝑐/𝑑=0',
     '𝑎/𝑏Ⓐ(1)𝑞+𝑐/𝑑=0', '𝑎/𝑏 Ⓐ(1)𝑞+𝑐/𝑑=0', '𝑎/𝑏+Ⓐ(1)𝑞 𝑐/𝑑=0', '𝑎/𝑏+Ⓐ(1)𝑞𝑐/𝑑=0',
     '𝑎/𝑏+𝑐Ⓐ(1)𝑞/𝑑=0', '𝑎/𝑏+𝑐/Ⓐ(1)𝑞𝑑=0', '𝑎/𝑏+𝑐/𝑑Ⓐ(1)𝑞=0', '𝑎/𝑏+𝑐/𝑑 Ⓐ(1)𝑞=0',
-    '𝑎/𝑏+𝑐/𝑑=Ⓐ(1)𝑞0', '𝑎/𝑏+𝑐/𝑑=0Ⓐ(1)𝑞',
-]
+    '𝑎/𝑏+𝑐/𝑑=Ⓐ(1)𝑞0', '𝑎/𝑏+𝑐/𝑑=0Ⓐ(1)𝑞',]
 
 const uMath1 = '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)'
 const homeExpect1 = 'Ⓐ() 1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)'
@@ -723,8 +723,7 @@ const rightArrowExpect1 = [
     '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏^Ⓐ(1)2)',   // 45
     '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−Ⓐ(2) 𝑏²)',   // 46
     '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/Ⓐ(3)√(𝑎²−𝑏²)',    // 46
-    '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=Ⓐ(2) 1/√(𝑎²−𝑏²)',   // 47
-]
+    '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=Ⓐ(2) 1/√(𝑎²−𝑏²)',]  // 47
 const speechExpect1 = ['1', 'end of numerator', '2', 'pi ',
     'end of denominator', 'integral expression', 'sub soup', 'integral ', 'end of base', '0',
     'end of lower limit', '2', 'pi ', 'end of upper limit', 'int-agrand, fraction',
@@ -734,8 +733,7 @@ const speechExpect1 = ['1', 'end of numerator', '2', 'pi ',
     'fraction', '1', 'end of numerator', 'square root', 'eigh squared',
     'eigh ', 'end of base', '2', 'end of superscript', 'minus ',
     'b squared', 'b ', 'end of base', '2', 'end of superscript',
-    'end of square root', 'end of denominator', 'end of math'
-]
+    'end of square root', 'end of denominator', 'end of math']
 
 const uMath2 = '𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎'
 const homeExpect2 = 'Ⓐ()𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎'
@@ -746,24 +744,37 @@ const rightArrowExpect2 = [
     '𝑥=(−𝑏±√(𝑏^Ⓐ()2−4𝑎𝑐))/2𝑎', '𝑥=(−𝑏±√(𝑏^Ⓐ(1)2−4𝑎𝑐))/2𝑎', '𝑥=(−𝑏±√(𝑏²Ⓐ()−4𝑎𝑐))/2𝑎',
     '𝑥=(−𝑏±√(𝑏²−Ⓐ()4𝑎𝑐))/2𝑎', '𝑥=(−𝑏±√(𝑏²−4Ⓐ()𝑎𝑐))/2𝑎', '𝑥=(−𝑏±√(𝑏²−4𝑎Ⓐ()𝑐))/2𝑎',
     '𝑥=(−𝑏±√(𝑏²−4𝑎Ⓐ(1)𝑐))/2𝑎', '𝑥=(−𝑏±Ⓐ(5)√(𝑏²−4𝑎𝑐))/2𝑎', '𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/Ⓐ()2𝑎',
-    '𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2Ⓐ()𝑎', '𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2Ⓐ(1)𝑎', '𝑥=Ⓐ(2) (−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎',
-]
+    '𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2Ⓐ()𝑎', '𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2Ⓐ(1)𝑎', '𝑥=Ⓐ(2) (−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎',]
 const speechExpect2 = ['=', 'fraction', 'minus ', 'b ', 'plus or minus ',
     'square root', 'b squared', 'b ', 'end of base', '2', 'end of superscript',
     'minus ', '4', 'eigh ', 'c ', 'end of square root', 'end of numerator',
-    '2', 'eigh ', 'end of denominator', 'end of math',
-]
+    '2', 'eigh ', 'end of denominator', 'end of math',]
 
 const uMath3 = '𝑍(𝜔)≠𝑍(𝜔+1)'
 const homeExpect3 = 'Ⓐ()𝑍(𝜔)≠𝑍(𝜔+1)'
 const rightArrowExpect3 = ['𝑍Ⓐ() (𝜔)≠𝑍(𝜔+1)', '𝑍Ⓐ()(𝜔)≠𝑍(𝜔+1)', '𝑍(Ⓐ()𝜔)≠𝑍(𝜔+1)',
     '𝑍(𝜔Ⓐ())≠𝑍(𝜔+1)', '𝑍(𝜔)Ⓐ()≠𝑍(𝜔+1)', '𝑍(𝜔)≠Ⓐ()𝑍(𝜔+1)', '𝑍(𝜔)≠𝑍Ⓐ() (𝜔+1)',
     '𝑍(𝜔)≠𝑍Ⓐ()(𝜔+1)', '𝑍(𝜔)≠𝑍(Ⓐ()𝜔+1)', '𝑍(𝜔)≠𝑍(𝜔Ⓐ()+1)', '𝑍(𝜔)≠𝑍(𝜔+Ⓐ()1)',
-    '𝑍(𝜔)≠𝑍(𝜔+1Ⓐ())', '𝑍(𝜔)≠𝑍Ⓐ(3) (𝜔+1)',
-]
+    '𝑍(𝜔)≠𝑍(𝜔+1Ⓐ())', '𝑍(𝜔)≠𝑍Ⓐ(3) (𝜔+1)',]
 const speechExpect3 = ['fenced', 'open ', 'omega ', 'close ', 'not equal ', 'cap Z ',
-    'fenced', 'open ', 'omega ', '+', '1', 'close ', 'end of math',
-]
+    'fenced', 'open ', 'omega ', '+', '1', 'close ', 'end of math',]
+
+const uMath4 = 'sin^2 𝜃+cos^2 𝜃=1'
+const homeExpect4 = 'Ⓐ() sin²⁡𝜃+cos²⁡𝜃=1'
+const rightArrowExpect4 = ['Ⓐ() sin²⁡𝜃+cos²⁡𝜃=1', 'Ⓐ()sin²⁡𝜃+cos²⁡𝜃=1',
+    'Ⓐ(-1)sin²⁡𝜃+cos²⁡𝜃=1', 'Ⓐ(-2)sin²⁡𝜃+cos²⁡𝜃=1', 'Ⓐ(1)sin²⁡𝜃+cos²⁡𝜃=1',
+    'sin^Ⓐ()2 ⁡𝜃+cos²⁡𝜃=1', 'sin^Ⓐ(1)2 ⁡𝜃+cos²⁡𝜃=1', 'sin²Ⓐ()⁡𝜃+cos²⁡𝜃=1',
+    'sin²⁡Ⓐ()𝜃+cos²⁡𝜃=1', 'sin²⁡Ⓐ(1)𝜃+cos²⁡𝜃=1', 'sin²⁡𝜃Ⓐ()+cos²⁡𝜃=1',
+    'sin²⁡𝜃+Ⓐ() cos²⁡𝜃=1', 'sin²⁡𝜃+Ⓐ() cos²⁡𝜃=1', 'sin²⁡𝜃+Ⓐ()cos²⁡𝜃=1',
+    'sin²⁡𝜃+Ⓐ(-1)cos²⁡𝜃=1', 'sin²⁡𝜃+Ⓐ(-2)cos²⁡𝜃=1', 'sin²⁡𝜃+Ⓐ(1)cos²⁡𝜃=1',
+    'sin²⁡𝜃+cos^Ⓐ()2 ⁡𝜃=1', 'sin²⁡𝜃+cos^Ⓐ(1)2 ⁡𝜃=1', 'sin²⁡𝜃+cos²Ⓐ()⁡𝜃=1',
+    'sin²⁡𝜃+cos²⁡Ⓐ()𝜃=1', 'sin²⁡𝜃+cos²⁡Ⓐ(1)𝜃=1', 'sin²⁡𝜃+cos²⁡𝜃Ⓐ()=1',
+    'sin²⁡𝜃+cos²⁡𝜃=Ⓐ()1', 'sin²⁡𝜃+cos²⁡𝜃=Ⓐ(1)1',]
+const speechExpect4 = ['sine squared', 's', 'i', 'n', 'end of base', '2',
+    'end of superscript', 'function apply ', 'theta ', 'end of function',
+    '+', 'cosine squared', 'superscript', 'c', 'o', 's', 'end of base',
+    '2', 'end of superscript', 'function apply ', 'theta ',
+    'end of function', '=', '1', 'end of math',]
 
 function testOutputHotKey(key, expect) {
     const event = new Event('keydown')
@@ -816,7 +827,7 @@ function testRightArrow(uMath, homeExpect, rightArrowExpect, speechExpect) {
     for (let i = 0; i < rightArrowExpect.length; i++) {
         testOutputHotKey('ArrowRight', rightArrowExpect[i])
         if (speechCurrent != speechExpect[i])
-            console.log(uMath + 'Speech failed. result: ' + speechCurrent + " expect: " + speechExpect[i])
+            console.log(uMath + ' Speech failed. result: ' + speechCurrent + " expect: " + speechExpect[i])
         speechCurrent = ''
         speechSynthesis.cancel()
     }
@@ -891,6 +902,7 @@ function testHotKeys() {
     testRightArrow(uMath1, homeExpect1, rightArrowExpect1, speechExpect1)
     testRightArrow(uMath2, homeExpect2, rightArrowExpect2, speechExpect2)
     testRightArrow(uMath3, homeExpect3, rightArrowExpect3, speechExpect3)
+    testRightArrow(uMath4, homeExpect4, rightArrowExpect4, speechExpect4)
 
     // Test output Ctrl+z and Ctrl+y hot keys
     buildUp('𝑎²+𝑏²=𝑐²')
