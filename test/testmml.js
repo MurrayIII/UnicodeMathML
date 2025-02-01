@@ -776,6 +776,24 @@ const speechExpect4 = ['sine squared', 's', 'i', 'n', 'end of base', '2',
     '2', 'end of superscript', 'function apply ', 'theta ',
     'end of function', '=', '1', 'end of math',]
 
+const uMath5 = '∫_−∞^∞ 𝑒^−𝑥² ⅆ𝑥=√𝜋'
+const homeExpect5 = 'Ⓐ() ∫_−∞^∞ 𝑒^−𝑥² ⅆ𝑥=√𝜋'
+const rightArrowExpect5 = ['Ⓐ() ∫_−∞^∞ 𝑒^−𝑥² ⅆ𝑥=√𝜋', 'Ⓐ()∫_−∞^∞ 𝑒^−𝑥² ⅆ𝑥=√𝜋',
+    'Ⓐ(1)∫_−∞^∞ 𝑒^−𝑥² ⅆ𝑥=√𝜋', '∫_(Ⓐ()−∞)^∞ 𝑒^−𝑥² ⅆ𝑥=√𝜋', '∫_−Ⓐ()∞^∞ 𝑒^−𝑥² ⅆ𝑥=√𝜋',
+    '∫_−Ⓐ(1)∞^∞ 𝑒^−𝑥² ⅆ𝑥=√𝜋', '∫_−∞^Ⓐ()∞ 𝑒^−𝑥² ⅆ𝑥=√𝜋', '∫_−∞^Ⓐ(1)∞ 𝑒^−𝑥² ⅆ𝑥=√𝜋',
+    '∫_−∞^∞ Ⓐ() 𝑒^−𝑥² ⅆ𝑥=√𝜋', '∫_−∞^∞ Ⓐ()𝑒^−𝑥² ⅆ𝑥=√𝜋', '∫_−∞^∞ Ⓐ(1)𝑒^−𝑥² ⅆ𝑥=√𝜋',
+    '∫_−∞^∞ 𝑒^(Ⓐ()−𝑥²) ⅆ𝑥=√𝜋', '∫_−∞^∞ 𝑒^(Ⓐ(1)−𝑥²) ⅆ𝑥=√𝜋', '∫_−∞^∞ 𝑒^−Ⓐ()𝑥² ⅆ𝑥=√𝜋',
+    '∫_−∞^∞ 𝑒^−Ⓐ(1)𝑥² ⅆ𝑥=√𝜋', '∫_−∞^∞ 𝑒^(−𝑥^Ⓐ()2) ⅆ𝑥=√𝜋', '∫_−∞^∞ 𝑒^(−𝑥^Ⓐ(1)2) ⅆ𝑥=√𝜋',
+    '∫_−∞^∞ 𝑒^(−Ⓐ(2) 𝑥²) ⅆ𝑥=√𝜋', '∫_−∞^∞ 𝑒^−𝑥² Ⓐ()ⅆ𝑥=√𝜋', '∫_−∞^∞ 𝑒^−𝑥² ⅆⒶ()𝑥=√𝜋',
+    '∫_−∞^∞ Ⓐ(3) 𝑒^−𝑥² ⅆ𝑥=√𝜋', '∫_−∞^∞ 𝑒^−𝑥² ⅆ𝑥Ⓐ()=√𝜋', '∫_−∞^∞ 𝑒^−𝑥² ⅆ𝑥Ⓐ(1)=√𝜋',
+    '∫_−∞^∞ 𝑒^−𝑥² ⅆ𝑥=√Ⓐ()𝜋', '∫_−∞^∞ 𝑒^−𝑥² ⅆ𝑥=√Ⓐ(1)𝜋', '∫_−∞^∞ 𝑒^−𝑥² ⅆ𝑥=Ⓐ(1)√𝜋',]
+const speechExpect5 = ['sub soup', 'integral ', 'end of base', 'minus ',
+    'infinity ', 'end of lower limit', 'infinity ', 'end of upper limit',
+    'int-agrand, superscript', 'e ', 'end of base', 'minus ', 'x squared',
+    'x ', 'end of base', '2', 'end of superscript', 'end of superscript',
+    'differential d ', 'x ', 'end of int-agrand', '=', 'square root , pi',
+    'pi ', 'end of square root', 'end of math',]
+
 function testOutputHotKey(key, expect) {
     const event = new Event('keydown')
     event.key = key
@@ -903,6 +921,7 @@ function testHotKeys() {
     testRightArrow(uMath2, homeExpect2, rightArrowExpect2, speechExpect2)
     testRightArrow(uMath3, homeExpect3, rightArrowExpect3, speechExpect3)
     testRightArrow(uMath4, homeExpect4, rightArrowExpect4, speechExpect4)
+    testRightArrow(uMath5, homeExpect5, rightArrowExpect5, speechExpect5)
 
     // Test output Ctrl+z and Ctrl+y hot keys
     buildUp('𝑎²+𝑏²=𝑐²')

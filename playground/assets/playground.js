@@ -2495,7 +2495,9 @@ function moveRight(sel, node, offset, e) {
     // an <mi>, <mo>, <mn>, or <mtext> (childless elements). But for editing,
     // we need to stop before elements with children like <mfrac>, <msup>,
     // etc. And we need to stop at the ends of the children, such as at the
-    // end of a numerator.
+    // end of a numerator. Note: cases that use default behavior are not
+    // testable via automation since dispatching keydown events doesn't
+    // run default behavior 😒
     let intent, name
 
     if (offset) {
@@ -2504,8 +2506,7 @@ function moveRight(sel, node, offset, e) {
             let cchCh = getCch(text, offset)
             offset += cchCh
 
-            if (offset < text.length ||
-                offset == text.length && !node.parentElement.nextElementSibling) {
+            if (offset < text.length) {
                 setSelectionEx(sel, node, offset, e)
                 return
             }
@@ -2525,9 +2526,11 @@ function moveRight(sel, node, offset, e) {
                 setSelectionEx(sel, node, 0, e)
                 return
             }
+            if (node.parentElement.nodeName == 'math') {
+                setSelectionEx(sel, node, 1, e)
+                return
+            }
             node = node.parentElement
-            if (node.nodeName == 'math')
-                return                      // Stay within math zone
             if (node.nextElementSibling) {
                 node = node.nextElementSibling
                 if (node.nodeName == 'mrow')
@@ -2554,7 +2557,7 @@ function moveRight(sel, node, offset, e) {
 
             // Comes here for 'ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)' when IP follows sin⁡𝜃.
             // Should say 'end of denominator'
-            if (node.nodeName == 'mrow' && !node.nextElementSibling) {
+            if (node.nodeName == 'mrow') {
                 node = node.parentElement
                 if (node.nextElementSibling) {
                     node = node.nextElementSibling
@@ -2576,6 +2579,11 @@ function moveRight(sel, node, offset, e) {
                         if (node.nodeName == 'mrow' && !node.getAttribute('intent'))
                             node = node.firstElementChild
                         setSelectionEx(sel, node, 0, e)
+                        return
+                    }
+                    node = node.parentElement
+                    if (node.nextElementSibling) {
+                        setSelectionEx(sel, node.nextElementSibling, 0, e)
                         return
                     }
                 }
@@ -2709,8 +2717,14 @@ function moveRight(sel, node, offset, e) {
                     }
                 } else {
                     offset = 1
-                    name = intent == ':function'
-                        ? 'function' : checkNaryand(nodeP)
+                    name = checkNaryand(nodeP)
+                    if (name) {
+                        speak('end of ' + name)
+                        setSelectionEx(sel, nodeP, nodeP.childElementCount, e)
+                        return
+                    }
+                    if (intent == ':function')
+                        name = 'function'
                     if (!name)
                         name = getArgName(nodeP)
                     if (name)
