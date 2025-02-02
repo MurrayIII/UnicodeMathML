@@ -346,7 +346,7 @@ function speak(s) {
         speechCurrent = ''
     } else {
         if (speechCurrent)
-            speechCurrent += ', '
+            speechCurrent += ' '
         speechSynthesis.cancel()
     }
     speechCurrent += s
@@ -1454,6 +1454,11 @@ function refreshDisplays(uMath, noUndo) {
     }
 }
 
+const elementsWithLimits = {
+    'msub': 'lower limit', 'mover':  'upper limit', 'msubsup':    'limits',
+    'msup': 'upper limit', 'munder': 'lower limit', 'munderover': 'limits'
+}
+
 function checkEmulationIntent(node) {
     // Get names for nary, function, and fenced emulated elements. These
     // elements are <mrow>'s with special intent properties
@@ -1461,14 +1466,17 @@ function checkEmulationIntent(node) {
     if (!intent)
         return ''
 
-    let name = ''
-    if (intent.startsWith(':nary'))
-        name = symbolSpeech(node.firstElementChild.firstElementChild.textContent) + 'expression'
-    else if (intent == ':function')
-        name = getFunctionName(node)
-    else if (intent == ':fenced')
-        name = 'fenced'
-    return name
+    if (intent == ':function')
+        return getFunctionName(node)
+    if (intent == ':fenced')
+        return 'fenced'
+    if (!intent.startsWith(':nary'))
+        return ''
+
+    node = node.firstElementChild
+    let narySymbol = resolveSymbols(node.firstElementChild.textContent)
+    let name = elementsWithLimits[node.nodeName]
+    return name ? narySymbol + ' with ' + name : 'indefinite ' + narySymbol
 }
 
 function checkNaryand(node) {
@@ -1988,14 +1996,15 @@ function checkMathSelection(sel) {
             name = ''
         else if (name == 'math') {
             if (keydownLast == 'ArrowLeft') {
+                let nameExp
                 name = 'start of ' + name
                 node = node.firstElementChild
                 if (node.nodeName == 'mrow') {
-                    let intent = node.getAttribute('intent')
-                    if (!intent)
+                    nameExp = checkEmulationIntent(node)
+                    if (!nameExp)
                         node = node.firstElementChild
                 }
-                name += ', ' + getName(node)
+                name += nameExp ? nameExp + ' , ': getName(node)
                 setSelection(sel, node, 0)
             } else if (offset) {
                 name = 'end of ' + name
@@ -2815,7 +2824,18 @@ function moveRight(sel, node, offset, e) {
         // Happens moving into square root, e.g., for '√(𝑎²−𝑏²)'.
         // Default moves to '𝑎' but should only move to '𝑎²'
         removeSelAttributes()
+        if (node.nodeName == 'mrow')
+            intent = node.getAttribute('intent')
         node = node.firstElementChild
+        if (intent && intent.startsWith(':nary')) {
+            // Moving into emulated nary element
+            if (elementsWithLimits[node.nodeName]) {
+                // Move to nary operator
+                node = node.firstElementChild
+            }
+            setSelectionEx(sel, node, 0, e)
+            return
+        }
         if (node.nodeName == 'mrow') {
             intent = node.getAttribute('intent')
             if (intent) {
