@@ -1307,7 +1307,7 @@ function getTableRowName(node) {
 function getName(node) {
     let name = checkSimpleSup(node)
     if (!name)
-        names[node.nodeName]
+        name = names[node.nodeName]
     if (!name)
         name = resolveSymbols(getCh(node.textContent, 0))
     return name
@@ -1347,7 +1347,9 @@ function getIntent(node) {
 }
 
 function checkSimpleSup(node) {
-    if (node.nodeName == 'msup' || node.nodeName == 'msqrt') {
+    if (node.nodeName == 'msup' || node.nodeName == 'msub' ||
+        node.nodeName == 'mover' && node.getAttribute('accent') ||
+        node.nodeName == 'msqrt') {
         let s = speech(node)
         if (s.length <= 6)
             return resolveSymbols(s)
@@ -1474,8 +1476,10 @@ function checkEmulationIntent(node) {
         return ''
 
     node = node.firstElementChild
-    let narySymbol = resolveSymbols(node.firstElementChild.textContent)
     let name = elementsWithLimits[node.nodeName]
+    if (name)
+        node = node.firstElementChild
+    let narySymbol = resolveSymbols(node.textContent)
     return name ? narySymbol + ' with ' + name : 'indefinite ' + narySymbol
 }
 
@@ -2827,14 +2831,24 @@ function moveRight(sel, node, offset, e) {
         if (node.nodeName == 'mrow')
             intent = node.getAttribute('intent')
         node = node.firstElementChild
-        if (intent && intent.startsWith(':nary')) {
-            // Moving into emulated nary element
-            if (elementsWithLimits[node.nodeName]) {
-                // Move to nary operator
-                node = node.firstElementChild
+        if (intent) {
+            if (intent.startsWith(':nary')) {
+                // Moving into emulated nary element
+                if (elementsWithLimits[node.nodeName]) {
+                    // Move to nary operator
+                    node = node.firstElementChild
+                }
+                setSelectionEx(sel, node, 0, e)
+                return
             }
-            setSelectionEx(sel, node, 0, e)
-            return
+            if (intent == ':function') {
+                if (node.nodeName == 'msup') {
+                    // Move to superscript base
+                    node = node.firstElementChild
+                }
+                setSelectionEx(sel, node, 0, e)
+                return
+            }
         }
         if (node.nodeName == 'mrow') {
             intent = node.getAttribute('intent')
@@ -3467,8 +3481,7 @@ output.addEventListener('keydown', function (e) {
                 name = 'Start of math , ' + name
                 offset = 0
             }
-            if(!testing)
-                speak(name)
+            speak(name)
             removeSelAttributes()
             setSelAttributes(node, 'selanchor', offset)
             refreshDisplays('', true)

@@ -760,20 +760,18 @@ const speechExpect3 = ['fenced', 'open ', 'omega ', 'close ', 'not equal ', 'cap
 
 const uMath4 = 'sin^2 𝜃+cos^2 𝜃=1'
 const homeExpect4 = 'Ⓐ() sin²⁡𝜃+cos²⁡𝜃=1'
-const rightArrowExpect4 = ['Ⓐ() sin²⁡𝜃+cos²⁡𝜃=1', 'Ⓐ()sin²⁡𝜃+cos²⁡𝜃=1',
-    'Ⓐ(-1)sin²⁡𝜃+cos²⁡𝜃=1', 'Ⓐ(-2)sin²⁡𝜃+cos²⁡𝜃=1', 'Ⓐ(1)sin²⁡𝜃+cos²⁡𝜃=1',
-    'sin^Ⓐ()2 ⁡𝜃+cos²⁡𝜃=1', 'sin^Ⓐ(1)2 ⁡𝜃+cos²⁡𝜃=1', 'sin²Ⓐ()⁡𝜃+cos²⁡𝜃=1',
-    'sin²⁡Ⓐ()𝜃+cos²⁡𝜃=1', 'sin²⁡Ⓐ(1)𝜃+cos²⁡𝜃=1', 'sin²⁡𝜃Ⓐ()+cos²⁡𝜃=1',
-    'sin²⁡𝜃+Ⓐ() cos²⁡𝜃=1', 'sin²⁡𝜃+Ⓐ() cos²⁡𝜃=1', 'sin²⁡𝜃+Ⓐ()cos²⁡𝜃=1',
-    'sin²⁡𝜃+Ⓐ(-1)cos²⁡𝜃=1', 'sin²⁡𝜃+Ⓐ(-2)cos²⁡𝜃=1', 'sin²⁡𝜃+Ⓐ(1)cos²⁡𝜃=1',
-    'sin²⁡𝜃+cos^Ⓐ()2 ⁡𝜃=1', 'sin²⁡𝜃+cos^Ⓐ(1)2 ⁡𝜃=1', 'sin²⁡𝜃+cos²Ⓐ()⁡𝜃=1',
-    'sin²⁡𝜃+cos²⁡Ⓐ()𝜃=1', 'sin²⁡𝜃+cos²⁡Ⓐ(1)𝜃=1', 'sin²⁡𝜃+cos²⁡𝜃Ⓐ()=1',
-    'sin²⁡𝜃+cos²⁡𝜃=Ⓐ()1', 'sin²⁡𝜃+cos²⁡𝜃=Ⓐ(1)1',]
-const speechExpect4 = ['sine squared', 's', 'i', 'n', 'end of base', '2',
-    'end of superscript', 'function apply ', 'theta ', 'end of function',
-    '+', 'cosine squared', 'superscript', 'c', 'o', 's', 'end of base',
-    '2', 'end of superscript', 'function apply ', 'theta ',
-    'end of function', '=', '1', 'end of math',]
+const rightArrowExpect4 = ['Ⓐ()sin²⁡𝜃+cos²⁡𝜃=1', 'Ⓐ(-1)sin²⁡𝜃+cos²⁡𝜃=1',
+    'Ⓐ(-2)sin²⁡𝜃+cos²⁡𝜃=1', 'Ⓐ(1)sin²⁡𝜃+cos²⁡𝜃=1', 'sin^Ⓐ()2 ⁡𝜃+cos²⁡𝜃=1',
+    'sin^Ⓐ(1)2 ⁡𝜃+cos²⁡𝜃=1', 'sin²Ⓐ()⁡𝜃+cos²⁡𝜃=1', 'sin²⁡Ⓐ()𝜃+cos²⁡𝜃=1',
+    'sin²⁡Ⓐ(1)𝜃+cos²⁡𝜃=1', 'sin²⁡𝜃Ⓐ()+cos²⁡𝜃=1', 'sin²⁡𝜃+Ⓐ() cos²⁡𝜃=1',
+    'sin²⁡𝜃+Ⓐ()cos²⁡𝜃=1', 'sin²⁡𝜃+Ⓐ(-1)cos²⁡𝜃=1', 'sin²⁡𝜃+Ⓐ(-2)cos²⁡𝜃=1',
+    'sin²⁡𝜃+Ⓐ(1)cos²⁡𝜃=1', 'sin²⁡𝜃+cos^Ⓐ()2 ⁡𝜃=1', 'sin²⁡𝜃+cos^Ⓐ(1)2 ⁡𝜃=1',
+    'sin²⁡𝜃+cos²Ⓐ()⁡𝜃=1', 'sin²⁡𝜃+cos²⁡Ⓐ()𝜃=1', 'sin²⁡𝜃+cos²⁡Ⓐ(1)𝜃=1',
+    'sin²⁡𝜃+cos²⁡𝜃Ⓐ()=1', 'sin²⁡𝜃+cos²⁡𝜃=Ⓐ()1', 'sin²⁡𝜃+cos²⁡𝜃=Ⓐ(1)1',]
+const speechExpect4 = ['s', 'i', 'n', 'end of base', '2', 'end of superscript',
+    'function apply ', 'theta ', 'end of function', '+', 'cosine squared',
+    'c', 'o', 's', 'end of base', '2', 'end of superscript', 'function apply ',
+    'theta ', 'end of function', '=', '1', 'end of math',]
 
 const uMath5 = '∫_−∞^∞ 𝑒^−𝑥² ⅆ𝑥=√𝜋'
 const homeExpect5 = 'Ⓐ() ∫_−∞^∞ 𝑒^−𝑥² ⅆ𝑥=√𝜋'
@@ -895,7 +893,10 @@ function testHotKeys() {
 
     // Test output Home/End hot keys
     testOutputHotKey('End', endExpect)
+    speechCurrent = ''
     testOutputHotKey('Home', homeExpect)
+    if (speechCurrent != 'Start of math , fraction')
+        console.log('Home speech incorrect: ' + speechCurrent)
 
     speechCurrent = ''
     for (let i = 0; i < rightArrowExpect.length; i++) {
