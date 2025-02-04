@@ -345,8 +345,12 @@ function speak(s) {
         // Some build-up tests insert 'q'; if so, delete 'q'
         speechCurrent = ''
     } else {
-        if (speechCurrent)
-            speechCurrent += ' '
+        if (speechCurrent) {
+            if (speechCurrent == s)
+                speechCurrent = ''
+            else
+                speechCurrent += ' '
+        }
         speechSynthesis.cancel()
     }
     speechCurrent += s
@@ -1966,18 +1970,13 @@ function checkMathSelection(sel) {
                         }
                     } else {
                         node = node.parentElement
-                        if (isMathMLObject(node.parentElement)) {
-                            name = getArgName(node)
-                            if (name)
-                                name = 'end of ' + name
-                        } else if (node.nodeName == 'mtd') {
+                        if (isMathMLObject(node.parentElement))
+                            name = getArgName(node, 'end of ')
+                        else if (node.nodeName == 'mtd')
                             name = '＆'      // → ampersand
-                        }
                     }
                 } else if (isMathMLObject(node.parentElement)) {
-                    name = getArgName(node)
-                    if (name)
-                        name = 'end of ' + name
+                    name = getArgName(node, 'end of ')
                 }
             } else {
                 name = symbolSpeech(getCh(node.textContent, offset))
@@ -2430,7 +2429,7 @@ function checkAutoBuildUp(node, nodeP, key) {
     }
     return null
 }
-function getArgName(node) {
+function getArgName(node, prefix) {
     let name = node.parentElement.nodeName
     while (name == 'mrow') {
         node = node.parentElement
@@ -2458,13 +2457,16 @@ function getArgName(node) {
         case 'msub':
         case 'msup':
             name = node.nextElementSibling ? 'base'
-                : name == 'msub' ? 'subscript' : 'superscript'
-            break;
+                 : name == 'msub' ? 'subscript'
+                 : 'superscript'
+            break
         case 'mover':
         case 'munder':
             name = node.nextElementSibling ? 'base'
-                : name == 'munder' ? 'below' : 'above'
-            break;
+                 : name == 'munder' ? 'below'
+                 : node.parentElement.getAttribute('accent') ? 'accent'
+                 : 'above'
+            break
         case 'menclose':
             if (node.parentElement.attributes.notation)
                 return node.parentElement.attributes.notation.nodeValue
@@ -2473,9 +2475,9 @@ function getArgName(node) {
             break;
 
         default:
-            name = ''
+            return ''
     }
-    return name
+    return prefix ? prefix + name : name
 }
 
 function moveLeft(sel, node, offset, e) {
@@ -2526,9 +2528,9 @@ function moveRight(sel, node, offset, e) {
             node = node.parentElement
             if (isMathMLObject(node.parentElement) &&
                 node.parentElement.nodeName != 'mrow') {
-                name = getArgName(node)
+                name = getArgName(node, 'end of ')
                 if (name)
-                    speak('end of ' + name)
+                    speak(name)
                 setSelectionEx(sel, node, 1, e)
                 return
             }
@@ -2579,9 +2581,9 @@ function moveRight(sel, node, offset, e) {
                     setSelectionEx(sel, node, 0, e)
                     return
                 }
-                name = getArgName(node)
+                name = getArgName(node, 'end of ')
                 if (name)
-                    speak('end of ' + name)
+                    speak(name)
             } else {
                 node = node.parentElement
                 if (node.nodeName == 'mrow') {
@@ -2589,14 +2591,26 @@ function moveRight(sel, node, offset, e) {
                         // E.g., when leaving ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃) move to
                         // nextElementSibling
                         node = node.nextElementSibling
-                        if (node.nodeName == 'mrow' && !node.getAttribute('intent'))
+                        if (node.nodeName == 'mrow' && !node.getAttribute('intent')) {
                             node = node.firstElementChild
+                            name = checkSimpleSup(node)
+                            if (!name)
+                                name = names[node.nodeName]
+                            if (name)
+                                speak(name)
+                        }
                         setSelectionEx(sel, node, 0, e)
                         return
                     }
                     node = node.parentElement
                     if (node.nextElementSibling) {
-                        setSelectionEx(sel, node.nextElementSibling, 0, e)
+                        node = node.nextElementSibling
+                        if (node.nodeName == 'mrow') {
+                            name = checkEmulationIntent(node)
+                            if (name)
+                            speak(name)
+                        }
+                        setSelectionEx(sel, node, 0, e)
                         return
                     }
                 }
@@ -2653,15 +2667,20 @@ function moveRight(sel, node, offset, e) {
                         setSelectionEx(sel, node.nextElementSibling, 0, e)
                         return
                     }
-                    name = checkNaryand(node.nextElementSibling)
+                    node = node.nextElementSibling
+                    name = checkNaryand(node)
                     if (name) {
-                        speak(name)
-                        node = node.nextElementSibling
                         if (node.nodeName == 'mrow')
                             node = node.firstElementChild
-                        setSelectionEx(sel, node, 0, e)
-                        return
+                    } else {
+                        name = checkSimpleSup(node)
+                        if(!name)
+                            name = names[node.nodeName]
                     }
+                    if (name)
+                         speak(name)
+                    setSelectionEx(sel, node, 0, e)
+                    return
                 }
             }
             if (node.nodeName == 'mtr') {
@@ -2677,10 +2696,14 @@ function moveRight(sel, node, offset, e) {
                 if (intent == ':cases')     // ZWSP used for selection attrs
                     name = 'end of cases'
             }
+            if (!name && (node.nodeName == 'mrow' || node.nodeName == 'mtd')) {
+                node = node.firstElementChild
+                name = checkSimpleSup(node)
+                if (!name)
+                    name = names[node.nodeName]
+            }
             if (name)
                 speak(name)
-            else if (node.nodeName == 'mrow' || node.nodeName == 'mtd')
-                node = node.firstElementChild
             setSelectionEx(sel, node, 0, e)
             return
         }
@@ -2714,7 +2737,7 @@ function moveRight(sel, node, offset, e) {
             }
             if (isMathMLObject(node.parentElement) && node.parentElement.nodeName != 'mrow') {
                 setSelectionEx(sel, node, 1, e)
-                speak('end of ' + getArgName(node))
+                speak(getArgName(node, 'end of '))
                 return
             }
             let nodeP = node.parentElement
@@ -2737,11 +2760,11 @@ function moveRight(sel, node, offset, e) {
                         return
                     }
                     if (intent == ':function')
-                        name = 'function'
+                        name = 'end of function'
                     if (!name)
-                        name = getArgName(nodeP)
+                        name = getArgName(nodeP, 'end of ')
                     if (name)
-                        speak('end of ' + name)
+                        speak(name)
                     if (intent == ':cases') {
                         node = nodeP
                         offset = node.childElementCount
@@ -2790,7 +2813,7 @@ function moveRight(sel, node, offset, e) {
             return
         } else if (mmlElemFixedArgs.includes(node.parentElement.nodeName)) {
             setSelectionEx(sel, node, 1, e)
-            speak('end of ' + getArgName(node))
+            speak(getArgName(node, 'end of '))
             return
         } else if (node.nextElementSibling.nodeName == 'mtable') {
             node = node.nextElementSibling
@@ -3149,9 +3172,6 @@ output.addEventListener("click", (e) => {
     atEnd = node.length == sel.anchorOffset
     if (sel.isCollapsed && node.nodeName == '#text' && node.textContent == '⬚')
         setSelection(sel, node, SELECTNODE)
-    let name = checkSimpleSup(node.parentElement.parentElement)
-    if (name)
-        speak(name)
     if (outputUndoStack.length < 2)
         outputUndoStack.push(getUnicodeMath(output.firstElementChild, true))
 })

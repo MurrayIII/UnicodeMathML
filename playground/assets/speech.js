@@ -100,10 +100,13 @@ const symbolSpeechStrings = {
 	'‖': 'double vertical line',				// 2016
 	'…': 'dot dot dot',						// 2026
 	'′': 'prime',							// 2032
+	'″': 'double prime',					// 2033
+	'‴': 'triple prime',					// 2034
 	'⁄': 'slash',							// 2044
 	'⁅': ', equation',						// 2045
 	'⁆': ',',								// 2046
 	'⁐': 'with',							// 2050
+	'⁗': 'quadruple prime',					// 2057
 	'\u2061': 'function apply',				// FunctionApply
 	'\u2062': 'times',						// Invisible times
 	'₁': 'tenths',							// 2081
@@ -1274,6 +1277,7 @@ function getSpeech(doc) {
 	let text = speech(doc);					// Get speech symbols
 	return resolveSymbols(text);
 }
+
 function resolveSymbols(text) {
 	let ret = '';							// Collects speech
 	let cchText = text.length;
@@ -1353,7 +1357,7 @@ function resolveSymbols(text) {
 		}
 		if (ch == 'Ⓕ')
 			focus = true
-		else if (ch == 'Ⓐ'&& !focus && text.indexOf('Ⓕ', i + 1) == -1)
+		else if (ch == 'Ⓐ' && !focus && text.indexOf('Ⓕ', i + 1) == -1)
 			ch = 'Ⓘ'
 
 		let c = symbolSpeech(ch);

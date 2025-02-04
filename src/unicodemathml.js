@@ -5,7 +5,6 @@ var selanchor
 var selfocus
 var useMfenced = 0
 
-
 const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
 const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
 
@@ -4587,16 +4586,27 @@ function dump(value, noAddParens) {
             }
                                             // Fall through to msubsup
         case 'msubsup':
-            if (isDigitArg(value) && !getSelectionCodes(value.children[1]) &&
-                !getSelectionCodes(value.children[2])) {
-                ret = dump(value.firstElementChild) +
-                    digitSubscripts[value.children[1].textContent];
-                if (isAsciiDigit(value.lastElementChild.textContent)) {
-                    ret += digitSuperscripts[value.lastElementChild.textContent]
+            nodeLEC = value.lastElementChild
+            if (nodeLEC && !getSelectionCodes(value.children[1]) &&
+                !getSelectionCodes(nodeLEC)) {
+                if (isDigitArg(value)) {
+                    ret = dump(value.firstElementChild) +
+                        digitSubscripts[value.children[1].textContent];
+                    if (isAsciiDigit(nodeLEC.textContent)) {
+                        ret += digitSuperscripts[nodeLEC.textContent]
+                        break;
+                    }
+                    ret += '^' + dump(nodeLEC);
                     break;
                 }
-                ret += '^' + dump(value.lastElementChild);
-                break;
+                if (isPrime(nodeLEC.textContent) && value.children[1].childElementCount < 2) {
+                    ret = dump(value.firstElementChild) + nodeLEC.textContent
+                    if (isAsciiDigit(value.children[1].textContent))
+                        ret += digitSubscripts[value.children[1].textContent]
+                    else
+                        ret += '_' + dump(value.children[1])
+                    break
+                }
             }
             ret = ternary(value, '_', '^');
             break;
