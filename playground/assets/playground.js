@@ -2509,220 +2509,10 @@ function moveLeft(sel, node, offset, e) {
     }
 }
 
-function moveRight(sel, node, offset, e) {
-    // Some right-arrow fix-ups are made in checkMathSelection(). Some need
-    // to be made here before or instead of the default right-arrow behavior.
-    // The default behavior moves to an element with a visible glyph, e.g.,
-    // an <mi>, <mo>, <mn>, or <mtext> (childless elements). But for editing,
-    // we need to stop before elements with children like <mfrac>, <msup>,
-    // etc. And we need to stop at the ends of the children, such as at the
-    // end of a numerator. Note: cases that use default behavior are not
-    // testable via automation since dispatching keydown events doesn't
-    // run default behavior 😒
+function moveRight0(sel, node, e) {
+    // Move right when sel focus offset is 0. See moveRight() for non0 offset
     let intent, name
-
-    if (offset) {
-        if (node.nodeName == '#text') {
-            let text = node.textContent
-            let cchCh = getCch(text, offset)
-            offset += cchCh
-
-            if (offset < text.length) {
-                setSelectionEx(sel, node, offset, e)
-                return
-            }
-            node = node.parentElement
-            if (isMathMLObject(node.parentElement) &&
-                node.parentElement.nodeName != 'mrow') {
-                name = getArgName(node, 'end of ')
-                if (name)
-                    speak(name)
-                setSelectionEx(sel, node, 1, e)
-                return
-            }
-            if (node.nextElementSibling) {
-                node = node.nextElementSibling
-                if (node.nodeName == 'mrow')
-                    node = node.firstElementChild
-                setSelectionEx(sel, node, 0, e)
-                return
-            }
-            if (node.parentElement.nodeName == 'math') {
-                setSelectionEx(sel, node, 1, e)
-                return
-            }
-            node = node.parentElement
-            if (node.nextElementSibling) {
-                node = node.nextElementSibling
-                if (node.nodeName == 'mrow')
-                    node = node.firstElementChild
-                setSelectionEx(sel, node, 0, e)
-                return
-            }
-            if (node.nodeName != 'mrow') {
-                setSelectionEx(sel, node, node.childElementCount, e)
-                return
-            }
-            offset = node.childElementCount
-        }
-        if (offset == node.childElementCount) { // (Excludes mi, mo, etc.)
-            if (node.nextElementSibling) {
-                node = node.nextElementSibling
-                if (node.nodeName == 'mrow' && !node.getAttribute('intent'))
-                    node = node.firstElementChild
-                setSelectionEx(sel, node, 0, e)
-                return
-            }
-            if (node.parentElement.nodeName == 'math')
-                return                  // Already at end of math
-
-            // Comes here for 'ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)' when IP follows sin⁡𝜃.
-            // Should say 'end of denominator'
-            if (node.nodeName == 'mrow') {
-                node = node.parentElement
-                if (node.nextElementSibling) {
-                    node = node.nextElementSibling
-                    if (node.nodeName == 'mrow')
-                        node = node.firstElementChild
-                    setSelectionEx(sel, node, 0, e)
-                    return
-                }
-                name = getArgName(node, 'end of ')
-                if (name)
-                    speak(name)
-            } else {
-                node = node.parentElement
-                if (node.nodeName == 'mrow') {
-                    if (node.nextElementSibling) {
-                        // E.g., when leaving ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃) move to
-                        // nextElementSibling
-                        node = node.nextElementSibling
-                        if (node.nodeName == 'mrow' && !node.getAttribute('intent')) {
-                            node = node.firstElementChild
-                            name = checkSimpleSup(node)
-                            if (!name)
-                                name = names[node.nodeName]
-                            if (name)
-                                speak(name)
-                        }
-                        setSelectionEx(sel, node, 0, e)
-                        return
-                    }
-                    node = node.parentElement
-                    if (node.nextElementSibling) {
-                        node = node.nextElementSibling
-                        if (node.nodeName == 'mrow') {
-                            name = checkEmulationIntent(node)
-                            if (name)
-                            speak(name)
-                        }
-                        setSelectionEx(sel, node, 0, e)
-                        return
-                    }
-                }
-            }
-            setSelectionEx(sel, node, node.childElementCount, e)
-            return
-        }
-        if (isMrowLike(node.parentElement) && node.nextElementSibling &&
-            node.nextElementSibling.childElementCount) {
-            // E.g., moving into √ from end of ± in 𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎
-            node = node.nextElementSibling.firstElementChild
-            if (node.nodeName == 'mrow')
-                node = node.firstElementChild
-            name = checkSimpleSup(node)
-            if (name)
-                speak(name)
-            setSelectionEx(sel, node, 0, e)
-            return
-        }
-        name = node.parentElement.nodeName
-        if (isMathMLObject(node.parentElement) || name == 'mtd' ||
-            name == 'mrow' && isMathMLObject(node.parentElement.parentElement)) {
-            if (name == 'mrow' || name == 'mtd')
-                node = node.parentElement
-            while (!node.nextElementSibling) {
-                node = node.parentElement
-                if (!node.nextElementSibling) {
-                    if (isMathMLObject(node)) {
-                        setSelectionEx(sel, node, node.childElementCount, e)
-                        return
-                    }
-                    if (node.nodeName == 'mtr' &&
-                        node.parentElement.getAttribute('intent') == ':equations') {
-                        speak('end of equations')
-                        setSelectionEx(sel, node, node.childElementCount, e)
-                        return              // Place to add new equation
-                    }
-                }
-                if (isMrowLike(node)) {
-                    name = checkNaryand(node)
-                    offset = node.childElementCount
-                    if (name) {
-                        speak('end of ' + name)
-                    } else if (node.nodeName == 'mrow' && node.nextElementSibling) {
-                        node = node.nextElementSibling
-                        offset = 0
-                    }
-                    setSelectionEx(sel, node, offset, e)
-                    return
-                } else if (node.nextElementSibling) {
-                    if (mmlElemFixedArgs.includes(node.parentElement.nodeName)) {
-                        name = getArgName(node)
-                        if (name) {
-                            // checkMathSelection() will speak name
-                            setSelectionEx(sel, node, node.childElementCount, e)
-                            return
-                        }
-                    }
-                    name = checkEmulationIntent(node.nextElementSibling)
-                    if (name) {
-                        speak(name)
-                        setSelectionEx(sel, node.nextElementSibling, 0, e)
-                        return
-                    }
-                    node = node.nextElementSibling
-                    name = checkNaryand(node)
-                    if (name) {
-                        if (node.nodeName == 'mrow')
-                            node = node.firstElementChild
-                    } else {
-                        name = checkSimpleSup(node)
-                        if(!name)
-                            name = names[node.nodeName]
-                    }
-                    if (name)
-                         speak(name)
-                    setSelectionEx(sel, node, 0, e)
-                    return
-                }
-            }
-            if (node.nodeName == 'mtr') {
-                if (node.nextElementSibling)
-                    node = node.nextElementSibling
-                setSelectionEx(sel, node.firstElementChild.firstElementChild, 0, e)
-                return
-            }
-            node = node.nextElementSibling
-            name = checkNaryand(node)
-            if (!name && node.textContent == '\u200B') {
-                let intent = node.parentElement.getAttribute('intent')
-                if (intent == ':cases')     // ZWSP used for selection attrs
-                    name = 'end of cases'
-            }
-            if (!name && (node.nodeName == 'mrow' || node.nodeName == 'mtd')) {
-                node = node.firstElementChild
-                name = checkSimpleSup(node)
-                if (!name)
-                    name = names[node.nodeName]
-            }
-            if (name)
-                speak(name)
-            setSelectionEx(sel, node, 0, e)
-            return
-        }
-        return
-    }   // if (offset) {}
+    let offset = 0
 
     if (node.nodeName == 'mtd') {
         setSelectionEx(sel, node.firstElementChild, 0, e)
@@ -2864,55 +2654,275 @@ function moveRight(sel, node, offset, e) {
             setSelectionEx(sel, node, 0, e)
             return
         }
-    } else if (isMathMLObject(node) || node.nodeName == 'mrow') {
-        // Happens moving into square root, e.g., for '√(𝑎²−𝑏²)'.
-        // Default moves to '𝑎' but should only move to '𝑎²'
-        removeSelAttributes()
-        if (node.nodeName == 'mrow')
-            intent = node.getAttribute('intent')
-        node = node.firstElementChild
+        return
+    }            // mi, mn, mtext, #text
+
+    if (!isMathMLObject(node) && node.nodeName != 'mrow') {
+        console.log('Unhandled moveRight case (not testable)')
+        return
+    }
+
+    // Comes here moving into square root, e.g., for '√(𝑎²−𝑏²)'. Default
+    // moves to '𝑎' but should only move to '𝑎²'
+    removeSelAttributes()
+    if (node.nodeName == 'mrow')
+        intent = node.getAttribute('intent')
+    node = node.firstElementChild
+    if (intent) {
+        if (intent.startsWith(':nary')) {
+            // Moving into emulated nary element
+            if (elementsWithLimits[node.nodeName]) {
+                // Move to nary operator
+                node = node.firstElementChild
+            }
+            setSelectionEx(sel, node, 0, e)
+            return
+        }
+        if (intent == ':function') {
+            if (node.nodeName == 'msup') {
+                // Move to superscript base
+                node = node.firstElementChild
+            }
+            setSelectionEx(sel, node, 0, e)
+            return
+        }
+    }
+    if (node.nodeName == 'mrow') {
+        intent = node.getAttribute('intent')
         if (intent) {
-            if (intent.startsWith(':nary')) {
-                // Moving into emulated nary element
-                if (elementsWithLimits[node.nodeName]) {
-                    // Move to nary operator
-                    node = node.firstElementChild
-                }
-                setSelectionEx(sel, node, 0, e)
-                return
-            }
-            if (intent == ':function') {
-                if (node.nodeName == 'msup') {
-                    // Move to superscript base
-                    node = node.firstElementChild
-                }
-                setSelectionEx(sel, node, 0, e)
-                return
-            }
+            if (intent.startsWith('binomial-coefficient'))
+                name = 'binomial coefficient'
+            else if (intent == ':fenced')
+                name = 'fenced'
+            if (name)
+                speak(name)
+            setTimeout(function () { }, 1000)
         }
+        node = node.firstElementChild
+    } else if (node.nodeName == 'mtr') {
+        node = node.firstElementChild.firstElementChild
+        if (!node.childNodes.length) {   // 'malignmark' or 'maligngroup'
+            node = node.nextElementSibling
+            speak('＆')
+        }
+    }
+    name = checkSimpleSup(node)
+    if (name)
+        speak(name)
+    setSelectionEx(sel, node, 0, e)
+}
+
+function moveRight(sel, node, offset, e) {
+    // This function handles right-arrow movements for non0 offset.
+    // Some right-arrow fix-ups are made in checkMathSelection(). Some need
+    // to be made here before or instead of the default right-arrow behavior.
+    // The default behavior moves to an element with a visible glyph, e.g.,
+    // an <mi>, <mo>, <mn>, or <mtext> (childless elements). But for editing,
+    // we need to stop before elements with children like <mfrac>, <msup>,
+    // etc. And we need to stop at the ends of the children, such as at the
+    // end of a numerator. Note: cases that use default behavior are not
+    // testable via automation since dispatching keydown events doesn't
+    // run default behavior 😒
+    let intent, name
+
+    if (node.nodeName == '#text') {
+        let text = node.textContent
+        let cchCh = getCch(text, offset)
+        offset += cchCh
+
+        if (offset < text.length) {
+            setSelectionEx(sel, node, offset, e)
+            return
+        }
+        node = node.parentElement
+        if (isMathMLObject(node.parentElement) &&
+            node.parentElement.nodeName != 'mrow') {
+            name = getArgName(node, 'end of ')
+            if (name)
+                speak(name)
+            setSelectionEx(sel, node, 1, e)
+            return
+        }
+        if (node.nextElementSibling) {
+            node = node.nextElementSibling
+            if (node.nodeName == 'mrow')
+                node = node.firstElementChild
+            setSelectionEx(sel, node, 0, e)
+            return
+        }
+        if (node.parentElement.nodeName == 'math') {
+            setSelectionEx(sel, node, 1, e)
+            return
+        }
+        node = node.parentElement
+        if (node.nextElementSibling) {
+            node = node.nextElementSibling
+            if (node.nodeName == 'mrow')
+                node = node.firstElementChild
+            setSelectionEx(sel, node, 0, e)
+            return
+        }
+        if (node.nodeName != 'mrow') {
+            setSelectionEx(sel, node, node.childElementCount, e)
+            return
+        }
+        offset = node.childElementCount
+    }
+    if (offset == node.childElementCount) { // (Excludes mi, mo, etc.)
+        if (node.nextElementSibling) {
+            node = node.nextElementSibling
+            if (node.nodeName == 'mrow' && !node.getAttribute('intent'))
+                node = node.firstElementChild
+            setSelectionEx(sel, node, 0, e)
+            return
+        }
+        if (node.parentElement.nodeName == 'math')
+            return                  // Already at end of math
+
+        // Comes here for 'ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)' when IP follows sin⁡𝜃.
+        // Should say 'end of denominator'
         if (node.nodeName == 'mrow') {
-            intent = node.getAttribute('intent')
-            if (intent) {
-                if (intent.startsWith('binomial-coefficient'))
-                    name = 'binomial coefficient'
-                else if (intent == ':fenced')
-                    name = 'fenced'
-                if (name)
-                    speak(name)
-                setTimeout(function () { }, 1000)
-            }
-            node = node.firstElementChild
-        } else if (node.nodeName == 'mtr') {
-            node = node.firstElementChild.firstElementChild
-            if (!node.childNodes.length) {   // 'malignmark' or 'maligngroup'
+            node = node.parentElement
+            if (node.nextElementSibling) {
                 node = node.nextElementSibling
-                speak('＆')
+                if (node.nodeName == 'mrow')
+                    node = node.firstElementChild
+                setSelectionEx(sel, node, 0, e)
+                return
+            }
+            name = getArgName(node, 'end of ')
+            if (name)
+                speak(name)
+        } else {
+            node = node.parentElement
+            if (node.nodeName == 'mrow') {
+                if (node.nextElementSibling) {
+                    // E.g., when leaving ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃) move to
+                    // nextElementSibling
+                    node = node.nextElementSibling
+                    if (node.nodeName == 'mrow' && !node.getAttribute('intent')) {
+                        node = node.firstElementChild
+                        name = checkSimpleSup(node)
+                        if (!name)
+                            name = names[node.nodeName]
+                        if (name)
+                            speak(name)
+                    }
+                    setSelectionEx(sel, node, 0, e)
+                    return
+                }
+                node = node.parentElement
+                if (node.nextElementSibling) {
+                    node = node.nextElementSibling
+                    if (node.nodeName == 'mrow') {
+                        name = checkEmulationIntent(node)
+                        if (name)
+                        speak(name)
+                    }
+                    setSelectionEx(sel, node, 0, e)
+                    return
+                }
             }
         }
+        setSelectionEx(sel, node, node.childElementCount, e)
+        return
+    }
+    if (isMrowLike(node.parentElement) && node.nextElementSibling &&
+        node.nextElementSibling.childElementCount) {
+        // E.g., moving into √ from end of ± in 𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎
+        node = node.nextElementSibling.firstElementChild
+        if (node.nodeName == 'mrow')
+            node = node.firstElementChild
         name = checkSimpleSup(node)
         if (name)
             speak(name)
         setSelectionEx(sel, node, 0, e)
+        return
+    }
+    name = node.parentElement.nodeName
+    if (isMathMLObject(node.parentElement) || name == 'mtd' ||
+        name == 'mrow' && isMathMLObject(node.parentElement.parentElement)) {
+        if (name == 'mrow' || name == 'mtd')
+            node = node.parentElement
+        while (!node.nextElementSibling) {
+            node = node.parentElement
+            if (!node.nextElementSibling) {
+                if (isMathMLObject(node)) {
+                    setSelectionEx(sel, node, node.childElementCount, e)
+                    return
+                }
+                if (node.nodeName == 'mtr' &&
+                    node.parentElement.getAttribute('intent') == ':equations') {
+                    speak('end of equations')
+                    setSelectionEx(sel, node, node.childElementCount, e)
+                    return              // Place to add new equation
+                }
+            }
+            if (isMrowLike(node)) {
+                name = checkNaryand(node)
+                offset = node.childElementCount
+                if (name) {
+                    speak('end of ' + name)
+                } else if (node.nodeName == 'mrow' && node.nextElementSibling) {
+                    node = node.nextElementSibling
+                    offset = 0
+                }
+                setSelectionEx(sel, node, offset, e)
+                return
+            } else if (node.nextElementSibling) {
+                if (mmlElemFixedArgs.includes(node.parentElement.nodeName)) {
+                    name = getArgName(node)
+                    if (name) {
+                        // checkMathSelection() will speak name
+                        setSelectionEx(sel, node, node.childElementCount, e)
+                        return
+                    }
+                }
+                name = checkEmulationIntent(node.nextElementSibling)
+                if (name) {
+                    speak(name)
+                    setSelectionEx(sel, node.nextElementSibling, 0, e)
+                    return
+                }
+                node = node.nextElementSibling
+                name = checkNaryand(node)
+                if (name) {
+                    if (node.nodeName == 'mrow')
+                        node = node.firstElementChild
+                } else {
+                    name = checkSimpleSup(node)
+                    if(!name)
+                        name = names[node.nodeName]
+                }
+                if (name)
+                        speak(name)
+                setSelectionEx(sel, node, 0, e)
+                return
+            }
+        }
+        if (node.nodeName == 'mtr') {
+            if (node.nextElementSibling)
+                node = node.nextElementSibling
+            setSelectionEx(sel, node.firstElementChild.firstElementChild, 0, e)
+            return
+        }
+        node = node.nextElementSibling
+        name = checkNaryand(node)
+        if (!name && node.textContent == '\u200B') {
+            let intent = node.parentElement.getAttribute('intent')
+            if (intent == ':cases')     // ZWSP used for selection attrs
+                name = 'end of cases'
+        }
+        if (!name && (node.nodeName == 'mrow' || node.nodeName == 'mtd')) {
+            node = node.firstElementChild
+            name = checkSimpleSup(node)
+            if (!name)
+                name = names[node.nodeName]
+        }
+        if (name)
+            speak(name)
+        setSelectionEx(sel, node, 0, e)
+        return
     }
 }
 
@@ -3405,7 +3415,11 @@ output.addEventListener('keydown', function (e) {
 
     switch (key) {
         case 'ArrowRight':
-            moveRight(sel, node, offset, e)
+            // For debugging ease, break into 2 cases
+            if(offset)
+                moveRight(sel, node, offset, e)
+            else
+                moveRight0(sel, node, e)    // offset = 0
             return
 
         case 'ArrowLeft':
