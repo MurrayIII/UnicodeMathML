@@ -842,6 +842,21 @@ const speechExpect6 = ['1', 'end of numerator', '8', 'pi squared', 'pi ',
     'end of fenced', '', 'end of math',
 ]
 
+const uMath7 = '𝑛⒞𝑘 𝑎² 𝑥²/2!'
+const homeExpect7 = 'Ⓐ() 𝑛⒞𝑘 𝑎² 𝑥²/2!'
+const rightArrowExpect7 = ['Ⓐ()𝑛⒞𝑘 𝑎² 𝑥²/2!', 'Ⓐ(1)𝑛⒞𝑘 𝑎² 𝑥²/2!', 'Ⓐ()𝑛⒞𝑘 𝑎² 𝑥²/2!',
+    'Ⓐ(1)𝑛⒞𝑘 𝑎² 𝑥²/2!', '𝑛⒞Ⓐ()𝑘 𝑎² 𝑥²/2!', '𝑛⒞Ⓐ(1)𝑘 𝑎² 𝑥²/2!', '𝑛⒞𝑘 Ⓐ()𝑎² 𝑥²/2!',
+    '𝑛⒞𝑘 Ⓐ() 𝑎² 𝑥²/2!', '𝑛⒞𝑘 Ⓐ()𝑎² 𝑥²/2!', '𝑛⒞𝑘 Ⓐ(1)𝑎² 𝑥²/2!', '𝑛⒞𝑘 𝑎^Ⓐ()2 𝑥²/2!',
+    '𝑛⒞𝑘 𝑎^Ⓐ(1)2 𝑥²/2!', '𝑛⒞𝑘 𝑎²Ⓐ() 𝑥²/2!', '𝑛⒞𝑘 𝑎² Ⓐ() 𝑥²/2!', '𝑛⒞𝑘 𝑎² Ⓐ()𝑥²/2!',
+    '𝑛⒞𝑘 𝑎² Ⓐ(1)𝑥²/2!', '𝑛⒞𝑘 𝑎² 𝑥^Ⓐ()2/2!', '𝑛⒞𝑘 𝑎² 𝑥^Ⓐ(1)2/2!', '𝑛⒞𝑘 𝑎² Ⓐ(2) 𝑥²/2!',
+    '𝑛⒞𝑘 𝑎² 𝑥²/Ⓐ()2!', '𝑛⒞𝑘 𝑎² 𝑥²/2Ⓐ()!', '𝑛⒞𝑘 𝑎² 𝑥²/2Ⓐ(1)!', '𝑛⒞𝑘 𝑎²Ⓐ(2) 𝑥²/2!',]
+const speechExpect7 = ['open ', 'fraction', 'n ', 'end of numerator', 'k ',
+    'end of denominator', 'close ', 'eigh squared', 'eigh ', 'end of base', '2',
+    'end of superscript', 'fraction', 'x squared', 'x ', 'end of base', '2',
+    'end of superscript', 'end of numerator', '2', 'factorial ', 'end of denominator',
+    'end of math',]
+
+
 function testOutputHotKey(key, expect) {
     const event = new Event('keydown')
     event.key = key
@@ -974,6 +989,7 @@ function testHotKeys() {
     testRightArrow(uMath4, homeExpect4, rightArrowExpect4, speechExpect4)
     testRightArrow(uMath5, homeExpect5, rightArrowExpect5, speechExpect5)
     testRightArrow(uMath6, homeExpect6, rightArrowExpect6, speechExpect6)
+    testRightArrow(uMath7, homeExpect7, rightArrowExpect7, speechExpect7)
 
     // Test output Ctrl+z and Ctrl+y hot keys
     buildUp('𝑎²+𝑏²=𝑐²')

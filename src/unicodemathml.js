@@ -4818,24 +4818,28 @@ function dump(value, noAddParens) {
             let i = ret.length - 1
             if (ret[0] == '|')              // Determinant
                 return ret.substring(1, i)
-            if (ret[0] != '(')
-                return ret
-            if (ret[i] == ')')
+            if (ret[0] == '(' && ret[i] == ')')
                 return ret.substring(1, i)
 
-            // Doesn't end with ')'. Scan ret matching parens. If the last
-            // ')' follows the '⒞' and matches the opening '(', remove them.
+            // ret doesn't start with '(' and end with ')'. Scan ret matching
+            // parens. If a ')' follows a '⒞' and matches the a '(', remove
+            // the parens. This allows selection anchor and focus to be present
+            // with binomial coefficients
             let binomial
-            let cParen = 1
-            for (i = 1; i < ret.length - 1; i++) {
+            let cParen = 0
+            let iOpen = -1
+            for (i = 0; i < ret.length; i++) {
                 switch (ret[i]) {
                     case '(':
                         cParen++
+                        iOpen = i
                         break;
                     case ')':
                         cParen--
-                        if (!cParen)
-                            return binomial ? ret.substring(1, i) + ret.substring(i + 1) : ret
+                        if (!cParen && binomial && iOpen >= 0)
+                            return ret.substring(0, iOpen) +
+                                ret.substring(iOpen + 1, i) + ret.substring(i + 1)
+                        iOpen = -1
                         break;
                     case '⒞':
                         binomial = true

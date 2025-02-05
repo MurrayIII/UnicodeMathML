@@ -1476,6 +1476,8 @@ function checkEmulationIntent(node) {
         return getFunctionName(node)
     if (intent == ':fenced')
         return 'fenced'
+    if (intent.startsWith('binomial-'))
+        return 'binomial coefficient'
     if (!intent.startsWith(':nary'))
         return ''
 
@@ -1928,8 +1930,12 @@ function checkMathSelection(sel) {
             }
         } else {
             if (offset || !checkSimpleSup(node) && node.nodeName != 'mtd') {
-                if (offset == node.childElementCount && !node.nextElementSibling)
-                    name = getArgName(node)
+                if (offset == node.childElementCount) {
+                    if (!node.nextElementSibling && node.parentElement.nodeName == 'mrow')
+                        name = checkNaryand(node.parentElement)
+                    if (!name)
+                        name = getArgName(node)
+                }
                 if (!name)
                     name = names[node.nodeName]
             }
@@ -2661,6 +2667,14 @@ function moveRight(sel, node, offset, e) {
                     setSelectionEx(sel, node, offset, e)
                     return
                 } else if (node.nextElementSibling) {
+                    if (mmlElemFixedArgs.includes(node.parentElement.nodeName)) {
+                        name = getArgName(node)
+                        if (name) {
+                            // checkMathSelection() will speak name
+                            setSelectionEx(sel, node, node.childElementCount, e)
+                            return
+                        }
+                    }
                     name = checkEmulationIntent(node.nextElementSibling)
                     if (name) {
                         speak(name)
@@ -2743,10 +2757,14 @@ function moveRight(sel, node, offset, e) {
             let nodeP = node.parentElement
             if (nodeP.nodeName == 'mrow') {
                 let intent = nodeP.getAttribute('intent')
-                if (intent == ':fenced') {
+                if (intent && (intent == ':fenced' || intent.startsWith('binomial-'))) {
                     if (nodeP.nextElementSibling) {
+                        // 𝑍(𝜔Ⓐ())=0 and 𝑛⒞𝑘 𝑎^𝑘 come here
                         node = nodeP.nextElementSibling
-                        offset = 0          // 𝑍(𝜔Ⓐ())=0 comes here
+                        offset = 0
+                        name = checkSimpleSup(node)
+                        if (!name)
+                            name = names[node.nodeName]
                     } else {
                         node = nodeP        // 𝑍(𝜔Ⓐ()) comes here
                         offset = node.childElementCount
@@ -2761,19 +2779,18 @@ function moveRight(sel, node, offset, e) {
                     }
                     if (intent == ':function')
                         name = 'end of function'
-                    if (!name)
-                        name = getArgName(nodeP, 'end of ')
-                    if (name)
-                        speak(name)
-                    if (intent == ':cases') {
+                    else if (intent == ':cases') {
                         node = nodeP
                         offset = node.childElementCount
-                    }
-                    if (!intent && nodeP.parentElement.getAttribute('intent') == ':fenced') {
+                    } else if (nodeP.parentElement.getAttribute('intent') == ':fenced') {
                         node = nodeP.parentElement.lastElementChild
                         offset = 0
+                    } else if (!name) {
+                        name = getArgName(nodeP, 'end of ')
                     }
                 }
+                if (name)
+                    speak(name)
                 setSelectionEx(sel, node, offset, e)
                 return
             }
