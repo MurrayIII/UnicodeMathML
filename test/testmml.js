@@ -832,7 +832,7 @@ const speechExpect6 = ['1', 'end of numerator', '8', 'pi squared', 'pi ',
     'integral with limits', 'integral ', 'end of base', 'alpha sub 1',
     'alpha ', 'end of base', '1', 'end of subscript', 'end of lower limit',
     'alpha sub 2', 'alpha ', 'end of base', '2', 'end of subscript',
-    'end of upper limit', '', 'differential d ', 'differential d ', 'alpha ',
+    'end of upper limit', '', 'differential d ', 'sub soup', 'alpha ',
     'end of base', '2', 'end of subscript', 'prime ', 'end of superscript',
     'fenced', 'open bracket ', 'sub soup', 'cap U ', 'end of base', 'delta sub 1',
     'delta ', 'end of base', '1', 'end of subscript', 'rho sub 1', 'rho ',
@@ -856,6 +856,15 @@ const speechExpect7 = ['open ', 'fraction', 'n ', 'end of numerator', 'k ',
     'end of superscript', 'end of numerator', '2', 'factorial ', 'end of denominator',
     'end of math',]
 
+const uMath8 = 'ⅅ_𝑥 𝑓(𝑥)=1'
+const homeExpect8 = 'Ⓐ() ⅅ_𝑥 𝑓(𝑥)=1'
+const rightArrowExpect8 = ['Ⓐ()ⅅ_𝑥 𝑓(𝑥)=1', 'Ⓐ(1)ⅅ_𝑥 𝑓(𝑥)=1', 'ⅅ_Ⓐ()𝑥 𝑓(𝑥)=1',
+    'ⅅ_Ⓐ(1)𝑥 𝑓(𝑥)=1', 'ⅅ_𝑥 Ⓐ()𝑓(𝑥)=1', 'ⅅ_𝑥 𝑓Ⓐ() (𝑥)=1', 'ⅅ_𝑥 𝑓Ⓐ()(𝑥)=1',
+    'ⅅ_𝑥 𝑓(Ⓐ()𝑥)=1', 'ⅅ_𝑥 𝑓(𝑥Ⓐ())=1', 'ⅅ_𝑥 𝑓Ⓐ(3) (𝑥)=1', 'ⅅ_𝑥 𝑓(𝑥)Ⓐ()=1',
+    'ⅅ_𝑥 𝑓(𝑥)=Ⓐ()1', 'ⅅ_𝑥 𝑓(𝑥)=Ⓐ(1)1',]
+const speechExpect8 = ['cap differential d ', 'end of base', 'x ', 'end of subscript',
+    'f ', 'fenced', 'open ', 'x ', 'close ', 'end of fenced', '=', '1',
+    'end of math']
 
 function testOutputHotKey(key, expect) {
     const event = new Event('keydown')
@@ -983,6 +992,7 @@ function testHotKeys() {
         speechSynthesis.cancel()
     }
 
+    // TODO: use for loop
     testRightArrow(uMath1, homeExpect1, rightArrowExpect1, speechExpect1)
     testRightArrow(uMath2, homeExpect2, rightArrowExpect2, speechExpect2)
     testRightArrow(uMath3, homeExpect3, rightArrowExpect3, speechExpect3)
@@ -990,6 +1000,7 @@ function testHotKeys() {
     testRightArrow(uMath5, homeExpect5, rightArrowExpect5, speechExpect5)
     testRightArrow(uMath6, homeExpect6, rightArrowExpect6, speechExpect6)
     testRightArrow(uMath7, homeExpect7, rightArrowExpect7, speechExpect7)
+    testRightArrow(uMath8, homeExpect8, rightArrowExpect8, speechExpect8)
 
     // Test output Ctrl+z and Ctrl+y hot keys
     buildUp('𝑎²+𝑏²=𝑐²')

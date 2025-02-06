@@ -119,7 +119,7 @@ const symbolSpeechStrings = {
 	'₈': 'eighths',							// 2088
 	'₉': 'ninths',							// 2089
 	'ℏ': 'h bar',							// 210F
-	'ⅅ': 'differential D',					// 2145
+	'ⅅ': 'cap differential d',				// 2145
 	'ⅆ': 'differential d',					// 2146
 	'ⅇ': 'e',								// 2147
 	'ⅈ': 'i',								// 2148

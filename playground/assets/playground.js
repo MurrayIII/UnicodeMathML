@@ -1993,13 +1993,16 @@ function checkMathSelection(sel) {
             let text = node.textContent
             if (text)
                 name = symbolSpeech(getCh(text, 0))
+            else if (node.nodeName == 'mspace')
+                name = 'space'
         } else if (node.parentElement.nodeName == 'math') {
             name = 'math'
         }
     }
     let intent = node.getAttribute('intent')
     if (isDoubleStruck(intent)) {
-        name = intent
+        if (!offset)
+            name = intent
     } else if (name) {
         if (name == 'matrix')
             name = ''
@@ -2521,7 +2524,7 @@ function moveRight0(sel, node, e) {
     if (node.nodeName == 'math')
         node = node.firstElementChild
 
-    if (!node.childElementCount) {          // mi, mn, mtext, #text
+    if (!node.childElementCount) {          // mi, mn, mtext, mspace, #text
         let text = node.textContent
         let cchCh = getCch(text, 0)
 
@@ -2639,7 +2642,12 @@ function moveRight0(sel, node, e) {
             }
             speak(intent)
             setSelectionEx(sel, node, 0, e)
-        } else if (!node.childNodes.length) { // 'malignmark' or 'maligngroup'
+        } else if (!node.childNodes.length) { // malignmark, maligngroup, mspace
+            if (node.nodeName == 'mspace') {
+                node = node.nextElementSibling
+                setSelectionEx(sel, node, 0, e)
+                return
+            }
             speak('＆')
             node = node.nextElementSibling
         } else {
@@ -2759,6 +2767,8 @@ function moveRight(sel, node, offset, e) {
             node = node.nextElementSibling
             if (node.nodeName == 'mrow')
                 node = node.firstElementChild
+            if (node.nodeName == 'mtd')
+                speak('＆')
             setSelectionEx(sel, node, 0, e)
             return
         }
@@ -2791,8 +2801,16 @@ function moveRight(sel, node, offset, e) {
                 return
             }
             name = getArgName(node, 'end of ')
-            if (name)
-                speak(name)
+            if (!name) {
+                if (node.getAttribute('arg') && node.parentElement.nodeName == 'mrow') {
+                    intent = node.parentElement.getAttribute('intent')
+                    if (intent && node.parentElement.nextElementSibling && 
+                        intent.indexOf('derivative') != -1) {
+                        setSelectionEx(sel, node.parentElement.nextElementSibling, 0, e)
+                        return
+                    }
+                }
+            }
         } else {
             node = node.parentElement
             if (node.nodeName == 'mrow') {
@@ -2848,6 +2866,8 @@ function moveRight(sel, node, offset, e) {
             node = node.parentElement
             if (!node.nextElementSibling) {
                 if (isMathMLObject(node)) {
+                    if (node.parentElement.getAttribute('intent') == ':function')
+                        node = node.parentElement
                     setSelectionEx(sel, node, node.childElementCount, e)
                     return
                 }
@@ -2869,7 +2889,8 @@ function moveRight(sel, node, offset, e) {
                 }
                 setSelectionEx(sel, node, offset, e)
                 return
-            } else if (node.nextElementSibling) {
+            }
+            if (node.nextElementSibling) {
                 if (mmlElemFixedArgs.includes(node.parentElement.nodeName)) {
                     name = getArgName(node)
                     if (name) {
@@ -2891,11 +2912,16 @@ function moveRight(sel, node, offset, e) {
                         node = node.firstElementChild
                 } else {
                     name = checkSimpleSup(node)
-                    if(!name)
+                    if (!name) {
+                        if (node.nodeName == 'mrow')
+                            node = node.firstElementChild
                         name = names[node.nodeName]
+                    }
                 }
                 if (name)
-                        speak(name)
+                    speak(name)
+                else if (node.nodeName == 'mtr')
+                    node = node.firstElementChild.firstElementChild
                 setSelectionEx(sel, node, 0, e)
                 return
             }
