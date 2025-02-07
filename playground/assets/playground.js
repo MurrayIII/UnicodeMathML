@@ -254,6 +254,45 @@ function setSelection(sel, node, offset, nodeFocus, offsetFocus) {
     return sel
 }
 
+function labelArgs(node) {
+    let cNode = node.childElementCount
+    if (!cNode)
+        return NodeFilter.FILTER_SKIP
+
+    let unLabel
+    let name = node.nodeName
+    if (isMrowLike(node) && (name != 'mrow' || node.attributes.length > 1))
+        return NodeFilter.FILTER_ACCEPT
+
+    if (mmlElemFixedArgs.includes(node.nodeName)) {
+        for (let i = 0; i < cNode; i++) {
+            if (unLabel === undefined)
+                unLabel = node.firstElementChild.hasAttribute('data-arg')
+            if (unLabel)
+                node.children[i].removeAttribute('data-arg')
+            else
+                node.children[i].setAttribute('data-arg', i)
+        }
+    }
+    return NodeFilter.FILTER_ACCEPT
+}
+
+function labelFixedArgs() {
+    // set/remove the 'data-arg' attribute on children of MathML elements that
+    // have fixed numbers of arguments like <mfrac>. The value of this attribute
+    // is the 0-based child index, e.g., '0' for an <mfrac> numerator.
+    let node = output.firstElementChild
+    if (node.nodeName != 'math') {
+        console.log("Can't label fixed args")
+        return
+    }
+    let walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, labelArgs)
+    for (node = walker.currentNode; node; node = walker.nextNode())
+        ;
+    if (!testing)
+        output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)))
+}
+
 const mappedPair = {
     "+-": "\u00B1", "<=": "\u2264", ">=": "\u2265", "~=": "\u2245",
     "~~": "\u2248", "::": "\u2237", ":=": "\u2254", "<<": "\u226A",
@@ -3286,40 +3325,32 @@ function getMathSelection() {
 }
 
 document.addEventListener('keydown', function (e) {
-    // Include cases for Mac ASCII letter hot keys
-    //   Alt + a	å
-    //   Alt + b	∫
-    //   Alt + d	∂
-    //   Alt + h	˙
-    //   Alt + m	µ
-    //   Alt + p	π
-    //   Alt + s	ß
-    //   Alt + t	†
+    // Include cases for Mac ASCII option hot keys
+    //   Alt + a or å     Alt + b or ∫     Alt + d or ∂     Alt + h or ˙
+    //   Alt + m or µ     Alt + p or π     Alt + s or ß     Alt + t or †
     if (e.altKey) {
         switch (e.key) {
             case 'a':                       // Alt+a
             case 'å':
                 document.getElementById("about").click()
-                return
+                break
 
             case 'b':                       // Alt+b
             case '∫':
                 // Braille MathML
-                e.preventDefault()
                 let mathML = isMathML(input.value)
                     ? input.value
                     : document.getElementById('output_source').innerText
                 let braille = MathMLtoBraille(mathML)
                 console.log('Math braille = ' + braille)
                 speechDisplay.innerText += '\n' + braille
-                return
+                break
 
             case 'd':                       // Alt+d
             case '∂':
                 // Toggle dictation mode on/off
-                e.preventDefault()
                 startDictation()
-                return
+                break
 
             case 'Enter':                   // Alt+Enter
                 // Enter Examples[iExample] (see also Demo mode)
@@ -3330,35 +3361,37 @@ document.addEventListener('keydown', function (e) {
                 iExample++                 // Increment for next time
                 if (iExample > cExamples - 1)
                     iExample = 0
-                return
+                break
 
             case 'h':                       // Alt+h
             case '˙':
                 document.getElementById("help").click()
-                return
+                break
+
+            case 'l':                       // Alt+l
+                // Used for manual testing of labelFixedArgs()
+                labelFixedArgs()
+                break
 
             case 'm':                       // Alt+m
             case 'µ':
                 // Toggle Unicode and MathML in input display
-                e.preventDefault()
                 ksi = true
                 input.value = isMathML(input.value)
                     ? MathMLtoUnicodeMath(input.value, true)
                     : document.getElementById('output_source').innerText
                 draw()
-                return
+                break
 
             case 'p':                       // Alt+p
             case 'π':
                 // Presentation: toggle demo mode on/off
-                e.preventDefault()
                 startDemo()
-                return
+                break
 
             case 's':                       // Alt+s
             case 'ß':
                 // Speak MathML
-                e.preventDefault()
                 if (speechSynthesis.speaking) {
                     speechSynthesis.cancel()
                 } else {
@@ -3373,15 +3406,18 @@ document.addEventListener('keydown', function (e) {
                         utterance.voice = voiceZira
                     speechSynthesis.speak(utterance)
                 }
-                return
+                break
 
             case 't':                       // Alt+t
             case '†':
                 // MathML to Unicode [La]TeX
-                e.preventDefault()
                 mathTeX()
+                break
+
+            default:
                 return
         }
+        e.preventDefault()
     }
 })
 

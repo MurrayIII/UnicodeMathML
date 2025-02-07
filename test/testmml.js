@@ -1018,6 +1018,20 @@ function testHotKeys() {
                        rats[i].speechExpect)
     }
 
+    // Test Alt+l toggle fixed-arg-element child arg nos
+    buildUp('𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎')
+    let mml = output.firstElementChild.innerHTML
+    labelFixedArgs()
+    if (output.firstElementChild.innerHTML != "<mi>𝑥</mi><mo>=</mo><mfrac><mrow data-arg=\"0\"><mo>−</mo><mi>𝑏</mi><mo>±</mo><msqrt><msup><mi data-arg=\"0\">𝑏</mi><mn data-arg=\"1\">2</mn></msup><mo>−</mo><mn>4</mn><mi>𝑎</mi><mi>𝑐</mi></msqrt></mrow><mrow data-arg=\"1\"><mn>2</mn><mi>𝑎</mi></mrow></mfrac>")
+        console.log("Fixed-arg labeling failed: " + output.firstElementChild.innerHTML)
+    else
+        console.log("Fixed-arg labeling succeeded")
+    labelFixedArgs()
+    if (output.firstElementChild.innerHTML != mml)
+        console.log("Fixed-arg unlabeling failed: " + output.firstElementChild.innerHTML)
+    else
+        console.log("Fixed-arg unlabeling succeeded")
+
     // Test output Ctrl+z and Ctrl+y hot keys
     buildUp('𝑎²+𝑏²=𝑐²')
     testOutputHotKey('z', '𝑎²+𝑏²=𝑐Ⓐ(1)²')
