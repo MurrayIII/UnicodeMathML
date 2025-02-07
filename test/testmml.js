@@ -75,6 +75,7 @@ const mathML = [
     "<math display=\"block\"><mi>𝑥</mi><mo>=</mo><mfrac><mrow><mo>−</mo><mi>𝑏</mi><mo>±</mo><msqrt><msup><mi>𝑏</mi><mn>2</mn></msup><mo>−</mo><mn>4</mn><mi>𝑎</mi><mi>𝑐</mi></msqrt></mrow><mrow><mn>2</mn><mi>𝑎</mi></mrow></mfrac></math>",
     "<math display=\"block\"><menclose notation=\"box\"><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></menclose></math>",
     "<math display=\"block\"><mrow intent=\":nary(𝑐,,$naryand)\"><msub><mo>∲</mo><mi>𝑐</mi></msub><mrow arg=\"naryand\"><mi>𝑑</mi><mi>𝜙</mi></mrow></mrow><mo>≠</mo><mrow intent=\":nary(𝑐,,$naryand)\"><munder><mo>∑</mo><mi>𝑐</mi></munder><mrow arg=\"naryand\"><mi>𝑑</mi><mi>𝑥</mi></mrow></mrow><mo>=</mo><mn>0</mn></math>",
+    "<math display=\"block\"><mo>∫</mo><msup><mi>𝑑</mi><mn>3</mn></msup><mi>𝑟</mi><mrow intent=\":fenced\"><mo>|</mo><mi>𝑟</mi><mo>⟩</mo></mrow><mrow intent=\":fenced\"><mo>⟨</mo><mrow><mi>𝑟</mi><mo>|</mo><mi>𝜓</mi></mrow><mo>⟩</mo></mrow><mo>,</mo><mrow intent=\":fenced\"><mo>⟨</mo><mrow><mi>𝜓</mi><mo>|</mo><mi>ℋ</mi><mo>|</mo><mi>𝜓</mi></mrow><mo>⟩</mo></mrow></math>",
 ]
 
 const unicodeMath = [
@@ -151,6 +152,7 @@ const unicodeMath = [
     "𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎",
     "▭(𝑎+𝑏)",
     "∲_𝑐 𝑑𝜙≠∑┬𝑐 𝑑𝑥=0",
+    "∫𝑑³𝑟|𝑟⟩⟨𝑟│𝜓⟩,⟨𝜓│ℋ│𝜓⟩",
 ]
 
 const mathSpeech = [
@@ -233,6 +235,7 @@ const mathSpeech = [
     "x = fraction minus b plus or minus square root , b squared minus 4 eigh c , end square root over 2 eigh , end fraction",
     "box eigh + b , end box",
     "clockwise contour integral over c of d phi not equal sum over c of d x = 0",
+    "integral d cubed r vertical bar r close angle bracket open angle bracket r vertical bar psi close angle bracket comma open angle bracket psi vertical bar script cap H vertical bar psi close angle bracket",
 ]
 
 const mathBrailles = [
@@ -309,6 +312,7 @@ const mathBrailles = [
     "⠭⠀⠨⠅⠀⠹⠤⠃⠬⠤⠜⠃⠘⠆⠐⠤⠲⠁⠉⠻⠌⠆⠁⠼",
     "⠫⠗⠸⠫⠁⠬⠃⠻",
     "⠮⠈⠫⠪⠢⠔⠻⠰⠉⠐⠙⠨⠋⠀⠌⠨⠅⠀⠐⠨⠠⠎⠩⠉⠻⠙⠭⠀⠨⠅⠀⠼⠴",
+    "⠮⠙⠘⠒⠐⠗⠳⠗⠨⠨⠾⠨⠨⠷⠗⠳⠨⠽⠨⠨⠾⠠⠀⠨⠨⠷⠨⠽⠳⠈⠰⠰⠠⠓⠳⠨⠽⠨⠨⠾",
 ]
 
 const mathTeXs = [                          // Some cases aren't supported by TeX
@@ -385,6 +389,7 @@ const mathTeXs = [                          // Some cases aren't supported by Te
     '𝑥=\\frac{−𝑏±\\sqrt{𝑏^2−4𝑎𝑐}}{2𝑎}',
     '\\boxed{𝑎+𝑏}',
     '∲_𝑐𝑑𝜙≠∑_𝑐𝑑𝑥=0',
+    '∫𝑑^3𝑟|𝑟⟩⟨𝑟|𝜓⟩,⟨𝜓|ℋ|𝜓⟩',
 ]
 
 function testMathMLtoUnicodeMath() {

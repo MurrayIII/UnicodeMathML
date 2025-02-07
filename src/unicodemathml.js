@@ -3183,7 +3183,10 @@ function preprocess(dsty, uast, index, arr) {
 
         case "bracketed":
             if (value.content.hasOwnProperty("separated")) {
-                value.content = {separated: {separator: value.content.separated.separator, of: preprocess(dsty, value.content.separated.of)}};
+                let sep = value.content.separated.separator
+                if (value.open == '⟨' && sep == '│' && value.close == '⟩')  // U+2502
+                    sep = '|'
+                value.content = {separated: {separator: sep, of: preprocess(dsty, value.content.separated.of)}};
             } else {
                 if (value.intent && value.intent.endsWith("interval") &&
                     Array.isArray(value.content) && value.content.length == 3) {
@@ -4678,6 +4681,16 @@ function dump(value, noAddParens) {
             if (val == '\u202F' && autoBuildUp) {
                 ret = ' '
                 break;
+            }
+            if (val == '|') {
+                ret = val
+                let node = value.parentElement.parentElement
+                if (node.getAttribute('intent') == ':fenced' &&
+                    node.firstElementChild.textContent == '⟨' &&
+                    node.lastElementChild.textContent == '⟩') {
+                    ret = '│'               // U+2502
+                }
+                break
             }
             if (val.startsWith('&#') && val.endsWith(';')) {
                 ret = value.innerHTML.substring(2, val.length - 1);
