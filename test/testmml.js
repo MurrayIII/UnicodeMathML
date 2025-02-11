@@ -929,6 +929,8 @@ function testInputHotKey(key, altKey, ctrlKey, expect, expectStart, expectEnd) {
 
 function testRightArrow(uMath, homeExpect, rightArrowExpect, speechExpect) {
     buildUp(uMath)
+    if (dataAttributes)
+        labelFixedArgs()
     testOutputHotKey('Home', homeExpect)
     speechCurrent = ''
     for (let i = 0; i < rightArrowExpect.length; i++) {
@@ -1011,6 +1013,7 @@ function testHotKeys() {
     }
 
     // More right-arrow navigation tests
+    dataAttributes = true
     for (let i = 0; i < rats.length; i++) {
         testRightArrow(rats[i].uMath,
                        rats[i].homeExpect,
@@ -1020,14 +1023,21 @@ function testHotKeys() {
 
     // Test Alt+l toggle fixed-arg-element child arg nos
     buildUp('𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎')
-    let mml = output.firstElementChild.innerHTML
+    let mml = output.innerHTML
+    dataAttributes = true
     labelFixedArgs()
-    if (output.firstElementChild.innerHTML != "<mi>𝑥</mi><mo>=</mo><mfrac><mrow data-arg=\"0\"><mo>−</mo><mi>𝑏</mi><mo>±</mo><msqrt><msup><mi data-arg=\"0\">𝑏</mi><mn data-arg=\"1\">2</mn></msup><mo>−</mo><mn>4</mn><mi>𝑎</mi><mi>𝑐</mi></msqrt></mrow><mrow data-arg=\"1\"><mn>2</mn><mi>𝑎</mi></mrow></mfrac>")
+    if (output.innerHTML != "<math display=\"block\" selanchor=\"3\"><mi>𝑥</mi><mo>=</mo><mfrac><mrow data-arg=\"0\"><mo>−</mo><mi>𝑏</mi><mo>±</mo><msqrt><msup><mi data-arg=\"0\">𝑏</mi><mn data-arg=\"1\">2</mn></msup><mo>−</mo><mn>4</mn><mi>𝑎</mi><mi>𝑐</mi></msqrt></mrow><mrow data-arg=\"1\"><mn>2</mn><mi>𝑎</mi></mrow></mfrac></math>")
         console.log("Fixed-arg labeling failed: " + output.firstElementChild.innerHTML)
     else
         console.log("Fixed-arg labeling succeeded")
+    let mathml = getMmlNoDataAttribs()
+    if (mathml != mml)
+        console.log("getMmlNoDataAttribs failed: " + mathml)
+    else
+        console.log("getMmlNoDataAttribs succeeded")
+    dataAttributes = false
     labelFixedArgs()
-    if (output.firstElementChild.innerHTML != mml)
+    if (output.innerHTML != mml)
         console.log("Fixed-arg unlabeling failed: " + output.firstElementChild.innerHTML)
     else
         console.log("Fixed-arg unlabeling succeeded")

@@ -16,6 +16,7 @@ var activeTab = "source";
 var anchorNode
 var atEnd = false;                          // True if at end of output object
 var contextmenuNode
+var dataAttributes = false                  // True if data-arg attributes are present
 var focusNode
 var hist = [];
 var inputRedoStack = []
@@ -259,28 +260,26 @@ function labelArgs(node) {
     if (!cNode)
         return NodeFilter.FILTER_SKIP
 
-    let unLabel
     let name = node.nodeName
     if (isMrowLike(node) && (name != 'mrow' || node.attributes.length > 1))
         return NodeFilter.FILTER_ACCEPT
 
     if (mmlElemFixedArgs.includes(node.nodeName)) {
         for (let i = 0; i < cNode; i++) {
-            if (unLabel === undefined)
-                unLabel = node.firstElementChild.hasAttribute('data-arg')
-            if (unLabel)
-                node.children[i].removeAttribute('data-arg')
-            else
+            if (dataAttributes)
                 node.children[i].setAttribute('data-arg', i)
+            else
+                node.children[i].removeAttribute('data-arg')
         }
     }
     return NodeFilter.FILTER_ACCEPT
 }
 
 function labelFixedArgs() {
-    // set/remove the 'data-arg' attribute on children of MathML elements that
-    // have fixed numbers of arguments like <mfrac>. The value of this attribute
-    // is the 0-based child index, e.g., '0' for an <mfrac> numerator.
+    // set/remove the data-arg attribute on children of MathML elements that
+    // have fixed numbers of arguments like <mfrac> (see mmlElemFixedArgs).
+    // The value of the data-arg attribute is the 0-based child index, e.g.,
+    // '0' for an < mfrac > numerator.
     let node = output.firstElementChild
     if (node.nodeName != 'math') {
         console.log("Can't label fixed args")
@@ -291,6 +290,25 @@ function labelFixedArgs() {
         ;
     if (!testing)
         output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)))
+}
+
+function getMmlNoDataAttribs() {
+    // Get output MathML without "data-*" attributes
+    let iLast = 0
+    let m = ''
+    let mml = output.innerHTML
+    if (!mml.startsWith('<math'))
+        return ''
+
+    for (; ;) {
+        let iData = mml.indexOf(' data-', iLast)
+        if (iData == -1)
+            break
+        m += mml.substring(iLast, iData)
+        iData = mml.indexOf('"', iData + 1) // Bypass thru attrib value
+        iLast = mml.indexOf('"', iData + 1) + 1
+    }
+    return m + mml.substring(iLast)
 }
 
 const mappedPair = {
@@ -1821,8 +1839,8 @@ function handleKeyboardInput(node, key, sel) {
 
     switch (nodeNewName) {
         case 'mi':
-            if (nodeName == 'mi' && nodeP.attributes.intent &&
-                nodeP.attributes.intent.nodeValue == ':function') {
+            if (nodeName == 'mi' &&
+                nodeP.getAttribute('intent') == ':function') {
                 node.textContent = node.textContent.substring(0, offset) +
                     key + node.textContent.substring(offset)
                 nodeNewName = ''            // No new node
@@ -2438,7 +2456,7 @@ function checkAutoBuildUp(node, nodeP, key) {
             if (!cParen) {
                 // Same count of open and close delimiters: try to build
                 // up nodeP: nodeP → UnicodeMath
-                uMath = getUnicodeMath(nodeP)
+                uMath = getUnicodeMath(nodeP, false, true)
             } else {
                 // Differing count: try to build up nodeP trailing mi, mo,
                 // mn, mtext children
@@ -2576,17 +2594,13 @@ function moveRight0(sel, node, e) {
         if (node.nodeName == '#text')
             node = node.parentElement
 
+        let nodeP = node.parentElement
+
         if (!node.nextElementSibling) {
-            if (node.parentElement.nodeName == 'math') {
+            if (nodeP.nodeName == 'math') {
                 setSelectionEx(sel, node, 1, e)
                 return
             }
-            if (isMathMLObject(node.parentElement) && node.parentElement.nodeName != 'mrow') {
-                setSelectionEx(sel, node, 1, e)
-                speak(getArgName(node, 'end of '))
-                return
-            }
-            let nodeP = node.parentElement
             if (nodeP.nodeName == 'mrow') {
                 let intent = nodeP.getAttribute('intent')
                 if (intent && (intent == ':fenced' || intent.startsWith('binomial-'))) {
@@ -2602,13 +2616,13 @@ function moveRight0(sel, node, e) {
                         offset = node.childElementCount
                     }
                 } else {
-                    offset = 1
                     name = checkNaryand(nodeP)
                     if (name) {
                         speak('end of ' + name)
                         setSelectionEx(sel, nodeP, nodeP.childElementCount, e)
                         return
                     }
+                    offset = 1
                     if (intent == ':function')
                         name = 'end of function'
                     else if (intent == ':cases') {
@@ -2624,6 +2638,11 @@ function moveRight0(sel, node, e) {
                 if (name)
                     speak(name)
                 setSelectionEx(sel, node, offset, e)
+                return
+            }   // nodeP is <mrow>
+            if (isMathMLObject(nodeP)) {
+                setSelectionEx(sel, node, 1, e)
+                speak(getArgName(node, 'end of '))
                 return
             }
             if (nodeP.nodeName == 'mtd') {
@@ -2648,7 +2667,8 @@ function moveRight0(sel, node, e) {
                 speak('end ' + name)
                 setSelectionEx(sel, node, offset, e)
             }
-        } else if ((!isMathMLObject(node.parentElement) || isMrowLike(node.parentElement)) &&
+            return
+        } else if ((!isMathMLObject(nodeP) || isMrowLike(nodeP)) &&
             isMathMLObject(node.nextElementSibling)) {
             // Moving from childless element to MathML element with
             // children as for moving past '=' in '=1/√(𝑎²−𝑏²)'
@@ -2660,7 +2680,7 @@ function moveRight0(sel, node, e) {
             }
             setSelectionEx(sel, node, offset, e)
             return
-        } else if (mmlElemFixedArgs.includes(node.parentElement.nodeName)) {
+        } else if (mmlElemFixedArgs.includes(nodeP.nodeName)) {
             setSelectionEx(sel, node, 1, e)
             speak(getArgName(node, 'end of '))
             return
@@ -2770,7 +2790,7 @@ function moveRight(sel, node, offset, e) {
     // end of a numerator. Note: cases that use default behavior are not
     // testable via automation since dispatching keydown events doesn't
     // run default behavior 😒
-    let intent, name
+    let intent, name, nodeP
 
     if (node.nodeName == '#text') {
         let text = node.textContent
@@ -2781,9 +2801,10 @@ function moveRight(sel, node, offset, e) {
             setSelectionEx(sel, node, offset, e)
             return
         }
-        node = node.parentElement
-        if (isMathMLObject(node.parentElement) &&
-            node.parentElement.nodeName != 'mrow') {
+        node = node.parentElement           // → mi, mn, mo, mtext
+        nodeP = node.parentElement
+
+        if (isMathMLObject(nodeP) && nodeP.nodeName != 'mrow') {
             name = getArgName(node, 'end of ')
             if (name)
                 speak(name)
@@ -2797,11 +2818,11 @@ function moveRight(sel, node, offset, e) {
             setSelectionEx(sel, node, 0, e)
             return
         }
-        if (node.parentElement.nodeName == 'math') {
+        if (nodeP.nodeName == 'math') {
             setSelectionEx(sel, node, 1, e)
             return
         }
-        node = node.parentElement
+        node = nodeP
         if (node.nextElementSibling) {
             node = node.nextElementSibling
             if (node.nodeName == 'mrow')
@@ -2816,7 +2837,8 @@ function moveRight(sel, node, offset, e) {
             return
         }
         offset = node.childElementCount
-    }
+    }               // node.nodeName == #text
+
     if (offset == node.childElementCount) { // (Excludes mi, mo, etc.)
         if (node.nextElementSibling) {
             node = node.nextElementSibling
@@ -2841,11 +2863,13 @@ function moveRight(sel, node, offset, e) {
             }
             name = getArgName(node, 'end of ')
             if (!name) {
-                if (node.getAttribute('arg') && node.parentElement.nodeName == 'mrow') {
-                    intent = node.parentElement.getAttribute('intent')
-                    if (intent && node.parentElement.nextElementSibling && 
+                nodeP = node.parentElement
+                if (node.getAttribute('arg') && nodeP.nodeName == 'mrow') {
+                    intent = nodeP.getAttribute('intent')
+                    if (intent && nodeP.nextElementSibling &&
                         intent.indexOf('derivative') != -1) {
-                        setSelectionEx(sel, node.parentElement.nextElementSibling, 0, e)
+                        // Comes here moving to '=' in 'ⅅ_𝑥 𝑓(𝑥)=1'
+                        setSelectionEx(sel, nodeP.nextElementSibling, 0, e)
                         return
                     }
                 }
@@ -2896,11 +2920,12 @@ function moveRight(sel, node, offset, e) {
         setSelectionEx(sel, node, 0, e)
         return
     }
-    name = node.parentElement.nodeName
-    if (isMathMLObject(node.parentElement) || name == 'mtd' ||
-        name == 'mrow' && isMathMLObject(node.parentElement.parentElement)) {
+    nodeP = node.parentElement
+    name = nodeP.nodeName
+    if (isMathMLObject(nodeP) || name == 'mtd' || name == 'mrow' &&
+        isMathMLObject(nodeP.parentElement)) {
         if (name == 'mrow' || name == 'mtd')
-            node = node.parentElement
+            node = nodeP
         while (!node.nextElementSibling) {
             node = node.parentElement
             if (!node.nextElementSibling) {
@@ -3370,6 +3395,7 @@ document.addEventListener('keydown', function (e) {
 
             case 'l':                       // Alt+l
                 // Used for manual testing of labelFixedArgs()
+                dataAttributes = !dataAttributes
                 labelFixedArgs()
                 break
 

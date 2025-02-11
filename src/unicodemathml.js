@@ -4371,7 +4371,7 @@ function dump(value, noAddParens) {
     if (!value)
         return ''
 
-    let cNode = value.nodeName == '#text' ? 1 : value.childElementCount
+    let cNode = value.childElementCount ? value.childElementCount : 1
     let intent
     let nodeLEC                             // node.lastElementChild
     let ret = ''
@@ -4888,9 +4888,9 @@ function MathMLtoUnicodeMath(mathML, keepSelInfo) {
     return getUnicodeMath(doc.firstElementChild, keepSelInfo)
 }
 
-function getUnicodeMath(doc, keepSelInfo) {
-    ksi = keepSelInfo                       // Keep selection info for undo
-    let unicodeMath = dump(doc);            // Get UnicodeMath from DOM doc
+function getUnicodeMath(doc, keepSelInfo, noAddParens) {
+    ksi = keepSelInfo                        // Keep selection info for undo
+    let unicodeMath = dump(doc, noAddParens) // Get UnicodeMath from DOM doc
 
     // Remove some unnecessary spaces
     for (let i = 0; ; i++) {
