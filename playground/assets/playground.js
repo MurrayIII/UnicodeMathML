@@ -255,6 +255,41 @@ function setSelection(sel, node, offset, nodeFocus, offsetFocus) {
     return sel
 }
 
+function setOutputSelection() {
+    // Set window selection to node(s) identified by selanchor and
+    // selfocus attributes.
+    let sel = window.getSelection()
+    let selanchor, selfocus
+    let node, nodeAnchor, nodeFocus
+    let walker = document.createTreeWalker(output.firstElementChild,
+        NodeFilter.SHOW_ELEMENT, null)
+
+    for (node = walker.currentNode; node; node = walker.nextNode()) {
+        if (!selanchor) {
+            selanchor = node.getAttribute('selanchor')
+            if (selanchor)
+                nodeAnchor = node
+        }
+        if (!selfocus) {
+            selfocus = node.getAttribute('selfocus')
+            if (selfocus)
+                nodeFocus = node
+        }
+    }
+    if (!selanchor)
+        return
+    if (!selfocus) {
+        selfocus = selanchor
+        nodeFocus = nodeAnchor
+    }
+    if (selanchor[0] == '-')    // Should switch to #text node...
+        selanchor = selanchor.substring(1)
+    if (selfocus[0] == '-')
+        selfocus = selfocus.substring(1)
+    sel.setBaseAndExtent(nodeAnchor, selanchor, nodeFocus, selfocus)
+    checkMathSelection(sel)
+}
+
 function labelArgs(node) {
     let cNode = node.childElementCount
     if (!cNode)
@@ -941,35 +976,7 @@ input.addEventListener("keydown", function (e) {
             case 's':                       // Ctrl+s
                 // Set output selection according to selection attributes
                 e.preventDefault()
-                let sel = window.getSelection()
-                let selanchor, selfocus
-                let node, nodeAnchor, nodeFocus
-                let walker = document.createTreeWalker(output.firstElementChild, NodeFilter.SHOW_ELEMENT, null)
-
-                for (node = walker.currentNode; node; node = walker.nextNode()) {
-                    if (!selanchor) {
-                        selanchor = node.getAttribute('selanchor')
-                        if (selanchor)
-                            nodeAnchor = node
-                    }
-                    if (!selfocus) {
-                        selfocus = node.getAttribute('selfocus')
-                        if (selfocus)
-                            nodeFocus = node
-                    }
-                }
-                if (!selanchor)
-                    return
-                if (!selfocus) {
-                    selfocus = selanchor
-                    nodeFocus = nodeAnchor
-                }
-                if (selanchor[0] == '-')    // Should switch to #text node...
-                    selanchor = selanchor.substring(1)
-                if (selfocus[0] == '-')
-                    selfocus = selfocus.substring(1)
-                sel.setBaseAndExtent(nodeAnchor, selanchor, nodeFocus, selfocus)
-                checkMathSelection(sel)
+                setOutputSelection()
                 return
 
             case 'y':                       // Ctrl+y
@@ -1719,6 +1726,7 @@ function handleKeyboardInput(node, key, sel) {
         sel = window.getSelection()
         node = sel.anchorNode
     }
+    removeSelAttributes()
     if (key == '#') {
         // Create equation number table if child of <math> is <mi>, <mn>,
         // <mo>, or <mtext>
@@ -1734,7 +1742,6 @@ function handleKeyboardInput(node, key, sel) {
         if (createEqNo) {
             // Create equation number table with first mtd containing <mtext>
             // with place holder and second mtd containing current MathML
-            removeSelAttributes()
             let html = `<mtable><mlabeledtr><mtd><mtext selanchor="0" selfocus="1">⬚</mtext></mtd><mtd>` +
                 output.firstElementChild.innerHTML +
                 `</mtd></mlabeledtr></mtable>`
@@ -1746,7 +1753,6 @@ function handleKeyboardInput(node, key, sel) {
     let nodeNewName = getMmlTag(key)
 
     if (node.nodeName == 'math') {
-        removeSelAttributes(node)
         if (!sel.anchorOffset) {
             let nodeNew = document.createElement(nodeNewName)
             nodeNew.textContent = key
@@ -1764,7 +1770,6 @@ function handleKeyboardInput(node, key, sel) {
         refreshDisplays()
         return
     }
-    removeSelAttributes()
     let autocl
     if (node.nodeName == '#text')
         node = node.parentElement
@@ -2424,8 +2429,11 @@ function checkAutoBuildUp(node, nodeP, key) {
         return null
 
     let cNode = nodeP.childElementCount
+    let i
+    let iNode = getChildIndex(node, nodeP)
+
     if (key == '"') {
-        for (let i = cNode - 1; i >= 0; i--) {
+        for (i = cNode - 1; i >= 0; i--) {
             if (nodeP.children[i].childElementCount)
                 break;
             if (nodeP.children[i].textContent == '"') {
@@ -2445,23 +2453,31 @@ function checkAutoBuildUp(node, nodeP, key) {
             }
         }
     }
-    if ('+=-<> )]|'.includes(key) ||
-        key == '/' && !node.textContent.endsWith(')') || // Not end of numerator
-        key == '#' && !node.textContent.endsWith('(')) { // Not hex RGB: eq-no
+    if ('+=-<> )]|'.includes(key) || iNode + 1 == cNode &&
+        (key == '/' && !node.textContent.endsWith(')') ||  // Not end of numerator
+         key == '#' && !node.textContent.endsWith('('))) { // Not hex RGB: eq-no
         // Try to build up <mrow> or trailing part of it
         let uMath = ''
         let [cParen, k, opBuildUp] = checkBrackets(nodeP)
         if (opBuildUp && (!cParen || k != -1)) {
             autoBuildUp = true
+            ksi = false
             if (!cParen) {
                 // Same count of open and close delimiters: try to build
                 // up nodeP: nodeP → UnicodeMath
-                uMath = getUnicodeMath(nodeP, false, true)
+                if (nodeP.nodeName == 'math' && !node.nextElementSibling)
+                    uMath = getUnicodeMath(nodeP, false, true)
+                else {
+                    for (i = 0; i <= iNode; i++)
+                        uMath += dump(nodeP.children[i])
+                    uMath += 'Ⓐ()'
+                    for (; i < cNode; i++)
+                        uMath += dump(nodeP.children[i])
+                }
             } else {
                 // Differing count: try to build up nodeP trailing mi, mo,
                 // mn, mtext children
-                ksi = false
-                for (let i = k + 1; i < cNode; i++)
+                for (i = k + 1; i < cNode; i++)
                     uMath += dump(nodeP.children[i]);
             }
             uMath = uMath.replace('"\\"', '\\')
@@ -2483,7 +2499,7 @@ function checkAutoBuildUp(node, nodeP, key) {
                 } else {                // Build up of trailing children
                     // Remove children[k + 1]...children[cNode - 1] and
                     // append their built-up counterparts
-                    for (let i = cNode - 1; i > k; i--)
+                    for (i = cNode - 1; i > k; i--)
                         nodeP.children[i].remove()
                     const parser = new DOMParser();
                     let doc = parser.parseFromString(t.mathml, "application/xml");
@@ -3803,13 +3819,14 @@ output.addEventListener('keydown', function (e) {
         nodeP = node.parentElement
 
     atEnd = sel.anchorOffset != 0
+    let lastChild = getChildIndex(node, nodeP) + 1 == nodeP.childElementCount
     let nodeT = checkAutoBuildUp(node, nodeP, key)
     if (nodeT) {
         node = nodeT                        // FAB succeeded: update node
         atEnd = true
         if (key == ' ' || key == '"') {     // Set insertion point
             let cChild = node.childElementCount
-            if (cChild) {
+            if (cChild && lastChild) {
                 while (node.nodeName == 'mrow') {
                     node = node.lastElementChild
                     cChild = node.childElementCount

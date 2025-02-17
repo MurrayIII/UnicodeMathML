@@ -393,10 +393,10 @@ const mathTeXs = [                          // Some cases aren't supported by Te
 ]
 
 function testMathMLtoUnicodeMath() {
-    var iSuccess = 0;
-    var iFail = 0;
-   for (var i = 0; i < mathML.length; i++) {
-        var result = MathMLtoUnicodeMath(mathML[i], true);
+    let iSuccess = 0;
+    let iFail = 0;
+   for (let i = 0; i < mathML.length; i++) {
+        let result = MathMLtoUnicodeMath(mathML[i], true);
         if (result != unicodeMath[i]) {
             if (unicodeMath[i][0] != 'ⓘ') {
                 console.log("Expect: " + unicodeMath[i] + '\n');
@@ -411,9 +411,9 @@ function testMathMLtoUnicodeMath() {
 }
 
 function testMathMLtoSpeech() {
-    var iSuccess = 0;
-    for (var i = 0; i < mathML.length; i++) {
-        var result = MathMLtoSpeech(mathML[i]);
+    let iSuccess = 0;
+    for (let i = 0; i < mathML.length; i++) {
+        let result = MathMLtoSpeech(mathML[i]);
         if (result != mathSpeech[i]) {
             console.log(unicodeMath[i] + '\n');
             console.log("Expect: " + mathSpeech[i] + '\n');
@@ -422,14 +422,14 @@ function testMathMLtoSpeech() {
             iSuccess++;
         }
     }
-    var iFail = mathML.length - iSuccess;
+    let iFail = mathML.length - iSuccess;
     console.log("Test MathML to speech: " + iSuccess + " passes; " + iFail + " failures\n");
 }
 
 function testMathMLtoBraille() {
-    var iSuccess = 0;
-    for (var i = 0; i < mathML.length; i++) {
-        var result = MathMLtoBraille(mathML[i]);
+    let iSuccess = 0;
+    for (let i = 0; i < mathML.length; i++) {
+        let result = MathMLtoBraille(mathML[i]);
         if (result != mathBrailles[i]) {
             console.log(unicodeMath[i] + '\n');
             console.log("Expect: " + mathBrailles[i] + '\n');
@@ -438,14 +438,14 @@ function testMathMLtoBraille() {
             iSuccess++;
         }
     }
-    var iFail = mathML.length - iSuccess;
+    let iFail = mathML.length - iSuccess;
     console.log("Test MathML to braille: " + iSuccess + " passes; " + iFail + " failures\n");
 }
 
 function testMathMLtoTeX() {
-    var iSuccess = 0;
-    for (var i = 0; i < mathTeXs.length; i++) {
-        var result = MathMLtoTeX(mathML[i]);
+    let iSuccess = 0;
+    for (let i = 0; i < mathTeXs.length; i++) {
+        let result = MathMLtoTeX(mathML[i]);
         if (result != mathTeXs[i]) {
             console.log(unicodeMath[i] + '\n');
             console.log("Expect: " + mathTeXs[i] + '\n');
@@ -454,7 +454,7 @@ function testMathMLtoTeX() {
             iSuccess++;
         }
     }
-    var iFail = mathTeXs.length - iSuccess;
+    let iFail = mathTeXs.length - iSuccess;
     console.log("Test MathML to TeX: " + iSuccess + " passes; " + iFail + " failures\n");
 }
 
@@ -468,6 +468,19 @@ function ctrlZ(key) {
     event.ctrlKey = true
     output.dispatchEvent(event)
     setTimeout(function () { }, 50)         // Sleep for 50 msec
+}
+
+function dispatchText(text) {
+    for (let i = 0; i < text.length; i++) {
+        const event = new Event('keydown')
+        event.key = ' '
+        if (i < text.length)
+            event.key = getCh(text, i)
+        output.dispatchEvent(event)
+        setTimeout(function () { }, 50)     // Sleep for 50 msec
+        if (event.key.length == 2)
+            i++                             // Bypass trail surrogate
+    }
 }
 
 function buildUp(uMath, uMathPartial) {
@@ -1021,13 +1034,25 @@ function testHotKeys() {
                        rats[i].speechExpect)
     }
 
+    // Check in-numerator build up, e.g., build up not at end of math zone
+    let t = unicodemathml('(𝑎+Ⓐ(1)𝑏)/𝑐=0', true)
+    output.innerHTML = t.mathml
+    setOutputSelection()
+    dispatchText('^2 ')
+    let uMath = getUnicodeMath(output.firstElementChild, true)
+    if (uMath != '(𝑎+Ⓐ(2) 𝑏²)/𝑐=0')
+        console.log('In-numerator build up failed: UnicodeMath = ' + uMath)
+    else
+        console.log('In-numerator build up succeeded')
+    removeSelAttributes()
+
     // Test Alt+l toggle fixed-arg-element child arg nos
     buildUp('𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎')
     let mml = output.innerHTML
     dataAttributes = true
     labelFixedArgs()
     if (output.innerHTML != "<math display=\"block\" selanchor=\"3\"><mi>𝑥</mi><mo>=</mo><mfrac><mrow data-arg=\"0\"><mo>−</mo><mi>𝑏</mi><mo>±</mo><msqrt><msup><mi data-arg=\"0\">𝑏</mi><mn data-arg=\"1\">2</mn></msup><mo>−</mo><mn>4</mn><mi>𝑎</mi><mi>𝑐</mi></msqrt></mrow><mrow data-arg=\"1\"><mn>2</mn><mi>𝑎</mi></mrow></mfrac></math>")
-        console.log("Fixed-arg labeling failed: " + output.firstElementChild.innerHTML)
+        console.log("Fixed-arg labeling failed: " + output.innerHTML)
     else
         console.log("Fixed-arg labeling succeeded")
     let mathml = getMmlNoDataAttribs()
@@ -1055,7 +1080,7 @@ function testHotKeys() {
     testOutputContextMenu('arg=arg', '<math display=\"block\" selanchor=\"0\" selfocus=\"6\" intent=\"Pythagorean theorem\" arg=\"arg\"><msup><mi>𝑎</mi><mn>2</mn></msup><mo>+</mo><msup><mi>𝑏</mi><mn>2</mn></msup><mo>=</mo><msup><mi>𝑐</mi><mn>2</mn></msup><mo> </mo></math>')
     testOutputHotKey('a', 'Ⓐ()Ⓕ(6) 𝑎²+𝑏²=𝑐² ')
     testOutputHotKey('Delete', 'Ⓐ()Ⓕ(1)⬚')
-    let t = unicodemathml('𝑎/𝑏 Ⓐ(-0)+Ⓕ(2) 𝑐/𝑑=0', true)
+    t = unicodemathml('𝑎/𝑏 Ⓐ(-0)+Ⓕ(2) 𝑐/𝑑=0', true)
     output.innerHTML = t.mathml
     refreshDisplays('', true)
     testOutputHotKey('Delete', '𝑎/𝑏 Ⓐ()=0')

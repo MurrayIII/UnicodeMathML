@@ -4151,21 +4151,8 @@ function pretty(mast) {
     if (Array.isArray(mast)) {
         let ret = ''
 
-        for (let i = 0; i < mast.length; i++) {
-            if (useMfenced != 1 && k(mast[i]) == 'maligngroup') {
-                // Float right if align group has only one element. This
-                // doesn't fix columns with multiple-element groups of
-                // different lengths. Firefox displays the groups correctly
-                // without the float:right attribute, so Chromium needs
-                // a bug fix after which this condition can be removed.
-                if (i + 2 > mast.length - 1 || k(mast[i + 2]) == 'malignmark')
-                    ret += `</mtd><mtd style='text-align:right;float:right'>`
-                else
-                    ret += `</mtd><mtd style='text-align:right'>`
-            } else {
-                ret += pretty(mast[i])
-            }
-        }
+        for (let i = 0; i < mast.length; i++)
+            ret += pretty(mast[i])
         return ret
     }
 
@@ -4259,7 +4246,9 @@ function pretty(mast) {
         case "malignmark":
             if (useMfenced == 1)            // Word needs malignmark, maligngroup
                 return tag(key, attributes, value);
-            return `</mtd><mtd style='text-align:left;'>`
+            return key == 'maligngroup'
+                ? `</mtd><mtd style='padding-left:0;text-align:right;float:right;display:math'>`
+                : `</mtd><mtd style='padding-left:0;text-align:left;vertical-align:middle'>`
         case "␢":
             return "";
         default:
@@ -4930,6 +4919,7 @@ function escapeHTMLSpecialChars(str) {
 
 function unicodemathml(unicodemath, displaystyle) {
     debugGroup(unicodemath);
+    selanchor = selfocus = null
     if (isMathML(unicodemath)) {
         if (unicodemath.startsWith('<mml:math') || unicodemath.startsWith('<m:math'))
             unicodemath = removeMmlPrefixes(unicodemath);
