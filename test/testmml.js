@@ -896,6 +896,24 @@ const rats = [    // Right Arrow Tests
     },
 ]
 
+const ieqbus = [    // Intra-equation build up Tests
+    {
+        uMath: '(𝑎+Ⓐ(1)𝑏)/𝑐=0',
+        text: '^2 ',
+        uMathExpect: '(𝑎+Ⓐ(2) 𝑏²)/𝑐=0',
+    },
+    {
+        uMath: '𝑎+Ⓐ(1)𝑏+𝑐=0',
+        text: '^2 ',
+        uMathExpect: '𝑎+𝑏²Ⓐ()+𝑐=0',
+    },
+    {
+        uMath: '(𝑎+𝑏Ⓐ()+c)/𝑐=0',
+        text: '^2 ',
+        uMathExpect: '(𝑎+𝑏²Ⓐ()+𝑐)/𝑐=0',
+    },
+]
+
 function testOutputHotKey(key, expect) {
     const event = new Event('keydown')
     event.key = key
@@ -953,6 +971,20 @@ function testRightArrow(uMath, homeExpect, rightArrowExpect, speechExpect) {
         speechCurrent = ''
         speechSynthesis.cancel()
     }
+}
+
+function testIntraEqBuildUp(uMath, text, uMathExpect) {
+    // Check in-numerator build up, e.g., build up not at end of math zone
+    let t = unicodemathml(uMath, true)
+    output.innerHTML = t.mathml
+    setOutputSelection()
+    dispatchText(text)
+    uMath = getUnicodeMath(output.firstElementChild, true)
+    if (uMath != uMathExpect)
+        console.log('Intra-equation build up failed: UnicodeMath = ' + uMath)
+    else
+        console.log('Intra-equation build up succeeded')
+    removeSelAttributes()
 }
 
 function testOutputContextMenu(intent, expect) {
@@ -1034,19 +1066,11 @@ function testHotKeys() {
                        rats[i].speechExpect)
     }
 
-    // Check in-numerator build up, e.g., build up not at end of math zone
-    let t = unicodemathml('(𝑎+Ⓐ(1)𝑏)/𝑐=0', true)
-    output.innerHTML = t.mathml
-    setOutputSelection()
-    dispatchText('^2 ')
-    let uMath = getUnicodeMath(output.firstElementChild, true)
-    if (uMath != '(𝑎+Ⓐ(2) 𝑏²)/𝑐=0')
-        console.log('In-numerator build up failed: UnicodeMath = ' + uMath)
-    else
-        console.log('In-numerator build up succeeded')
-    removeSelAttributes()
+    // Check intra-equation build up, e.g., build up not at end of math zone
+    for (let i = 0; i < ieqbus.length; i++)
+        testIntraEqBuildUp(ieqbus[i].uMath, ieqbus[i].text, ieqbus[i].uMathExpect)
 
-    // Test Alt+l toggle fixed-arg-element child arg nos
+    // Test Alt+l toggle fixed-arg-element child argument indices
     buildUp('𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎')
     let mml = output.innerHTML
     dataAttributes = true
@@ -1080,7 +1104,7 @@ function testHotKeys() {
     testOutputContextMenu('arg=arg', '<math display=\"block\" selanchor=\"0\" selfocus=\"6\" intent=\"Pythagorean theorem\" arg=\"arg\"><msup><mi>𝑎</mi><mn>2</mn></msup><mo>+</mo><msup><mi>𝑏</mi><mn>2</mn></msup><mo>=</mo><msup><mi>𝑐</mi><mn>2</mn></msup><mo> </mo></math>')
     testOutputHotKey('a', 'Ⓐ()Ⓕ(6) 𝑎²+𝑏²=𝑐² ')
     testOutputHotKey('Delete', 'Ⓐ()Ⓕ(1)⬚')
-    t = unicodemathml('𝑎/𝑏 Ⓐ(-0)+Ⓕ(2) 𝑐/𝑑=0', true)
+    let t = unicodemathml('𝑎/𝑏 Ⓐ(-0)+Ⓕ(2) 𝑐/𝑑=0', true)
     output.innerHTML = t.mathml
     refreshDisplays('', true)
     testOutputHotKey('Delete', '𝑎/𝑏 Ⓐ()=0')
