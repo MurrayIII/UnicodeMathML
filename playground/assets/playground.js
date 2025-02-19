@@ -14,7 +14,6 @@ var output_source = document.getElementById("output_source");
 
 var activeTab = "source";
 var anchorNode
-var atEnd = false;                          // True if at end of output object
 var contextmenuNode
 var dataAttributes = false                  // True if data-arg attributes are present
 var focusNode
@@ -1511,11 +1510,6 @@ function refreshDisplays(uMath, noUndo) {
     if (nodeA.textContent == '⬚') {
         setSelection(sel, nodeA, SELECTNODE)
     } else if (nodeA === nodeF && offsetA == offsetF) {
-        if (nodeA.nodeName == '#text' && offsetA == nodeA.textContent.length ||
-            !nodeA.childElementCount && offsetA == '1' ||
-            offsetA && nodeA.childElementCount == offsetA) {
-                atEnd = true
-        }
         setSelection(sel, nodeA, offsetA)
     } else {
         if (nodeF.childElementCount && offsetF > nodeF.childElementCount)
@@ -1668,7 +1662,6 @@ function handleEndOfTextNode(node) {
 
     if (name != 'mrow') {
         speak('end of ' + name);
-        atEnd = true;
     }
     return node
 }
@@ -2291,8 +2284,6 @@ function deleteSelection(range) {
 
     node = sel.anchorNode                   // Anchor node after deletions
     let offset = sel.anchorOffset
-    if (!offset)
-        atEnd = false
 
     if (node.childElementCount) {
         let i = sel.anchorOffset            // Child index
@@ -2410,12 +2401,9 @@ function checkEmpty(node, offset, uMath) {
             } else {
                 setSelAttributes(nodeT, 'selanchor', nodeT.textContent ? '1' : '0')
                 setSelection(null, nodeT, 0)
-                atEnd = true
             }
         }
     } else {
-        if (offset == undefined)
-            offset = atEnd ? '1' : '0'
         if (node.nodeName == '#text') {
             node = node.parentElement
             offset = '-' + offset
@@ -3244,7 +3232,6 @@ function pasteMathML(clipText, node, offset, sel) {
     }
 
     if (name == 'math' && node.firstElementChild.nodeName == 'mrow') {
-        atEnd = offset != 0
         node = node.firstElementChild
         name = 'mrow'
     }
@@ -3306,7 +3293,6 @@ output.addEventListener("click", (e) => {
 
     if (node.nodeName == 'DIV')
         return                          // </math>
-    atEnd = node.length == sel.anchorOffset
     if (sel.isCollapsed && node.nodeName == '#text' && node.textContent == '⬚')
         setSelection(sel, node, SELECTNODE)
     if (outputUndoStack.length < 2)
@@ -3516,11 +3502,9 @@ output.addEventListener('keydown', function (e) {
             node = node.firstElementChild
             name = 'math'
             sel = setSelection(sel, node, 0)
-            atEnd = true
         } else {                            // Move to first math-zone child
             node = node.firstElementChild
             sel = setSelection(sel, node, 0)
-            atEnd = false
         }
     }
 
@@ -3812,7 +3796,6 @@ output.addEventListener('keydown', function (e) {
         }
         node = nodeP.children[i >= 0 ? i : 0]
         name = node.nodeName
-        atEnd = true
         key = ch
         return
     }
@@ -3825,12 +3808,10 @@ output.addEventListener('keydown', function (e) {
     if (!node.childElementCount && name != 'math')
         nodeP = node.parentElement
 
-    atEnd = sel.anchorOffset != 0
     let lastChild = getChildIndex(node, nodeP) + 1 == nodeP.childElementCount
     let nodeT = checkAutoBuildUp(node, nodeP, key)
     if (nodeT) {
         node = nodeT                        // FAB succeeded: update node
-        atEnd = true
         if (key == ' ' || key == '"') {     // Set insertion point
             let cChild = node.childElementCount
             if (cChild && lastChild) {
