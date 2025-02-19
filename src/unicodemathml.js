@@ -4,6 +4,10 @@ var testing
 var selanchor
 var selfocus
 var useMfenced = 0
+var emitDefaultIntents =
+    typeof ummlConfig === "undefined" ||
+    typeof ummlConfig.defaultIntents === "undefined" ||
+    ummlConfig.defaultIntents;
 
 const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
 const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
@@ -68,7 +72,7 @@ function getUnicodeFraction(chNum, chDenom) {
 // determine space width attribute values: x/18em
 //                    0         1                       2                   3                  4                   5               6                       7                 8       9      10    11    12   13    14     15    16   17     18
 const uniSpaces = ['\u200B', '\u200A',            '\u200A\u200A',       '\u2009',          '\u205F',          '\u2005',         '\u2004',              '\u2004\u200A',       '', '\u2002',  '',   '',   '',   '',  '',    '',   '',  '', '\u2003'];
-var spaceWidths = ['0', 'veryverythinmathspace', 'verythinmathspace', 'thinmathspace', 'mediummathspace', 'thickmathspace', 'verythickmathspace', 'veryverythickmathspace', null, '0.5em', null, null, null, null, null, null, null, null, '1em'];
+const spaceWidths = ['0', 'veryverythinmathspace', 'verythinmathspace', 'thinmathspace', 'mediummathspace', 'thickmathspace', 'verythickmathspace', 'veryverythickmathspace', null, '0.5em', null, null, null, null, null, null, null, null, '1em'];
 
 const anCodesEng = [
     // 0      1       2       3        4        5       6        7
@@ -340,11 +344,11 @@ function foldSupDigit(char) {   // Fold Unicode superscript digit to ASCII
 }
 
 function foldMathAlphanumeric(code, ch) {   // Generalization of foldMathItalic()
-    var anCode = '';
+    let anCode = '';
     if (code < 0x1D400) {
         if (code < 0x2102)                  // 1st Letterlike math alphabetic
             return ['mup', ch];
-        var letterLikeSymbol = letterLikeSymbols[ch];
+        let letterLikeSymbol = letterLikeSymbols[ch];
         return (letterLikeSymbol == undefined) ? ['mup', ch]
             : [anCodesEng[letterLikeSymbol[0]], letterLikeSymbol[1]];
     }
@@ -427,7 +431,7 @@ function needParens(ret) {
 }
 
 function removeMmlPrefixes(mathML) {
-    var prefix;
+    let prefix;
     if (mathML.startsWith('<m:'))
         prefix = 'm:';
     else if (mathML.startsWith('<mml:'))
@@ -497,7 +501,7 @@ function hasSingleMrow(value) {
 function codeAt(chars, i) {
     // Get UTF-32 code of character at position i, where i can be at a
     // trail surrogate
-    var code = chars.codePointAt(i);
+    let code = chars.codePointAt(i);
     if (code >= 0xDC00 && code <= 0xDFFF)
         code = chars.codePointAt(i - 1);
     return code;
@@ -583,17 +587,12 @@ function debugLog(x) {
     }
 }
 
-var emitDefaultIntents =
-    typeof ummlConfig === "undefined" ||
-    typeof ummlConfig.defaultIntents === "undefined" ||
-    ummlConfig.defaultIntents;
-
 ///////////
 // PARSE //
 ///////////
 
 // control words, to be replaced before parsing proper commences
-var controlWords = {
+const controlWords = {
     // from tech note: Appendix B. Character Keywords and Properties updated
     // with the Microsoft math autocorrect list. For a more complete list, see
     // https://ctan.math.utah.edu/ctan/tex-archive/macros/unicodetex/latex/unicode-math/unimath-symbols.pdf
@@ -1162,7 +1161,7 @@ var controlWords = {
 // this control word replacement would fly in the face of the UnicodeMath
 // "literal" operator if there were single-character control words
 function resolveCW(unicodemath) {
-    var res = unicodemath.replace(/\\([A-Za-z0-9]+) ?/g, (match, cw) => {
+    let res = unicodemath.replace(/\\([A-Za-z0-9]+) ?/g, (match, cw) => {
 
         // check custom control words first (i.e. custom ones shadow built-in ones)
         if (typeof ummlConfig !== "undefined" &&
@@ -1175,7 +1174,7 @@ function resolveCW(unicodemath) {
         // a Unicode code point
         if (cw.startsWith("u") && cw.length >= 5) {
             try {
-                var symbol = String.fromCodePoint("0x" + cw.substring(1));
+                let symbol = String.fromCodePoint("0x" + cw.substring(1));
                 return symbol;
             } catch(error) {
                 // do nothing – could be a regular control word starting with "u"
@@ -1184,10 +1183,10 @@ function resolveCW(unicodemath) {
 
         // Check for math alphanumeric control words like \mscrH for ℋ defined in
         // unimath-symbols.pdf (link below)
-        var cch = cw.length;
+        let cch = cw.length;
         if (cch > 3) {
-            var mathStyle = '';
-            var c = '';
+            let mathStyle = '';
+            let c = '';
             if (cw.startsWith('Bbb')) {
                 // Blackboard bold (double-struck)
                 mathStyle = 'Bbb';
@@ -1198,7 +1197,7 @@ function resolveCW(unicodemath) {
                     'mup', 'mscr', 'mfrak', 'msans', 'mitBbb', 'mitsans', 'mit', 'mtt',
                     'mbfscr', 'mbffrak', 'mbfsans', 'mbfitsans', 'mbfit', 'mbf'];
 
-                for (var i = 0; i < mathStyles.length; i++) {
+                for (let i = 0; i < mathStyles.length; i++) {
                     if (cw.startsWith(mathStyles[i])) {
                         mathStyle = mathStyles[i];
                         break;
@@ -1228,7 +1227,7 @@ function resolveCW(unicodemath) {
         }
 
         // Check built-in control words
-        var symbol = controlWords[cw];
+        let symbol = controlWords[cw];
         if (symbol != undefined)
             return symbol;
         // Not a control word: display it in upright type
@@ -1242,14 +1241,15 @@ var cKeys = keys.length;
 
 function getPartialMatches(cw) {
     // Get array of control-word partial matches for autocomplete drop down
-    var iMax = cKeys - 1;
-    var iMid;
-    var iMin = 0;
-    var matches = [];
+    let iMax = cKeys - 1;
+    let iMid;
+    let iMin = 0;
+    let key
+    let matches = [];
 
     do {                                // Binary search for a partial match
         iMid = Math.floor((iMin + iMax) / 2);
-        var key = keys[iMid];
+        key = keys[iMid];
         if (key.startsWith(cw)) {
             matches.push(key + ' ' + controlWords[key]);
             break;
@@ -1470,10 +1470,12 @@ function foldMathItalic(code) {
 }
 
 function foldMathItalics(chars) {
-    var fn = "";
-    for (var i = 0; i < chars.length; i += code > 0xFFFF ? 2 : 1) {
-        var ch = chars[i];
-        var code = chars.codePointAt(i);
+    let fn = ""
+    let code
+
+    for (let i = 0; i < chars.length; i += code > 0xFFFF ? 2 : 1) {
+        let ch = chars[i]
+        code = chars.codePointAt(i);
         if (code >= 0x2102) {
             ch = foldMathItalic(code);
         }
@@ -1502,8 +1504,8 @@ function italicizeCharacters(chars) {
 function getAbsArg(content) {
     if (Array.isArray(content) && content[0].hasOwnProperty("atoms") &&
         content[0].atoms.length == 1 && content[0].atoms[0].hasOwnProperty("chars")) {
-        var arg = content[0].atoms[0].chars;
-        var ch = getCh(arg, 0);
+        let arg = content[0].atoms[0].chars;
+        let ch = getCh(arg, 0);
         if (ch.length == arg.length)
             return ch;
     }
@@ -1513,10 +1515,10 @@ function getAbsArg(content) {
 function getIntervalArg(content, n) {
     if (!Array.isArray(content) || n != 0 && n !=2)
         return '';                          // Invalid content
-    var arg = content[n];
+    let arg = content[n];
     if (Array.isArray(arg))
         arg = arg.flat().join('');
-    var ch = getCh(arg, 0);
+    let ch = getCh(arg, 0);
     if (arg.length > ch.length && !isAsciiDigit(arg[0]) && !'-−+∞'.includes(arg[0]))
         arg = '$' + (n ? 'b' : 'a');
     return arg;
@@ -1524,7 +1526,7 @@ function getIntervalArg(content, n) {
 
 function getIntervalEndPoint(arg, content) {
     if (arg[0] == '$') {
-        var ret = {atoms: [{chars: content.flat().join('')}]};
+        let ret = {atoms: [{chars: content.flat().join('')}]};
         ret.atoms.arg = arg.substring(1);
         return ret;
     }
@@ -1551,8 +1553,8 @@ function getIntervalEndPoint(arg, content) {
 
 function getScriptArg(dsty, value) {
     // Include arg property for script high/low given by value
-    var arg = value.arg;
-    var intent = value.intent;
+    let arg = value.arg;
+    let intent = value.intent;
 
     if (!arg && Array.isArray(value) && value[0].hasOwnProperty("bracketed"))
         arg = value[0].bracketed.arg;
@@ -1743,7 +1745,7 @@ function getDifferentialInfo(of, n) {
 }
 
 // mapping betwen codepoint ranges in astral planes and bmp's private use area
-var astralPrivateMap = [
+const astralPrivateMap = [
 
     // dummy entry
     {astral: {begin: 0, end: 0}, private: {begin: 0, end: 0}},
@@ -1874,7 +1876,7 @@ function mapToPrivate(s) {
 // passed string
 function mapFromPrivate(s) {
     return Array.from(s).map(c => {
-        var cp = c.codePointAt(0);
+        let cp = c.codePointAt(0);
 
         // do nothing if character is not in Private Use Area
         if (cp < 0xE000 || 0xF8FF < cp) {
@@ -1960,16 +1962,16 @@ function matrixRows(n, m) {
     // Generate matrix rows for identity and null matrices
     const b = [];
 
-    var fIdentity = false;
+    let fIdentity = false;
     if (!m) {
         m = n;
         fIdentity = true;
     }
 
-    for (var i = 0; i < n; i++) {
+    for (let i = 0; i < n; i++) {
         const a = [];
 
-        for (var j = 0; j < m; j++) {
+        for (let j = 0; j < m; j++) {
             let x = '\u2B1A';
             if (fIdentity)
                 x = i == j ? 1 : 0;
