@@ -412,6 +412,7 @@ function testMathMLtoUnicodeMath() {
 
 function testMathMLtoSpeech() {
     let iSuccess = 0;
+    ummlConfig.speakSelectionEnds = true
     for (let i = 0; i < mathML.length; i++) {
         let result = MathMLtoSpeech(mathML[i]);
         if (result != mathSpeech[i]) {
@@ -1013,9 +1014,8 @@ function testHotKeys() {
     input.dispatchEvent(event)
     setTimeout(function () { }, 50)
     event.key = 'c'
-    useMfenced = true
+    event.shiftKey = true
     output.dispatchEvent(event)
-    useMfenced = false
     setTimeout(function () { }, 200)
 
     navigator.clipboard.readText()
@@ -1090,6 +1090,11 @@ function testHotKeys() {
         console.log("Fixed-arg unlabeling failed: " + output.firstElementChild.innerHTML)
     else
         console.log("Fixed-arg unlabeling succeeded")
+
+    // Test removeMathMlSelAttributes()
+    mml = removeMathMlSelAttributes(`<math display="block" selanchor="0" selfocus="5"><mi>𝑎</mi><mo>+</mo><mfrac><mi mathbackground="#666">𝑏</mi><mi>𝑐</mi></mfrac><mo>=</mo><mn>0</mn></math>`)
+    if (mml != `<math display="block"><mi>𝑎</mi><mo>+</mo><mfrac><mi>𝑏</mi><mi>𝑐</mi></mfrac><mo>=</mo><mn>0</mn></math>`)
+        console.log('mml = ' + mml)
 
     // Test output Ctrl+z and Ctrl+y hot keys
     buildUp('𝑎²+𝑏²=𝑐²')

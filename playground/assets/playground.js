@@ -1615,7 +1615,11 @@ function indexEndOfValue(str, i) {
 }
 
 function removeMathMlSelAttributes(mathml) {
-    let i = mathml.indexOf('selanchor')
+    // Remove ' mathbackground="#666"'
+    mathml = mathml.replace(/ mathbackground="#666"/g, '')
+
+    // Remove attributes that start with 'sel'
+    let i = mathml.indexOf('sel')
     if (i == -1)
         return mathml
 
@@ -1624,7 +1628,7 @@ function removeMathMlSelAttributes(mathml) {
         return mathml
 
     let mml = mathml.substring(0, i - 1) + mathml.substring(j)
-    i = mml.indexOf('selfocus', i)
+    i = mml.indexOf('sel', i)
     if (i == -1)
         return mml
 
@@ -3319,46 +3323,49 @@ function selectMathZone() {
 }
 
 function getMathSelection() {
+    let mathml
     let sel = window.getSelection()
-    if (sel.isCollapsed)
-        selectMathZone()
-    let range = sel.getRangeAt(0)
-    let nodeS = range.startContainer
-    if (nodeS.nodeName == '#text')
-        nodeS = nodeS.parentElement
-    let nodeE = range.endContainer
-    if (nodeE.nodeName == '#text')
-        nodeE = nodeE.parentElement
-    let node = range.commonAncestorContainer
-    if (node.nodeName == '#text')
-        node = node.parentElement
-    let walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, null)
-    let mathml = ''
 
-    while (node && node !== nodeS)
-        node = walker.nextNode()            // Advance walker to starting node
+    if (sel.isCollapsed) {
+        mathml = output.firstElementChild.innerHTML
+    } else {
+        let range = sel.getRangeAt(0)
+        let nodeS = range.startContainer
+        if (nodeS.nodeName == '#text')
+            nodeS = nodeS.parentElement
+        let nodeE = range.endContainer
+        if (nodeE.nodeName == '#text')
+            nodeE = nodeE.parentElement
+        let node = range.commonAncestorContainer
+        if (node.nodeName == '#text')
+            node = node.parentElement
+        let walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, null)
 
-    let done = false
+        while (node && node !== nodeS)
+            node = walker.nextNode()            // Advance walker to starting node
 
-    while (node && !done) {
-        mathml += node.outerHTML
-        if (node === nodeE)                 // Reached the ending node
-            break
-        if (!walker.nextSibling()) {
-            while (true) {                  // Bypass current node
-                if (!walker.nextNode()) {
-                    done = true
-                    break
+        let done = false
+        mathml = ''
+
+        while (node && !done) {
+            mathml += node.outerHTML
+            if (node === nodeE)                 // Reached the ending node
+                break
+            if (!walker.nextSibling()) {
+                while (true) {                  // Bypass current node
+                    if (!walker.nextNode()) {
+                        done = true
+                        break
+                    }
+                    let position = walker.currentNode.compareDocumentPosition(node)
+                    if (!(position & 8))
+                        break                   // currentNode isn't inside node
                 }
-                let position = walker.currentNode.compareDocumentPosition(node)
-                if (!(position & 8))
-                    break                   // currentNode isn't inside node
             }
+            node = walker.currentNode
         }
-        node = walker.currentNode
     }
-    if (!mathml.startsWith('<math'))
-        mathml = `<math display="block" xmlns="http://www.w3.org/1998/Math/MathML">${mathml}</math>`
+    mathml = `<math display="block" xmlns="http://www.w3.org/1998/Math/MathML">${mathml}</math>`
     mathml = mathml.replace(/&nbsp;/g, ' ')
     mathml = mathml.replace(/<malignmark><\/malignmark>/g, '<malignmark/>')
     mathml = mathml.replace(/<maligngroup><\/maligngroup>/g, '<maligngroup/>')

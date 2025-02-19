@@ -2564,6 +2564,10 @@ function preprocess(dsty, uast, index, arr) {
             value.naryand = preprocess(dsty, value.naryand);
             value.limits = preprocess(dsty, value.limits);
 
+            if (useMfenced && !Array.isArray(value.naryand)) {
+                // Word MML2OMML.XSL wants naryand to be an <mrow>
+                value.naryand = [value.naryand]
+            }
             if (!intent && emitDefaultIntents) {
                 let arg0 = getScript(value.limits.script.low, '$l')
                 let arg1 = getScript(value.limits.script.high, '$h')

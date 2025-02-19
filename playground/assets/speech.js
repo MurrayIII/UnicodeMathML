@@ -1164,35 +1164,38 @@ function speech(value, noAddParens) {
 			break;
 	}
 	if (ret) {
-		let selattra = value.getAttribute('selanchor')
-		let selAttrF = value.getAttribute('selfocus')
-		let i
+		if (ummlConfig.speakSelectionEnds) {
+			// Include speech for insertion-point/selection ends
+			let selattra = value.getAttribute('selanchor')
+			let selAttrF = value.getAttribute('selfocus')
+			let i
 
-		if (selattra) {
-			if (selattra == '-0' || selattra == '0') {
-				ret = 'Ⓐ' + ret
-			} else if (selattra[0] == '-') {
-				ret = value.textContent
-				i = selattra[1]
-				ret = ret.substring(0, i) + 'Ⓐ' + ret.substring(i)
-			} else {
-				ret = 'Ⓐ' + ret
+			if (selattra) {
+				if (selattra == '-0' || selattra == '0') {
+					ret = 'Ⓐ' + ret
+				} else if (selattra[0] == '-') {
+					ret = value.textContent
+					i = selattra[1]
+					ret = ret.substring(0, i) + 'Ⓐ' + ret.substring(i)
+				} else {
+					ret = 'Ⓐ' + ret
+				}
 			}
-		}
 
-		if (selAttrF) {
-			if (selAttrF == '-0' || selAttrF == '0') {
-				ret = 'Ⓕ' + ret
-			} else if (selAttrF[0] == '-') {
-				let j = selAttrF[1]
-				if (i && j > i)
-					j++
-				ret = ret.substring(0, j) + 'Ⓕ' + ret.substring(j)
-			} else {
-				if (selAttrF == argCounts[value.nodeName])
-					ret += 'Ⓕ'
-				else
+			if (selAttrF) {
+				if (selAttrF == '-0' || selAttrF == '0') {
 					ret = 'Ⓕ' + ret
+				} else if (selAttrF[0] == '-') {
+					let j = selAttrF[1]
+					if (i && j > i)
+						j++
+					ret = ret.substring(0, j) + 'Ⓕ' + ret.substring(j)
+				} else {
+					if (selAttrF == argCounts[value.nodeName])
+						ret += 'Ⓕ'
+					else
+						ret = 'Ⓕ' + ret
+				}
 			}
 		}
 		return ret

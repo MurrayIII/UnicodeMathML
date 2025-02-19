@@ -353,10 +353,10 @@
             caching: true,
             tracing: false,
             forceMathJax: false,
-            outputLaTeX: false,
             defaultIntents: false,
             doubleStruckMode: "us-tech",
             transposeChar: "T",
+            speakSelectionEnds: false
         };
         var configDescriptions = {
             splitInput: "Process each input line separately",
@@ -367,6 +367,7 @@
             tracing: "Enable parser tracing",
             forceMathJax: "Force-enable MathJax",
             defaultIntents: "Emit default intent attributes",
+            speakSelectionEnds: "Speak insertion point, selection start and end",
         };
 
         var ummlConfig = JSON.parse(JSON.stringify(defaultConfig));  // clone it
