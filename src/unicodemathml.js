@@ -3352,9 +3352,12 @@ function mtransform(dsty, puast) {
             ? ret[0] : {mrow: withAttrs(arg, ret)}
     }
 
+    let attrs
+    let key = k(puast);
     let selanchor1
-    var key = k(puast);
-    var value = v(puast);
+    let str
+    let value = v(puast)
+    let val
     if (value && !value.arg && puast.hasOwnProperty("arg"))
         value.arg = puast.arg;
 
@@ -3362,25 +3365,38 @@ function mtransform(dsty, puast) {
         case "unicodemath":
             if (autoBuildUp)                // Used for WYSIWYG editing
                 return mtransform(dsty, value.content);
-            var attrs = getAttrs(value, '')
+            attrs = getAttrs(value, '')
             attrs.display = dsty ? "block" : "inline"
-            if (useMfenced == 1)            // Word needs xmlns
-                attrs.xmlns = "http://www.w3.org/1998/Math/MathML"
             if (value.eqnumber == null)
                 return {math: withAttrs(attrs, mtransform(dsty, value.content))};
 
             // generate id, via https://stackoverflow.com/a/55008188. Together
             // with some javascript, this can be used to reference a specific
             // equation.
-            var id = value.eqnumber.replace(/(^-\d-|^\d|^-\d|^--)/,'$1').replace(/[\W]/g, '-');
+            let id = value.eqnumber.replace(/(^-\d-|^\d|^-\d|^--)/,'$1').replace(/[\W]/g, '-')
 
-            // Assign equation numbers by wrapping everything in an mtable
-            // with an mlabeledtr containing the eqnumber and content in
-            // individual mtd's
+            // Assign equation numbers by wrapping everything in an mtable.
+            // For MathJax, the table contains an <mlabeledtr> containing the
+            // eqnumber and content in individual mtd's.
+            if (ummlConfig.forceMathJax || testing) {
+                return {math: withAttrs(attrs,
+                    {mtable: withAttrs({displaystyle: true}, {mlabeledtr: withAttrs({id: id}, [
+                        {mtd: noAttr({mtext: noAttr(value.eqnumber)})},
+                        {mtd: noAttr(mtransform(dsty, value.content))} ])})})}
+            }
+            // For native rendering an <mtr> is used for which the labeling
+            // (first) mtd has attributes that flush the equation number to
+            // the right margin. Unfortunately this second method messes up
+            // the vertical alignment of equations higher than 1em but native
+            // renderers don't support <mlabeledtr>. MathJax doesn't support
+            // this second method.
+            let attrsEqNo = { style: 'margin-right:1em;position:absolute;right:0em;bottom:2em' }
             return {math: withAttrs(attrs,
-                        {mtable: withAttrs({displaystyle: true}, {mlabeledtr: withAttrs({id: id}, [
-                            {mtd: noAttr({mtext: noAttr(value.eqnumber)})},
-                            {mtd: noAttr(mtransform(dsty, value.content))} ])})})};
+                {mtable: withAttrs({ displaystyle: true }, {
+                    mtr: withAttrs({id: id}, [
+                        {mtd: withAttrs(attrsEqNo, {mtext: noAttr(value.eqnumber)})},
+                        {mtd: noAttr(mtransform(dsty, value.content))}])})})}
+
         case "newline":
             return {mspace: withAttrs({linebreak: "newline"}, null)};
 
@@ -3410,8 +3426,8 @@ function mtransform(dsty, puast) {
             return mtransform(dsty, value);
 
         case "operator":
-            var attrs = (value.content) ? getAttrs(value, '') : {};
-            var val = value.content ? value.content : value;
+            attrs = (value.content) ? getAttrs(value, '') : {};
+            val = value.content ? value.content : value;
 
             if ('←→↔⇐⇒⇔↩↪↼⇀↽⇁⊢⊣⟵⟶⟷⟸⟹⟺↦⊨'.split('').includes(val)) {
                 attrs.stretchy = true;
@@ -3426,7 +3442,7 @@ function mtransform(dsty, puast) {
 
         case "array":                       // Equation array
             value = mtransform(dsty, value);
-            var attrs = getAttrs(value, ':equations');
+            attrs = getAttrs(value, ':equations');
             attrs.columnspacing = '0pt'     // MathJax needs this
             return {mtable: withAttrs(attrs, value)};
         case "arows":
@@ -3442,8 +3458,8 @@ function mtransform(dsty, puast) {
 
         case "matrix":
             value = mtransform(dsty, value);
-            var str = ':array(' + value.length + ',' + value[0].mtr.content.length + ')';
-            var attrs = getAttrs(value, str);
+            str = ':array(' + value.length + ',' + value[0].mtr.content.length + ')';
+            attrs = getAttrs(value, str);
             return {mtable: withAttrs(attrs, value)};
         case "mrows":
             return value.map(r => ({mtr: noAttr(mtransform(dsty, r))}));
@@ -3454,8 +3470,8 @@ function mtransform(dsty, puast) {
             return mtransform(dsty, value);
 
         case "nary":
-            var attrs = getAttrs(value, 'n-ary')
-            var attrsn = getAttrs(value.naryand)
+            attrs = getAttrs(value, 'n-ary')
+            let attrsn = getAttrs(value.naryand)
             value.limits = mtransform(dsty, value.limits)
             value.naryand = mtransform(dsty, value.naryand)
             if (attrsn != {})
@@ -3463,11 +3479,11 @@ function mtransform(dsty, puast) {
             return {mrow: withAttrs(attrs, [value.limits, value.naryand])}
 
         case "opnary":
-            var attrs = getAttrs(value, '');
+            attrs = getAttrs(value, '');
             return {mo: withAttrs(attrs, value)};
 
         case "phantom":
-            var attrs = getAttrs(value, '');
+            attrs = getAttrs(value, '');
             var mask = value.mask;
 
             if (mask) {
@@ -3492,7 +3508,7 @@ function mtransform(dsty, puast) {
             return {mphantom: withAttrs(attrs, mtransform(dsty, value.of))};
 
         case "smash":
-            var attrs = getAttrs(value, '');
+            attrs = getAttrs(value, '');
 
             switch (value.symbol) {
                 case "⬍":
@@ -3513,7 +3529,7 @@ function mtransform(dsty, puast) {
             return {mpadded: withAttrs(attrs, mtransform(dsty, value.of))};
 
         case "fraction":
-            var attrs = getAttrs(value, '');
+            attrs = getAttrs(value, '');
             var of = value.of.map(e => (mtransform(dsty, dropOutermostParens(e))));
 
             switch (value.symbol) {
@@ -3528,7 +3544,7 @@ function mtransform(dsty, puast) {
             }
 
         case "atop":
-            var attrs = getAttrs(value, '');
+            attrs = getAttrs(value, '');
             attrs.linethickness = 0;
             var arg0 = value[0].arg;
             var arg1 = value[1].arg;
@@ -3551,7 +3567,7 @@ function mtransform(dsty, puast) {
             return mtransform(dsty, {bracketed: {intent: value.intent, arg: value.arg, open: "(", close: ")", content: {atop: [value.top, value.bottom]}}});
 
         case "script":
-            var attrs = getAttrs(value, '');
+            attrs = getAttrs(value, '');
 
             switch (value.type) {
                 case "subsup":
@@ -3639,7 +3655,7 @@ function mtransform(dsty, puast) {
 
         case "enclosed":
             var symbol = value.symbol;
-            var attrs = getAttrs(value, '');
+            attrs = getAttrs(value, '');
             var mask = value.mask;
             attrs.notation = enclosureAttrs(mask, symbol);
 
@@ -3655,7 +3671,7 @@ function mtransform(dsty, puast) {
             // but potentially helpful class attribute
 
             // TODO remove this class once all options are properly implemented
-            var attrs = {class: options.join(" "), intent: intent};
+            attrs = {class: options.join(" "), intent: intent};
 
             // nAlignBaseline, nSpaceDefault, nSizeDefault: do nothing, these
             // are the defaults
@@ -3689,7 +3705,7 @@ function mtransform(dsty, puast) {
             // the bracket
             var base = dropSingletonLists(value.of);
             var expLow, expHigh;
-            var attrs = getAttrs(value, '');
+            attrs = getAttrs(value, '');
             var mtag = overBrackets.includes(value.bracket) ? 'mover' : 'munder';
 
             if (value.intent)
@@ -3734,15 +3750,15 @@ function mtransform(dsty, puast) {
                         [mtransform(dsty, dropOutermostParens(value.of)),
                          mtransform(dsty, value.degree)])};
         case "sqrt":
-            var val = mtransform(dsty, dropOutermostParens(value))
-            var attrs = getAttrs(value, '')
+            val = mtransform(dsty, dropOutermostParens(value))
+            attrs = getAttrs(value, '')
 
             return {msqrt: withAttrs(attrs, val)};
 
         case "function":
             let selanchorSave = selanchor
             let selfocusSave = selfocus
-            var attrs = getAttrs(value, ':function')
+            attrs = getAttrs(value, ':function')
             if (selfocusSave && selfocusSave[0] == '-') {
                 // Selection is in function name: move it there
                 delete attrs.selanchor
@@ -3750,14 +3766,14 @@ function mtransform(dsty, puast) {
                 selanchor = selanchorSave
                 selfocus = selfocusSave
             }
-            var val = mtransform(dsty, value.f)
+            val = mtransform(dsty, value.f)
             return {mrow: withAttrs(attrs,
                         [val, {mo: noAttr('\u2061')},
                          mtransform(dsty, value.of)])};
         case "text":
             // replace spaces with non-breaking spaces (else leading and
             // trailing spaces are hidden)
-            var attrs = getAttrs(value, '');
+            attrs = getAttrs(value, '');
             if (value.length == 1 && (isAsciiAlphabetic(value) || isLcGreek(value))) {
                 attrs.mathvariant = 'normal'
                 return {mi: withAttrs(attrs, value)}
@@ -3793,7 +3809,7 @@ function mtransform(dsty, puast) {
             }
 
         case "colored":
-            var attrs = getAttrs(value.of, '')
+            attrs = getAttrs(value.of, '')
             attrs.mathcolor = value.color
             value.of = mtransform(dsty, value.of);
             if (value.of.hasOwnProperty('mo'))
@@ -3801,7 +3817,7 @@ function mtransform(dsty, puast) {
             return {mstyle: withAttrs(attrs, value.of)}
 
         case "bgcolored":
-            var attrs = getAttrs(value.of, '')
+            attrs = getAttrs(value.of, '')
             attrs.mathbackground = value.color
             return {mstyle: withAttrs(attrs, mtransform(dsty, value.of))}
 
@@ -3811,17 +3827,17 @@ function mtransform(dsty, puast) {
             return {mstyle: withAttrs({fontfamily: "monospace"}, {mtext: noAttr(value.split(" ").join("\xa0"))})};
 
         case "primed":
-            var attrs = getAttrs(value, '');
+            attrs = getAttrs(value, '');
             return {msup: withAttrs(attrs, [mtransform(dsty, value.base),
                                       {mo: noAttr(processPrimes(value.primes))}
                                      ])};
 
         case "factorial":
-            var attrs = getAttrs(value, '');
+            attrs = getAttrs(value, '');
             return {mrow: withAttrs(attrs, [mtransform(dsty, value), {mo: noAttr("!")}])};
 
         case "atoms":
-            var attrs = getAttrs(value, '')
+            attrs = getAttrs(value, '')
 
             if (value.funct != undefined)
                 return {mi: withAttrs(attrs, value.chars)}
@@ -4370,6 +4386,7 @@ function dump(value, noAddParens) {
     let intent
     let nodeLEC                             // node.lastElementChild
     let ret = ''
+    let val
 
     switch (value.localName) {
         case 'mtable':
@@ -4640,7 +4657,7 @@ function dump(value, noAddParens) {
             break;
 
         case 'mo':
-            var val = value.innerHTML;
+            val = value.innerHTML;
             if (val == '\u200B' && value.parentElement.getAttribute('intent') == ':cases')
                 return ''                   // Discard ZWSP (used for in-line editing)
             if (!intent)

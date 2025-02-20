@@ -2082,9 +2082,10 @@ function checkMathSelection(sel) {
             }
         }
     }
-    if (name)
+    if (name && (offset || keydownLast != 'Ctrl'))
         speak(name)
 
+    keydownLast = ''
     if (sel.isCollapsed)
         return sel                          // All insertion points are valid
 
@@ -3510,6 +3511,35 @@ output.addEventListener('keydown', function (e) {
 
     switch (key) {
         case 'ArrowRight':
+            if (e.ctrlKey) {                // Ctrl+→
+                if (node.nodeName == '#text')
+                    node = node.parentElement
+                let nodeP = node.parentElement
+                while (!isMathMLObject(nodeP)) {
+                    if (nodeP.nodeName == 'math')
+                        break
+                    node = nodeP
+                    nodeP = node.parentElement
+                }
+                let offset = 0
+                if (nodeP.nodeName == 'math') {
+                    if (node.nextElementSibling)
+                        node = node.nextElementSibling
+                    else
+                        offset = node.childElementCount ? node.childElementCount : 1
+                } else {
+                    while (!node.nextElementSibling)
+                        node = node.parentElement
+                    if (node.nodeName == 'math')
+                        break
+                    node = node.nextElementSibling
+                }
+                if (!offset)
+                    speak(resolveSymbols(speech(node)))
+                setSelectionEx(sel, node, offset, e)
+                keydownLast = 'Ctrl'
+                return
+            }
             // For debugging ease, break into 2 cases
             if(offset)
                 moveRight(sel, node, offset, e)
