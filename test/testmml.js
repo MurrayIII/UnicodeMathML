@@ -752,7 +752,7 @@ const rats = [    // Right Arrow Tests
             'end of upper limit', 'int-agrand fraction', 'differential d ',
             'theta ', 'end of numerator', 'eigh ', '+', 'b ', 'sine', 's',
             'i', 'n', 'function apply ', 'theta ', 'end of function',
-            'end of denominator', 'end of fraction', '=', 'fraction', '1',
+            'end of denominator', 'end of int-agrand', '=', 'fraction', '1',
             'end of numerator', 'square root', 'eigh squared', 'eigh ',
             'end of base', '2', 'end of superscript', 'minus ', 'b squared',
             'b ', 'end of base', '2', 'end of superscript', 'end of square root',
@@ -852,9 +852,8 @@ const rats = [    // Right Arrow Tests
             '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−Ⓐ()2𝑎′]', '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−Ⓐ(1)2𝑎′]',
             '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2Ⓐ()𝑎′]', '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2Ⓐ(1)𝑎′]',
             '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎Ⓐ()′]', '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎Ⓐ(1)′]',
-            '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2Ⓐ(2) 𝑎′]', '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎′Ⓐ()]',
-            '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂Ⓐ(3) [𝑈_𝛿₁𝜌₁^2𝛽−2𝑎′]', '1/8𝜋² ∫_𝛼₁^𝛼₂ Ⓐ(3) ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎′]',
-            '1/8𝜋² Ⓐ(2) ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎′]',],
+            '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎′Ⓐ()]', '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂Ⓐ(3) [𝑈_𝛿₁𝜌₁^2𝛽−2𝑎′]',
+            '1/8𝜋² ∫_𝛼₁^𝛼₂ Ⓐ(3) ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎′]', '1/8𝜋² Ⓐ(2) ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎′]',],
         speechExpect: ['1', 'end of numerator', '8', 'pi squared', 'pi ',
             'end of base', '2', 'end of superscript', 'end of denominator',
             'integral with limits', 'integral ', 'end of base', 'alpha sub 1',
@@ -866,8 +865,8 @@ const rats = [    // Right Arrow Tests
             'delta ', 'end of base', '1', 'end of subscript', 'rho sub 1', 'rho ',
             'end of base', '1', 'end of subscript', 'end of subscript', '2', 'beta ',
             'end of superscript', 'minus ', '2', 'eigh prime', 'eigh ', 'end of base',
-            'prime ', 'end of superscript', 'end of superscript', 'close bracket ',
-            'end of fenced', '', 'end of math',]
+            'prime ', 'end of superscript', 'close bracket ', 'end of fenced',
+            'end of int-agrand', 'end of math',]
     },
     {
         uMath: '𝑛⒞𝑘 𝑎² 𝑥²/2!',
@@ -895,6 +894,12 @@ const rats = [    // Right Arrow Tests
             'f ', 'fenced', 'open ', 'x ', 'close ', 'end of fenced', '=', '1',
             'end of math']
     },
+    {
+        uMath: '|𝜓⟩=∫𝑑³𝑟|𝑟⟩⟨𝑟│𝜓⟩',
+        homeExpect: 'Ⓐ()|𝜓⟩=∫𝑑³𝑟|𝑟⟩⟨𝑟│𝜓⟩ ',
+        rightArrowExpect: ['|Ⓐ()𝜓⟩=∫𝑑³𝑟|𝑟⟩⟨𝑟│𝜓⟩ ',],
+        speechExpect: ['psi ',]
+    }
 ]
 
 const ieqbus = [    // Intra-equation build up Tests

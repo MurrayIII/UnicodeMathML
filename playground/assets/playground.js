@@ -1554,8 +1554,14 @@ function checkNaryand(node) {
 
     let name = 'n aryand'
     let intent = node.parentElement.getAttribute('intent')
+    let text
+
     if (intent.startsWith(':nary')) {
-        let text = node.parentElement.firstElementChild.firstElementChild.textContent
+        node = node.parentElement.firstElementChild
+        if (node.childElementCount)         // msubsup, msub, etc.
+            text = node.firstElementChild.textContent
+        else                                // mo
+            text = node.textContent         // Indefinite integrand, etc.
         if (isIntegral(text))
             name = 'int-agrand' // Convince speech to say integrand
         else if (text == '∑')
@@ -1995,7 +2001,7 @@ function checkMathSelection(sel) {
                     if (!name)
                         name = getArgName(node)
                 }
-                if (!name)
+                else if (!name)
                     name = names[node.nodeName]
             }
         }
@@ -2722,6 +2728,8 @@ function moveRight0(sel, node, e) {
             node = node.nextElementSibling
             if (node.nodeName == 'mrow') {
                 let name = checkEmulationIntent(node)
+                if (!name)
+                    name = checkNaryand(node)
                 if (name)
                     speak(name)
                 else
@@ -2870,7 +2878,9 @@ function moveRight(sel, node, offset, e) {
                 setSelectionEx(sel, node, 0, e)
                 return
             }
-            name = getArgName(node, 'end of ')
+            name = getArgName(node)
+            if (!name)
+                name = checkNaryand(node)
             if (!name) {
                 nodeP = node.parentElement
                 if (node.getAttribute('arg') && nodeP.nodeName == 'mrow') {
@@ -2883,6 +2893,8 @@ function moveRight(sel, node, offset, e) {
                     }
                 }
             }
+            if(name)
+                speak('end of ' + name)
         } else {
             node = node.parentElement
             if (node.nodeName == 'mrow') {
@@ -2939,9 +2951,19 @@ function moveRight(sel, node, offset, e) {
             node = node.parentElement
             if (!node.nextElementSibling) {
                 if (isMathMLObject(node)) {
-                    if (node.parentElement.getAttribute('intent') == ':function')
-                        node = node.parentElement
-                    setSelectionEx(sel, node, node.childElementCount, e)
+                    nodeP = node.parentElement
+                    if (nodeP.nodeName == 'mrow') {
+                        intent = nodeP.getAttribute('intent')
+                        if (intent == ':function') {
+                            node = nodeP
+                        } else if (!intent &&
+                            nodeP.parentElement.getAttribute('intent') == ':fenced') {
+                            // Move to closing delimiter
+                            node = nodeP.nextElementSibling
+                        }
+                    }
+                    offset = node.childElementCount ? node.childElementCount : 0
+                    setSelectionEx(sel, node, offset, e)
                     return
                 }
                 if (node.nodeName == 'mtr' &&
