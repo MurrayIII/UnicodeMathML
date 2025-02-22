@@ -2452,7 +2452,7 @@ function checkAutoBuildUp(node, nodeP, key) {
             }
         }
     }
-    if ('+=-<> )]|'.includes(key) || iNode + 1 == cNode &&
+    if ('+=-<> )]|⟩'.includes(key) || iNode + 1 == cNode &&
         (key == '/' && !node.textContent.endsWith(')') ||  // Not end of numerator
          key == '#' && !node.textContent.endsWith('('))) { // Not hex RGB: eq-no
         // Try to build up <mrow> or trailing part of it

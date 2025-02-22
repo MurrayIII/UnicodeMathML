@@ -694,7 +694,7 @@ const rightArrowQExpect = ['Ⓐ(1)𝑞𝑎/𝑏+𝑐/𝑑=0', '𝑎Ⓐ(1)𝑞/�
     '𝑎/𝑏+𝑐/𝑑=Ⓐ(1)𝑞0', '𝑎/𝑏+𝑐/𝑑=0Ⓐ(1)𝑞',]
 
 const rats = [    // Right Arrow Tests
-    {
+    {                                       // case 0
         uMath: '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)',
         homeExpect: 'Ⓐ() 1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)',
         rightArrowExpect: [
@@ -758,7 +758,7 @@ const rats = [    // Right Arrow Tests
             'b ', 'end of base', '2', 'end of superscript', 'end of square root',
             'end of denominator', 'end of math']
     },
-    {
+    {                                       // case 1
         uMath: '𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎',
         homeExpect: 'Ⓐ()𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎',
         rightArrowExpect: [
@@ -774,7 +774,7 @@ const rats = [    // Right Arrow Tests
             'minus ', '4', 'eigh ', 'c ', 'end of square root', 'end of numerator',
             '2', 'eigh ', 'end of denominator', 'end of math',]
     },
-    {
+    {                                       // case 2
         uMath: '𝑍(𝜔)≠𝑍(𝜔+1)',
         homeExpect: 'Ⓐ()𝑍(𝜔)≠𝑍(𝜔+1)',
         rightArrowExpect: ['𝑍Ⓐ() (𝜔)≠𝑍(𝜔+1)', '𝑍Ⓐ()(𝜔)≠𝑍(𝜔+1)', '𝑍(Ⓐ()𝜔)≠𝑍(𝜔+1)',
@@ -784,7 +784,7 @@ const rats = [    // Right Arrow Tests
         speechExpect: ['fenced', 'open ', 'omega ', 'close ', 'not equal ', 'cap Z ',
             'fenced', 'open ', 'omega ', '+', '1', 'close ', 'end of math',]
     },
-    {
+    {                                       // case 3
         uMath: 'sin^2 𝜃+cos^2 𝜃=1',
         homeExpect: 'Ⓐ() sin²⁡𝜃+cos²⁡𝜃=1',
         rightArrowExpect: ['Ⓐ()sin²⁡𝜃+cos²⁡𝜃=1', 'Ⓐ(-1)sin²⁡𝜃+cos²⁡𝜃=1',
@@ -800,7 +800,7 @@ const rats = [    // Right Arrow Tests
             'c', 'o', 's', 'end of base', '2', 'end of superscript', 'function apply ',
             'theta ', 'end of function', '=', '1', 'end of math',]
     },
-    {
+    {                                       // case 4
         uMath: '∫_−∞^∞ 𝑒^−𝑥² ⅆ𝑥=√𝜋',
         homeExpect: 'Ⓐ() ∫_−∞^∞ 𝑒^−𝑥² ⅆ𝑥=√𝜋',
         rightArrowExpect: ['Ⓐ()∫_−∞^∞ 𝑒^−𝑥² ⅆ𝑥=√𝜋', 'Ⓐ(1)∫_−∞^∞ 𝑒^−𝑥² ⅆ𝑥=√𝜋',
@@ -819,7 +819,7 @@ const rats = [    // Right Arrow Tests
             'differential d ', 'x ', 'end of int-agrand', '=', 'square root , pi',
             'pi ', 'end of square root', 'end of math',]
     },
-    {
+    {                                       // case 5
         uMath: '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽-2𝑎′]',
         homeExpect: 'Ⓐ() 1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎′]',
         rightArrowExpect: ['Ⓐ()1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎′]',
@@ -868,7 +868,7 @@ const rats = [    // Right Arrow Tests
             'prime ', 'end of superscript', 'close bracket ', 'end of fenced',
             'end of int-agrand', 'end of math',]
     },
-    {
+    {                                       // case 6
         uMath: '𝑛⒞𝑘 𝑎² 𝑥²/2!',
         homeExpect: 'Ⓐ() 𝑛⒞𝑘 𝑎² 𝑥²/2!',
         rightArrowExpect: ['Ⓐ()𝑛⒞𝑘 𝑎² 𝑥²/2!', 'Ⓐ(1)𝑛⒞𝑘 𝑎² 𝑥²/2!', 'Ⓐ()𝑛⒞𝑘 𝑎² 𝑥²/2!',
@@ -883,7 +883,7 @@ const rats = [    // Right Arrow Tests
             'end of superscript', 'end of numerator', '2', 'factorial ', 'end of denominator',
             'end of math',]
     },
-    {
+    {                                       // case 7
         uMath: 'ⅅ_𝑥 𝑓(𝑥)=1',
         homeExpect: 'Ⓐ() ⅅ_𝑥 𝑓(𝑥)=1',
         rightArrowExpect: ['Ⓐ()ⅅ_𝑥 𝑓(𝑥)=1', 'Ⓐ(1)ⅅ_𝑥 𝑓(𝑥)=1', 'ⅅ_Ⓐ()𝑥 𝑓(𝑥)=1',
@@ -894,15 +894,27 @@ const rats = [    // Right Arrow Tests
             'f ', 'fenced', 'open ', 'x ', 'close ', 'end of fenced', '=', '1',
             'end of math']
     },
-    {
-        uMath: '|𝜓⟩=∫𝑑³𝑟|𝑟⟩⟨𝑟│𝜓⟩',
-        homeExpect: 'Ⓐ()|𝜓⟩=∫𝑑³𝑟|𝑟⟩⟨𝑟│𝜓⟩ ',
-        rightArrowExpect: ['|Ⓐ()𝜓⟩=∫𝑑³𝑟|𝑟⟩⟨𝑟│𝜓⟩ ',],
-        speechExpect: ['psi ',]
+    {                                       // case 8
+        uMath: '|𝜓⟩=∫𝑑³𝑟|𝐫⟩⟨𝐫│𝜓⟩',
+        homeExpect: 'Ⓐ() |𝜓⟩=∫𝑑³𝑟|𝐫⟩⟨𝐫│𝜓⟩',
+        rightArrowExpect: ['Ⓐ()|𝜓⟩=∫𝑑³𝑟|𝐫⟩⟨𝐫│𝜓⟩', '|Ⓐ()𝜓⟩=∫𝑑³𝑟|𝐫⟩⟨𝐫│𝜓⟩', '|𝜓Ⓐ()⟩=∫𝑑³𝑟|𝐫⟩⟨𝐫│𝜓⟩',
+            '|𝜓⟩Ⓐ()=∫𝑑³𝑟|𝐫⟩⟨𝐫│𝜓⟩', '|𝜓⟩=Ⓐ()∫𝑑³𝑟|𝐫⟩⟨𝐫│𝜓⟩', '|𝜓⟩=Ⓐ(1)∫𝑑³𝑟|𝐫⟩⟨𝐫│𝜓⟩',
+            '|𝜓⟩=∫Ⓐ()𝑑³𝑟|𝐫⟩⟨𝐫│𝜓⟩', '|𝜓⟩=∫Ⓐ(1)𝑑³𝑟|𝐫⟩⟨𝐫│𝜓⟩', '|𝜓⟩=∫𝑑^Ⓐ()3 𝑟|𝐫⟩⟨𝐫│𝜓⟩',
+            '|𝜓⟩=∫𝑑^Ⓐ(1)3 𝑟|𝐫⟩⟨𝐫│𝜓⟩', '|𝜓⟩=∫𝑑³Ⓐ()𝑟|𝐫⟩⟨𝐫│𝜓⟩', '|𝜓⟩=∫𝑑³𝑟Ⓐ() |𝐫⟩⟨𝐫│𝜓⟩',
+            '|𝜓⟩=∫𝑑³𝑟Ⓐ()|𝐫⟩⟨𝐫│𝜓⟩', '|𝜓⟩=∫𝑑³𝑟|Ⓐ()𝐫⟩⟨𝐫│𝜓⟩', '|𝜓⟩=∫𝑑³𝑟|𝐫Ⓐ()⟩⟨𝐫│𝜓⟩',
+            '|𝜓⟩=∫𝑑³𝑟|𝐫⟩Ⓐ() ⟨𝐫│𝜓⟩', '|𝜓⟩=∫𝑑³𝑟|𝐫⟩Ⓐ()⟨𝐫│𝜓⟩', '|𝜓⟩=∫𝑑³𝑟|𝐫⟩⟨Ⓐ()𝐫│𝜓⟩',
+            '|𝜓⟩=∫𝑑³𝑟|𝐫⟩⟨𝐫Ⓐ()│𝜓⟩', '|𝜓⟩=∫𝑑³𝑟|𝐫⟩⟨𝐫│Ⓐ()𝜓⟩', '|𝜓⟩=∫𝑑³𝑟|𝐫⟩⟨𝐫│𝜓Ⓐ()⟩',
+            '|𝜓⟩=∫𝑑³𝑟|𝐫⟩Ⓐ(3) ⟨𝐫│𝜓⟩',],
+        speechExpect: ['vertical bar ', 'psi ', 'close angle bracket ', '=', 'integral ',
+            'd cubed', 'd ', 'end of base', '3', 'end of superscript', 'r ',
+            'fenced', 'vertical bar ', 'bold r ', 'close angle bracket ',
+            'fenced', 'open angle bracket ', 'bold r ', 'vertical bar ',
+            'psi ', 'close angle bracket ', 'end of math',
+        ]
     }
-]
+]                   // End of right-arrow tests
 
-const ieqbus = [    // Intra-equation build up Tests
+const ieqbus = [    // Intra-equation build-up Tests
     {
         uMath: '(𝑎+Ⓐ(1)𝑏)/𝑐=0',
         text: '^2 ',

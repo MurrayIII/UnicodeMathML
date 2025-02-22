@@ -256,6 +256,7 @@ function checkBrackets(node) {
     // may occur for a nonzero bracket count difference, e.g., √(𝑎²-𝑏²
     let cNode = node.childElementCount
     let cBracket = 0
+    let ket = false
     let opBuildUp = false
     let vbar = false
     let k = -1                              // Index of final child not in
@@ -276,12 +277,14 @@ function checkBrackets(node) {
                 k = i
         } else if (nodeC.localName == 'mo') { // Sometimes nodeName is capitalized...
             if (isOpenDelimiter(text)) {
-                cBracket++
                 if (k == -1)
                     k = i
+                cBracket++
                 if (cBracket > 0)
                     break
             } else if (isCloseDelimiter(text)) {
+                if (text == '⟩')            // Set up |𝜓⟩
+                    ket = true
                 cBracket--
                 if (k == -1)
                     k = i
@@ -292,6 +295,9 @@ function checkBrackets(node) {
                 if (vbar) {
                     vbar = false
                     opBuildUp = true
+                    break
+                } else if (ket) {           // Handle |𝜓⟩
+                    cBracket++
                     break
                 }
                 vbar = true
