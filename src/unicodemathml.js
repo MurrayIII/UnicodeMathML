@@ -1243,10 +1243,10 @@ function resolveCW(unicodemath) {
 }
 
 const keys = Object.keys(controlWords);
-var cKeys = keys.length;
 
 function getPartialMatches(cw) {
     // Get array of control-word partial matches for autocomplete drop down
+    let cKeys = keys.length;
     let iMax = cKeys - 1;
     let iMid;
     let iMin = 0;
@@ -1995,7 +1995,7 @@ function parse(unicodemath) {
     }
     unicodemath = mapToPrivate(unicodemath);
 
-    var uast;
+    let uast;
     if (typeof ummlConfig === "undefined" || typeof ummlConfig.tracing === "undefined" || !ummlConfig.tracing) {
 
         // no tracing
@@ -2003,7 +2003,7 @@ function parse(unicodemath) {
     } else {
 
         // tracing
-        var tracer = new SimpleTracer();
+        let tracer = new SimpleTracer();
         try {
             uast = ummlParser.parse(unicodemath, {tracer: tracer});
         } finally {
@@ -2018,9 +2018,7 @@ function parse(unicodemath) {
             tracer.reset();
         }
     }
-
     uast = astMapFromPrivate(uast);
-
     return uast;
 }
 
@@ -2070,7 +2068,6 @@ function clone(object) {
     Reflect.ownKeys(object).forEach(key =>
         defineProp(_object, key, { value: clone(object[key]) }, object)
     )
-
     return _object
 
     function defineProp(object, key, descriptor = {}, copyFrom = {}) {
@@ -2106,12 +2103,10 @@ function clone(object) {
 
 // compute a list of nary options based on a bit mask
 function naryOptions(mask) {
-
-    if (mask < 0 || mask > 159) {
+    if (mask < 0 || mask > 159)
         throw "nary mask is not between 0 and 159";
-    }
 
-    var options = [];
+    let options = [];
 
     // first block
     switch (mask % 4) {
@@ -2169,25 +2164,23 @@ function naryOptions(mask) {
     } else if (mask == 128) {
         options.push("fGrowWithContent");
     }
-
     return options;
 }
 
 function enclosureAttrs(mask, symbol) {
-    if (mask < 0 || mask > 255) {
+    if (mask < 0 || mask > 255)
         throw "enclosure mask is not between 0 and 255";
-    }
 
     // get classes corresponding to mask
-    var ret = "";
+    let ret = "";
     if (mask != null) {
         mask ^= 15;                         // spec inverts low 4 bits
-        var binMask = mask.toString(2).split('').reverse().join('');
-        var classes = [];
-        for (var i = binMask.length - 1; i >= 0; i--) {
-            if (binMask[i] == '1') {
+        let binMask = mask.toString(2).split('').reverse().join('');
+        let classes = []
+
+        for (let i = binMask.length - 1; i >= 0; i--) {
+            if (binMask[i] == '1')
                 classes.push(maskClasses[Math.pow(2, i)]);
-            }
         }
         ret = classes.join(' ');
     } else if (symbol != null) {
@@ -2218,7 +2211,7 @@ function abstractBoxOptions(mask) {
     // fXPositioning 256
     // fXSpacing 512
 
-    var options = [];
+    let options = []
 
     // align
     switch (mask % 2) {
@@ -2286,7 +2279,6 @@ function abstractBoxOptions(mask) {
             options.push("fXSpacing");
         }
     }
-
     return options;
 }
 
@@ -2296,16 +2288,14 @@ function abstractBoxOptions(mask) {
 // and running
 // document.querySelectorAll('.table td:nth-child(3)').forEach(n => console.log("a" + n.innerHTML + "  " + n.innerHTML));
 // in the console)
-function diacriticPosition(d) {
-    var overlays = ['\u0334','\u0335','\u0336','\u0337','\u0338','\u20D2','\u20D3','\u20D8','\u20D9','\u20DA','\u20DD','\u20DE','\u20DF','\u20E0','\u20E2','\u20E3','\u20E4','\u20E5','\u20E6','\u20EA','\u20EB'];
-    var belows = ['\u0316','\u0317','\u0318','\u0319','\u031C','\u031D','\u031E','\u031F','\u0320','\u0321','\u0322','\u0323','\u0324','\u0325','\u0326','\u0327','\u0328','\u0329','\u032A','\u032B','\u032C','\u032D','\u032E','\u032F','\u0330','\u0331','\u0332','\u0333','\u0339','\u033A','\u033B','\u033C','\u0345','\u0347','\u0348','\u0349','\u034D','\u034E','\u0353','\u0354','\u0355','\u0356','\u0359','\u035A','\u035C','\u035F','\u0362','\u20E8','\u20EC','\u20ED','\u20EE','\u20EF'];
+const overlays = ['\u0334','\u0335','\u0336','\u0337','\u0338','\u20D2','\u20D3','\u20D8','\u20D9','\u20DA','\u20DD','\u20DE','\u20DF','\u20E0','\u20E2','\u20E3','\u20E4','\u20E5','\u20E6','\u20EA','\u20EB'];
+const belows = ['\u0316','\u0317','\u0318','\u0319','\u031C','\u031D','\u031E','\u031F','\u0320','\u0321','\u0322','\u0323','\u0324','\u0325','\u0326','\u0327','\u0328','\u0329','\u032A','\u032B','\u032C','\u032D','\u032E','\u032F','\u0330','\u0331','\u0332','\u0333','\u0339','\u033A','\u033B','\u033C','\u0345','\u0347','\u0348','\u0349','\u034D','\u034E','\u0353','\u0354','\u0355','\u0356','\u0359','\u035A','\u035C','\u035F','\u0362','\u20E8','\u20EC','\u20ED','\u20EE','\u20EF'];
 
-    if (overlays.includes(d)) {
+function diacriticPosition(d) {
+    if (overlays.includes(d))
         return 0;
-    }
-    if (belows.includes(d)) {
+    if (belows.includes(d))
         return -1;
-    }
     return 1;
 }
 
@@ -2318,31 +2308,13 @@ function fontSize(n) {
 
 // determine char to emit based on config: "us-tech" (ⅆ ↦ 𝑑), "us-patent"
 // (ⅆ ↦ ⅆ), or "euro-tech" (ⅆ ↦ d), see section 3.11 of the tech note
-function doublestruckChar(value) {
-    var variants = {
-        "us-tech": {
-            "ⅅ": "𝐷",
-            "ⅆ": "𝑑",
-            "ⅇ": "𝑒",
-            "ⅈ": "𝑖",
-            "ⅉ": "𝑗"
-        },
-        "us-patent": {
-            "ⅅ": "ⅅ",
-            "ⅆ": "ⅆ",
-            "ⅇ": "ⅇ",
-            "ⅈ": "ⅈ",
-            "ⅉ": "ⅉ"
-        },
-        "euro-tech": {
-            "ⅅ": "D",
-            "ⅆ": "d",
-            "ⅇ": "e",
-            "ⅈ": "i",
-            "ⅉ": "j"
-        }
-    }
+const variants = {
+    "us-tech":   {"ⅅ": "𝐷", "ⅆ": "𝑑", "ⅇ": "𝑒", "ⅈ": "𝑖", "ⅉ": "𝑗"},
+    "us-patent": {"ⅅ": "ⅅ", "ⅆ": "ⅆ", "ⅇ": "ⅇ", "ⅈ": "ⅈ", "ⅉ": "ⅉ"},
+    "euro-tech": {"ⅅ": "D", "ⅆ": "d", "ⅇ": "e", "ⅈ": "i", "ⅉ": "j"}
+}
 
+function doublestruckChar(value) {
     if (typeof ummlConfig !== "undefined" && typeof ummlConfig.doubleStruckMode !== "undefined" &&
         ummlConfig.doubleStruckMode in variants) {
         return variants[ummlConfig.doubleStruckMode][value];
@@ -2350,19 +2322,17 @@ function doublestruckChar(value) {
     return variants["us-tech"][value];
 }
 
-    function transposeChar() {
-        if (typeof ummlConfig !== "undefined" && ummlConfig.transposeChar != undefined) {
-            return ummlConfig.transposeChar;
-        }
-        return "T";
-    }
+function transposeChar() {
+    if (typeof ummlConfig !== "undefined" && ummlConfig.transposeChar != undefined)
+        return ummlConfig.transposeChar
+    return "T"
+}
 
 // if the outermost node of an AST describes a parenthesized expression, remove
 // the parentheses. used for fractions, exponentiation, etc.
 function dropOutermostParens(uast) {
-    if (uast.hasOwnProperty("expr")) {
+    if (uast.hasOwnProperty("expr"))
         return {expr: dropOutermostParens(uast.expr)};
-    }
 
     if (Array.isArray(uast)) {
         if (uast.length == 1)
@@ -2372,12 +2342,11 @@ function dropOutermostParens(uast) {
             return [dropOutermostParens(uast[0]), uast[1]]
         }
     }
-
-    if (!uast.hasOwnProperty("bracketed")) {
+    if (!uast.hasOwnProperty("bracketed"))
         return uast;
-    }
 
-    if (v(uast).open == "(" && v(uast).close == ")" && !v(uast).content.hasOwnProperty("separated")) {
+    if (v(uast).open == "(" && v(uast).close == ")" &&
+        !v(uast).content.hasOwnProperty("separated")) {
         return v(uast).content;
     }
     return uast;
@@ -2386,13 +2355,12 @@ function dropOutermostParens(uast) {
 // return the given AST, which may be wrapped in a stack of singleton lists,
 // sans those lists
 function dropSingletonLists(uast) {
-    if (Array.isArray(uast) && uast.length == 1) {
+    if (Array.isArray(uast) && uast.length == 1)
         return dropSingletonLists(uast[0]);
-    }
     return uast;
 }
 
-var brackets = {'⒨': '()', '⒩': '‖‖', 'ⓢ': '[]', 'Ⓢ': '{}', '⒱': '||'};
+const brackets = {'⒨': '()', '⒩': '‖‖', 'ⓢ': '[]', 'Ⓢ': '{}', '⒱': '||'};
 
 function isCharsButNotFunction(value) {
     return value.hasOwnProperty("chars") && value.chars[0] != 'Ⅎ' &&
@@ -2415,8 +2383,10 @@ function preprocess(dsty, uast, index, arr) {
     }
 
     let base
-    var key = k(uast);
-    var value = v(uast);
+    let i
+    let key = k(uast);
+    let value = v(uast);
+    let ret
     var intent = dsty.intent;
     var arg = dsty.arg;
     if (!arg)
@@ -2442,9 +2412,9 @@ function preprocess(dsty, uast, index, arr) {
             return {arows: preprocess(dsty, value)};
         case "arow":
             // divide "&" into alignment marks and stretchy gaps
-            var currAcol = []
-            var ret = []
-            var i = 0
+            let currAcol = []
+            ret = []
+            i = 0
 
             if (value[0] == null)           // align mark at start of row
                 i = 1
@@ -2462,13 +2432,13 @@ function preprocess(dsty, uast, index, arr) {
             value = matrixRows(value[0], value[1]);
 
             if (emitDefaultIntents) {
-                var val = matrixIntents[t];
+                let val = matrixIntents[t];
                 if (val)
                     intent = val;
             }
             if (t != "■") {
-                var o = brackets[t][0];
-                var c = brackets[t][1];
+                o = brackets[t][0];
+                c = brackets[t][1];
                 return {bracketed: {open: o, close: c, intent: intent, arg: arg, content: {matrix: preprocess(dsty, value)}}};
             }
             // Fall through to "matrix"
@@ -2481,9 +2451,9 @@ function preprocess(dsty, uast, index, arr) {
             return {mrow: value.map(c => ({mcol: preprocess(dsty, c)}))};
 
         case "nary":
-            var options = naryOptions(value.mask);
-            var value = clone(value);  // must be cloned since it's going to be
-                                       // modified
+            let options = naryOptions(value.mask);
+            value = clone(value);           // must be cloned since it's going
+                                            // to be modified
 
             if (options.includes("nLimitsOpposite")) {
 
@@ -2491,7 +2461,7 @@ function preprocess(dsty, uast, index, arr) {
                 // note contains no details and word doesn't appear to implement
                 // this feature)
                 if ("low" in value.limits.script && "high" in value.limits.script) {
-                    var tmp = value.limits.script.high;
+                    let tmp = value.limits.script.high;
                     value.limits.script.high = value.limits.script.low;
                     value.limits.script.low = tmp;
                 } else if ("low" in value.limits.script) {
@@ -2505,14 +2475,12 @@ function preprocess(dsty, uast, index, arr) {
                 }
             }
             if (options.includes("nShowLowLimitPlaceHolder")) {
-                if (!("low" in value.limits.script)) {
+                if (!("low" in value.limits.script))
                     value.limits.script.low = {operator: "⬚"};
-                }
             }
             if (options.includes("nShowUpLimitPlaceHolder")) {
-                if (!("high" in value.limits.script)) {
+                if (!("high" in value.limits.script))
                     value.limits.script.high = {operator: "⬚"};
-                }
             }
 
             if (options.includes("fDontGrowWithContent")) {
@@ -2533,7 +2501,7 @@ function preprocess(dsty, uast, index, arr) {
                 // display low as abovebelow, high as subsup => generate two
                 // nested scripts
                 if (value.limits.script.type != "subsup" && "high" in value.limits.script) {
-                    var high = value.limits.script.high;
+                    let high = value.limits.script.high;
                     delete value.limits.script.high;
                     value.limits.script.base = {script: {type: "subsup", base: value.limits.script.base, high: high}};
                 }
@@ -2600,21 +2568,21 @@ function preprocess(dsty, uast, index, arr) {
         case "fraction":
             if (value.symbol == '/' && !intent && !arg && emitDefaultIntents) {
                 // Check for Leibniz derivatives
-                var [chDifferential0, order0, arg0] = getDifferentialInfo(value.of, 0); // Numerator
+                let [chDifferential0, order0, arg0] = getDifferentialInfo(value.of, 0); // Numerator
 
                 if (chDifferential0) {      // Might be a derivative
-                    var [chDifferential1, order1, wrt] = getDifferentialInfo(value.of, 1); // Denominator
+                    let [chDifferential1, order1, wrt] = getDifferentialInfo(value.of, 1); // Denominator
 
                     if (chDifferential0 == chDifferential1 && order0 == order1) {
                         // It's a derivative
                         if (!arg0) {        // Assign intent arg as for 𝜕²/𝜕𝑥² 𝜓(𝑥,𝑡)
                             if (Array.isArray(value.of[1])) { // Denominator
                                 // Reorder tree for, e.g., ⅆ/ⅆ𝑧⁡arcsin⁡𝑧
-                                var val = value.of[1][0];
+                                let val = value.of[1][0];
                                 if (val.hasOwnProperty('function') &&
                                     val.function.f.hasOwnProperty('atoms') &&
                                     val.function.f.atoms.hasOwnProperty('chars')) {
-                                    var arg = val.function.of;
+                                    let arg = val.function.of;
                                     value.of[1][0] = {atoms: {chars:
                                         value.of[1][0].function.f.atoms.chars.split(',').join('')}};
                                     arr.splice(index + 1, 0, arg);
@@ -2684,7 +2652,7 @@ function preprocess(dsty, uast, index, arr) {
                             } else if (of[0].length == 2 && // 𝑑𝑓(𝑥)/𝑑𝑥
                                 s.hasOwnProperty('atoms') &&
                                 of[0][1].hasOwnProperty('bracketed')) {
-                                var ch = getCh(s.atoms[0].chars, 0);
+                                let ch = getCh(s.atoms[0].chars, 0);
 
                                 if (s.atoms[0].chars.length > ch.length) {
                                     value.of[0] = [{atoms: [{chars: ch}]}, [{arg: arg0.substring(1)},
@@ -2703,7 +2671,7 @@ function preprocess(dsty, uast, index, arr) {
             return {fraction: {symbol: value.symbol, intent: intent, arg: arg, of: preprocess(dsty, value.of)}};
 
         case "unicodefraction":
-            var uFrac = unicodeFractions[value];
+            let uFrac = unicodeFractions[value];
             return (uFrac == undefined) ? value
                 : {fraction: {symbol: "⊘", of: [{number: uFrac[0]}, {number: uFrac[1]}]}};
 
@@ -2720,8 +2688,8 @@ function preprocess(dsty, uast, index, arr) {
             value.bottom = preprocess(dsty, value.bottom);
 
             if (!intent && emitDefaultIntents) {
-                var top = getVariable(value.top);
-                var bottom = getVariable(value.bottom);
+                let top = getVariable(value.top);
+                let bottom = getVariable(value.bottom);
                 intent = "binomial-coefficient(";
                 if (top[0] == '$') {
                     intent += '$t,';
@@ -2772,7 +2740,7 @@ function preprocess(dsty, uast, index, arr) {
                         // if the subsup contains a primed expression, pull the
                         // prime up into the superscript and make the prime's
                         // base the subsup's base
-                        var primes = {operator: processPrimes(base.primed.primes)};  // TODO not ideal for latex output
+                        let primes = {operator: processPrimes(base.primed.primes)};  // TODO not ideal for latex output
                         if ("low" in value) {
                             ret.low = preprocess(dsty, value.low);
                         }
@@ -3013,17 +2981,16 @@ function preprocess(dsty, uast, index, arr) {
             return {sqrt: value};
 
         case "function":
-
             // clone this since it's going to be modified
-            var valuef = clone(value.f);
+            let valuef = clone(value.f);
 
             // tech note, section 3.3: if display mode is active, convert
             // subscripts after certain function names into belowscripts. the
             // <mo> movablelimits attribute could in theory also be used here,
             // but it's not supported everywhere (e.g. safari)
             if (value.f.hasOwnProperty("script")) {
-                var s = valuef.script;
-                var f = s.base.atoms.chars;
+                let s = valuef.script;
+                let f = s.base.atoms.chars;
                 if (dsty.display && s.type == "subsup" && s.low &&
                     ["det", "gcd", "inf", "lim", "lim inf", "lim sup", "max", "min", "Pr", "sup"].includes(f)) {
                     if (!s.high) {
@@ -3039,11 +3006,11 @@ function preprocess(dsty, uast, index, arr) {
             // Handle ⒡ "parenthesize argument" dictation option
             var of = preprocess(dsty, value.of);
             if (Array.isArray(of)) {
-                var x = of[0];
+                let x = of[0];
                 if (Array.isArray(x))
                     x = x[0];                  // '⒡' as separate array element
                 if (x != undefined && x.hasOwnProperty('atoms')) {
-                    var ch = x.atoms[0].chars;
+                    let ch = x.atoms[0].chars;
                     if (ch[0] == '⒡') {
                         // Remove '⒡' and enclose function arg in parens
                         if (ch.length == 1) {
@@ -3055,7 +3022,7 @@ function preprocess(dsty, uast, index, arr) {
                     }
                 }
             }
-            var extra = [];
+            let extra = [];
             if (valuef.hasOwnProperty('atoms') && valuef.atoms.hasOwnProperty('chars')) {
                 var chars = valuef.atoms.chars.split(",");
                 valuef.atoms.chars = chars.pop();
@@ -3065,7 +3032,7 @@ function preprocess(dsty, uast, index, arr) {
                     extra.push({atoms: {chars: chars.join('')}});
                 }
             }
-            var ret = {function: {f: preprocess(dsty, valuef), intent: intent, arg: arg, of: of}}
+            ret = {function: {f: preprocess(dsty, valuef), intent: intent, arg: arg, of: of}}
             if (extra.length) {
                 extra.push(ret)
                 return extra;
@@ -3093,7 +3060,7 @@ function preprocess(dsty, uast, index, arr) {
                 Array.isArray(base.atoms) && base.atoms[0].hasOwnProperty('chars')) {
                 let chars = base.atoms[0].chars;
                 let cch = chars.length;
-                var cchCh = (chars[cch - 1] >= '\DC00') ? 2 : 1;
+                let cchCh = (chars[cch - 1] >= '\DC00') ? 2 : 1;
 
                 if (cch > cchCh) {
                     // Return leading chars followed by primed end char
@@ -3131,9 +3098,9 @@ function preprocess(dsty, uast, index, arr) {
 
         case "factorial":
             value = preprocess(dsty, value);
-            if(intent)
+            if (intent)
                 value.intent = intent;
-            if(arg)
+            if (arg)
                 value.arg = arg;
             return {factorial: value};
 
@@ -3187,7 +3154,7 @@ function preprocess(dsty, uast, index, arr) {
             var c = brackets[t][1];
 
             if (!value.intent && emitDefaultIntents) {
-                var val = matrixIntents[t];
+                let val = matrixIntents[t];
                 if (val)
                     value.intent = val;
             }
@@ -3203,8 +3170,8 @@ function preprocess(dsty, uast, index, arr) {
                 if (value.intent && value.intent.endsWith("interval") &&
                     Array.isArray(value.content) && value.content.length == 3) {
                     // Arrange interval endpoint arguments and content
-                    var arg0 = getIntervalArg(value.content, 0);
-                    var arg1 = getIntervalArg(value.content, 2);
+                    let arg0 = getIntervalArg(value.content, 0);
+                    let arg1 = getIntervalArg(value.content, 2);
                     if (emitDefaultIntents) {
                         value.intent += '(' + arg0 + ',' + arg1 + ')';
                         if (!intent)
@@ -3275,7 +3242,7 @@ function preprocess(dsty, uast, index, arr) {
 
 
 function getAttrs(value, deflt) {
-    var attrs = {};
+    let attrs = {};
 
     if (selanchor) {
         attrs.selanchor = selanchor
@@ -3552,10 +3519,10 @@ function mtransform(dsty, puast) {
         case "atop":
             attrs = getAttrs(value, '');
             attrs.linethickness = 0;
-            var arg0 = value[0].arg;
-            var arg1 = value[1].arg;
-            var top = mtransform(dsty, dropOutermostParens(value[0]));
-            var bottom = mtransform(dsty, dropOutermostParens(value[1]));
+            let arg0 = value[0].arg;
+            let arg1 = value[1].arg;
+            let top = mtransform(dsty, dropOutermostParens(value[0]));
+            let bottom = mtransform(dsty, dropOutermostParens(value[1]));
             if (arg0) {
                 top.mrow.attributes.arg = arg0;
                 if (hasSingleMrow(top.mrow.content))
@@ -3660,16 +3627,16 @@ function mtransform(dsty, puast) {
             }
 
         case "enclosed":
-            var symbol = value.symbol;
+            let symbol = value.symbol;
+            mask = value.mask;
             attrs = getAttrs(value, '');
-            var mask = value.mask;
             attrs.notation = enclosureAttrs(mask, symbol);
 
             return {menclose: withAttrs(attrs, mtransform(dsty,
                                             dropOutermostParens(value.of)))};
 
         case "abstractbox":
-            var options = abstractBoxOptions(value.mask);
+            let options = abstractBoxOptions(value.mask);
 
             // abstract boxes aren't clearly defined in the tech note, testing
             // of word's implementation didn't yield many insights either – so I
@@ -3709,10 +3676,10 @@ function mtransform(dsty, puast) {
             // If the bracket precedes a script, put the bracket below or above
             // the script's base and the script's sub or sup text below or above
             // the bracket
-            var base = dropSingletonLists(value.of);
-            var expLow, expHigh;
+            let base = dropSingletonLists(value.of);
+            let expLow, expHigh;
             attrs = getAttrs(value, '');
-            var mtag = overBrackets.includes(value.bracket) ? 'mover' : 'munder';
+            let mtag = overBrackets.includes(value.bracket) ? 'mover' : 'munder';
 
             if (value.intent)
                 attrs.intent = value.intent;
@@ -3721,10 +3688,10 @@ function mtransform(dsty, puast) {
                 (base.script.type == "subsup" || base.script.type == "abovebelow")) {
                 expLow = base.script.low;
                 expHigh = base.script.high;
-                var type = base.script.type;
+                let type = base.script.type;
                 base = dropOutermostParens(base.script.base);
 
-                var exp;
+                let exp;
                 if (mtag == "mover") {
                     exp = expHigh;
                     if (expLow != undefined) {
@@ -3850,7 +3817,7 @@ function mtransform(dsty, puast) {
 
             // n > 1 for atoms with embedded spaces and/or diacritics, e.g., 𝑐𝑎̂𝑏𝑛
             let n = value.length;
-            var mis = [];                   // MathML elements to return
+            let mis = [];                   // MathML elements to return
 
             if (n == undefined) {           // value isn't an array
                 str = value.chars;          // Maybe value is a chars
@@ -3872,10 +3839,10 @@ function mtransform(dsty, puast) {
                         // Need a more general fix for cases like 𝑥 ⅆ𝑥
                         str = value[0].chars + '\u2009' + str;
                     }
-                    var cch = str.length;
+                    let cch = str.length;
 
                     if (cch > 2 || cch == 2 && str.codePointAt(0) < 0xFFFF) {
-                        var cchCh = 1;
+                        let cchCh = 1;
 
                         for (let j = 0; j < cch; j += cchCh) {
                             cchCh = (cch >= 2 && str.codePointAt(j) > 0xFFFF) ? 2 : 1;
@@ -3960,8 +3927,8 @@ function mtransform(dsty, puast) {
             // TODO some of the work could be done in preprocessing step? but
             // need the loop both in preprocessing as well as actual compilation,
             // so doubtful if that would actually be better
-            var ret = mtransform(dsty, value.base);
-            var notation = '';
+            let notation = '';
+            ret = mtransform(dsty, value.base);
 
             for (let d of value.diacritics) {
                 // Handle diacritics that can be represented by an enclosure
@@ -4140,7 +4107,7 @@ function tag(tagname, attribs, ...vals) {
     if (vals.length == 1 && vals[0] == null) {
         return `<${tagname}${attributes} />`;
     }
-    var values = vals.reduce((a,b) => `${a} ${b}`);
+    let values = vals.reduce((a,b) => `${a} ${b}`);
     return `<${tagname}${attributes}>${values}</${tagname}>`;
 }
 
@@ -4391,12 +4358,14 @@ function dump(value, noAddParens) {
     let cNode = value.childElementCount ? value.childElementCount : 1
     let intent
     let nodeLEC                             // node.lastElementChild
+    let op
     let ret = ''
+    let symbol
     let val
 
     switch (value.localName) {
         case 'mtable':
-            var symbol = '■';
+            symbol = '■';
             if (value.getAttribute('intent') == ':equations') {
                 symbol = '█';
             } else if (value.parentElement.hasAttribute('intent')) {
@@ -4471,8 +4440,8 @@ function dump(value, noAddParens) {
             break;
 
         case 'mpadded':
-            var op = '';
-            var mask = 0;                   // Compute phantom mask
+            op = '';
+            let mask = 0;                   // Compute phantom mask
 
             if (value.getAttribute('width') === '0')
                 mask = 2;                   // fPhantomZeroWidth
@@ -4524,7 +4493,7 @@ function dump(value, noAddParens) {
             break;
 
         case 'mfrac':
-            var op = '/';
+            op = '/';
             val = value.getAttribute('displaystyle')
             if (val === 'false')
                 op = '⊘';
@@ -4745,7 +4714,7 @@ function dump(value, noAddParens) {
                     ret = italicizeCharacter(c);
                     break;
                 }
-                var mathstyle = mathvariants[value.getAttribute('mathvariant')];
+                let mathstyle = mathvariants[value.getAttribute('mathvariant')];
                 if (c in mathFonts && mathstyle in mathFonts[c] && (c < 'Α' || c > 'Ω' && c != '∇')) {
                     ret = mathFonts[c][mathstyle];
                     break;
@@ -4936,11 +4905,8 @@ function getUnicodeMath(doc, keepSelInfo, noAddParens) {
 //////////////
 
 function escapeHTMLSpecialChars(str) {
-    var replacements = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;'
-    };
+    const replacements = { '&': '&amp;', '<': '&lt;', '>': '&gt;' }
+
     return str.replace(/[&<>]/g, tag => {
         return replacements[tag] || tag;
     });
@@ -4954,7 +4920,7 @@ function unicodemathml(unicodemath, displaystyle) {
             unicodemath = removeMmlPrefixes(unicodemath);
         return {mathml: unicodemath, details: {}};
     }
-    var uast;
+    let uast;
     try {
         var t1s = performance.now();
         uast = parse(unicodemath);
@@ -4963,32 +4929,32 @@ function unicodemathml(unicodemath, displaystyle) {
         uast = {unicodemath: {content: [{expr: [{colored: {color: '#F00', of: {text: unicodemath}}}]}], eqnumber: null}}
         autoBuildUp = false                 // If called for autobuildup, return failure
     }
-    var jsonParse;                          // Initially undefined
-    var puast;
-    var mast;
+    let jsonParse;                          // Initially undefined
+    let puast;
+    let mast;
     try {
         jsonParse = JSON.stringify(uast, undefined);
-        var t1e = performance.now();
+        let t1e = performance.now();
         debugLog(uast);
 
-        var dsty = {display: displaystyle, intent: ''};
-        var t2s = performance.now();
+        let dsty = {display: displaystyle, intent: ''};
+        let t2s = performance.now();
         puast = preprocess(dsty, uast);
-        var t2e = performance.now();
+        let t2e = performance.now();
         debugLog(puast);
 
-        var t3s = performance.now();
+        let t3s = performance.now();
         mast = mtransform(displaystyle, puast);
         if (selanchor && mast.math) {
             mast.math.attributes.selanchor = '1'
             selanchor = ''
         }
-        var t3e = performance.now();
+        let t3e = performance.now();
         debugLog(mast);
 
-        var t4s = performance.now();
-        var mathml = pretty(mast);
-        var t4e = performance.now();
+        let t4s = performance.now();
+        let mathml = pretty(mast);
+        let t4e = performance.now();
         useMfenced = 0
         mathml = mathml.replace(/<mtd><\/mtd>/g, '')
 
@@ -5014,7 +4980,7 @@ function unicodemathml(unicodemath, displaystyle) {
         debugLog(error);
 
         // convert error to string and invert any private use area mappings
-        var strError = ''; // mapFromPrivate("" + error);
+        let strError = ''; // mapFromPrivate("" + error);
 
         // add variant of input with resolved control words, if any
         //if (typeof ummlConfig !== "undefined" && typeof ummlConfig.resolveControlWords !== "undefined" && ummlConfig.resolveControlWords && resolveCW(unicodemath) != unicodemath) {
