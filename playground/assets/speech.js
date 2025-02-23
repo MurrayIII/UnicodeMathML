@@ -795,8 +795,12 @@ function speech(value, noAddParens) {
 	}
 
 	// Function called recursively to convert MathML to speech
-	let cNode = value.children.length;
-	let ret = '';
+	let cNode = value.children.length
+	let intent
+	let op
+	let ret = ''
+	let symbol
+	let val
 
 	ret = checkIntent(value);				// Check for MathML intent
 	if (ret)
@@ -805,8 +809,8 @@ function speech(value, noAddParens) {
 	switch (value.nodeName) {
 		case 'mtable':
 			ret = cNode + '☒';				// cNode 'by' ...
-			var symbol = '■';				// 'matrix'
-			var sep = '@';					// 'row'
+			symbol = '■';					// 'matrix'
+			let sep = '@';					// 'row'
 			let intnt = value.parentElement.getAttribute('intent')
 			let the = 'ⓣ';
 
@@ -851,7 +855,7 @@ function speech(value, noAddParens) {
 			break
 
 		case 'mtr':
-			var op = '⏳';
+			op = '⏳';
 			let intent = value.parentElement.getAttribute('intent')
 			if (intent && intent.endsWith('equations'))
 				op = '';
@@ -888,8 +892,8 @@ function speech(value, noAddParens) {
 			break
 
 		case 'mpadded':
-			var op = '';
-			var mask = 0;                   // Compute phantom mask
+			op = '';
+			mask = 0;						// Compute phantom mask
 
 			if (value.getAttribute('width') == '0')
 				mask = 2;                   // fPhantomZeroWidth
@@ -941,10 +945,10 @@ function speech(value, noAddParens) {
 			break
 
 		case 'mfrac':
-			var op = '/';
 			let num = speech(value.firstElementChild, true);
 			let den = speech(value.lastElementChild, true);
 			let linethickness = value.getAttribute('linethickness')
+			op = '/';
 
 			if (linethickness == '0' || linethickness == '0.0pt') {
 				op = '¦';
@@ -1083,7 +1087,7 @@ function speech(value, noAddParens) {
 			break
 
 		case 'mo':
-			var val = value.innerHTML;
+			val = value.innerHTML;
 			if (val == '\u2062')			// Ignore invisible times
 				break
 
@@ -1235,7 +1239,7 @@ function speech(value, noAddParens) {
 		return op + '▒' + ret + (needParens(ret) ? '¶' + op : '⏳');
 	}
 
-	for (var i = 0; i < cNode; i++) {
+	for (let i = 0; i < cNode; i++) {
 		let node = value.children[i];
 
 		if (i > 0 && node.getAttribute('arg') == 'f' &&

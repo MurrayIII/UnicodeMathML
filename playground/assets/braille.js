@@ -17,7 +17,7 @@ function MathMLtoBraille(mathML) {
 		cchCh = code > 0xFFFF ? 2 : 1;
 		ch = text.substring(i, i + cchCh);
 		if (isAsciiDigit(ch) && ret[ret.length - 1] == '\u2800') {
-			// Need numeric indicator after braille space;
+			// Need numeric indicator after braille space
 			ret += '⠼';
 		}
 		ch = symbolBraille(ch);
@@ -35,7 +35,6 @@ function MathMLtoBraille(mathML) {
 }
 
 const symbolBrailleStrings = {
-
 	// Math symbol braille strings in braille order
 	'\u2524': '',				// ┤	Missing close bracket
 	'\u2061': '⠀',				//		Use braille space for function apply
@@ -685,7 +684,10 @@ function braille(value, noAddParens, subsup) {
 	}
 
 	let cNode = value.children.length;
+	let op;
 	let ret = '';
+	let sep;
+	let val;
 
 	//ret = checkIntent(value);				// Check for MathML intent
 	//if (ret)
@@ -693,7 +695,7 @@ function braille(value, noAddParens, subsup) {
 
 	switch (value.nodeName) {
 		case 'mtable':
-			var sep = '⣍';					// 'inline next row'
+			sep = '⣍';						// 'inline next row'
 
 			if (value.firstElementChild.nodeName == 'mlabeledtr' &&
 				value.firstElementChild.children.length == 2 &&
@@ -706,7 +708,7 @@ function braille(value, noAddParens, subsup) {
 			return nary(value, sep, cNode);
 
 		case 'mtr':
-			var op = '⠀';					// Braille space (U+2800)
+			op = '⠀';						// Braille space (U+2800)
 			if (value.parentElement.hasAttribute('intent') &&
 				value.parentElement.getAttribute('intent').endsWith('equations'))
 				op = '';
@@ -774,7 +776,7 @@ function braille(value, noAddParens, subsup) {
 				subsup = '⠘';
 			else
 				subsup += '⠘';
-			var val = braille(value.lastElementChild, true, subsup);
+			val = braille(value.lastElementChild, true, subsup);
 			if (isPrime(val[0])) {
 				ret += val[0];
 				val = val.substring(1);
@@ -809,7 +811,7 @@ function braille(value, noAddParens, subsup) {
 			if (isNumericSubscript(value))
 				return binary(value, '');	// No sub op for sub'd numerals
 
-			var val = braille(value.lastElementChild, true, subsup);
+			val = braille(value.lastElementChild, true, subsup);
 			if (!val.endsWith('⠐'))
 				val += '⠐';
 
@@ -859,7 +861,7 @@ function braille(value, noAddParens, subsup) {
 			return ret + opClose;
 
 		case 'mo':
-			var val = value.innerHTML;
+			val = value.innerHTML;
 			if (val[0] == '&') {
 				if (val.startsWith('&#') && val.endsWith(';')) {
 					ret = value.innerHTML.substring(2, val.length - 1);
@@ -948,7 +950,7 @@ function braille(value, noAddParens, subsup) {
 		return ret;
 	}
 
-	for (var i = 0; i < cNode; i++) {
+	for (let i = 0; i < cNode; i++) {
 		let node = value.children[i];
 		ret += braille(node, false, subsup);
 	}
