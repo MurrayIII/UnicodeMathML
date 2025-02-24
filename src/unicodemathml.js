@@ -9,6 +9,14 @@ var emitDefaultIntents =
     typeof ummlConfig.defaultIntents === "undefined" ||
     ummlConfig.defaultIntents;
 
+function escapeHTMLSpecialChars(str) {
+    const replacements = { '&': '&amp;', '<': '&lt;', '>': '&gt;' }
+
+    return str.replace(/[&<>]/g, tag => {
+        return replacements[tag] || tag;
+    });
+};
+
 const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
 const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
 
@@ -4909,14 +4917,6 @@ function getUnicodeMath(doc, keepSelInfo, noAddParens) {
 //////////////
 // PLUMBING //
 //////////////
-
-function escapeHTMLSpecialChars(str) {
-    const replacements = { '&': '&amp;', '<': '&lt;', '>': '&gt;' }
-
-    return str.replace(/[&<>]/g, tag => {
-        return replacements[tag] || tag;
-    });
-};
 
 function unicodemathml(unicodemath, displaystyle) {
     debugGroup(unicodemath);

@@ -235,24 +235,26 @@ const dictationWords = {
 };
 
 const keys = Object.keys(dictationWords);
-var cKeys = keys.length;
 
 function resolveDW(dictation) {
 	// Get longest dictationWords match
-	var iMax = cKeys - 1;
-	var iMid;
-	var iMin = 0;
-	var matchKey = '';
+	let cchWord = 0
+	let cKeys = keys.length;
+	let iMax = cKeys - 1;
+	let iMid;
+	let iMin = 0;
+	let key
+	let matchKey = '';
 
 	// Find length of first word
-	for (var cchWord = 0; cchWord < dictation.length && (isLcAscii(dictation[cchWord]) || dictation[cchWord] == '\''); cchWord++)
+	for (; cchWord < dictation.length && (isLcAscii(dictation[cchWord]) || dictation[cchWord] == '\''); cchWord++)
 		;
 
-	var firstWord = dictation.substring(0, cchWord);
+	let firstWord = dictation.substring(0, cchWord);
 
 	do {									// Binary search for a match
 		iMid = Math.floor((iMin + iMax) / 2);
-		var key = keys[iMid];
+		key = keys[iMid];
 		if (key.startsWith(firstWord) &&
 			(key.length <= cchWord || key[cchWord] == ' ')) {
 			matchKey = key;
@@ -309,10 +311,10 @@ const relationalRanges = [
 ];
 
 function isRelational(ch) {
-	var n = ch.codePointAt(0);
+	let n = ch.codePointAt(0);
 
-	for (var i = 0; i < relationalRanges.length; i++) {
-		var pair = relationalRanges[i];
+	for (let i = 0; i < relationalRanges.length; i++) {
+		let pair = relationalRanges[i];
 		if (n < pair[0])
 			return false;
 		if (n <= pair[1])
@@ -323,7 +325,7 @@ function isRelational(ch) {
 
 function getMathAlphanumeric(ch, mathStyle) {
 	// Return ch in the math style described by mathStyle
-	var style = '';
+	let style = '';
 
 	if (mathStyle.includes('cap')) {
 		ch = ch.toUpperCase();
@@ -362,22 +364,22 @@ function dictationToUnicodeMath(dictation) {
 	}
 	dictation = dictation.replaceAll(',', '').toLowerCase();
 
-	var cDerivOrder = 0;
-	var ch = '';
-	var ch2 = '';
-	var chPrev = '';
-	var derivClose = false;
-	var derivOrder = 0;
-	var derivPartial = false;
-	var fraction = 0
-	var integral = false;
-	var interval = 0;
-	var iSubSup = 0;
-	var limit = false;
-	var mathStyle = [];
-	var nary = '';
+	let cDerivOrder = 0;
+	let ch = '';
+	let ch2 = '';
+	let chPrev = '';
+	let derivClose = false;
+	let derivOrder = 0;
+	let derivPartial = false;
+	let fraction = 0
+	let integral = false;
+	let interval = 0;
+	let iSubSup = 0;
+	let limit = false;
+	let mathStyle = [];
+	let nary = '';
 
-	for (var i = 0; i < dictation.length; chPrev = ch) {
+	for (let i = 0; i < dictation.length; chPrev = ch) {
 		ch = dictation[i];
 
 		if (i >= 2)
@@ -399,11 +401,11 @@ function dictationToUnicodeMath(dictation) {
 			continue;
 		}
 		if (isLcAscii(ch) && isLcAscii(chPrev)) {
-			var key = resolveDW(dictation.substring(i - 1));
+			let key = resolveDW(dictation.substring(i - 1));
 			if (key != '') {
 				var unicodeMath = dictationWords[key];
-				var b = '';
-				var iRem = i - 1 + key.length;
+				let b = '';
+				let iRem = i - 1 + key.length;
 
 				if (unicodeMath == '\uFFFF' ||
 					unicodeMath == '▒' && '√∛∜⒜⒨⒭⒱('.includes(ch2) ||
@@ -417,7 +419,7 @@ function dictationToUnicodeMath(dictation) {
 				} else if (interval) {		// Mathematical interval fix-ups
 					if (unicodeMath == '][') {
 						// Finalize the interval-text order
-						var chClose = dictation[interval]; // Save closing char & delete it
+						let chClose = dictation[interval]; // Save closing char & delete it
 						dictation = dictation.substring(0, interval) + dictation.substring(interval + 1);
 						i--;
 						if (ch2 == '\u3017' || ch2 == '&')
@@ -445,7 +447,7 @@ function dictationToUnicodeMath(dictation) {
 					}
 				}
 
-				var cchUni = unicodeMath.length;
+				let cchUni = unicodeMath.length;
 
 				if (dictation[iRem] == ' ')
 					iRem++;					// Remove space following key
@@ -493,7 +495,7 @@ function dictationToUnicodeMath(dictation) {
 					} else if (key == 'derivative of') {
 						derivClose = derivPartial = false;
 						derivOrder = 1;
-						var j = i;
+						let j = i;
 						if (ch2 == '∂') {
 							unicodeMath = '';
 							derivPartial = true;

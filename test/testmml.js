@@ -468,7 +468,6 @@ function ctrlZ(key) {
     event.key = key
     event.ctrlKey = true
     output.dispatchEvent(event)
-    setTimeout(function () { }, 50)         // Sleep for 50 msec
 }
 
 function dispatchText(text) {
@@ -478,7 +477,6 @@ function dispatchText(text) {
         if (i < text.length)
             event.key = getCh(text, i)
         output.dispatchEvent(event)
-        setTimeout(function () { }, 50)     // Sleep for 50 msec
         if (event.key.length == 2)
             i++                             // Bypass trail surrogate
     }
@@ -499,7 +497,6 @@ function buildUp(uMath, uMathPartial) {
         if (i < uMath.length)
             event.key = getCh(uMath, i)
         output.dispatchEvent(event)
-        setTimeout(function () { }, 50)     // Sleep for 50 msec
         if (event.key.length == 2)
             i++                             // Bypass trail surrogate
         if (uMathPartial) {
@@ -941,7 +938,6 @@ function testOutputHotKey(key, expect) {
         key = 'Ctrl+' + key
     }
     output.dispatchEvent(event)
-    setTimeout(function () { }, 50)
     let uMath = getUnicodeMath(output.firstElementChild, true)
     if (uMath == expect) {
         console.log('Output ' + key + ' succeeded')
@@ -961,7 +957,6 @@ function testInputHotKey(key, altKey, ctrlKey, expect, expectStart, expectEnd) {
     if (!hotKey)
         event.inputType = 'insertText'
     input.dispatchEvent(event)
-    setTimeout(function () { }, 50)
     if (event.altKey)
         key = 'Alt+' + key
     if (event.ctrlKey)
@@ -1025,16 +1020,13 @@ function testHotKeys() {
     input.textContent = 'Ⓐ()𝑎/𝑏+Ⓕ(2) 𝑐/𝑑=0'
     prevInputValue = ''
     draw(false)
-    setTimeout(function () { }, 50)         // Sleep for 50 msec
     let event = new Event('keydown')
     event.key = 's'
     event.ctrlKey = true
     input.dispatchEvent(event)
-    setTimeout(function () { }, 50)
     event.key = 'c'
     event.shiftKey = true
     output.dispatchEvent(event)
-    setTimeout(function () { }, 200)
 
     navigator.clipboard.readText()
         .then((clipText) => {
@@ -1067,7 +1059,6 @@ function testHotKeys() {
         const event = new Event('keydown')
         event.key = 'q'
         output.dispatchEvent(event)
-        setTimeout(function () { }, 500) // Sleep for 50 msec
         uMath = outputUndoStack.pop()
         if (uMath != rightArrowQExpect[i])
             console.log('Output q failed. result: ' + uMath + " expect: " + rightArrowQExpect[i])

@@ -12,7 +12,7 @@ var output_pegjs_ast = document.getElementById("output_pegjs_ast");
 var output_preprocess_ast = document.getElementById("output_preprocess_ast");
 var output_source = document.getElementById("output_source");
 
-var activeTab = "source";
+var activeTab = "source"
 var anchorNode
 var contextmenuNode
 var dataAttributes = false                  // True if data-arg attributes are present
@@ -370,12 +370,12 @@ function startDemo() {
     nextEq();
     demoID = setInterval(nextEq, 3000);     // Display next equation every 3 seconds
     demoPause = false;                      // Not paused (pause by entering ' ')
-    var demoEq = document.getElementById('demos');
+    let demoEq = document.getElementById('demos');
     demoEq.style.backgroundColor = 'DodgerBlue'; // Show user demo mode is active
 }
 
 function endDemo() {
-    var demoEq = document.getElementById('demos');
+    let demoEq = document.getElementById('demos');
     clearInterval(demoID);
     demoID = 0;
     demoEq.style.backgroundColor = 'inherit';
@@ -478,7 +478,7 @@ function setUnicodeMath(uMath) {
     refreshDisplays('', true)
 }
 
-var symbolNames = {}
+const symbolNames = {}
 
 Object.entries(controlWords).forEach(([key, value]) => {
     if (symbolNames[value])
@@ -488,20 +488,20 @@ Object.entries(controlWords).forEach(([key, value]) => {
 })
 
 // escape mathml tags and entities, via https://stackoverflow.com/a/13538245
-function escapeMathMLSpecialChars(str) {
-    var replacements = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;'
-    };
-    return str.replace(/[&<>]/g, tag => {
-        return replacements[tag] || tag;
-    });
-};
+//function escapeMathMLSpecialChars(str) {
+//    const replacements = {
+//        '&': '&amp;',
+//        '<': '&lt;',
+//        '>': '&gt;'
+//    };
+//    return str.replace(/[&<>]/g, tag => {
+//        return replacements[tag] || tag;
+//    });
+//};
 
 // via https://stackoverflow.com/a/49458964
 function indentMathML(str) {
-    var formatted = '', indent = '';
+    let formatted = '', indent = '';
     str.split(/>\s*</).forEach(node => {
         if (node.match(/^\/\w/)) {
             indent = indent.substring(2);   // End tag decreases indent
@@ -521,7 +521,7 @@ function highlightMathML(mathml) {
     return mathml;
 
     function extract(str, start, end, func, repl) {
-        var s, e, d = "", a = [];
+        let s, e, d = "", a = [];
         while (str.search(start) > -1) {
             s = str.search(start);
             e = str.indexOf(end, s);
@@ -539,7 +539,7 @@ function highlightMathML(mathml) {
         this.arr = a;
     }
     function mathmlMode(txt) {
-        var rest = txt, done = "", comment, angular, startpos, endpos, note, i;
+        let rest = txt, done = "", comment, angular, startpos, endpos, note, i;
         comment = new extract(rest, "&lt;!--", "--&gt;", commentMode, "W3HTMLCOMMENTPOS");
         rest = comment.rest;
         while (rest.indexOf("&lt;") > -1) {
@@ -557,7 +557,7 @@ function highlightMathML(mathml) {
         return "<span class=\"text\">" + rest + "</span>";
     }
     function tagMode(txt) {
-        var rest = txt, done = "", startpos, endpos, result;
+        let rest = txt, done = "", startpos, endpos, result;
         while (rest.search(/(\s|<br>)/) > -1) {
             startpos = rest.search(/(\s|<br>)/);
             endpos = rest.indexOf("&gt;");
@@ -574,7 +574,7 @@ function highlightMathML(mathml) {
         return "<span class=\"tag\">" + result + "</span>";
     }
     function attributeMode(txt) {
-        var rest = txt, done = "", startpos, endpos, singlefnuttpos, doublefnuttpos, spacepos;
+        let rest = txt, done = "", startpos, endpos, singlefnuttpos, doublefnuttpos, spacepos;
         while (rest.indexOf("=") > -1) {
             endpos = -1;
             startpos = rest.indexOf("=") + 1;
@@ -611,13 +611,13 @@ function highlightJson(json) {
         json = JSON.stringify(json, undefined);
     }
     // Insert compact indents
-    var indent = '';
-    var chPrev = '';
-    var json1 = '';
-    var cJson = json.length;
+    let indent = '';
+    let chPrev = '';
+    let json1 = '';
+    let cJson = json.length;
 
-    for (var i = 0; i < cJson; i++) {
-        var ch = json[i];
+    for (let i = 0; i < cJson; i++) {
+        let ch = json[i];
         switch (ch) {
             case '{':
             case '[':
@@ -647,10 +647,10 @@ function highlightJson(json) {
         json1 += ch;
         chPrev = ch;
     }
-    json = escapeMathMLSpecialChars(json1);
+    json = escapeHTMLSpecialChars(json1);
 
     return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, match => {
-        var cls = 'number';
+        let cls = 'number';
         if (/^"/.test(match)) {
             if (/:$/.test(match)) {
                 cls = 'key';
@@ -725,15 +725,15 @@ function boldItalicToggle(chars, key) {
     // Get current bold and italic states from first char in selection
     if (!chars)
         return;                             // Nothing selected
-    var code = chars.codePointAt(0);
-    var ch = chars[0];
-    var [font, chFolded] = foldMathAlphanumeric(code, ch);
-    var bold = font.startsWith('mbf');
-    var italic = bold ? font.substring(3, 5) == 'it' : font.startsWith('mit');
-    var symbols = '';
+    let code = chars.codePointAt(0);
+    let ch = chars[0];
+    let [font, chFolded] = foldMathAlphanumeric(code, ch);
+    let bold = font.startsWith('mbf');
+    let italic = bold ? font.substring(3, 5) == 'it' : font.startsWith('mit');
+    let symbols = '';
 
     // Toggle bold/italic state of selected characters
-    for (var i = 0; i < chars.length; i++) {
+    for (let i = 0; i < chars.length; i++) {
         code = chars.codePointAt(i);
         ch = chars[i];
         if (code > 0xFFFF) {
@@ -779,12 +779,12 @@ function GetCodePoint(str, i, cch) {
     if (cch < 1)
         return 0;
 
-    var cchCh = 1;
-    var cchChPrev = 1;
-    var code = 0;
-    var n = 0;                              // Accumulates code point
+    let cchCh = 1;
+    let cchChPrev = 1;
+    let code = 0;
+    let n = 0;                              // Accumulates code point
 
-    for (var j = 0; cch > 0; j += 4, cch--) {
+    for (let j = 0; cch > 0; j += 4, cch--) {
         code = str.codePointAt(i - 1);
         cchCh = 1;
         if (code < 0x0030)
@@ -816,7 +816,7 @@ function GetCodePoint(str, i, cch) {
 }
 
 function closeFormatModeList() {
-    var x = document.getElementById("formatmode-list");
+    let x = document.getElementById("formatmode-list");
 
     if (x != undefined)
         x.remove();
@@ -834,16 +834,17 @@ function setFormatMode(value, list) {
 
 function getSubSupDigit(str, i, delim) {
     // Return e.g., '²' for '^2 ' (str[i-1] = '^', str[i] = '2', delim = ' ')
-    var ch = str[i];
-    var op = str[i - 1];
+    let ch = str[i];
+    let op = str[i - 1];
 
     if (!'_^'.includes(op) || !'+-=/ )]}'.includes(delim) || !/[0-9]/.test(ch))
         return '';
 
     // If the preceding op is the other subsup op, return '', e.g., for a_0^2
-    var opSupSub = op == '^' ? '_' : '^';
+    let opSupSub = op == '^' ? '_' : '^';
+    let j = i - 2
 
-    for (var j = i - 2; j >= 0; j--) {
+    for (; j >= 0; j--) {
         if (str[j] == opSupSub)
             return '';
         if (str[j] < '\u3017' && !isAsciiAlphanumeric(str[j]) && !isDoubleStruck(str[j]))
@@ -876,10 +877,10 @@ function opAutocorrect(ip, delim) {
     if (ip > 4) {
         // Convert span of math-italic characters to ASCII and check for
         // function name
-        var fn = "";
+        let fn = "";
         while (i > 0) {
-            var code = codeAt(input.value, i);
-            var ch = foldMathItalic(code);
+            let code = codeAt(input.value, i);
+            let ch = foldMathItalic(code);
             if (!ch) break;
             fn = ch + fn;
             i -= code > 0xFFFF ? 2 : 1;
@@ -899,9 +900,9 @@ function opAutocorrect(ip, delim) {
     }
 
     if (ip >= 4) {                          // E.g., replace "𝑎^2+" by "𝑎²+"
-        var ch = getSubSupDigit(input.value, ip - 2, delim);
+        let ch = getSubSupDigit(input.value, ip - 2, delim);
         if (ch) {
-            var j = (delim == ' ') ? ip : ip - 1;
+            let j = (delim == ' ') ? ip : ip - 1;
             input.value = input.value.substring(0, ip - 3) + ch + input.value.substring(j);
             input.selectionStart = input.selectionEnd = j;
             return false;
@@ -934,7 +935,7 @@ function opAutocorrect(ip, delim) {
 }
 
 input.addEventListener("keydown", function (e) {
-    var x = document.getElementById(this.id + "autocomplete-list")
+    let x = document.getElementById(this.id + "autocomplete-list")
     if (handleAutocompleteKeys(x, e))
         return
 
@@ -1033,7 +1034,7 @@ input.addEventListener("keydown", function (e) {
         return
     }
     if (demoID) {
-        var demoEq = document.getElementById('demos')
+        let demoEq = document.getElementById('demos')
         switch (e.key) {
             case 'ArrowRight':
                 nextEq()
@@ -1079,8 +1080,8 @@ function insertAtCursorPos(symbols) {
         }
     }
     if (input.selectionStart || input.selectionStart == '0') {
-        var startPos = input.selectionStart;
-        var endPos = input.selectionEnd;
+        let startPos = input.selectionStart;
+        let endPos = input.selectionEnd;
         input.value = input.value.substring(0, startPos)
             + symbols
             + input.value.substring(endPos, input.value.length);
@@ -1096,7 +1097,7 @@ function autocomplete() {
     // Try autocorrecting or autocompleting a control word when user
     // modifies UnicodeMath in input window
     input.addEventListener("input", function (e) {
-        var ip = input.selectionStart;      // Insertion point
+        let ip = input.selectionStart;      // Insertion point
 
         if (e.inputType != "insertText" && e.inputType != "deleteContentBackward" ||
             !ip || ip != input.selectionEnd) {
@@ -1104,13 +1105,13 @@ function autocomplete() {
         }
         closeAutocompleteList();
 
-        var delim = input.value[ip - 1];    // Last char entered
-        var i = ip - 2;
-        var oddQuote = delim == '"';
-        var iQuote = 0;
+        let delim = input.value[ip - 1];    // Last char entered
+        let i = ip - 2;
+        let oddQuote = delim == '"';
+        let iQuote = 0;
 
         // Check if ip is inside a quoted literal
-        for (var iOff = 0; ; iOff = iQuote + 1) {
+        for (let iOff = 0; ; iOff = iQuote + 1) {
             iQuote = input.value.indexOf('"', iOff);
             if (iQuote == -1 || iQuote >= ip - 1)
                 break;                      // No more quotes before ip
@@ -1140,7 +1141,7 @@ function autocomplete() {
         if (i < 0 || input.value[i] != '\\' &&
             (!i || !isMathColor(input.value.substring(i - 1, i + 1)))) {
             // Not control word; check for italicization & operator autocorrect
-            var ch = italicizeCharacter(delim);
+            let ch = italicizeCharacter(delim);
             if (ch != delim) {
                 // Change ASCII or lower-case Greek letter to math-italic letter
                 input.value = input.value.substring(0, ip - 1) + ch + input.value.substring(ip);
@@ -1155,8 +1156,8 @@ function autocomplete() {
 
         if (!/[a-zA-Z0-9]/.test(delim)) {
             // Delimiter entered: try to autocorrect control word
-            var symbol = resolveCW(input.value.substring(i, ip - 1));
-            var cch = symbol.length;
+            let symbol = resolveCW(input.value.substring(i, ip - 1));
+            let cch = symbol.length;
             if (symbol[0] != '\"' || cch == 3) {
                 // Control word found: replace it with its symbol and update
                 // the input selection
@@ -1205,15 +1206,15 @@ function autocomplete() {
 ////////////////////////////
 
 // Symbols whose autocomplete options should be selected by default
-var commonSymbols = "αβδζθλχϕϵ⁡←∂√∞⒨■"; // 03B1 03B2 03B4 03B6 03B8 03BB 03C7 03D5 03F5 2061 2190 2202 221A 221E 24A8 25A0
-var currentFocus = -1;
+const commonSymbols = "αβδζθλχϕϵ⁡←∂√∞⒨■"; // 03B1 03B2 03B4 03B6 03B8 03BB 03C7 03D5 03F5 2061 2190 2202 221A 221E 24A8 25A0
+let currentFocus = -1;
 
 function closeAutocompleteList() {
     let x = document.getElementsByClassName("autocomplete-items")
     if (x != undefined) {
         let cItem = x.length
 
-        for (var i = 0; i < cItem; i++) {
+        for (let i = 0; i < cItem; i++) {
             x[i].parentNode.removeChild(x[i])
         }
     }
@@ -1323,9 +1324,8 @@ function addActive(x) {
 
 function removeActive(x) {
     // Remove "autocomplete-active" class from all autocomplete options
-    for (var i = 0; i < x.length; i++) {
+    for (let i = 0; i < x.length; i++)
         x[i].classList.remove("autocomplete-active");
-    }
 }
 
 ///////////////////////////////////
@@ -3413,7 +3413,7 @@ document.addEventListener('keydown', function (e) {
                 // Enter Examples[iExample] (see also Demo mode)
                 let x = document.getElementById('Examples').childNodes[0]
                 input.value = x.childNodes[iExample].innerText
-                var cExamples = x.childNodes.length
+                let cExamples = x.childNodes.length
 
                 iExample++                 // Increment for next time
                 if (iExample > cExamples - 1)
@@ -3911,7 +3911,7 @@ checkResize();
 if (!testing) {
     if (window.innerWidth < 768 || !ummlConfig.debug) {
         // Suppress AST tabs for mobile devices
-        var tabs = document.getElementsByClassName('tabs');
+        let tabs = document.getElementsByClassName('tabs');
         tabs[0].style.display = "none";
 
         if (!input.value)
@@ -3925,7 +3925,7 @@ if (!testing) {
 
     // if tracing is enabled, add trace tab
     if (ummlConfig.tracing) {
-        var tempElem = document.createElement('button');
+        let tempElem = document.createElement('button');
         tempElem.classList.add('tab');
         tempElem.id = 'trace';
         tempElem.innerHTML = 'Trace';
@@ -3954,7 +3954,8 @@ if (!testing) {
 }
 
 // Enable autocorrect and autocomplete
-autocomplete();
+autocomplete()
+
 function setSpeech() {
     return new Promise(
         function (resolve, reject) {
@@ -3981,13 +3982,13 @@ function getCodePoints() {
     input.style.fontSize = "1.5rem";
     var codepoints_HTML = "";
     Array.from(input.value).forEach(c => {
-        var cp = c.codePointAt(0).toString(16).padStart(4, '0').toUpperCase();
+        let cp = c.codePointAt(0).toString(16).padStart(4, '0').toUpperCase();
 
         // highlight special invisible characters and spaces (via
         // https://en.wikipedia.org/wiki/Whitespace_character#Unicode,
         // https://www.ptiglobal.com/2018/04/26/the-beauty-of-unicode-zero-width-characters/,
         // https://330k.github.io/misc_tools/unicode_steganography.html)
-        var invisibleChar = [
+        const invisibleChar = [
             "0009", "000A", "000B", "000C", "000D", "0020", "0085", "00A0",
             "1680", "2000", "2001", "2002", "2003", "2004", "2005", "2006",
             "2007", "2008", "2009", "200A", "200B", "200C", "200D", "200E",
@@ -3996,10 +3997,10 @@ function getCodePoints() {
         ].includes(cp);
 
         // lookup unicode data for tooltip
-        var tooltip = "";
+        let tooltip = "";
         if (typeof getCodepointData === "function") {
             try {
-                var cpd = getCodepointData(cp);
+                let cpd = getCodepointData(cp);
                 tooltip = `Name: ${cpd["name"].replace("<", "&amp;lt;").replace(">", "&amp;gt;")}<br>Block: ${cpd["block"]}<br>Category: ${cpd["category"]}`;
             } catch (e) {
                 tooltip = "no info found";
@@ -4108,7 +4109,7 @@ async function draw(undo) {
     }
 
     // get input(s) – depending on the ummlConfig.splitInput option, either...
-    var inp;
+    let inp;
     if (ummlConfig.splitInput && !input.value.startsWith("<math")) {
         inp = input.value.split("\n");  // ...process each line of input separately...
     } else {
@@ -4116,15 +4117,15 @@ async function draw(undo) {
     }
 
     // compile inputs and accumulate outputs
-    var m_parse = [];
-    var m_preprocess = [];
-    var m_transform = [];
-    var m_pretty = [];
-    var output_HTML = "";
-    var output_pegjs_ast_HTML = "";
-    var output_preprocess_ast_HTML = "";
-    var output_mathml_ast_HTML = "";
-    var output_source_HTML = "";
+    let m_parse = [];
+    let m_preprocess = [];
+    let m_transform = [];
+    let m_pretty = [];
+    let output_HTML = "";
+    let output_pegjs_ast_HTML = "";
+    let output_preprocess_ast_HTML = "";
+    let output_mathml_ast_HTML = "";
+    let output_source_HTML = "";
     inp.forEach(val => {
 
         // ignore empty lines
@@ -4139,20 +4140,19 @@ async function draw(undo) {
         }
 
         // mathml output
-        var mathml, details;
+        let mathml, details;
         ({mathml, details} = unicodemathml(val, ummlConfig.displaystyle));
         output_HTML += mathml;
         if (isMathML(input.value)) {
             output_source_HTML = MathMLtoUnicodeMath(input.value);
         } else {
-            output_source_HTML += highlightMathML(escapeMathMLSpecialChars(indentMathML(mathml))) + "\n";
+            output_source_HTML += highlightMathML(escapeHTMLSpecialChars(indentMathML(mathml))) + "\n";
         }
 
         // show parse tree and mathml ast
         if (details["intermediates"]) {
-            var pegjs_ast = details["intermediates"]["parse"];
-            var preprocess_ast = details["intermediates"]["preprocess"];
-            var mathml_ast = details["intermediates"]["transform"];
+            let preprocess_ast = details["intermediates"]["preprocess"];
+            let mathml_ast = details["intermediates"]["transform"];
 
             output_pegjs_ast_HTML += highlightJson(details["intermediates"]["json"]) + "\n";
             output_preprocess_ast_HTML += highlightJson(preprocess_ast) + "\n";
@@ -4160,7 +4160,7 @@ async function draw(undo) {
         }
 
         // tally measurements
-        var extractMeasurement = name => parseInt(details["measurements"][name], 10);
+        let extractMeasurement = name => parseInt(details["measurements"][name], 10);
         if (details["measurements"]) {
             m_parse.push(extractMeasurement("parse"));
             m_preprocess.push(extractMeasurement("preprocess"));
@@ -4171,7 +4171,7 @@ async function draw(undo) {
 
     // display measurements
     if (!testing) {
-        var sum = a => a.reduce((a, b) => a + b, 0);
+        let sum = a => a.reduce((a, b) => a + b, 0);
         measurements_parse.innerHTML = sum(m_parse) + 'ms';
         measurements_preprocess.innerHTML = sum(m_preprocess) + 'ms';
         measurements_transform.innerHTML = sum(m_transform) + 'ms';
@@ -4222,18 +4222,15 @@ function addToHistory(symbols) {
 }
 
 function displayHistory() {
-
     // don't overwhelm the browser
-    var historySize = 50;
+    let historySize = 50;
 
     //                  ↙ clone array before reversing
-    var histo = hist.slice().reverse().slice(0,historySize).map(c => {
-
+    let histo = hist.slice().reverse().slice(0,historySize).map(c => {
         // get tooltip data
-        var t = "";
-        if (symbolTooltips[c] != undefined && symbolTooltips[c] != "") {
+        let t = "";
+        if (symbolTooltips[c] != undefined && symbolTooltips[c] != "")
             t = symbolTooltips[c];
-        }
 
         return `<button class="unicode" data-tooltip="${t}">${c}</button>`;
     });
@@ -4318,8 +4315,8 @@ $('#controlword').keypress(function (e) {
 })
 
 $('button#insert_controlword').click(function () {
-    var cw = $('#controlword').val();
-    var symbol = resolveCW(cw);
+    let cw = $('#controlword').val();
+    let symbol = resolveCW(cw);
 
     if (symbol[0] == '\"') {
         // control word not found; display it as is
@@ -4332,9 +4329,9 @@ $('button#insert_controlword').click(function () {
 })
 
 $('button#insert_dictation').click(function () {
-    var dictation = $('#dictation').val();
+    let dictation = $('#dictation').val();
     try {
-        var unicodeMath = dictationToUnicodeMath(dictation);
+        let unicodeMath = dictationToUnicodeMath(dictation);
         insertAtCursorPos(unicodeMath);
     }
     catch {
@@ -4355,20 +4352,18 @@ $('#dictation').keydown(function (e) {
 $('#mathchar').on("change keyup paste", function (e) {
     $('.mathfont').removeClass("disabled");
 
-    var char = mathchar.value;
-    var code = char.codePointAt(0);
-    var anCode = '';
+    let char = mathchar.value;
+    let code = char.codePointAt(0);
+    let anCode = '';
 
-    if (code >= 0x2102) {
+    if (code >= 0x2102)
         [anCode, char] = foldMathAlphanumeric(code, char);
-    }
-    if (char == "") {
+    if (char == "")
         return;
-    }
     code = char.codePointAt(0);
     mathchar.value = char = char.substring(0, code > 0xFFFF ? 2 : 1);  // Max of 1 char
 
-    var fonts;
+    let fonts;
     try {
         fonts = Object.keys(mathFonts[char]);
     } catch (e) {
@@ -4394,11 +4389,11 @@ function getInputSelection() {
 }
 
 $('button.mathfont').click(function () {
-    var font = this.id;
+    let font = this.id;
 
-    var char = $('#mathchar').val();
+    let char = $('#mathchar').val();
     if (char != "") {
-        var symbol = char;
+        let symbol = char;
         if (font != 'mup') {
             try {
                 symbol = mathFonts[char][font];
@@ -4415,11 +4410,11 @@ $('button.mathfont').click(function () {
             // to track this and maybe other properties as in OfficeMath.
             // Also code doesn't currently handle selecting part way into
             // a quoted string.
-            var symbolSave = symbol;
+            let symbolSave = symbol;
 
-            for (var iOff = 0;; ) {
-                var iQuote = input.value.indexOf('"', iOff);
-                var iQuoteClose = input.value.indexOf('"', iQuote + 1);
+            for (let iOff = 0;; ) {
+                let iQuote = input.value.indexOf('"', iOff);
+                let iQuoteClose = input.value.indexOf('"', iQuote + 1);
 
                 if (iQuote == -1 || iQuoteClose == -1 || iQuote > input.selectionEnd ||
                     input.selectionStart <= iQuote && input.selectionEnd > iQuoteClose) {
@@ -4450,14 +4445,14 @@ $('button.mathfont').click(function () {
         addToHistory(symbolSave);
     } else if (input.selectionStart != input.selectionEnd) {
         // if no character entered, try converting nondegenerate selection
-        var symbols = '';
-        var chars = getInputSelection();
+        let symbols = '';
+        let chars = getInputSelection();
 
-        for (var i = 0; i < chars.length; i++) {
-            var code = chars.codePointAt(i);
-            var ch = chars[i];
-            var chFolded = ch;
-            var anCode = 0;
+        for (let i = 0; i < chars.length; i++) {
+            let code = chars.codePointAt(i);
+            let ch = chars[i];
+            let chFolded = ch;
+            let anCode = 0;
 
             if (code >= 0x2102) {           // Letterlike symbols or beyond
                 if (code > 0xFFFF) {
@@ -4490,18 +4485,18 @@ function hideTooltip() {
     $(".tooltip").remove();
 }
 $('button').hover(function (e) {
-    var elem = this;
-    var x = $(elem).offset().left;
-    var y = $(elem).offset().top + $(elem).outerHeight(true) + 1;
-    var text = elem.getAttribute("data-tooltip");
+    let elem = this;
+    let x = $(elem).offset().left;
+    let y = $(elem).offset().top + $(elem).outerHeight(true) + 1;
+    let text = elem.getAttribute("data-tooltip");
     showTooltip(x, y, text);
 }, hideTooltip);
 
 $('#codepoints').on('mouseover', '.cp', function (e) {
-    var elem = this;
-    var x = $(elem).offset().left + 0.3 * $(elem).outerWidth(true) + 10;
-    var y = $(elem).offset().top + 0.8 * $(elem).outerHeight(true);
-    var text = elem.getAttribute("data-tooltip");
+    let elem = this;
+    let x = $(elem).offset().left + 0.3 * $(elem).outerWidth(true) + 10;
+    let y = $(elem).offset().top + 0.8 * $(elem).outerHeight(true);
+    let text = elem.getAttribute("data-tooltip");
     showTooltip(x, y, text);
 });
 $('#codepoints').on('mouseout', '.cp', hideTooltip);
@@ -4510,10 +4505,10 @@ $('#codepoints').on('mouseout', '.cp', hideTooltip);
 $('[data-explanation]').hover(function (e) {
     if (window.innerWidth < 768)            // Hover doesn't work on small devices
         return;
-    var elem = this;
-    var x = $(elem).offset().left;
-    var y = $(elem).offset().top + $(elem).outerHeight(true) + 1;
-    var text = elem.getAttribute("data-explanation");
+    let elem = this;
+    let x = $(elem).offset().left;
+    let y = $(elem).offset().top + $(elem).outerHeight(true) + 1;
+    let text = elem.getAttribute("data-explanation");
     showTooltip(x, y, text);
 }, hideTooltip);
 
@@ -4546,21 +4541,22 @@ function initDictation() {
 
     recognition.onresult = function (event) {
         if (event.results.length > 0) {
-            var current = event.results[event.results.length - 1][0];
-            var result = current.transcript;
+            let current = event.results[event.results.length - 1][0];
+            let result = current.transcript;
             console.log(result);
             result = dictationToUnicodeMath(result);
-            var result1 = '';
-            var ch = '';
-            var chPrev;
+            let result1 = '';
+            let ch = '';
+            let chPrev;
 
             // Convert ASCII and lower-case Greek letters to math italic
             // unless they comprise function names
-            for (var i = 0; i < result.length; i++) {
+            for (let i = 0; i < result.length; i++) {
                 chPrev = ch;
                 ch = result[i];
                 if (isLcAscii(ch) || isUcAscii(ch)) {
-                    for (var j = i + 1; j < result.length; j++) {
+                    let j = i + 1
+                    for ( ; j < result.length; j++) {
                         if (!isLcAscii(result[j]) && !isUcAscii(result[j]))
                             break;
                     }
@@ -4574,8 +4570,8 @@ function initDictation() {
                     ch = italicizeCharacter(ch);     // Might be lc Greek
                     if (ch == result[i]) {           // Isn't
                         if (result.length > i + 1) { // Convert eg '^2 ' to '²'
-                            var delim = result.length > i + 2 ? result[i + 2] : ' ';
-                            var chScriptDigit = getSubSupDigit(result, i + 1, delim);
+                            let delim = result.length > i + 2 ? result[i + 2] : ' ';
+                            let chScriptDigit = getSubSupDigit(result, i + 1, delim);
                             if (chScriptDigit) {
                                 result1 += chScriptDigit;
                                 i += (delim == ' ' && result.length > i + 2) ? 2 : 1;
