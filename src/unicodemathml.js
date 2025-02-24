@@ -2386,10 +2386,14 @@ function preprocess(dsty, uast, index, arr) {
     let i
     let key = k(uast);
     let value = v(uast);
+    let opClose, opOpen
     let ret
-    var intent = dsty.intent;
-    var arg = dsty.arg;
-    if (!arg)
+    let type
+    let val
+
+    var intent = dsty.intent;               // Currently intent and arg need
+    var arg = dsty.arg;                     //  to be global to pass down to
+    if (!arg)                               //  lower preprocess() calls
         arg = uast.arg;
     if (!intent)
         intent = uast.intent;
@@ -2428,18 +2432,18 @@ function preprocess(dsty, uast, index, arr) {
             return {arow: ret}
 
         case "specialMatrix":               // n×m or identity matrix
-            t = value[2];
+            type = value[2];
             value = matrixRows(value[0], value[1]);
 
             if (emitDefaultIntents) {
-                let val = matrixIntents[t];
+                let val = matrixIntents[type];
                 if (val)
                     intent = val;
             }
-            if (t != "■") {
-                o = brackets[t][0];
-                c = brackets[t][1];
-                return {bracketed: {open: o, close: c, intent: intent, arg: arg, content: {matrix: preprocess(dsty, value)}}};
+            if (type != "■") {
+                opOpen = brackets[type][0];
+                opClose = brackets[type][1];
+                return {bracketed: {open: opOpen, close: opClose, intent: intent, arg: arg, content: {matrix: preprocess(dsty, value)}}};
             }
             // Fall through to "matrix"
         case "matrix":
@@ -2607,8 +2611,8 @@ function preprocess(dsty, uast, index, arr) {
                         }
                         if (arg0.startsWith('$') || order0.startsWith('$')) {
                             // Handle intent argument reference(s)
-                            var of = value.of;
-                            let s = of[0][0];
+                            let ofDiff = value.of;
+                            let s = ofDiff[0][0];
                             if (s.hasOwnProperty('script')) {
                                 // For, e.g., 𝑑^(n-1) 𝑓(𝑥)/𝑑𝑥^(𝑛-1), 𝑑^(𝑛-1) y/𝑑𝑥^(𝑛-1), ⅆ²𝛾′/ⅆ𝑧²
                                 if (Array.isArray(s.script.high)) {
@@ -2618,50 +2622,50 @@ function preprocess(dsty, uast, index, arr) {
                                         else if (s.script.high[0].hasOwnProperty('atoms'))
                                             s.script.high[0].atoms.arg = order0.substring(1);
                                     } else if (arg0.startsWith('$')) {
-                                        if (of[0].length == 1) {
+                                        if (ofDiff[0].length == 1) {
                                             s.script.arg = arg0.substring(1);
-                                        } else if (of[0][1].hasOwnProperty('primed')) {
-                                            of[0][1].primed.arg = arg0.substring(1); // ⅆ^2 𝛾′/ⅆ𝑧²
+                                        } else if (ofDiff[0][1].hasOwnProperty('primed')) {
+                                            ofDiff[0][1].primed.arg = arg0.substring(1); // ⅆ^2 𝛾′/ⅆ𝑧²
                                         }
                                     }
-                                } else if (of[0].length == 2) {
-                                    if (of[0][1].hasOwnProperty('script')) { // For, e.g., ⅆ²𝛾^∗/ⅆ𝑧²
-                                        of[0][1].script.arg = arg0.substring(1);
-                                    } else if (of[0][1].hasOwnProperty('primed')) {
-                                        of[0][1].primed.arg = arg0.substring(1); // ⅆ²𝛾′/ⅆ𝑧²
-                                    } else if (of[0][1].hasOwnProperty('function')) { // 𝜕²𝑓⁡(𝑥)/𝜕𝑥² (incl \u2061)
-                                        of[0][1].arg = arg0.substring(1);
+                                } else if (ofDiff[0].length == 2) {
+                                    if (ofDiff[0][1].hasOwnProperty('script')) { // For, e.g., ⅆ²𝛾^∗/ⅆ𝑧²
+                                        ofDiff[0][1].script.arg = arg0.substring(1);
+                                    } else if (ofDiff[0][1].hasOwnProperty('primed')) {
+                                        ofDiff[0][1].primed.arg = arg0.substring(1); // ⅆ²𝛾′/ⅆ𝑧²
+                                    } else if (ofDiff[0][1].hasOwnProperty('function')) { // 𝜕²𝑓⁡(𝑥)/𝜕𝑥² (incl \u2061)
+                                        ofDiff[0][1].arg = arg0.substring(1);
                                     }
                                 } else if (s.script.low) {
                                     s.script.arg = arg0.substring(1);
                                 }
                                 // For, e.g., 𝑑²𝑓(𝑥)/𝑑𝑥² or 𝑑^(n-1) 𝑓(𝑥)/𝑑𝑥^(n-1)
-                                if (of[0].length == 3 &&
-                                    of[0][1].hasOwnProperty('atoms') &&
-                                    of[0][2].hasOwnProperty('bracketed')) {
+                                if (ofDiff[0].length == 3 &&
+                                    ofDiff[0][1].hasOwnProperty('atoms') &&
+                                    ofDiff[0][2].hasOwnProperty('bracketed')) {
                                     value.of[0] = [s, [{arg: arg0.substring(1)},
-                                                        of[0][1], of[0][2]]];
-                                } else if (of[0].length == 2) {
+                                        ofDiff[0][1], ofDiff[0][2]]];
+                                } else if (ofDiff[0].length == 2) {
                                     // For, e.g., 𝑑^(n-1) y/𝑑𝑥^(n-1)
-                                    value.of[0] = [s, of[0][1]];
+                                    value.of[0] = [s, ofDiff[0][1]];
                                 }
                             } else if (s.hasOwnProperty('primed')) {
                                 s.primed.arg = arg0.substring(1);
                             } else if (s.hasOwnProperty('function')) {
                                 s.arg = arg0.substring(1);  // 𝜕𝑓⁡(𝑥,𝑥′)/𝜕𝑥′
-                            } else if (of[0].length == 2 && // 𝑑𝑓(𝑥)/𝑑𝑥
+                            } else if (ofDiff[0].length == 2 && // 𝑑𝑓(𝑥)/𝑑𝑥
                                 s.hasOwnProperty('atoms') &&
-                                of[0][1].hasOwnProperty('bracketed')) {
+                                ofDiff[0][1].hasOwnProperty('bracketed')) {
                                 let ch = getCh(s.atoms[0].chars, 0);
 
                                 if (s.atoms[0].chars.length > ch.length) {
                                     value.of[0] = [{atoms: [{chars: ch}]}, [{arg: arg0.substring(1)},
                                     {atoms: [{chars: getCh(s.atoms[0].chars, ch.length)}]},
-                                    of[0][1]]];
+                                        ofDiff[0][1]]];
                                 }
                             }
                         }
-                        var intent = '∂𝜕'.includes(chDifferential0)
+                        intent = '∂𝜕'.includes(chDifferential0)
                             ? 'partial-derivative' : 'derivative';
                         intent += '(' + order0 + ',' + arg0 + ',' + wrt + ')';
                         return {fraction: {symbol: value.symbol, intent: intent, of: preprocess(dsty, value.of)}};
@@ -2679,7 +2683,7 @@ function preprocess(dsty, uast, index, arr) {
             value = preprocess(dsty, value);
             if (intent)
                 value.intent = intent;
-            if(arg)
+            if (arg)
                 value.arg = arg;
 
             return {atop: value};
@@ -2731,7 +2735,7 @@ function preprocess(dsty, uast, index, arr) {
                         // If the selanchor is applied to the base, make the
                         // selanchor apply to the sub/superscript object to
                         // make it parsable
-                        var val = base.intend.intent.text
+                        val = base.intend.intent.text
                         ret.base = arr[index - 1]
                         ret.high = value.high
                         ret.low = value.low
@@ -2931,7 +2935,7 @@ function preprocess(dsty, uast, index, arr) {
         case "intend":
             if (value.content.hasOwnProperty("expr") && value.content.expr.length > 1) {
                 // Set up to put attribute(s) on an <mrow>
-                var c = preprocess(dsty, v(value.content));
+                let c = preprocess(dsty, v(value.content));
                 if (value.op == 'ⓘ') {
                     c.intent = value.intent.text;
                     if (c.intent == 'cardinality')
@@ -3004,27 +3008,26 @@ function preprocess(dsty, uast, index, arr) {
                 valuef.script = s;
             }
             // Handle ⒡ "parenthesize argument" dictation option
-            var of = preprocess(dsty, value.of);
-            if (Array.isArray(of)) {
-                let x = of[0];
+            let ofFunc = preprocess(dsty, value.of);
+            if (Array.isArray(ofFunc)) {
+                let x = ofFunc[0];
                 if (Array.isArray(x))
                     x = x[0];                  // '⒡' as separate array element
                 if (x != undefined && x.hasOwnProperty('atoms')) {
                     let ch = x.atoms[0].chars;
                     if (ch[0] == '⒡') {
                         // Remove '⒡' and enclose function arg in parens
-                        if (ch.length == 1) {
-                            of[0].shift();
-                        } else {
-                            of[0].atoms[0].chars = ch.substring(1);
-                        }
-                        of = {bracketed: {open: '(', close: ')', content: of}};
+                        if (ch.length == 1)
+                            ofFunc[0].shift();
+                        else
+                            ofFunc[0].atoms[0].chars = ch.substring(1);
+                        ofFunc = {bracketed: {open: '(', close: ')', content: ofFunc}}
                     }
                 }
             }
             let extra = [];
             if (valuef.hasOwnProperty('atoms') && valuef.atoms.hasOwnProperty('chars')) {
-                var chars = valuef.atoms.chars.split(",");
+                let chars = valuef.atoms.chars.split(",");
                 valuef.atoms.chars = chars.pop();
                 if (chars.length) {
                     // Separate out character(s) preceding function name,
@@ -3032,7 +3035,7 @@ function preprocess(dsty, uast, index, arr) {
                     extra.push({atoms: {chars: chars.join('')}});
                 }
             }
-            ret = {function: {f: preprocess(dsty, valuef), intent: intent, arg: arg, of: of}}
+            ret = {function: {f: preprocess(dsty, valuef), intent: intent, arg: arg, of: ofFunc}}
             if (extra.length) {
                 extra.push(ret)
                 return extra;
@@ -3149,16 +3152,18 @@ function preprocess(dsty, uast, index, arr) {
             return {spaces: preprocess(dsty, value)};
 
         case "bracketedMatrix":
-            var t = value.type;
-            var o = brackets[t][0];
-            var c = brackets[t][1];
+            type = value.type;
+            opOpen = brackets[type][0];
+            opClose = brackets[type][1];
 
             if (!value.intent && emitDefaultIntents) {
-                let val = matrixIntents[t];
+                val = matrixIntents[type];
                 if (val)
                     value.intent = val;
             }
-            return {bracketed: {open: o, close: c, intent: value.intent, arg: arg, content: preprocess(dsty, value.content)}};
+            return {bracketed: {
+                    open: opOpen, close: opClose, intent: value.intent,
+                    arg: arg, content: preprocess(dsty, value.content)}}
 
         case "bracketed":
             if (value.content.hasOwnProperty("separated")) {
@@ -3198,11 +3203,10 @@ function preprocess(dsty, uast, index, arr) {
                     if (!intent && value.intent) {
                         intent = value.intent;  // Happens for cases & absolute-value
                         if (intent == 'ⓒ') {
-                            var arg0 = getAbsArg(value.content);
+                            let arg0 = getAbsArg(value.content);
                             intent += '(' + arg0 + ')';
-                            if (arg0 == "$a") {
+                            if (arg0 == "$a")
                                 value.content.expr.arg = 'a';
-                            }
                         }
                     }
                }
@@ -3327,6 +3331,8 @@ function mtransform(dsty, puast) {
 
     let attrs
     let key = k(puast);
+    let mask
+    let ret = ''
     let selanchor1
     let str
     let value = v(puast)
@@ -3376,7 +3382,7 @@ function mtransform(dsty, puast) {
         case "expr":
             if (Array.isArray(value) && Array.isArray(value[0])) {
                 if (value[0][0].hasOwnProperty("intent") || value[0][0].hasOwnProperty("arg")) {
-                    var c = mtransform(dsty, value[0][0]);
+                    let c = mtransform(dsty, value[0][0]);
                     c.mrow.attributes = getAttrs(value[0][0], '');
                     return c;
                 }
@@ -3386,7 +3392,7 @@ function mtransform(dsty, puast) {
                     if (n == 1 || n == 2 && value[0][1].intend &&
                         value[0][1].intend.symbol == 'Ⓕ') {
                         let selarr = value.shift()
-                        c = mtransform(dsty, value)
+                        let c = mtransform(dsty, value)
                         if (c && c.mrow) {
                             c.mrow.attributes.selanchor = selarr[0].intend.value
                             if (n == 2)
@@ -3457,7 +3463,7 @@ function mtransform(dsty, puast) {
 
         case "phantom":
             attrs = getAttrs(value, '');
-            var mask = value.mask;
+            mask = value.mask;
 
             if (mask) {
                 if (mask & 2)               // fPhantomZeroWidth
@@ -3503,17 +3509,17 @@ function mtransform(dsty, puast) {
 
         case "fraction":
             attrs = getAttrs(value, '');
-            var of = value.of.map(e => (mtransform(dsty, dropOutermostParens(e))));
+            let ofFrac = value.of.map(e => (mtransform(dsty, dropOutermostParens(e))));
 
             switch (value.symbol) {
-                case "\u2298":  // small fraction
+                case "\u2298":              // small fraction
                     attrs.displaystyle = 'false'; // Fall through
-                case "/":       // normal fraction ¹-₂
-                    return {mfrac: withAttrs(attrs, of)};
-                case "\u2044":  // skewed fraction ¹/₂
-                    return {mfrac: withAttrs({bevelled: true}, of)};
-                case "\u2215":  // linear fraction 1/2
-                    return {mrow: noAttr([of[0], {mo: noAttr('/')}, of[1]])};
+                case "/":                   // normal fraction ¹-₂
+                    return {mfrac: withAttrs(attrs, ofFrac)};
+                case "\u2044":              // skewed fraction ¹/₂
+                    return {mfrac: withAttrs({ bevelled: true }, ofFrac)};
+                case "\u2215":              // linear fraction 1/2
+                    return {mrow: noAttr([ofFrac[0], { mo: noAttr('/') }, ofFrac[1]])};
             }
 
         case "atop":
@@ -3568,7 +3574,7 @@ function mtransform(dsty, puast) {
                     }
                     return value.base;      // No subscript/superscript
                 case "pre":
-                    var ret = [mtransform(dsty, value.base)];
+                    ret = [mtransform(dsty, value.base)];
                     if ("low" in value && "high" in value) {
                         ret.push(mtransform(dsty, dropOutermostParens(value.low)));
                         ret.push(mtransform(dsty, dropOutermostParens(value.high)));
@@ -3949,7 +3955,7 @@ function mtransform(dsty, puast) {
                         notation = 'box';
                         break;
                     default:
-                        var tag = (diacriticPosition(d) == -1) ? "munder" : "mover";
+                        let tag = (diacriticPosition(d) == -1) ? "munder" : "mover";
                         d = "&#x" + d.codePointAt(0).toString(16) + ";";
                         ret = {[tag]: withAttrs({accent: true}, [ret, {mo: noAttr(d)}])};
                         continue;
@@ -4097,10 +4103,10 @@ function c(ast) {
 }
 
 function tag(tagname, attribs, ...vals) {
-    var attributes = "";
+    let attributes = "";
     if (Object.keys(attribs).length) {
         attributes = " " + Object.keys(attribs).map(key => {
-            var value = attribs[key];
+            let value = attribs[key];
             return `${key}="${value}"`;
         }).join(' ');
     }
@@ -4780,7 +4786,7 @@ function dump(value, noAddParens) {
     }
 
     // Dump <mrow> children
-    for (var i = 0; i < cNode; i++) {
+    for (let i = 0; i < cNode; i++) {
         let node = value.children[i];
         ret += checkSpace(i, node, ret)
         ret += dump(node, false, i);
@@ -4921,8 +4927,8 @@ function unicodemathml(unicodemath, displaystyle) {
         return {mathml: unicodemath, details: {}};
     }
     let uast;
+    let t1s = performance.now();
     try {
-        var t1s = performance.now();
         uast = parse(unicodemath);
     } catch (error) {
         // Display unparsable string in red

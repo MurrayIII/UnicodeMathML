@@ -488,6 +488,7 @@ function buildUp(uMath, uMathPartial) {
     // Build up UnicodeMath string one character at a time. If uMathPartial
     // is defined, check results against uMathPartial
     output.innerHTML = `<math display='block'><mi selanchor="0" selfocus="1">⬚</mi></math>`
+    outputUndoStack = ['']
     let sel = window.getSelection()
     setSelection(sel, output, 0)
     let iSuccess = 0
