@@ -1,7 +1,7 @@
 ﻿// Code that generates math speech from MathML. Create DOM for MathML, extract
 // symbols from DOM inserting nonmath symbols for connecting words, and convert
 // the symbols to speech using symbolSpeech(). The default speech language is
-// English. To localize the speech in another languages, translate the strings
+// English. To localize the speech in another language, translate the strings
 // in symbolSpeechString, functions, mathstyles, and ordinals. The speech
 // generation can be guided by MathML intent attributes, which may allow one
 // to change the speech ordering from English.
@@ -39,7 +39,7 @@ const symbolSpeechStrings = {
 	'±': 'plus or minus',					// 00B1
 	'²': 'squared',							// 00B2
 	'³': 'cubed',							// 00B3
-	'¶': ', end',							// 00B6, e.g., '¶ ⍁' for 'end fraction'
+	'¶': 'end',								// 00B6, e.g., '¶⍁' for 'end fraction'
 	'¼': 'one fourth',						// 00BC
 	'½': 'one half',						// 00BD
 	'×': 'times',							// 00D7
@@ -57,7 +57,7 @@ const symbolSpeechStrings = {
 	'\u0305': 'bar',
 	'\u0307': 'dot',
 	'\u0308': 'double dot',
-	'Γ': 'Gamma',
+	'Γ': 'Gamma',							// 0393
 	'Δ': 'Delta',
 	'Θ': 'Theta',
 	'Λ': 'Lambda',
@@ -95,7 +95,7 @@ const symbolSpeechStrings = {
 	'ϕ': 'phi',
 	'Ϝ': 'cap digamma',
 	'ϝ': 'digamma',
-	'ϵ': 'epsilon',
+	'ϵ': 'epsilon',							// 03F5
 	'\u200B': ',',							// ZWSP
 	'‖': 'double vertical line',				// 2016
 	'…': 'dot dot dot',						// 2026
@@ -105,6 +105,7 @@ const symbolSpeechStrings = {
 	'⁄': 'slash',							// 2044
 	'⁅': ', equation',						// 2045
 	'⁆': ',',								// 2046
+	'⁋': 'start',							// 204B
 	'⁐': 'with',							// 2050
 	'⁗': 'quadruple prime',					// 2057
 	'\u2061': 'function apply',				// FunctionApply
@@ -851,7 +852,7 @@ function speech(value, noAddParens) {
 			for (let i = 0; i < cNode; i++) {
 				ret += sep + (i + 1) + '⏳' + speech(value.children[i]);
 			}
-			ret = the ? the + ret + '¶' + symbol : ret
+			ret = the ? the + ret + '⏳¶' + symbol : ret
 			break
 
 		case 'mtr':
@@ -871,11 +872,11 @@ function speech(value, noAddParens) {
 
 			let notation = value.getAttribute('notation')
 			if (!notation)
-				return '▭' + ret + '¶▭';
+				return '▭' + ret + '⏳¶▭';
 
 			for (const [key, val] of Object.entries(symbolClasses)) {
 				if (val == notation) {
-					return key + ' ' + ret + '¶' + key;
+					return key + ' ' + ret + '⏳¶' + key;
 				}
 			}
 			let nota = notation.split(' ').map(c => {
@@ -883,12 +884,12 @@ function speech(value, noAddParens) {
 					return boxNotations[c];
 			});
 			// E.g., 'line on right left enclosing c + b , end enclosure'
-			ret = '─' + nota.join('') + '⼖' + ret + '¶⼞'
+			ret = '─' + nota.join('') + '⼖' + ret + '⏳¶⼞'
 			break
 
 		case 'mphantom':
 			// Full size, no display
-			ret = '⟡' + unary(value, '') + '¶⟡'
+			ret = '⟡' + unary(value, '') + '⏳¶⟡'
 			break
 
 		case 'mpadded':
@@ -924,24 +925,24 @@ function speech(value, noAddParens) {
 			if (color) {
 				if (color[0] == '#')
 					color = '⬢ ' + color.substring(1) + '⏳';
-				ret = '✎' + color + ' ' + ret + '¶✎';
+				ret = '✎' + color + ' ' + ret + '⏳¶✎';
 			}
 			color = value.getAttribute('mathbackground')
 			if (color) {
 				if (color[0] == '#')
 					color = '⬢ ' + color.substring(1) + '⏳';
-				ret = '☁' + color + ' ' + ret + '¶☁';
+				ret = '☁' + color + ' ' + ret + '⏳¶☁';
 			}
 			break
 
 		case 'msqrt':
 			ret = unary(value, '')
-			ret = needParens(ret) ? '√⏳' + ret + '¶√' : '√⏳' + ret
+			ret = needParens(ret) ? '√⏳' + ret + '⏳¶√' : '√⏳' + ret
 			break
 
 		case 'mroot':
 			ret = '⒭' + speech(value.lastElementChild, true) + '▒' +
-				speech(value.firstElementChild, true) + '¶⒭'
+				speech(value.firstElementChild, true) + '⏳¶⒭'
 			break
 
 		case 'mfrac':
@@ -963,7 +964,7 @@ function speech(value, noAddParens) {
 			if (op == '/') {
 				if (needParens(num) || needParens(den) ||
 					value.parentElement.nodeName == 'mfrac') {
-					ret = '⍁' + num + "/" + den + '¶⍁';
+					ret = '⍁' + num + "/" + den + '⏳¶⍁';
 				} else if (isAsciiDigit(num) && (isAsciiDigit(den) || den == '10')) {
 					ret = (num == '1')
 						? getUnicodeFraction(num, den)
@@ -1236,7 +1237,7 @@ function speech(value, noAddParens) {
 		mrowIntent.startsWith('cardinality')) {
 		let op = mrowIntent[0] == 'a' ? '⒜' : 'ⓒ';
 		ret = speech(value.children[1], true);
-		return op + '▒' + ret + (needParens(ret) ? '¶' + op : '⏳');
+		return op + '▒' + ret + (needParens(ret) ? '⏳¶' + op : '⏳');
 	}
 
 	for (let i = 0; i < cNode; i++) {

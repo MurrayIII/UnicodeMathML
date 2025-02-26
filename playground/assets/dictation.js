@@ -1,8 +1,12 @@
 ﻿(function (root) {
 	'use strict';
+	// The function dictationToUnicodeMath(dictation) translates English math speech
+	// (dictation) to UnicodeMath. The function is called by recognition.onresult in
+	// playgroud.js. The UnicodeMath produced can be converted to MathML by calling
+	// unicodemathml(). 
 
 const dictationWords = {
-	// English math dictation dictionary. Keep in ASCII order for binary search
+	// English math dictation dictionary
 	'absolute value':			'⒜',		// \abs
 	'alpha':					'α',		// α
 	'ampersand':				'&',		// & (for matrix cell separator or eqarray alignments)

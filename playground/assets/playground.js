@@ -137,7 +137,7 @@ document.onselectionchange = () => {
     }
     // Update MathML window
     if (!testing) {
-        output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
+        output_source.innerHTML = highlightMathML(escapeHTMLSpecialChars(indentMathML(output.innerHTML)));
         console.log('uMath = ' + getUnicodeMath(output.firstElementChild, true))
         input.innerHTML = getUnicodeMath(output.firstElementChild, false)
     }
@@ -323,7 +323,7 @@ function labelFixedArgs() {
     for (node = walker.currentNode; node; node = walker.nextNode())
         ;
     if (!testing)
-        output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)))
+        output_source.innerHTML = highlightMathML(escapeHTMLSpecialChars(indentMathML(output.innerHTML)))
 }
 
 function getMmlNoDataAttribs() {
@@ -429,9 +429,9 @@ function mathTeX() {
 }
 
 function speak(s) {
+    s = resolveSymbols(s)
     if(!testing)
-        console.log(s)
-    s = symbolSpeech(s)
+        console.log("'" + s + "'")
     if (!speechSynthesis.pending && (!testing || speechCurrent == 'q')) {
         // Some build-up tests insert 'q'; if so, delete 'q'
         speechCurrent = ''
@@ -467,7 +467,7 @@ function setUnicodeMath(uMath) {
     output.innerHTML = t.mathml
 
     if (!testing) {
-        output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
+        output_source.innerHTML = highlightMathML(escapeHTMLSpecialChars(indentMathML(output.innerHTML)));
         if (t.details["intermediates"]) {
             let pegjs_ast = t.details["intermediates"]["parse"];
             let preprocess_ast = t.details["intermediates"]["preprocess"];
@@ -488,7 +488,7 @@ Object.entries(controlWords).forEach(([key, value]) => {
 })
 
 // escape mathml tags and entities, via https://stackoverflow.com/a/13538245
-//function escapeMathMLSpecialChars(str) {
+//function escapeHTMLSpecialChars(str) {
 //    const replacements = {
 //        '&': '&amp;',
 //        '<': '&lt;',
@@ -1419,7 +1419,7 @@ function checkSimpleSup(node) {
         node.nodeName == 'msqrt') {
         let s = speech(node)
         if (s.length <= 6)
-            return resolveSymbols(s)
+            return s
     }
     return ''
 }
@@ -1440,7 +1440,7 @@ function refreshDisplays(uMath, noUndo) {
     // onto output undo stack; restore selection from selanchor and selfocus
     let uMathCurrent = getUnicodeMath(output.firstElementChild, true)
     if (!testing)
-        output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)))
+        output_source.innerHTML = highlightMathML(escapeHTMLSpecialChars(indentMathML(output.innerHTML)))
 
     if (!noUndo) {
         if (!uMath)
@@ -1667,7 +1667,7 @@ function handleEndOfTextNode(node) {
         name = names[name];
 
     if (name != 'mrow') {
-        speak('end of ' + name);
+        speak('¶▒' + name);
     }
     return node
 }
@@ -1710,8 +1710,12 @@ function insertNode(node, offset, nodeNew, nodeP) {
         }
     } else {                                // nodeP is mrow-like
         if (!offset) {
+            nodeNew.removeAttribute('selanchor')
+            node.setAttribute('selanchor', '0')
             nodeP.insertBefore(nodeNew, node)
         } else if (node.nextElementSibling) {
+            nodeNew.removeAttribute('selanchor')
+            node.nextElementSibling.setAttribute('selanchor', '0')
             nodeP.insertBefore(nodeNew, node.nextElementSibling)
         } else {
             if (!node.textContent)
@@ -1759,7 +1763,7 @@ function handleKeyboardInput(node, key, sel) {
         if (!sel.anchorOffset) {
             let nodeNew = document.createElement(nodeNewName)
             nodeNew.textContent = key
-            setSelAttributes(nodeNew, 'selanchor', '1')
+            setSelAttributes(node.firstElementChild, 'selanchor', '0')
             node.insertBefore(nodeNew, node.firstElementChild)
             refreshDisplays()
             return
@@ -2006,7 +2010,7 @@ function checkMathSelection(sel) {
             }
         }
         if (name && offset == node.childElementCount)
-            name = 'end of ' + name
+            name = '¶▒' + name
     } else if (offset == 1 && node.nextElementSibling &&
         sel.focusNode.nodeName != '#text' &&
         !mmlElemFixedArgs.includes(node.parentNode.nodeName)) {
@@ -2042,12 +2046,12 @@ function checkMathSelection(sel) {
                     } else {
                         node = node.parentElement
                         if (isMathMLObject(node.parentElement))
-                            name = getArgName(node, 'end of ')
+                            name = getArgName(node, '¶▒')
                         else if (node.nodeName == 'mtd')
                             name = '＆'      // → ampersand
                     }
                 } else if (isMathMLObject(node.parentElement)) {
-                    name = getArgName(node, 'end of ')
+                    name = getArgName(node, '¶▒')
                 }
             } else {
                 name = symbolSpeech(getCh(node.textContent, offset))
@@ -2074,17 +2078,17 @@ function checkMathSelection(sel) {
         else if (name == 'math') {
             if (keydownLast == 'ArrowLeft') {
                 let nameExp
-                name = 'start of ' + name
+                name = '⁋▒' + name
                 node = node.firstElementChild
                 if (node.nodeName == 'mrow') {
                     nameExp = checkEmulationIntent(node)
                     if (!nameExp)
                         node = node.firstElementChild
                 }
-                name += nameExp ? nameExp + ' , ': getName(node)
+                name += '⏳' + (nameExp ? nameExp : getName(node))
                 setSelection(sel, node, 0)
             } else if (offset) {
-                name = 'end of ' + name
+                name = '¶▒' + name
             }
         }
     }
@@ -2240,7 +2244,7 @@ function deleteSelection(range) {
     else                                    //  some element nodes
         range.deleteContents()              // Ditto
     if (!testing && ummlConfig.debug)       // (Set breakpoint to see what got deleted)
-        output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)));
+        output_source.innerHTML = highlightMathML(escapeHTMLSpecialChars(indentMathML(output.innerHTML)));
 
     let node, nodeNext, nodeP
 
@@ -2422,7 +2426,7 @@ function checkEmpty(node, offset, uMath) {
     refreshDisplays(uMath)
 }
 
-function checkAutoBuildUp(node, nodeP, key) {
+function checkAutoBuildUp(node, offset, nodeP, key) {
     // Return new node if formula auto build up succeeds; else null
     if (!isMrowLike(nodeP) && (node.nodeName != 'mtext' || node.textContent[0] != '\\'))
         return null
@@ -2467,6 +2471,8 @@ function checkAutoBuildUp(node, nodeP, key) {
                 if (nodeP.nodeName == 'math' && !node.nextElementSibling)
                     uMath = getUnicodeMath(nodeP, false, true)
                 else {
+                    if (!offset)
+                        iNode--
                     for (i = 0; i <= iNode; i++)
                         uMath += dump(nodeP.children[i])
                     uMath += 'Ⓐ()'
@@ -2633,13 +2639,13 @@ function moveRight0(sel, node, e) {
                 } else {
                     name = checkNaryand(nodeP)
                     if (name) {
-                        speak('end of ' + name)
+                        speak('¶▒' + name)
                         setSelectionEx(sel, nodeP, nodeP.childElementCount, e)
                         return
                     }
                     offset = 1
                     if (intent == ':function')
-                        name = 'end of function'
+                        name = '¶▒function'
                     else if (intent == ':cases') {
                         node = nodeP
                         offset = node.childElementCount
@@ -2647,7 +2653,7 @@ function moveRight0(sel, node, e) {
                         node = nodeP.parentElement.lastElementChild
                         offset = 0
                     } else if (!name) {
-                        name = getArgName(nodeP, 'end of ')
+                        name = getArgName(nodeP, '¶▒')
                     }
                 }
                 if (name)
@@ -2657,7 +2663,7 @@ function moveRight0(sel, node, e) {
             }   // nodeP is <mrow>
             if (isMathMLObject(nodeP)) {
                 setSelectionEx(sel, node, 1, e)
-                speak(getArgName(node, 'end of '))
+                speak(getArgName(node, '¶▒'))
                 return
             }
             if (nodeP.nodeName == 'mtd') {
@@ -2697,7 +2703,7 @@ function moveRight0(sel, node, e) {
             return
         } else if (mmlElemFixedArgs.includes(nodeP.nodeName)) {
             setSelectionEx(sel, node, 1, e)
-            speak(getArgName(node, 'end of '))
+            speak(getArgName(node, '¶▒'))
             return
         } else if (node.nextElementSibling.nodeName == 'mtable') {
             node = node.nextElementSibling
@@ -2822,7 +2828,7 @@ function moveRight(sel, node, offset, e) {
         nodeP = node.parentElement
 
         if (isMathMLObject(nodeP) && nodeP.nodeName != 'mrow') {
-            name = getArgName(node, 'end of ')
+            name = getArgName(node, '¶▒')
             if (name)
                 speak(name)
             setSelectionEx(sel, node, 1, e)
@@ -2894,7 +2900,7 @@ function moveRight(sel, node, offset, e) {
                 }
             }
             if(name)
-                speak('end of ' + name)
+                speak('¶▒' + name)
         } else {
             node = node.parentElement
             if (node.nodeName == 'mrow') {
@@ -2968,7 +2974,7 @@ function moveRight(sel, node, offset, e) {
                 }
                 if (node.nodeName == 'mtr' &&
                     node.parentElement.getAttribute('intent') == ':equations') {
-                    speak('end of equations')
+                    speak('¶▒equations')
                     setSelectionEx(sel, node, node.childElementCount, e)
                     return              // Place to add new equation
                 }
@@ -2977,7 +2983,7 @@ function moveRight(sel, node, offset, e) {
                 name = checkNaryand(node)
                 offset = node.childElementCount
                 if (name) {
-                    speak('end of ' + name)
+                    speak('¶▒' + name)
                 } else if (node.nodeName == 'mrow' && node.nextElementSibling) {
                     node = node.nextElementSibling
                     offset = 0
@@ -3032,7 +3038,7 @@ function moveRight(sel, node, offset, e) {
         if (!name && node.textContent == '\u200B') {
             let intent = node.parentElement.getAttribute('intent')
             if (intent == ':cases')     // ZWSP used for selection attrs
-                name = 'end of cases'
+                name = '¶▒cases'
         }
         if (!name && (node.nodeName == 'mrow' || node.nodeName == 'mtd')) {
             node = node.firstElementChild
@@ -3161,7 +3167,7 @@ function handleContextMenu(e) {
         case 'Escape':
             closeContextMenu()
             if (!testing)
-                output_source.innerHTML = highlightMathML(escapeMathMLSpecialChars(indentMathML(output.innerHTML)))
+                output_source.innerHTML = highlightMathML(escapeHTMLSpecialChars(indentMathML(output.innerHTML)))
     }
     return true
 }
@@ -3665,7 +3671,7 @@ output.addEventListener('keydown', function (e) {
             if (key == 'End') {
                 node = node.lastElementChild
                 offset = node.childElementCount ? node.childElementCount : 1
-                name = 'end of math'
+                name = '¶▒math'
             } else {
                 node = node.firstElementChild
                 name = ''
@@ -3676,7 +3682,7 @@ output.addEventListener('keydown', function (e) {
                 }
                 if (!name)
                     name = getName(node)
-                name = 'Start of math , ' + name
+                name = '⁋▒math⏳' + name
                 offset = 0
             }
             speak(name)
@@ -3861,7 +3867,7 @@ output.addEventListener('keydown', function (e) {
         nodeP = node.parentElement
 
     let lastChild = getChildIndex(node, nodeP) + 1 == nodeP.childElementCount
-    let nodeT = checkAutoBuildUp(node, nodeP, key)
+    let nodeT = checkAutoBuildUp(node, offset, nodeP, key)
     if (nodeT) {
         node = nodeT                        // FAB succeeded: update node
         if (key == ' ' || key == '"') {     // Set insertion point
@@ -4129,9 +4135,8 @@ async function draw(undo) {
     inp.forEach(val => {
 
         // ignore empty lines
-        if (val.trim() == "") {
+        if (val.trim() == "")
             return;
-        }
 
         // tell the user that unicodemath delimiters aren't required if they've
         // used them
