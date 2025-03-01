@@ -849,8 +849,8 @@ const rats = [    // Right Arrow Tests
             '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−Ⓐ()2𝑎′]', '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−Ⓐ(1)2𝑎′]',
             '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2Ⓐ()𝑎′]', '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2Ⓐ(1)𝑎′]',
             '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎Ⓐ()′]', '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎Ⓐ(1)′]',
-            '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎′Ⓐ()]', '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂Ⓐ(3) [𝑈_𝛿₁𝜌₁^2𝛽−2𝑎′]',
-            '1/8𝜋² ∫_𝛼₁^𝛼₂ Ⓐ(3) ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎′]', '1/8𝜋² Ⓐ(2) ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎′]',],
+            '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎′Ⓐ()]', '1/8𝜋² ∫_𝛼₁^𝛼₂ Ⓐ(3) ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎′]',
+            '1/8𝜋² Ⓐ(2) ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎′]',],
         speechExpect: ['1', 'end of numerator', '8', 'pi squared', 'pi',
             'end of base', '2', 'end of superscript', 'end of denominator',
             'integral with limits', 'integral', 'end of base', 'alpha sub 1',
@@ -862,7 +862,7 @@ const rats = [    // Right Arrow Tests
             'delta', 'end of base', '1', 'end of subscript', 'rho sub 1', 'rho',
             'end of base', '1', 'end of subscript', 'end of subscript', '2', 'beta',
             'end of superscript', 'minus', '2', 'eigh prime', 'eigh', 'end of base',
-            'prime', 'end of superscript', 'close bracket', 'end of fenced',
+            'prime', 'end of superscript', 'close bracket',
             'end of int- agrand', 'end of math',]
     },
     {                                       // case 6
@@ -885,14 +885,13 @@ const rats = [    // Right Arrow Tests
         homeExpect: 'Ⓐ() ⅅ_𝑥 𝑓(𝑥)=1',
         rightArrowExpect: ['Ⓐ()ⅅ_𝑥 𝑓(𝑥)=1', 'Ⓐ(1)ⅅ_𝑥 𝑓(𝑥)=1', 'ⅅ_Ⓐ()𝑥 𝑓(𝑥)=1',
             'ⅅ_Ⓐ(1)𝑥 𝑓(𝑥)=1', 'ⅅ_𝑥 Ⓐ()𝑓(𝑥)=1', 'ⅅ_𝑥 𝑓Ⓐ() (𝑥)=1', 'ⅅ_𝑥 𝑓Ⓐ()(𝑥)=1',
-            'ⅅ_𝑥 𝑓(Ⓐ()𝑥)=1', 'ⅅ_𝑥 𝑓(𝑥Ⓐ())=1', 'ⅅ_𝑥 𝑓Ⓐ(3) (𝑥)=1', 'ⅅ_𝑥 𝑓(𝑥)Ⓐ()=1',
-            'ⅅ_𝑥 𝑓(𝑥)=Ⓐ()1', 'ⅅ_𝑥 𝑓(𝑥)=Ⓐ(1)1',],
+            'ⅅ_𝑥 𝑓(Ⓐ()𝑥)=1', 'ⅅ_𝑥 𝑓(𝑥Ⓐ())=1', 'ⅅ_𝑥 𝑓(𝑥)Ⓐ()=1', 'ⅅ_𝑥 𝑓(𝑥)=Ⓐ()1',
+            'ⅅ_𝑥 𝑓(𝑥)=Ⓐ(1)1',],
         speechExpect: ['cap differential d', 'end of base', 'x', 'end of subscript',
-            'f', 'fenced', 'open', 'x', 'close', 'end of fenced', '=', '1',
-            'end of math']
+            'f', 'fenced', 'open', 'x', 'close', '=', '1', 'end of math']
     },
     {                                       // case 8
-        uMath: '|𝜓⟩=∫𝑑³𝑟|𝐫⟩⟨𝐫│𝜓⟩',
+        uMath: '|𝜓⟩=∫▒𝑑^3 𝑟|𝐫⟩⟨𝐫│𝜓⟩',
         homeExpect: 'Ⓐ() |𝜓⟩=∫𝑑³𝑟|𝐫⟩⟨𝐫│𝜓⟩',
         rightArrowExpect: ['Ⓐ()|𝜓⟩=∫𝑑³𝑟|𝐫⟩⟨𝐫│𝜓⟩', '|Ⓐ()𝜓⟩=∫𝑑³𝑟|𝐫⟩⟨𝐫│𝜓⟩', '|𝜓Ⓐ()⟩=∫𝑑³𝑟|𝐫⟩⟨𝐫│𝜓⟩',
             '|𝜓⟩Ⓐ()=∫𝑑³𝑟|𝐫⟩⟨𝐫│𝜓⟩', '|𝜓⟩=Ⓐ()∫𝑑³𝑟|𝐫⟩⟨𝐫│𝜓⟩', '|𝜓⟩=Ⓐ(1)∫𝑑³𝑟|𝐫⟩⟨𝐫│𝜓⟩',
@@ -905,8 +904,8 @@ const rats = [    // Right Arrow Tests
         speechExpect: ['vertical bar', 'psi', 'close angle bracket', '=',
             'integral', 'd cubed', 'd', 'end of base', '3', 'end of superscript',
             'r', 'fenced', 'vertical bar', 'bold r', 'close angle bracket',
-            'fenced', 'open angle bracket', 'bold r', 'vertical bar',
-            'psi', 'close angle bracket', 'end of math',
+            'fenced', 'open angle bracket', 'bold r', 'vertical bar', 'psi',
+            'close angle bracket', 'end of math',
         ]
     }
 ]                   // End of right-arrow tests
@@ -1066,7 +1065,6 @@ function testHotKeys() {
     }
 
     // More right-arrow navigation tests
-    dataAttributes = true
     for (let i = 0; i < rats.length; i++) {
         testRightArrow(rats[i].uMath,
                        rats[i].homeExpect,

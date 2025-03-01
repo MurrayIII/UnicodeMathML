@@ -94,6 +94,7 @@ function checkSelectionChangeEvent() {
     if (selectionChangeEventPending) {
         // Safari didn't fire selectionchange event
         document.onselectionchange()
+        checkMathSelAnchor()
     }
 }
 
@@ -142,6 +143,19 @@ document.onselectionchange = () => {
         input.innerHTML = getUnicodeMath(output.firstElementChild, false)
     }
     shadeArgNode()
+}
+
+function checkMathSelAnchor() {
+    if (!output.firstElementChild.hasAttribute('selanchor'))
+        return
+
+    // Move <math> selanchor down to lastElementChild. Always at end of math
+    output.firstElementChild.removeAttribute('selanchor')
+    let node = output.firstElementChild.lastElementChild
+
+    node.setAttribute('selanchor', node.childElementCount ? node.childElementCount : 1)
+    output_source_HTML = highlightMathML(escapeHTMLSpecialChars(
+        indentMathML(output.firstElementChild.outerHTML)))
 }
 
 function shadeArgNode() {
@@ -343,6 +357,13 @@ function getMmlNoDataAttribs() {
         iLast = mml.indexOf('"', iData + 1) + 1
     }
     return m + mml.substring(iLast)
+}
+
+function getNewNode(symbol) {
+    let nodeNewName = getMmlTag(symbol)
+    let nodeNew = document.createElement(nodeNewName)
+    nodeNew.textContent = symbol
+    return nodeNew
 }
 
 const mappedPair = {
@@ -1289,6 +1310,31 @@ function handleAutocompleteKeys(x, e) {
             addActive(x);
             return true;
 
+        case '\\':                          // Resolve current cw; start next
+        case ' ':                           // Resolve current cw
+            if (e.currentTarget.id != 'output')
+                return false                // Input autocorrect handles these
+            e.preventDefault();
+            let node = document.getSelection().anchorNode
+            let symbol = resolveCW(node.textContent)
+
+            if (symbol) {
+                let nodeNew = getNewNode(symbol)
+                if (node.nodeName == '#text')
+                    node = node.parentElement
+                if (e.key == ' ') {
+                    // Replace <mtext> by element for corresponding symbol
+                    setSelAttributes(nodeNew, 'selanchor', '1')
+                    node.parentElement.replaceChild(nodeNew, node)
+                } else {
+                    // Insert new node before text node; change latter to \
+                    node.parentElement.insertBefore(nodeNew, node)
+                    setSelAttributes(node, 'selanchor', '-1')
+                    node.textContent = '\\'
+                }
+                refreshDisplays()
+            }
+                                            // Fall through to Escape
         case 'Escape':
             closeAutocompleteList()
             return true
@@ -1373,8 +1419,14 @@ function getTableRowName(node) {
 
 function getName(node) {
     let name = checkSimpleSup(node)
-    if (!name)
+    if (!name) {
         name = names[node.nodeName]
+        if (node.nodeName == 'mfrac') {
+            let intent = node.getAttribute('intent')
+            if (intent && intent.startsWith('derivative'))
+            name = 'derivative'
+        }
+    }
     if (!name)
         name = resolveSymbols(getCh(node.textContent, 0))
     return name
@@ -2010,15 +2062,21 @@ function checkMathSelection(sel) {
             }
         }
         if (name && offset == node.childElementCount)
-            name = '¶▒' + name
+            name = '¶▒' + name              // 'end of ' + name
     } else if (offset == 1 && node.nextElementSibling &&
         sel.focusNode.nodeName != '#text' &&
         !mmlElemFixedArgs.includes(node.parentNode.nodeName)) {
         // Moving from childless element to MathML element with
         // children as for moving past '-' in '√(𝑎²−𝑏²)'
         name = checkSimpleSup(node.nextElementSibling)
-        if (!name)
+        if (!name) {
             name = names[node.nextElementSibling.nodeName]
+            if (node.nextElementSibling.nodeName == 'mfrac') {
+                let intent = node.nextElementSibling.getAttribute('intent')
+                if (intent && intent.startsWith('derivative'))
+                name = 'derivative'
+            }
+        }
     } else {
         if (sel.focusNode.nodeName == '#text') {
             if (offset == sel.focusNode.textContent.length) {
@@ -2435,7 +2493,7 @@ function checkAutoBuildUp(node, offset, nodeP, key) {
     let i
     let iNode = getChildIndex(node, nodeP)
 
-    if (key == '"') {
+    if (key == '"') {                       // Handle mtext content
         for (i = cNode - 1; i >= 0; i--) {
             if (nodeP.children[i].childElementCount)
                 break;
@@ -2456,21 +2514,22 @@ function checkAutoBuildUp(node, offset, nodeP, key) {
             }
         }
     }
+    let [cParen, k, opBuildUp] = checkBrackets(nodeP)
+
     if ('+=-<> )]|⟩'.includes(key) || iNode + 1 == cNode &&
         (key == '/' && !node.textContent.endsWith(')') ||  // Not end of numerator
          key == '#' && !node.textContent.endsWith('('))) { // Not hex RGB: eq-no
         // Try to build up <mrow> or trailing part of it
         let uMath = ''
-        let [cParen, k, opBuildUp] = checkBrackets(nodeP)
         if (opBuildUp && (!cParen || k != -1)) {
             autoBuildUp = true
             ksi = false
             if (!cParen) {
                 // Same count of open and close delimiters: try to build
                 // up nodeP: nodeP → UnicodeMath
-                if (nodeP.nodeName == 'math' && !node.nextElementSibling)
+                if (nodeP.nodeName == 'math' && !node.nextElementSibling) {
                     uMath = getUnicodeMath(nodeP, false, true)
-                else {
+                } else {
                     if (!offset)
                         iNode--
                     for (i = 0; i <= iNode; i++)
@@ -2633,8 +2692,31 @@ function moveRight0(sel, node, e) {
                         if (!name)
                             name = names[node.nodeName]
                     } else {
-                        node = nodeP        // 𝑍(𝜔Ⓐ()) comes here
+                        // 𝑍(𝜔Ⓐ()) comes here
+                        node = nodeP
                         offset = node.childElementCount
+                        if (intent == ':fenced') {
+                            if (node.parentElement.nodeName != 'math')
+                                node = node.parentElement
+                            offset = node.childElementCount
+                            if (!node.nextElementSibling) {
+                                name = checkNaryand(node)
+                                if (name) {
+                                    name = '¶▒' + name    // 'end of ' + name
+                                } else {
+                                    intent = node.parentElement.getAttribute('intent')
+                                    if (intent && (intent.startsWith('derivative') || intent.startsWith(':nary'))) {
+                                        node = node.parentElement
+                                        offset = node.childElementCount
+                                        if (node.nextElementSibling) {
+                                            // Happens for ⅅ_𝑥 𝑓(𝑥)=1 moving to '='
+                                            node = node.nextElementSibling
+                                            offset = 0
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 } else {
                     name = checkNaryand(nodeP)
@@ -4191,13 +4273,15 @@ async function draw(undo) {
             measurements_preprocess.title = "";
             measurements_transform.title = "";
             measurements_pretty.title = "";
-        }
+        } 9
+
     }
 
     // write outputs to dom (doing this inside the loop becomes excruciatingly
     // slow when more than a few dozen inputs are present)
-    // if mathjax is loaded, tell it to redraw math
     output.innerHTML = output_HTML;
+    checkMathSelAnchor()
+
     if (!testing) {
         output_pegjs_ast.innerHTML = output_pegjs_ast_HTML;
         output_preprocess_ast.innerHTML = output_preprocess_ast_HTML;
@@ -4207,6 +4291,7 @@ async function draw(undo) {
 
     if (ummlConfig.forceMathJax) {
         try {
+            // if mathjax is loaded, tell it to redraw math
             MathJax.typeset([output])
         }
         catch { }

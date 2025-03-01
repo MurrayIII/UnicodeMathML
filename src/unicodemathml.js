@@ -15,7 +15,7 @@ function escapeHTMLSpecialChars(str) {
     return str.replace(/[&<>]/g, tag => {
         return replacements[tag] || tag;
     });
-};
+}
 
 const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
 const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
@@ -48,6 +48,7 @@ function getFencedOps(value) {
         opSeparators = ','
     return [opClose, opOpen, opSeparators]
 }
+
 function getUnicodeFraction(chNum, chDenom) {
     if (chNum.length == 1) {
         if (chDenom == '10' && chNum == '1')
@@ -261,11 +262,13 @@ function checkBrackets(node) {
     // implies equal counts, but the code doesn't check for correct balance
     // order. Also return the node index of the final child that shouldn't be
     // included in partial build up. Partial build up of trailing children
-    // may occur for a nonzero bracket count difference, e.g., √(𝑎²-𝑏²
+    // may occur for a nonzero bracket count difference, e.g., √(𝑎²-𝑏². Also
+    // return opBuildUp: 1 means possible build up; 2 means possible build up
+    // and that an nary op is present.
     let cNode = node.childElementCount
     let cBracket = 0
     let ket = false
-    let opBuildUp = false
+    let opBuildUp = 0
     let vbar = false
     let k = -1                              // Index of final child not in
                                             //  partial build up
@@ -278,11 +281,15 @@ function checkBrackets(node) {
 
         if (nodeC.childElementCount) {
             // Most built-up objects currently aren't included in partial
-            // build up but just in case msup base is a function name...
-            if (nodeC.nodeName == 'msup' || nodeC.nodeName == 'msub')
-                opBuildUp = true
-            else if (k == -1)
+            // build up but just in case base of msup, etc. is a function
+            // name or nary operator...
+            const scripts = ['msub', 'msup', 'msubsup', 'mover', 'munder', 'munderover']
+
+            if (scripts.includes(nodeC.nodeName)) {
+                opBuildUp = isNary(nodeC.firstElementChild.textContent) ? 2 : 1
+            } else if (k == -1) {
                 k = i
+            }
         } else if (nodeC.localName == 'mo') { // Sometimes nodeName is capitalized...
             if (isOpenDelimiter(text)) {
                 if (k == -1)
@@ -296,21 +303,23 @@ function checkBrackets(node) {
                 cBracket--
                 if (k == -1)
                     k = i
-                opBuildUp = true
+                opBuildUp = 1
             } else if (text == '|') {
                 if (k == -1)
                     k = i
                 if (vbar) {
                     vbar = false
-                    opBuildUp = true
+                    opBuildUp = 1
                     break
                 } else if (ket) {           // Handle |𝜓⟩
                     cBracket++
-                    break
+                    continue
                 }
                 vbar = true
-            } else if ('_^/√⒞\u2061'.includes(text)) {
-                opBuildUp = true
+            } else if ('_^/√⒞\u2061▒'.includes(text)) {
+                opBuildUp = 1
+            } else if (isNary(text)) {
+                opBuildUp = 2
             }
         }
     }
@@ -322,9 +331,9 @@ function checkBrackets(node) {
 }
 
 function checkSpace(i, node, ret) {
-    // Return ' ' if node is an <mrow> with an ASCII-alphabetic first child
-    // preceded by an alphanumeric character. Else return ''. E.g., need a ' '
-    // between '𝑏' and 'sin' in '𝑎+𝑏 sin 𝜃'
+    // Return ' ' if node is an <mrow> containing an ASCII-alphabetic first
+    // child and preceded by an alphanumeric character. Else return ''. E.g.,
+    // need a ' ' between '𝑏' and 'sin' in '𝑎+𝑏 sin 𝜃'
     if (i && node.nodeName == 'mrow' && node.firstElementChild &&
         node.firstElementChild.nodeName == 'mi' &&
         isAsciiAlphabetic(node.firstElementChild.textContent[0]) &&
@@ -3200,7 +3209,7 @@ function preprocess(dsty, uast, index, arr) {
                     value.content = preprocess(dsty, value.content);
                 } else {
                     value.content = preprocess(dsty, value.content);
-                    if (!value.intent && value.open == '{' && !value.close &&
+                    if (!value.intent && value.open == '\u007B' && !value.close &&
                         value.content.hasOwnProperty('expr') &&
                         Array.isArray(value.content.expr) &&
                         value.content.expr[0].hasOwnProperty('array')) {
@@ -4786,8 +4795,8 @@ function dump(value, noAddParens) {
 
         if (needPreSpace.includes(value.nodeName)) {
             // Insert ' ' between the selection code(s) and certain MathML
-            // elements so that the code(s) apply to the element and not its
-            // first child
+            // elements so that the code(s) apply to the element and not to
+            // its first child
             selcode += ' '
         }
         return selcode + ret
