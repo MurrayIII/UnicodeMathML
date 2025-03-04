@@ -3564,6 +3564,57 @@ document.addEventListener('keydown', function (e) {
                 return
         }
         e.preventDefault()
+    } else if (e.key == 'Tab') {
+        const IDs = {
+            'help': { next: 'demos', prev: 'output' },
+            'demos': { next: 'speech', prev: 'help' },
+            'speech': { next: 'braille', prev: 'demos' },
+            'braille': { next: 'TeX', prev: 'speech' },
+            'TeX': { next: 'dictation', prev: 'braille' },
+            'dictation': { next: 'about', prev: 'TeX' },
+            'about': { next: 'input', prev: 'dictation' },
+            'input': { next: 'output', prev: 'about' },
+            'output': { next: 'help', prev: 'input' },
+            //'config':   { next: 'help',      prev: 'output' },
+        }
+        let id = document.activeElement.id
+        if (!id)
+            id = 'input'
+
+        let nav = IDs[id]
+
+        if (e.shiftKey)
+            id = nav.prev
+        else
+            id = nav.next
+
+        let node = document.getElementById(id)
+        let sel = window.getSelection()
+
+        e.preventDefault()
+        node.focus()
+        if (node.localName == 'textarea')
+            input.selectionStart = input.selectionEnd = 0
+        else
+            sel.setBaseAndExtent(node, 0, node, 0)
+        speak(id)
+        id = document.activeElement.id
+        console.log('activeElement = ' + id)
+    } else if (e.key == 'Enter') {
+        const cmds = {'help': 'h', 'demos': 'p', 'speech': 's', 'braille': 'b',
+            'TeX': 't', 'dictation': 'd', 'about': 'a', 'input': '', 'output': '',
+        }
+
+        let id = document.activeElement.id
+        let key = cmds[id]
+
+        if (key) {
+            e.preventDefault()
+            const event = new Event('keydown')
+            event.key = key
+            event.altKey = true
+            document.dispatchEvent(event)
+        }
     }
 })
 
@@ -4273,8 +4324,7 @@ async function draw(undo) {
             measurements_preprocess.title = "";
             measurements_transform.title = "";
             measurements_pretty.title = "";
-        } 9
-
+        }
     }
 
     // write outputs to dom (doing this inside the loop becomes excruciatingly
