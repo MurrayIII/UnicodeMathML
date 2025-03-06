@@ -27,7 +27,7 @@
     <button type="button" id="TeX" onclick="mathTeX()" title="Alt+t"><span> TeX</span></button>
     <button type="button" id="dictation" onclick="startDictation()" title="Alt+d"><span> Dictate</span></button>
     <span>  <a id="about" href="https://github.com/MurrayIII/UnicodeMathML/" target="_blank" title="Alt+a">About</a> </span>
-    <aside id="config"><h2>⚙︎</h2></aside>
+    <aside id="config" contenteditable="true" spellcheck="false"><h2>⚙︎</h2></aside>
     <script>
         var buttons = [
             {
@@ -345,7 +345,7 @@
 
     <!-- config -->
     <script>
-        var defaultConfig = {
+        const defaultConfig = {             // Order same as configDescriptions
             splitInput: true,
             resolveControlWords: true,
             displaystyle: true,
@@ -354,38 +354,39 @@
             tracing: false,
             forceMathJax: false,
             defaultIntents: false,
+            speakSelectionEnds: false,
             doubleStruckMode: "us-tech",
             transposeChar: "T",
-            speakSelectionEnds: false
         };
-        var configDescriptions = {
-            splitInput: "Process each input line separately",
+        const configDescriptions = {
+            splitInput: "Process input lines separately",
             resolveControlWords: "Autocorrect control words",
-            displaystyle: "Display equations in display style instead of inline",
+            displaystyle: "Use display style not inline style",
             debug: "Enable debug mode",
             caching: "Enable parser caching",
             tracing: "Enable parser tracing",
-            forceMathJax: "Force-enable MathJax",
+            forceMathJax: "Use MathJax not native rendering",
             defaultIntents: "Emit default intent attributes",
-            speakSelectionEnds: "Speak insertion point, selection start and end",
+            speakSelectionEnds: "Include selection ends in speech",
         };
 
         var ummlConfig = JSON.parse(JSON.stringify(defaultConfig));  // clone it
 
         function renderConfigPane() {
-            var e = document.getElementById("config");
-            var i = 0;
+            let e = document.getElementById("config");
+            let i = 0;
             e.innerHTML += Object.keys(ummlConfig).map(k => {
                 i++;
                 if (configDescriptions[k])
                     return `<div><input type="checkbox" id="c${i}" name="${k}" ${ummlConfig[k] ? "checked" : ""}><label for="c${i}">${configDescriptions[k]}</label></div>`;
             }).join("");
-            e.innerHTML += `<div class="buttons"><button onclick="applyConfigAndReload()">Apply & Reload Page</button><a onclick="resetConfigAndReload()">Reset</a></div>`;
+            e.innerHTML += `<div class="buttons"><button onclick="applyConfigAndReload()">Apply & Reload Page</button></div>`;
+            e.innerHTML += `<div class="buttons"><button onclick="resetConfigAndReload()">Reset & Reload Page</button></div>`;
             e.innerHTML += `<div class="buttons"><button onclick="chooseFormatMode(1)">Choose display format for ⅅ ⅆ ⅇ ⅈ ⅉ</div>`;
             e.innerHTML += `<div class="buttons"><button onclick="chooseFormatMode(2)">Choose character for transpose ⊺</div>`;
         }
         function loadConfigIntoPane() {
-            var tempConfig = defaultConfig;
+            let tempConfig = defaultConfig;
             if (window.localStorage.getItem("config")) {
                 tempConfig = JSON.parse(localStorage.getItem('config'));
             }
@@ -397,14 +398,14 @@
             ummlConfig.transposeChar = tempConfig.transposeChar;
         }
         function applyConfigAndReload() {
-            var tempConfig = {};
+            let tempConfig = {};
             Array.from(document.querySelectorAll("#config input[type='checkbox']")).map(e => {
                 tempConfig[e.name] = e.checked;
             });
             tempConfig.doubleStruckMode = ummlConfig.doubleStruckMode;
             tempConfig.transposeChar = ummlConfig.transposeChar;
 
-            var value = JSON.stringify(tempConfig);
+            let value = JSON.stringify(tempConfig);
             localStorage.setItem('config', value);
             window.location.reload(false);
         }
@@ -419,19 +420,19 @@
             const doubleStruckDescriptions = ["math italic: 𝐷𝑑𝑒𝑖𝑗", "unchanged: ⅅⅆⅇⅈⅉ", "upright: Ddeij"];
             const transposeChars = ["T", "𝑇", "t", "⊺", "⊤"];
 
-            var formatModes = (list == 1) ? doubleStruckModes : transposeChars;
-            var formatModeList = document.createElement("div");
+            let formatModes = (list == 1) ? doubleStruckModes : transposeChars;
+            let formatModeList = document.createElement("div");
 
             formatModeList.setAttribute("id", "formatmode-list");
             formatModeList.setAttribute("class", "formatmode-items");
 
             // Append div element as a child of the config container
-            var e = document.getElementById("config");
+            let e = document.getElementById("config");
             e.appendChild(formatModeList);
 
             // Create a div element for each format option
-            for (var j = 0; j < formatModes.length; j++) {
-                var b = document.createElement("div");
+            for (let j = 0; j < formatModes.length; j++) {
+                let b = document.createElement("div");
                 let option = formatModes[j];
 
                 // Insert an input field to hold the current option
@@ -445,7 +446,7 @@
                 });
                 formatModeList.appendChild(b);
             }
-            var formatMode = formatModes[0];
+            let formatMode = formatModes[0];
 
             if (ummlConfig != undefined) {
                 if (list == 1) {
@@ -455,7 +456,7 @@
                     formatMode = ummlConfig.transposeChar;
                 }
             }
-            var formatModeOption = document.getElementById(formatMode);
+            let formatModeOption = document.getElementById(formatMode);
             formatModeOption.parentNode.classList.add("formatmode-active");
         }
 

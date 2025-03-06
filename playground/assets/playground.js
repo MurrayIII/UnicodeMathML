@@ -2,6 +2,7 @@
 
 var dictateButton = document.getElementById('dictation')
 var codepoints = document.getElementById("codepoints");
+var config = document.getElementById("config");
 var input = document.getElementById("input");
 var measurements_parse = document.getElementById("measurements_parse");
 var measurements_pretty = document.getElementById("measurements_pretty");
@@ -3469,6 +3470,37 @@ function getMathSelection() {
     return removeMathMlSelAttributes(mathml)
 }
 
+function speakConfigOption(node) {
+    const settings = {
+        'c1': ['', 'dont'],
+        'c2': ['', 'dont'],
+        'c3': ['Use display style', 'Use inline style'],
+        'c4': ['', 'dont'],
+        'c5': ['', 'dont'],
+        'c6': ['', 'dont'],
+        'c7': ['Use MathJax rendering', 'Use native rendering'],
+        'c8': ['', 'dont'],
+        'c9': ['', 'dont'],
+    }
+    let checked = node.firstElementChild.checked
+    let text = node.textContent
+    let id = node.firstElementChild.id
+    let mode = settings[id]
+    if (mode) {
+        if (checked) {
+            if (mode[0])
+                text = mode[0]
+        } else {
+            if (mode[1] == 'dont')
+                text = mode[1] + ' ' + text
+            else
+                text = mode[1]
+        }
+    }
+    speak(text)
+}
+
+
 document.addEventListener('keydown', function (e) {
     // Include cases for Mac ASCII option hot keys
     //   Alt + a or å     Alt + b or ∫     Alt + d or ∂     Alt + h or ˙
@@ -3564,59 +3596,109 @@ document.addEventListener('keydown', function (e) {
                 return
         }
         e.preventDefault()
-    } else if (e.key == 'Tab') {
-        const IDs = {
-            'help': { next: 'demos', prev: 'output' },
-            'demos': { next: 'speech', prev: 'help' },
-            'speech': { next: 'braille', prev: 'demos' },
-            'braille': { next: 'TeX', prev: 'speech' },
-            'TeX': { next: 'dictation', prev: 'braille' },
-            'dictation': { next: 'about', prev: 'TeX' },
-            'about': { next: 'input', prev: 'dictation' },
-            'input': { next: 'output', prev: 'about' },
-            'output': { next: 'help', prev: 'input' },
-            //'config':   { next: 'help',      prev: 'output' },
-        }
-        let id = document.activeElement.id
-        if (!id)
-            id = 'input'
+        return
+    }
+    let id
+    let node
+    let sel = window.getSelection()
 
-        let nav = IDs[id]
+    switch (e.key) {
+        case 'ArrowDown':
+            if (document.activeElement.id != 'config')
+                return
 
-        if (e.shiftKey)
-            id = nav.prev
-        else
-            id = nav.next
-
-        let node = document.getElementById(id)
-        let sel = window.getSelection()
-
-        e.preventDefault()
-        node.focus()
-        if (node.localName == 'textarea')
-            input.selectionStart = input.selectionEnd = 0
-        else
-            sel.setBaseAndExtent(node, 0, node, 0)
-        speak(id)
-        id = document.activeElement.id
-        console.log('activeElement = ' + id)
-    } else if (e.key == 'Enter') {
-        const cmds = {'help': 'h', 'demos': 'p', 'speech': 's', 'braille': 'b',
-            'TeX': 't', 'dictation': 'd', 'about': 'a', 'input': '', 'output': '',
-        }
-
-        let id = document.activeElement.id
-        let key = cmds[id]
-
-        if (key) {
             e.preventDefault()
-            const event = new Event('keydown')
-            event.key = key
-            event.altKey = true
-            document.dispatchEvent(event)
-        }
+            node = sel.anchorNode.nextElementSibling
+            if (node) {
+                speakConfigOption(node)
+                sel.setBaseAndExtent(node, 0, node, 0)
+                break
+            }
+            // To be done...
+            node = document.getElementById('help')
+            sel.setBaseAndExtent(node, 0, node, 0)
+
+        case 'Tab':
+            const IDs = {
+                'help': { next: 'demos', prev: 'config' },
+                'demos': { next: 'speech', prev: 'help' },
+                'speech': { next: 'braille', prev: 'demos' },
+                'braille': { next: 'TeX', prev: 'speech' },
+                'TeX': { next: 'dictation', prev: 'braille' },
+                'dictation': { next: 'about', prev: 'TeX' },
+                'about': { next: 'input', prev: 'dictation' },
+                'input': { next: 'output', prev: 'about' },
+                'output': { next: 'config', prev: 'input' },
+                'config': { next: 'help', prev: 'output' },
+            }
+            id = document.activeElement.id
+            if (!id)
+                id = 'input'
+
+            let nav = IDs[id]
+            id = e.shiftKey ? nav.prev : nav.next
+
+            node = document.getElementById(id)
+            node.focus()
+
+            e.preventDefault()
+            speak(id)
+            if (node.localName == 'textarea')
+                input.selectionStart = input.selectionEnd = 0
+            else
+                sel.setBaseAndExtent(node, 0, node, 0)
+
+            id = document.activeElement.id
+            console.log('activeElement = ' + id)
+            break
+
+        case 'Enter':
+            id = document.activeElement.id
+            if (id == 'config') {
+                e.preventDefault()
+                node = sel.anchorNode
+                if (node == document.getElementById("config")) {
+                    node.style.width = '15rem'
+                    for (let i = 1; i < node.childElementCount; i++) {
+                        // Style config dialog as in hovering
+                        let nodeC = node.children[i]
+                        nodeC.style.display = "block"
+                        nodeC.style.border = "1px solid #d4d4d4"
+                        nodeC.style.backgroundColor = "#222222"
+                    }
+                    node = node.children[1]     // Go to first checkbox
+                    sel.setBaseAndExtent(node, 0, node, 0)
+                } else {
+                    if (node.firstElementChild.nodeName == 'BUTTON')
+                        node.firstElementChild.click()
+                    else
+                        node.firstElementChild.checked = !node.firstElementChild.checked
+                }
+                speakConfigOption(node)
+                break
+            }
+            const cmds = {
+                'help': 'h', 'demos': 'p', 'speech': 's', 'braille': 'b',
+                'TeX': 't', 'dictation': 'd', 'about': 'a', 'input': '', 'output': '',
+            }
+            let key = cmds[id]
+            if (key) {
+                e.preventDefault()
+                const event = new Event('keydown')
+                event.key = key
+                event.altKey = true
+                document.dispatchEvent(event)
+            }
+            break
     }
 })
+
+if (config) {
+    config.addEventListener('blur', () => {
+        for (let i = 1; i < config.childElementCount; i++)
+            config.children[i].style.display = ""
+    })
+}
 
 output.addEventListener('keydown', function (e) {
     let key = e.key
@@ -4530,6 +4612,7 @@ function getInputSelection() {
 
 $('button.mathfont').click(function () {
     let font = this.id;
+    let symbolSave
 
     let char = $('#mathchar').val();
     if (char != "") {
@@ -4543,6 +4626,7 @@ $('button.mathfont').click(function () {
             } catch (e) {
                 return;
             }
+            symbolSave = symbol
         } else {
             // Quote symbol unless selection is inside a quoted string. Note
             // that \mup... should map to mi mathvariant=normal rather than
@@ -4550,7 +4634,7 @@ $('button.mathfont').click(function () {
             // to track this and maybe other properties as in OfficeMath.
             // Also code doesn't currently handle selecting part way into
             // a quoted string.
-            let symbolSave = symbol;
+            symbolSave = symbol;
 
             for (let iOff = 0;; ) {
                 let iQuote = input.value.indexOf('"', iOff);
