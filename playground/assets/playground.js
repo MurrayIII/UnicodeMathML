@@ -3470,6 +3470,25 @@ function getMathSelection() {
     return removeMathMlSelAttributes(mathml)
 }
 
+function moveToSibling(e) {
+    let tab = document.activeElement.id
+    if (tab != 'config' && tab != 'history')
+        return
+
+    e.preventDefault()
+    let sel = window.getSelection()
+    let node = e.key == 'ArrowLeft' || e.key == 'ArrowUp'
+             ? sel.anchorNode.previousElementSibling
+             : sel.anchorNode.nextElementSibling
+    if (node) {
+        if (tab == 'config')
+            speakConfigOption(node)
+        else
+            speak(node.textContent)
+        sel.setBaseAndExtent(node, 0, node, 0)
+    }
+}
+
 function speakConfigOption(node) {
     const settings = {
         'c1': ['', 'dont'],
@@ -3604,23 +3623,15 @@ document.addEventListener('keydown', function (e) {
 
     switch (e.key) {
         case 'ArrowDown':
-            if (document.activeElement.id != 'config')
-                return
-
-            e.preventDefault()
-            node = sel.anchorNode.nextElementSibling
-            if (node) {
-                speakConfigOption(node)
-                sel.setBaseAndExtent(node, 0, node, 0)
-                break
-            }
-            // To be done...
-            node = document.getElementById('help')
-            sel.setBaseAndExtent(node, 0, node, 0)
+        case 'ArrowUp':
+        case 'ArrowLeft':
+        case 'ArrowRight':
+            moveToSibling(e)
+            break
 
         case 'Tab':
             const IDs = {
-                'help': { next: 'demos', prev: 'config' },
+                'help': { next: 'demos', prev: 'history' },
                 'demos': { next: 'speech', prev: 'help' },
                 'speech': { next: 'braille', prev: 'demos' },
                 'braille': { next: 'TeX', prev: 'speech' },
@@ -3629,8 +3640,10 @@ document.addEventListener('keydown', function (e) {
                 'about': { next: 'input', prev: 'dictation' },
                 'input': { next: 'output', prev: 'about' },
                 'output': { next: 'config', prev: 'input' },
-                'config': { next: 'help', prev: 'output' },
+                'config': { next: 'history', prev: 'output' },
+                'history': { next: 'help', prev: 'config' },
             }
+            e.preventDefault()
             id = document.activeElement.id
             if (!id)
                 id = 'input'
@@ -3640,9 +3653,12 @@ document.addEventListener('keydown', function (e) {
 
             node = document.getElementById(id)
             node.focus()
+            if (id == 'output')
+                node = node.firstElementChild
 
-            e.preventDefault()
             speak(id)
+            if (!node)
+                break
             if (node.localName == 'textarea')
                 input.selectionStart = input.selectionEnd = 0
             else
@@ -3666,15 +3682,29 @@ document.addEventListener('keydown', function (e) {
                         nodeC.style.border = "1px solid #d4d4d4"
                         nodeC.style.backgroundColor = "#222222"
                     }
-                    node = node.children[1]     // Go to first checkbox
+                    node = node.children[1]     // Move to first checkbox
                     sel.setBaseAndExtent(node, 0, node, 0)
                 } else {
                     if (node.firstElementChild.nodeName == 'BUTTON')
                         node.firstElementChild.click()
-                    else
+                    else                    // Toggle checkbox
                         node.firstElementChild.checked = !node.firstElementChild.checked
                 }
                 speakConfigOption(node)
+                break
+            }
+            if (id == 'history') {
+                e.preventDefault()
+                node = sel.anchorNode
+                if (node == document.getElementById("history")) {
+                    // Move to first history entry
+                    node = node.firstElementChild
+                    sel.setBaseAndExtent(node, 0, node, 0)
+                } else {
+                    // Insert current entry into input window
+                    insertAtCursorPos(node.textContent)
+                }
+                speak(node.textContent)     // Speak symbol
                 break
             }
             const cmds = {
