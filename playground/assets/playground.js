@@ -3470,9 +3470,26 @@ function getMathSelection() {
     return removeMathMlSelAttributes(mathml)
 }
 
+var mathchar = document.getElementById('mathchar')
+
+if (mathchar) {
+    mathchar.addEventListener('keydown', (e) => {
+        console.log('mathchar key = ' + e.key)
+        if (e.key == 'ArrowRight') {
+            e.preventDefault()
+            let node = document.getElementById('mathstyles')
+            node.focus()
+            node = node.children[1]
+            let sel = window.getSelection()
+            console.log(node.id + ' ' + node.nodeName)
+            sel.setBaseAndExtent(node, 0, node, 0)
+        }
+    })
+}
+
 function moveToSibling(e) {
     let tab = document.activeElement.id
-    if (tab != 'config' && tab != 'history')
+    if (tab != 'config' && tab != 'history' && tab != 'mathstyles')
         return
 
     e.preventDefault()
@@ -3481,10 +3498,19 @@ function moveToSibling(e) {
              ? sel.anchorNode.previousElementSibling
              : sel.anchorNode.nextElementSibling
     if (node) {
-        if (tab == 'config')
-            speakConfigOption(node)
-        else
-            speak(node.textContent)
+        switch (tab) {
+            case 'config':
+                speakConfigOption(node)
+                break
+            case 'history':
+                speak(node.textContent)
+                break
+            case 'mathstyles':
+                let text = node.getAttribute('data-tooltip')
+                text = text.substring(0, text.length - 1) + ' X'
+                speak(text)
+                break
+        }
         sel.setBaseAndExtent(node, 0, node, 0)
     }
 }
@@ -3631,7 +3657,7 @@ document.addEventListener('keydown', function (e) {
 
         case 'Tab':
             const IDs = {
-                'help': { next: 'demos', prev: 'history' },
+                'help': { next: 'demos', prev: 'mathstyles' },
                 'demos': { next: 'speech', prev: 'help' },
                 'speech': { next: 'braille', prev: 'demos' },
                 'braille': { next: 'TeX', prev: 'speech' },
@@ -3641,7 +3667,8 @@ document.addEventListener('keydown', function (e) {
                 'input': { next: 'output', prev: 'about' },
                 'output': { next: 'config', prev: 'input' },
                 'config': { next: 'history', prev: 'output' },
-                'history': { next: 'help', prev: 'config' },
+                'history': { next: 'mathstyles', prev: 'config' },
+                'mathstyles': { next: 'help', prev: 'history' },
             }
             e.preventDefault()
             id = document.activeElement.id
@@ -3669,55 +3696,70 @@ document.addEventListener('keydown', function (e) {
             break
 
         case 'Enter':
-            id = document.activeElement.id
-            if (id == 'config') {
-                e.preventDefault()
-                node = sel.anchorNode
-                if (node == document.getElementById("config")) {
-                    node.style.width = '15rem'
-                    for (let i = 1; i < node.childElementCount; i++) {
-                        // Style config dialog as in hovering
-                        let nodeC = node.children[i]
-                        nodeC.style.display = "block"
-                        nodeC.style.border = "1px solid #d4d4d4"
-                        nodeC.style.backgroundColor = "#222222"
+            node = sel.anchorNode
+            switch (document.activeElement.id) {
+                case 'config':
+                    e.preventDefault()
+                    if (node == document.getElementById("config")) {
+                        node.style.width = '15rem'
+                        for (let i = 1; i < node.childElementCount; i++) {
+                            // Style config dialog as in hovering
+                            let nodeC = node.children[i]
+                            nodeC.style.display = "block"
+                            nodeC.style.border = "1px solid #d4d4d4"
+                            nodeC.style.backgroundColor = "#222222"
+                        }
+                        node = node.children[1] // Move to first checkbox
+                        sel.setBaseAndExtent(node, 0, node, 0)
+                    } else {
+                        if (node.firstElementChild.nodeName == 'BUTTON')
+                            node.firstElementChild.click()
+                        else                    // Toggle checkbox
+                            node.firstElementChild.checked = !node.firstElementChild.checked
                     }
-                    node = node.children[1]     // Move to first checkbox
-                    sel.setBaseAndExtent(node, 0, node, 0)
-                } else {
-                    if (node.firstElementChild.nodeName == 'BUTTON')
-                        node.firstElementChild.click()
-                    else                    // Toggle checkbox
-                        node.firstElementChild.checked = !node.firstElementChild.checked
-                }
-                speakConfigOption(node)
-                break
-            }
-            if (id == 'history') {
-                e.preventDefault()
-                node = sel.anchorNode
-                if (node == document.getElementById("history")) {
-                    // Move to first history entry
-                    node = node.firstElementChild
-                    sel.setBaseAndExtent(node, 0, node, 0)
-                } else {
-                    // Insert current entry into input window
-                    insertAtCursorPos(node.textContent)
-                }
-                speak(node.textContent)     // Speak symbol
-                break
-            }
-            const cmds = {
-                'help': 'h', 'demos': 'p', 'speech': 's', 'braille': 'b',
-                'TeX': 't', 'dictation': 'd', 'about': 'a', 'input': '', 'output': '',
-            }
-            let key = cmds[id]
-            if (key) {
-                e.preventDefault()
-                const event = new Event('keydown')
-                event.key = key
-                event.altKey = true
-                document.dispatchEvent(event)
+                    speakConfigOption(node)
+                    return
+
+                case 'history':
+                    e.preventDefault()
+                    if (node == document.getElementById("history")) {
+                        // Move to first history entry
+                        node = node.firstElementChild
+                        sel.setBaseAndExtent(node, 0, node, 0)
+                    } else {
+                        // Insert current entry into input window
+                        insertAtCursorPos(node.textContent)
+                    }
+                    speak(node.textContent)     // Speak symbol
+                    return
+
+                case 'mathstyles':
+                    e.preventDefault()
+                    if (node == document.getElementById("mathstyles")) {
+                        // Move to input field
+                        node = node.children[1]
+                        sel.setBaseAndExtent(node, 0, node, 0)
+                        node.focus()
+                    } else {
+                        // Set math style
+                        node.click()
+                        console.log('In math styles input')
+                    }
+                    return
+
+                default:
+                    const cmds = {
+                        'help': 'h', 'demos': 'p', 'speech': 's', 'braille': 'b',
+                        'TeX': 't', 'dictation': 'd', 'about': 'a', 'input': '', 'output': '',
+                    }
+                    let key = cmds[id]
+                    if (key) {
+                        e.preventDefault()
+                        const event = new Event('keydown')
+                        event.key = key
+                        event.altKey = true
+                        document.dispatchEvent(event)
+                    }
             }
             break
     }

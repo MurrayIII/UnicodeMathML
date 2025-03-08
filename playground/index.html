@@ -267,9 +267,23 @@
         <span id="history" contenteditable="true">
             <button class="unicode disabled">empty</button>
         </span>
-    <p class="mathfonts">
+    <p id="mathstyles" contenteditable="true" class="mathfonts">
         <span class="category" data-explanation="If you want to convert multiple characters at a time, enter them into the UnicodeMath input field, select them and click one of these buttons. Any characters that cannot be converted will remain unchanged.">Math styles</span>
-        <input type="text" id="mathchar" placeholder="A" maxlength="2"><button id="mup" class="submit mathfont" data-tooltip="\mup… Normal upright">ABC</button><button id="mbf" class="submit mathfont" data-tooltip="\mbf… Serif & Bold">𝐀𝐁𝐂</button><button id="mit" class="mathfont" data-tooltip="\mit… Serif & Italic">𝐴𝐵𝐶</button><button id="mbfit" class="mathfont" data-tooltip="\mbfit… Serif & Bold & Italic">𝑨𝑩𝑪</button><button id="msans" class="mathfont" data-tooltip="\msans… Sans-serif">𝖠𝖡𝖢</button><button id="mbfsans" class="mathfont" data-tooltip="\mbfsans… Sans-serif & Bold">𝗔𝗕𝗖</button><button id="mbfitsans" class="mathfont" data-tooltip="\mbfitsans… Sans-serif & Italic">𝘈𝘉𝘊</button><button id="mitsans" class="mathfont" data-tooltip="\mitsans… Sans-serif & Bold & Italic">𝘼𝘽𝘾</button><button id="mscr" class="mathfont" data-tooltip="\mscr… Script">𝒜ℬ𝒞</button><button id="mbfscr" class="mathfont" data-tooltip="\mbfscr… Script & Bold">𝓐𝓑𝓒</button><button id="mfrak" class="mathfont" data-tooltip="\mfrak… Fraktur">𝔄𝔅ℭ</button><button id="mbffrak" class="mathfont" data-tooltip="\mbffrak… Fraktur & Bold">𝕬𝕭𝕮</button><button id="mtt" class="mathfont" data-tooltip="\mtt… Monospace">𝙰𝙱𝙲</button><button id="Bbb" class="mathfont" data-tooltip="\Bbb… Double-struck (blackboard bold)">𝔸𝔹ℂ</button>
+        <input type="text" id="mathchar" placeholder="A" maxlength="2">
+        <button id="mup" class="submit mathfont" data-tooltip="Normal upright \mupX">ABC</button>
+        <button id="mbf" class="submit mathfont" data-tooltip="Serif Bold \mbfX">𝐀𝐁𝐂</button>
+        <button id="mit" class="mathfont" data-tooltip="Serif Italic \mitX">𝐴𝐵𝐶</button>
+        <button id="mbfit" class="mathfont" data-tooltip="Serif Bold Italic \mbfitX">𝑨𝑩𝑪</button>
+        <button id="msans" class="mathfont" data-tooltip="Sans-serif \msansX">𝖠𝖡𝖢</button>
+        <button id="mbfsans" class="mathfont" data-tooltip="Sans-serif Bold \mbfsansX">𝗔𝗕𝗖</button>
+        <button id="mbfitsans" class="mathfont" data-tooltip="Sans-serif Italic \mbfitsansX">𝘈𝘉𝘊</button>
+        <button id="mitsans" class="mathfont" data-tooltip="Sans-serif Bold Italic \mitsansX">𝘼𝘽𝘾</button>
+        <button id="mscr" class="mathfont" data-tooltip="Script \mscrX">𝒜ℬ𝒞</button>
+        <button id="mbfscr" class="mathfont" data-tooltip="Script Bold \mbfscrX">𝓐𝓑𝓒</button>
+        <button id="mfrak" class="mathfont" data-tooltip="Fraktur \mfrakX">𝔄𝔅ℭ</button>
+        <button id="mbffrak" class="mathfont" data-tooltip="Fraktur Bold \mbffrakX">𝕬𝕭𝕮</button>
+        <button id="mtt" class="mathfont" data-tooltip="Monospace \mttX">𝙰𝙱𝙲</button>
+        <button id="Bbb" class="mathfont" data-tooltip="Double-struck \BbbX">𝔸𝔹ℂ</button>
     </p>
     <br />
     <div class="categorytab">
