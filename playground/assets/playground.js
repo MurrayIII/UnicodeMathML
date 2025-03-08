@@ -4268,6 +4268,29 @@ let s = setSpeech();
 
 s.then(v => voiceZira = v.filter(val => val.name.startsWith('Microsoft Zira'))[0])
 
+function getSymbolControlWord(ch) {
+    if (!ch)
+        return ''
+
+    let cw = ''
+    if (!testing)
+        cw = symbolTooltips[ch]
+
+    if (!cw) {
+        cw = symbolNames[ch]     // From controlWords
+        if (cw) {
+            cw = '\\' + cw
+        } else if (isAlphanumeric(ch)) { // Get math-alphanumeric control word 
+            let [anCode, chFolded] = foldMathAlphanumeric(ch.codePointAt(0), ch)
+            if (anCode)
+                cw = '\\' + anCode + chFolded
+        } else {
+            cw = (ch == '"') ? '&#x0022' : ch
+        }
+    }
+    return cw
+}
+
 function getCodePoints() {
     // display code points and symbol names for the input characters
     if (window.innerHeight < 1000)
@@ -4303,21 +4326,7 @@ function getCodePoints() {
         // Prepend tooltip symbol names defined for the on-screen buttons,
         // or derived from controlWords or from math alphanumerics
         if (!testing) {
-            let symbol = symbolTooltips[c]
-            if (!symbol) {
-                symbol = symbolNames[c]     // From controlWords
-                if (symbol) {
-                    symbol = '\\' + symbol
-                } else if (isAlphanumeric(c)) { // Get math-alphanumeric control word 
-                    let [anCode, chFolded] = foldMathAlphanumeric(c.codePointAt(0), c)
-                    if (anCode)
-                        symbol = '\\' + anCode + chFolded
-                } else {
-                    symbol = c
-                    if (c == '"')
-                        symbol = '&#x0022'
-                }
-            }
+            let symbol = getSymbolControlWord(c)
             tooltip = symbol + "<hr>" + tooltip
         }
         codepoints_HTML += '<div class="cp' + (invisibleChar ? ' invisible-char' : '') + '" data-tooltip="' + tooltip + '"><div class="p">' + cp + '</div><div class="c">' + c + '</div></div>'
@@ -4522,11 +4531,8 @@ function displayHistory() {
     //                  ↙ clone array before reversing
     let histo = hist.slice().reverse().slice(0,historySize).map(c => {
         // get tooltip data
-        let t = "";
-        if (symbolTooltips[c] != undefined && symbolTooltips[c] != "")
-            t = symbolTooltips[c];
-
-        return `<button class="unicode" data-tooltip="${t}">${c}</button>`;
+        let t = getSymbolControlWord(c)
+        return `<button type="button" class="unicode" data-tooltip="${t}">${c}</button>`;
     });
     document.getElementById('history').innerHTML = histo.join('');
 }

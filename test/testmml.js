@@ -1046,8 +1046,9 @@ function testHotKeys() {
         console.log('Home speech incorrect: ' + speechCurrent)
 
     // Test right-arrow navigation with insertion of q
+    let i
     speechCurrent = ''
-    for (let i = 0; i < rightArrowExpect.length; i++) {
+    for (i = 0; i < rightArrowExpect.length; i++) {
         testOutputHotKey('ArrowRight', rightArrowExpect[i])
         if (speechCurrent != speechExpect[i])
             console.log('Speech failed. result: ' + speechCurrent + " expect: " + speechExpect[i])
@@ -1065,7 +1066,7 @@ function testHotKeys() {
     }
 
     // More right-arrow navigation tests
-    for (let i = 0; i < rats.length; i++) {
+    for (i = 0; i < rats.length; i++) {
         testRightArrow(rats[i].uMath,
                        rats[i].homeExpect,
                        rats[i].rightArrowExpect,
@@ -1073,7 +1074,7 @@ function testHotKeys() {
     }
 
     // Check intra-equation build up, e.g., build up not at end of math zone
-    for (let i = 0; i < ieqbus.length; i++)
+    for (i = 0; i < ieqbus.length; i++)
         testIntraEqBuildUp(ieqbus[i].uMath, ieqbus[i].text, ieqbus[i].uMathExpect)
 
     // Test Alt+l toggle fixed-arg-element child argument indices
@@ -1153,6 +1154,16 @@ function testHotKeys() {
     input.value = '1/2='
     input.selectionStart = input.selectionEnd = 4
     testInputHotKey('=', false, false, '½=', 2, 2)
+
+    const cwch = [['𝓠', '\\mbfscrQ'], ['∈', '\\in'], ['ℋ', '\\mscrH'],]
+
+    for (i = 0; i < cwch.length; i++) {
+        let cw = getSymbolControlWord(cwch[i][0])
+        if (cw != cwch[i][1])
+            console.log('Symbol-to-control-word conversion failed: ' + cw)
+        else
+            console.log('Symbol-to-control-word conversion succeeded')
+    }
 }
 
 const mathDictation = [

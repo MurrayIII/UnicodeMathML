@@ -1071,7 +1071,6 @@ const controlWords = {
     'rparen':           ')',    // 0029
     'rrect':            '▢',	// 25A2
     'rtimes':           '⋊',    	// 22CA
-    'scriptH':          'ℋ',    // 210B
     'sdiv':             '⁄',	// 2044
     'sdivide':          '⁄',	// 2044
     'searrow':          '↘',	    // 2198

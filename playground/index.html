@@ -29,7 +29,7 @@
     <span>  <a id="about" href="https://github.com/MurrayIII/UnicodeMathML/" target="_blank" title="Alt+a">About</a> </span>
     <aside id="config" contenteditable="true" spellcheck="false"><h2>⚙︎</h2></aside>
     <script>
-        var buttons = [
+        const buttons = [
             {
                 label: 'Operators', symbols: {
                     '±': '\\pm, +-', '∓': '\\mp, -+', '×': '\\times', '⋅': '\\cdot',
@@ -271,13 +271,13 @@
         <span class="category" data-explanation="If you want to convert multiple characters at a time, enter them into the UnicodeMath input field, select them and click one of these buttons. Any characters that cannot be converted will remain unchanged.">Math styles</span>
         <input type="text" id="mathchar" placeholder="A" maxlength="2">
         <button id="mup" class="submit mathfont" data-tooltip="Normal upright \mupX">ABC</button>
-        <button id="mbf" class="submit mathfont" data-tooltip="Serif Bold \mbfX">𝐀𝐁𝐂</button>
-        <button id="mit" class="mathfont" data-tooltip="Serif Italic \mitX">𝐴𝐵𝐶</button>
-        <button id="mbfit" class="mathfont" data-tooltip="Serif Bold Italic \mbfitX">𝑨𝑩𝑪</button>
+        <button id="mbf" class="submit mathfont" data-tooltip="Bold \mbfX">𝐀𝐁𝐂</button>
+        <button id="mit" class="mathfont" data-tooltip="Italic \mitX">𝐴𝐵𝐶</button>
+        <button id="mbfit" class="mathfont" data-tooltip="Bold Italic \mbfitX">𝑨𝑩𝑪</button>
         <button id="msans" class="mathfont" data-tooltip="Sans-serif \msansX">𝖠𝖡𝖢</button>
         <button id="mbfsans" class="mathfont" data-tooltip="Sans-serif Bold \mbfsansX">𝗔𝗕𝗖</button>
-        <button id="mbfitsans" class="mathfont" data-tooltip="Sans-serif Italic \mbfitsansX">𝘈𝘉𝘊</button>
-        <button id="mitsans" class="mathfont" data-tooltip="Sans-serif Bold Italic \mitsansX">𝘼𝘽𝘾</button>
+        <button id="mbfitsans" class="mathfont" data-tooltip="Sans-serif Bold Italic \mbfitsansX">𝘈𝘉𝘊</button>
+        <button id="mitsans" class="mathfont" data-tooltip="Sans-serif Italic \mitsansX">𝘼𝘽𝘾</button>
         <button id="mscr" class="mathfont" data-tooltip="Script \mscrX">𝒜ℬ𝒞</button>
         <button id="mbfscr" class="mathfont" data-tooltip="Script Bold \mbfscrX">𝓐𝓑𝓒</button>
         <button id="mfrak" class="mathfont" data-tooltip="Fraktur \mfrakX">𝔄𝔅ℭ</button>
@@ -304,7 +304,7 @@
 
     <script>
         function openCategory(evt, categoryName) {
-            var i, categorytabcontent, categorytablinks;
+            let i, categorytabcontent, categorytablinks;
             categorytabcontent = document.getElementsByClassName("categorytabcontent");
             for (i = 0; i < categorytabcontent.length; i++) {
                 categorytabcontent[i].style.display = "none";
@@ -336,11 +336,11 @@
             Object.keys(syms).forEach(function (c) {
 
                 // extract styles, if available
-                var tooltip = syms[c];
-                var css = '';
+                let tooltip = syms[c];
+                let css = '';
                 if (syms[c] instanceof Array) {
-                    var tooltip = syms[c][0];
-                    var css = 'style="' + syms[c][1] + '"';
+                    tooltip = syms[c][0];
+                    css = 'style="' + syms[c][1] + '"';
                     syms[c] = syms[c][0];
                 }
                 document.write(`<button class="unicode" ${css} data-tooltip="${tooltip}">${c}</button>`)
@@ -348,12 +348,12 @@
             document.write(`</div>`)
             symbolTooltips = Object.assign({}, symbolTooltips, syms);
         });
-        var categoryButtonId = 'operators';
+        let categoryButtonId = 'operators';
 
         if (window.localStorage.getItem('categoryButtonId')) {
             categoryButtonId = window.localStorage.getItem('categoryButtonId');
         }
-        var ops = document.getElementById(categoryButtonId);
+        let ops = document.getElementById(categoryButtonId);
         ops.click();
     </script>
 
@@ -485,7 +485,7 @@
         var ummlParser = undefined;
 
         // load grammar from file, then generate parser
-        var client = new XMLHttpRequest();
+        let client = new XMLHttpRequest();
         client.open('GET', '../src/unicodemathml-parser.pegjs' + "?" + Math.random());
         client.onreadystatechange = function () {
             if (client.readyState === 4) {
