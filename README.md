@@ -350,6 +350,11 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Ctrl+c and Ctrl+x copy MathML for selected output-window nodes to the clipboard. Ctrl+x then deletes the selection. If the selection is collapsed (insertion point), the whole math zone is copied. The result can be pasted into Word via Ctrl+v. If the MathJax display mode is enabled, only Ctrl+c is supported and it copies MathML for the whole math zone.
 * Ctrl+v pastes MathML (in text/plain slot) at the current output-window selection
 * Initial drag and drop capability copies the current output-window selection to the drop target
+* Help button pops up help for app
+* Shade MathML argument containing the insertion point
+* Eliminate more superfluous mrows and support mrow-like elements, such as math and msqrt, with multiple children without an enclosing mrow
+* Implement Tab hierarchy for Tab navigation since there are so many button elements.
+* Replace many var declarations by set or const.
 
 ## MathML intent-attribute support:
 * Derivative and partial-derivative intent attributes are defined for Leipzig and Euler derivative notations.
@@ -357,10 +362,11 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * The \intent (ⓘ) and \arg (ⓐ) options are defined for enclosures, factorials, fences, atoms, sub/superscripts, and other expressions, thereby enabling the user to add intents explicitly to these constructs.
 * \abs for unambiguous entry of absolute value with the absolute-value intent attribute. \choose along with its intent attribute (binomial-coefficient). Intent attributes are included for UnicodeMath equation arrays, matrices, and determinants.
 * Default intents are defined for \abs, \choose, \cases, fences, n-ary objects, math-function objects, transpose objects, and double-struck italic symbols like differential d (ⅆ). This improves MathML readablity and supports round-tripping these concepts via MathML.
+* Context menu for user to add intents in output window.
 
 ## To do:
-* Improve drag-and-drop UI; delete source content unless Ctrl key is depressed while dragging
+* Improve drag-and-drop UI
 * Improve caret placement in output-display editing
 * Left-arrow navigation; Ctrl+arrow navigation. Polish right-arrow navigation
 * Shift+arrow selection
-* Write user manual
+* Improve Help content

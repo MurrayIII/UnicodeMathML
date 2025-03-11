@@ -18,7 +18,7 @@ var anchorNode
 var contextmenuNode
 var dataAttributes = false                  // True if data-arg attributes are present
 var focusNode
-var hist = [];
+var hist = [];                              // History stack
 var inputRedoStack = []
 var inputUndoStack = [{uMath: ''}]
 var inSelChange = false
@@ -28,8 +28,8 @@ var outputUndoStack = ['']
 var prevInputValue = "";
 var Safari = navigator.userAgent.indexOf('Macintosh') != -1
 var selectionChangeEventPending
-var selectionEnd                            // Used when editing input
-var selectionStart                          // Used when editing input
+var selectionEnd = 0                        // Used when editing input
+var selectionStart = 0                      // Used when editing input
 var shadedArgNode                           // Used for IP when editing output
 var speechCurrent = ''
 
@@ -956,6 +956,16 @@ function opAutocorrect(ip, delim) {
     return false;
 }
 
+input.addEventListener("focus", () => {
+    input.selectionStart = selectionStart
+    input.selectionEnd = selectionEnd
+})
+
+input.addEventListener("blur", () => {
+    selectionStart = input.selectionStart
+    selectionEnd = input.selectionEnd
+})
+
 input.addEventListener("keydown", function (e) {
     let x = document.getElementById(this.id + "autocomplete-list")
     if (handleAutocompleteKeys(x, e))
@@ -1101,8 +1111,8 @@ function insertAtCursorPos(symbols) {
             return
         }
     }
-    if (input.selectionStart || input.selectionStart == '0') {
-        let startPos = input.selectionStart;
+    let startPos = input.selectionStart;
+    if (startPos || startPos == '0') {
         let endPos = input.selectionEnd;
         input.value = input.value.substring(0, startPos)
             + symbols
@@ -3488,31 +3498,38 @@ if (mathchar) {
 }
 
 function moveToSibling(e) {
-    let tab = document.activeElement.id
-    if (tab != 'config' && tab != 'history' && tab != 'mathstyles')
-        return
-
-    e.preventDefault()
+    const areas = ['config', 'history', 'mathstyles']
     let sel = window.getSelection()
-    let node = e.key == 'ArrowLeft' || e.key == 'ArrowUp'
-             ? sel.anchorNode.previousElementSibling
-             : sel.anchorNode.nextElementSibling
-    if (node) {
-        switch (tab) {
-            case 'config':
-                speakConfigOption(node)
-                break
-            case 'history':
-                speak(node.textContent)
-                break
-            case 'mathstyles':
-                let text = node.getAttribute('data-tooltip')
-                text = text.substring(0, text.length - 1) + ' X'
-                speak(text)
-                break
-        }
-        sel.setBaseAndExtent(node, 0, node, 0)
+    let activeID = document.activeElement.id
+    let node = sel.anchorNode
+    if (!areas.includes(activeID) && (node.nodeName != 'BUTTON' || node.id))
+        return                              // Not a symbol button
+
+    node = e.key == 'ArrowLeft' || e.key == 'ArrowUp'
+             ? node.previousElementSibling
+             : node.nextElementSibling
+    if (!node) {
+        beep(1200)                          // No next/previous sibling
+        return
     }
+
+    switch (activeID) {
+        case 'config':
+            speakConfigOption(node)
+            break
+        case 'history':
+            speak(node.textContent)
+            break
+        case 'mathstyles':
+            let text = node.getAttribute('data-tooltip')
+            text = text.substring(0, text.length - 1) + ' X'
+            speak(text)
+            break
+        default:
+            speak(node.textContent)
+    }
+    e.preventDefault()
+    sel.setBaseAndExtent(node, 0, node, 0)
 }
 
 function speakConfigOption(node) {
@@ -3656,19 +3673,36 @@ document.addEventListener('keydown', function (e) {
             break
 
         case 'Tab':
-            const IDs = {
-                'help': { next: 'demos', prev: 'mathstyles' },
-                'demos': { next: 'speech', prev: 'help' },
-                'speech': { next: 'braille', prev: 'demos' },
-                'braille': { next: 'TeX', prev: 'speech' },
-                'TeX': { next: 'dictation', prev: 'braille' },
-                'dictation': { next: 'about', prev: 'TeX' },
-                'about': { next: 'input', prev: 'dictation' },
-                'input': { next: 'output', prev: 'about' },
-                'output': { next: 'config', prev: 'input' },
-                'config': { next: 'history', prev: 'output' },
-                'history': { next: 'mathstyles', prev: 'config' },
-                'mathstyles': { next: 'help', prev: 'history' },
+            let x = document.getElementsByClassName("autocomplete-items")
+            if (x && x.length)
+                return
+
+            const IDs = { //next   previous
+                'help': ['demos', 'examples'],
+                'demos': ['speech', 'help'],
+                'speech': ['braille', 'demos'],
+                'braille': ['TeX', 'speech'],
+                'TeX': ['dictation', 'braille'],
+                'dictation': ['about', 'TeX'],
+                'about': ['input', 'dictation'],
+                'input': ['output', 'about'],
+                'output': ['config', 'input'],
+                'config': ['history', 'output'],
+                'history': ['mathstyles', 'config'],
+                'mathstyles': ['operators', 'history'],
+                'operators': ['large', 'mathstyles'],
+                'large': ['build', 'operators'],
+                'build': ['invisibles', 'large'],
+                'invisibles': ['delimiters', 'build'],
+                'delimiters': ['arrows', 'invisibles'],
+                'arrows': ['logic', 'delimiters'],
+                'logic': ['scripts', 'arrows'],
+                'scripts': ['enclosures', 'logic'],
+                'enclosures': ['misc', 'scripts'],
+                'misc': ['accents', 'enclosures'],
+                'accents': ['greek', 'misc.'],
+                'greek': ['examples', 'accents'],
+                'examples': ['help', 'greek'],
             }
             e.preventDefault()
             id = document.activeElement.id
@@ -3676,28 +3710,41 @@ document.addEventListener('keydown', function (e) {
                 id = 'input'
 
             let nav = IDs[id]
-            id = e.shiftKey ? nav.prev : nav.next
+            id = e.shiftKey ? nav[1] : nav[0]
 
             node = document.getElementById(id)
+            let classname = node.className
+            if (classname && classname.startsWith('categorytablinks'))
+                node.click()                // Symbol gallery or examples
             node.focus()
             if (id == 'output')
                 node = node.firstElementChild
 
+            if (id == 'large' || id == 'build')
+                id += ' operators'
+            else if (id == 'misc')
+                id = 'miscellaneous operators'
             speak(id)
             if (!node)
                 break
-            if (node.localName == 'textarea')
-                input.selectionStart = input.selectionEnd = 0
-            else
+            if (node.localName == 'textarea') {
+                // Restore input selection
+                input.selectionStart = selectionStart
+                input.selectionEnd = selectionEnd
+                console.log('input')
+            } else {
                 sel.setBaseAndExtent(node, 0, node, 0)
-
+            }
             id = document.activeElement.id
             console.log('activeElement = ' + id)
             break
 
         case 'Enter':
             node = sel.anchorNode
-            switch (document.activeElement.id) {
+            console.log('Enter anchorNode = ' + node.nodeName)
+            id = document.activeElement.id
+            console.log('activeElement = ' + id)
+            switch (id) {
                 case 'config':
                     e.preventDefault()
                     if (node == document.getElementById("config")) {
@@ -3747,6 +3794,29 @@ document.addEventListener('keydown', function (e) {
                     }
                     return
 
+                case 'operators':
+                case 'large':
+                case 'build':
+                case 'invisible':
+                case 'delimiters':
+                case 'arrows':
+                case 'logic':
+                case 'scripts':
+                case 'enclosures':
+                case 'misc':
+                case 'accents':
+                case 'greek':
+                case 'examples':
+                    e.preventDefault()
+                    node.click()
+                    id = id[0].toUpperCase() + id.substring(1)
+                    node = document.getElementById(id)
+                    node = node.firstElementChild.firstElementChild
+                    sel.setBaseAndExtent(node, 0, node, 0)
+                    node.focus()
+                    speak(node.textContent) // Speak symbol
+                    return
+
                 default:
                     const cmds = {
                         'help': 'h', 'demos': 'p', 'speech': 's', 'braille': 'b',
@@ -3759,6 +3829,12 @@ document.addEventListener('keydown', function (e) {
                         event.key = key
                         event.altKey = true
                         document.dispatchEvent(event)
+                    } else if (node.nodeName == 'BUTTON') {
+                        e.preventDefault()
+                        input.selectionStart = selectionStart
+                        input.selectionEnd = selectionEnd
+                        sel.setBaseAndExtent(null, 0, null, 0)
+                        insertAtCursorPos(node.textContent)
                     }
             }
             break
@@ -4532,7 +4608,7 @@ function displayHistory() {
     let histo = hist.slice().reverse().slice(0,historySize).map(c => {
         // get tooltip data
         let t = getSymbolControlWord(c)
-        return `<button type="button" class="unicode" data-tooltip="${t}">${c}</button>`;
+        return `<button type="button" class="unicode" title="${t}">${c}</button>`;
     });
     document.getElementById('history').innerHTML = histo.join('');
 }

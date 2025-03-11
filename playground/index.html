@@ -91,7 +91,7 @@
                 }
             },
             {
-                label: 'Invisible', symbols: {
+                label: 'Invisibles', symbols: {
                     '2061': '\\funcapply: invisible function apply',
                     '2062': '\\itimes: invisible times',
                     '2063': '\\isep: invisible separator',
@@ -165,7 +165,7 @@
                 }
             },
             {
-                label: 'Misc.', symbols: {
+                label: 'Misc', symbols: {
                     'ⅅ': '\\Dd: differential D', 'ⅆ': '\\dd: differential d', 'ⅇ': '\\ee: exponential',
                     'ⅈ': '\\ii: imaginary unit', 'ⅉ': '\\jj: imaginary unit', '∞': '\\infty', '℘': '\\wp',
                     'ℏ': '\\hbar', 'ℜ': '\\Re', 'ℑ': '\Im', '∇': '\\nabla', '𝜕': '\\partial', '†': '\\dag',
@@ -288,15 +288,15 @@
     <br />
     <div class="categorytab">
         <button id="operators" class="categorytablinks" onclick="openCategory(event, 'Operators')"><span data-explanation='Common binary and relational operators'>Operators</span></button>
-        <button id="large" class="categorytablinks" onclick="openCategory(event, 'Large')"><span data-explanation='𝑁-ary (large) operators'>Large</span></button>
-        <button id="build" class="categorytablinks" onclick="openCategory(event, 'Build')"><span data-explanation='UnicodeMath build-up operators: hover over buttons for more information'>Build</span></button>
-        <button id="invisible" class="categorytablinks" onclick="openCategory(event, 'Invisible')"><span data-explanation='Function-apply, invisible times, spaces: hover over each button for more information'>Invisible</span></button>
+        <button id="large" class="categorytablinks" onclick="openCategory(event, 'Large')"><span data-explanation='𝑁-ary (large) operators'>LargeOps</span></button>
+        <button id="build" class="categorytablinks" onclick="openCategory(event, 'Build')"><span data-explanation='UnicodeMath build-up operators: hover over buttons for more information'>BuildOps</span></button>
+        <button id="invisibles" class="categorytablinks" onclick="openCategory(event, 'Invisibles')"><span data-explanation='Function-apply, invisible times, spaces: hover over each button for more information'>Invisibles</span></button>
         <button id="delimiters" class="categorytablinks" onclick="openCategory(event, 'Delimiters')"><span data-explanation='Vertical and horizontal brackets'>Delimiters</span></button>
         <button id="arrows" class="categorytablinks" onclick="openCategory(event, 'Arrows')">Arrows</button>
         <button id="logic" class="categorytablinks" onclick="openCategory(event, 'Logic')">Logic</button>
         <button id="scripts" class="categorytablinks" onclick="openCategory(event, 'Scripts')"><span data-explanation='Subscripts and superscripts (also use _ and ^)'>Scripts</span></button>
         <button id="enclosures" class="categorytablinks" onclick="openCategory(event, 'Enclosures')"><span data-explanation='Square roots, enclosures, phantoms, smashes'>Enclosures</span></button>
-        <button id="misc." class="categorytablinks" onclick="openCategory(event, 'Misc.')">Misc.</button>
+        <button id="misc" class="categorytablinks" onclick="openCategory(event, 'Misc')">Misc</button>
         <button id="accents" class="categorytablinks" onclick="openCategory(event, 'Accents')"><span data-explanation='Can use any accent from Unicode "Combining Diacritical Marks" and "Combining Diacritical Marks for Symbols"'>Accents</span></button>
         <button id="greek" class="categorytablinks" onclick="openCategory(event, 'Greek')">Greek</button>
         <button id="examples" class="categorytablinks" onclick="openCategory(event, 'Examples')">Examples</button>
@@ -319,22 +319,19 @@
         }
         var symbolTooltips = {};
         buttons.forEach(function (entry) {
-            document.write(`<div id=${entry['label']} class="categorytabcontent"><p>`);
+            document.write(`<div id=${entry['label']} contenteditable="true" class="categorytabcontent"><p>`);
             let syms = {};
             Object.keys(entry['symbols']).forEach(function (c) {
                 if (/^[0-9A-F]+$/i.test(c)) {
-
                     // hex code
                     syms[String.fromCodePoint("0x" + c)] = entry['symbols'][c];
                 } else {
-
                     // normal character
                     syms[c] = entry['symbols'][c];
                 }
             });
 
             Object.keys(syms).forEach(function (c) {
-
                 // extract styles, if available
                 let tooltip = syms[c];
                 let css = '';

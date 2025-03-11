@@ -1028,7 +1028,8 @@ const controlWords = {
     'prcue':            '≼',	    // 227C
     'prec':             '≺',	    // 227A
     'preccurlyeq':      '≼',	    // 227C
-    'preceq':           '≼',	    // 227C
+    'preceq':           '⪯',	// 2AAF
+    'precneq':          '⪱',	// 2AB1
     'precnsim':         '⋨',	    // 22E8
     'precsim':          '≾',    	// 227E
     'prime':            '′',	// 2032
@@ -1320,10 +1321,10 @@ const negs = {
     '≥': '≱',   // /\ge
     '≶': '≸',   // /\lessgtr
     '≷': '≹',   // /\gtrless
-    '≽': '⋡',   // /\prec
-    '≺': '⊀',   // /\succ
-    '≻': '⊁',   // /\preceq
-    '≼': '⋠',   // /\succeq
+    '≺': '⊀',   // /\prec
+    '≻': '⊁',   // /\succ
+    '⪯': '⪱',  // /\preceq
+    '⪰': '⪲',  // /\succeq
     '⊂': '⊄',  // /\subset
     '⊃': '⊅',  // /\supset
     '⊆': '⊈',  // /\subseteq
@@ -1332,13 +1333,11 @@ const negs = {
     '⊒': '⋣'    // /\sqsupseteq
 };
 
-// math font conversion
-// should match mathFonts variable in playground.js
+// Math-alphanumeric-style conversions
 const mathFonts = {
-
-    // courtesy of https://en.wikipedia.org/wiki/Mathematical_Alphanumeric_Symbols and
-    // sublime text's multiple cursors. The math style names are the unicode-math style names
-    // in https://mirrors.rit.edu/CTAN/macros/unicodetex/latex/unicode-math/unimath-symbols.pdf
+    // Courtesy of https://en.wikipedia.org/wiki/Mathematical_Alphanumeric_Symbols
+    // and sublime text's multiple cursors. The math style names are the unicode-math
+    // style names in https://texdoc.org/serve/unimath-symbols.pdf/0
 
     'A': {'mbf': '𝐀', 'mit': '𝐴', 'mbfit': '𝑨', 'msans': '𝖠', 'mbfsans': '𝗔', 'mitsans': '𝘈', 'mbfitsans': '𝘼', 'mscr': '𝒜', 'mbfscr': '𝓐', 'mfrak': '𝔄', 'mbffrak': '𝕬', 'mtt': '𝙰', 'Bbb': '𝔸'},
     'B': {'mbf': '𝐁', 'mit': '𝐵', 'mbfit': '𝑩', 'msans': '𝖡', 'mbfsans': '𝗕', 'mitsans': '𝘉', 'mbfitsans': '𝘽', 'mscr': 'ℬ', 'mbfscr': '𝓑', 'mfrak': '𝔅', 'mbffrak': '𝕭', 'mtt': '𝙱', 'Bbb': '𝔹'},
