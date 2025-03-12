@@ -1124,6 +1124,23 @@ function testHotKeys() {
     testOutputHotKey('q', '𝑎/𝑏 𝑞Ⓐ()=0')
     speechSynthesis.cancel()
 
+    // Test Tab navigation
+    input.value = '1/2𝜋'
+    input.selectionEnd = input.selectionStart = 3
+
+    //          →output →config →history
+    const keys = ['Tab', 'Tab', 'Tab', 'Enter', 'Enter']
+    for (i = 0; i < keys.length; i++) {
+        const event = new Event('keydown')
+        event.key = keys[i]
+        document.dispatchEvent(event)
+    }
+    if (input.value != '1/2→𝜋')
+        console.log('Tab navigation failed: ' + input.textContent)
+    else
+        console.log('Tab navigation succeeded')
+    input.value = ''
+
     // Test input Ctrl+z and Ctrl+y hot keys
     input.focus()
     inputUndoStack = [{uMath: ''}]
@@ -1157,6 +1174,7 @@ function testHotKeys() {
 
     const cwch = [['𝓠', '\\mbfscrQ'], ['∈', '\\in'], ['ℋ', '\\mscrH'],]
 
+    // Test symbol-to-control-word conversion
     for (i = 0; i < cwch.length; i++) {
         let cw = getSymbolControlWord(cwch[i][0])
         if (cw != cwch[i][1])

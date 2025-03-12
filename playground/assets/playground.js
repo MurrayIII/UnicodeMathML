@@ -32,6 +32,7 @@ var selectionEnd = 0                        // Used when editing input
 var selectionStart = 0                      // Used when editing input
 var shadedArgNode                           // Used for IP when editing output
 var speechCurrent = ''
+var uMathSave = ''                          // Used to restore output selection on focus
 
 const SELECTNODE = -1024
 
@@ -118,6 +119,11 @@ document.onselectionchange = () => {
         return                              // Not math output window
 
     // In math output window
+    if (uMathSave) {                        // Restore selection
+        setUnicodeMath(uMathSave)
+        uMathSave = ''
+        return
+    }
     removeSelAttributes()
     let offset = sel.anchorOffset
     anchorNode = sel.anchorNode
@@ -1114,13 +1120,14 @@ function insertAtCursorPos(symbols) {
     let startPos = input.selectionStart;
     if (startPos || startPos == '0') {
         let endPos = input.selectionEnd;
-        input.value = input.value.substring(0, startPos)
-            + symbols
-            + input.value.substring(endPos, input.value.length);
-        input.selectionEnd = input.selectionStart = startPos + symbols.length;
+        input.value = input.value.substring(0, startPos) + symbols +
+            input.value.substring(endPos);
+        input.selectionEnd = startPos + symbols.length;
     } else {
         input.value += symbols;
+        input.selectionEnd = input.value.length
     }
+    selectionStart = selectionEnd = input.selectionStart = input.selectionEnd
     input.focus();
     draw();
 }
@@ -2029,6 +2036,9 @@ function checkMathSelection(sel) {
         node = node.parentElement
     if (node.nodeName[0] != 'm')
         return null                         // Not MathML ⇒ not output window
+
+    if (uMathSave)
+        return sel                          // In MathML; return & restore selection
 
     let selanchor = node.getAttribute('selanchor')
     if (selanchor && sel.isCollapsed) {
@@ -3204,31 +3214,6 @@ output.addEventListener('contextmenu', (e) => {
     node.focus()
 })
 
-output.addEventListener('dragstart', (e) => {
-    // Drag selection as MathML in the 'text/plain' slot
-    let mathml = getMathSelection()
-    e.dataTransfer.setData("text/plain", mathml)
-    console.log('drag "' + mathml + '"')
-})
-
-output.addEventListener('dragenter', (e) => {
-    e.preventDefault()                      // Allow drop
-})
-
-output.addEventListener('dragover', (e) => {
-    e.preventDefault()                      // Allow drop
-})
-
-output.addEventListener('drop', (e) => {
-    e.preventDefault()
-    let sel = window.getSelection()
-    let range = sel.getRangeAt(0)
-    let mathml = e.dataTransfer.getData('text/plain')
-    if (pasteMathML(mathml, e.target, 0) && !e.ctrlKey)
-        deleteSelection(range)
-    console.log('drop "' + mathml + '"')
-})
-
 function handleContextMenu(e) {
     let x = document.getElementById('contextmenu')
     if (!x)
@@ -3264,6 +3249,35 @@ function handleContextMenu(e) {
     }
     return true
 }
+
+output.addEventListener('dragstart', (e) => {
+    // Drag selection as MathML in the 'text/plain' slot
+    let mathml = getMathSelection()
+    e.dataTransfer.setData("text/plain", mathml)
+    console.log('drag "' + mathml + '"')
+})
+
+output.addEventListener('dragenter', (e) => {
+    e.preventDefault()                      // Allow drop
+})
+
+output.addEventListener('dragover', (e) => {
+    e.preventDefault()                      // Allow drop
+})
+
+output.addEventListener('drop', (e) => {
+    e.preventDefault()
+    let sel = window.getSelection()
+    let range = sel.getRangeAt(0)
+    let mathml = e.dataTransfer.getData('text/plain')
+    if (pasteMathML(mathml, e.target, 0) && !e.ctrlKey)
+        deleteSelection(range)
+    console.log('drop "' + mathml + '"')
+})
+
+output.addEventListener("blur", () => {
+    uMathSave = getUnicodeMath(output.firstElementChild, true)
+})
 
 function readPaste() {
     // Try to read HTML with embedded MathML from the clipboard and paste
@@ -3403,7 +3417,6 @@ output.addEventListener("click", (e) => {
     }
     closeContextMenu()
     inSelChange = false
-    //removeSelAttributes()
     let sel = window.getSelection()
     let node = sel.anchorNode
     if (!node) {
@@ -3415,6 +3428,7 @@ output.addEventListener("click", (e) => {
 
     if (node.nodeName == 'DIV')
         return                          // </math>
+
     if (sel.isCollapsed && node.nodeName == '#text' && node.textContent == '⬚')
         setSelection(sel, node, SELECTNODE)
     if (outputUndoStack.length < 2)
@@ -3564,7 +3578,7 @@ function speakConfigOption(node) {
 
 
 document.addEventListener('keydown', function (e) {
-    // Include cases for Mac ASCII option hot keys
+    // Include Mac ASCII hot keys
     //   Alt + a or å     Alt + b or ∫     Alt + d or ∂     Alt + h or ˙
     //   Alt + m or µ     Alt + p or π     Alt + s or ß     Alt + t or †
     if (e.altKey) {
@@ -3675,7 +3689,7 @@ document.addEventListener('keydown', function (e) {
         case 'Tab':
             let x = document.getElementsByClassName("autocomplete-items")
             if (x && x.length)
-                return
+                return                      // Tab inserts selected autocomplete char
 
             const IDs = { //next   previous
                 'help': ['demos', 'examples'],
@@ -3713,6 +3727,8 @@ document.addEventListener('keydown', function (e) {
             id = e.shiftKey ? nav[1] : nav[0]
 
             node = document.getElementById(id)
+            if (!node)
+                break                       // Testing code
             let classname = node.className
             if (classname && classname.startsWith('categorytablinks'))
                 node.click()                // Symbol gallery or examples
@@ -3731,19 +3747,16 @@ document.addEventListener('keydown', function (e) {
                 // Restore input selection
                 input.selectionStart = selectionStart
                 input.selectionEnd = selectionEnd
-                console.log('input')
             } else {
                 sel.setBaseAndExtent(node, 0, node, 0)
             }
-            id = document.activeElement.id
-            console.log('activeElement = ' + id)
             break
 
         case 'Enter':
             node = sel.anchorNode
-            console.log('Enter anchorNode = ' + node.nodeName)
             id = document.activeElement.id
-            console.log('activeElement = ' + id)
+            if(!testing)
+                console.log('Enter anchorNode = ' + node.nodeName + ', activeElement = ' + id)
             switch (id) {
                 case 'config':
                     e.preventDefault()
@@ -3764,7 +3777,8 @@ document.addEventListener('keydown', function (e) {
                         else                    // Toggle checkbox
                             node.firstElementChild.checked = !node.firstElementChild.checked
                     }
-                    speakConfigOption(node)
+                    if(!testing)
+                        speakConfigOption(node)
                     return
 
                 case 'history':
@@ -3775,6 +3789,9 @@ document.addEventListener('keydown', function (e) {
                         sel.setBaseAndExtent(node, 0, node, 0)
                     } else {
                         // Insert current entry into input window
+                        input.selectionStart = selectionStart
+                        input.selectionEnd = selectionEnd
+                        sel.setBaseAndExtent(null, 0, null, 0)
                         insertAtCursorPos(node.textContent)
                     }
                     speak(node.textContent)     // Speak symbol
@@ -3783,18 +3800,17 @@ document.addEventListener('keydown', function (e) {
                 case 'mathstyles':
                     e.preventDefault()
                     if (node == document.getElementById("mathstyles")) {
-                        // Move to input field
+                        // Move to input element
                         node = node.children[1]
                         sel.setBaseAndExtent(node, 0, node, 0)
                         node.focus()
                     } else {
-                        // Set math style
+                        // Enter input symbol with math style
                         node.click()
-                        console.log('In math styles input')
                     }
                     return
 
-                case 'operators':
+                case 'operators':           // Symbol galleries
                 case 'large':
                 case 'build':
                 case 'invisible':
@@ -3808,9 +3824,10 @@ document.addEventListener('keydown', function (e) {
                 case 'greek':
                 case 'examples':
                     e.preventDefault()
-                    node.click()
+                    node.click()            // Activate gallery
                     id = id[0].toUpperCase() + id.substring(1)
                     node = document.getElementById(id)
+                    // Set focus on first gallery entry
                     node = node.firstElementChild.firstElementChild
                     sel.setBaseAndExtent(node, 0, node, 0)
                     node.focus()
@@ -3835,6 +3852,7 @@ document.addEventListener('keydown', function (e) {
                         input.selectionEnd = selectionEnd
                         sel.setBaseAndExtent(null, 0, null, 0)
                         insertAtCursorPos(node.textContent)
+                        selectionStart = selectionEnd += node.textContent.length
                     }
             }
             break
