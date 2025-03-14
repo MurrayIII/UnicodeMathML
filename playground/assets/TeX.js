@@ -138,11 +138,16 @@ function TeX(value, noAddParens) {
                         break;
                     }
                 }
-            } else if (value.firstElementChild.nodeName == 'mlabeledtr' &&
-                value.firstElementChild.childElementCount == 2 &&
-                value.firstElementChild.firstElementChild.firstElementChild.nodeName == 'mtext') {
-                // Numbered equation: convert to UnicodeMath like 𝐸=𝑚𝑐²#(20)
-                ret = '\\begin{equation}' + TeX(value.firstElementChild.lastElementChild.firstElementChild) +
+            } else if (value.firstElementChild.childElementCount == 2 &&
+                value.firstElementChild.firstElementChild.firstElementChild.nodeName == 'mtext' &&
+                (value.firstElementChild.nodeName == 'mlabeledtr' ||
+                    value.firstElementChild.firstElementChild.getAttribute('intent')
+                    == ':equation-label')) {
+                // Numbered equation
+                let eq = value.firstElementChild.firstElementChild.firstElementChild.textContent
+                if (eq && eq[0] == '(')
+                    eq = eq.substring(1, eq.length - 1)
+                ret = '\\begin{equation}\\label{eq' + eq + '}' + TeX(value.firstElementChild.lastElementChild) +
                     '\\end{equation}'
                 break;
             }

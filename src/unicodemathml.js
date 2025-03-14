@@ -3384,9 +3384,9 @@ function mtransform(dsty, puast) {
             // the vertical alignment of equations higher than 1em but native
             // renderers don't support <mlabeledtr>. MathJax doesn't support
             // this second method.
-            let attrsEqNo = { style: 'margin-right:1em;position:absolute;right:0em;bottom:2em' }
+            let attrsEqNo = {intent: ':equation-label', style: 'margin-right:1em;position:absolute;right:0em;bottom:2em' }
             return {math: withAttrs(attrs,
-                {mtable: withAttrs({ displaystyle: true }, {
+                {mtable: withAttrs({displaystyle: true}, {
                     mtr: withAttrs({id: id}, [
                         {mtd: withAttrs(attrsEqNo, {mtext: noAttr(value.eqnumber)})},
                         {mtd: noAttr(mtransform(dsty, value.content))}])})})}
@@ -4398,13 +4398,14 @@ function dump(value, noAddParens) {
                         break;
                     }
                 }
-            } else if (value.firstElementChild.nodeName == 'mlabeledtr' &&
-                value.firstElementChild.childElementCount == 2 &&
-                value.firstElementChild.firstElementChild.firstElementChild.nodeName == 'mtext') {
+            } else if (value.firstElementChild.childElementCount == 2 &&
+                value.firstElementChild.firstElementChild.firstElementChild.nodeName == 'mtext' &&
+                (value.firstElementChild.nodeName == 'mlabeledtr' ||
+                 value.firstElementChild.firstElementChild.getAttribute('intent')
+                    == ':equation-label')) {
                 // Numbered equation: convert to UnicodeMath like 𝐸=𝑚𝑐²#(20)
-                ret = dump(value.firstElementChild.lastElementChild) +
-                    '#' + value.firstElementChild.firstElementChild.firstElementChild.textContent;
-                break;
+                let eqno = value.firstElementChild.firstElementChild.firstElementChild.textContent
+                return dump(value.firstElementChild.lastElementChild) + '#' + eqno
             }
             ret = symbol + '(' + nary(value, '@', cNode) + ')';
             break;
@@ -4941,6 +4942,8 @@ function unicodemathml(unicodemath, displaystyle) {
         // Display unparsable string in red
         uast = {unicodemath: {content: [{expr: [{colored: {color: '#F00', of: {text: unicodemath}}}]}], eqnumber: null}}
         autoBuildUp = false                 // If called for autobuildup, return failure
+        if(!testing)
+            console.log(unicodemath + ' parse error: ' + error.name)
     }
     let jsonParse;                          // Initially undefined
     let puast;

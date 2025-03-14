@@ -1002,6 +1002,8 @@ input.addEventListener("keydown", function (e) {
                 // Toggle math bold/italic
                 e.preventDefault()
                 let chars = getInputSelection()
+                if (!chars)
+                    return
                 if (chars[0] == '"' && chars[chars.length - 1] == '"')
                     chars = chars.substring(1, chars.length - 1)
                 chars = boldItalicToggle(chars, e.key)
@@ -1751,6 +1753,10 @@ function insertNode(node, offset, nodeNew, nodeP) {
     if (offset && offset == node.childElementCount &&
           (node.nodeName != 'mrow' || !node.hasAttribute('intent'))) {
         if (node.nextElementSibling) {
+            if (isMathMLObject(nodeP) && node.nodeName == 'mrow') {
+                node.appendChild(nodeNew)   // E.g., inserting 𝑢 in 𝑑²𝑢/𝑑𝑥
+                return
+            }
             nodeP.insertBefore(nodeNew, node.nextElementSibling)
             return
         }
@@ -3618,6 +3624,7 @@ document.addEventListener('keydown', function (e) {
 
             case 'h':                       // Alt+h
             case '˙':
+            case 'F1':
                 document.getElementById("help").click()
                 break
 
@@ -3740,7 +3747,7 @@ document.addEventListener('keydown', function (e) {
                 id += ' operators'
             else if (id == 'misc')
                 id = 'miscellaneous operators'
-            speak(id)
+            speak(id == 'config' ? 'settings' : id)
             if (!node)
                 break
             if (node.localName == 'textarea') {

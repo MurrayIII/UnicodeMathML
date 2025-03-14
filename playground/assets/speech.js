@@ -795,6 +795,15 @@ function speech(value, noAddParens) {
 		}
 	}
 
+	function getNumberedEquation(node) {
+		let eqno = value.firstElementChild.firstElementChild.firstElementChild.textContent
+		if (!eqno)
+			return ''
+		if (eqno[0] == '(')
+			eqno = eqno.substring(1, eqno.length - 1)
+		return 'Equation ' + eqno + '⏳' + speech(value.firstElementChild.lastElementChild)
+	}
+
 	// Function called recursively to convert MathML to speech
 	let cNode = value.children.length
 	let intent
@@ -835,16 +844,23 @@ function speech(value, noAddParens) {
 			} else if (value.firstElementChild.nodeName == 'mlabeledtr' &&
 				value.firstElementChild.children.length == 2 &&
 				value.firstElementChild.firstElementChild.firstElementChild.nodeName == 'mtext') {
-				// Numbered equation: convert to UnicodeMath like 𝐸=𝑚𝑐²#(20)
-				let eqno = value.firstElementChild.firstElementChild.firstElementChild.textContent;
-				return speech(value.firstElementChild.lastElementChild.firstElementChild) +
-					'#' + eqno.substring(1, eqno.length - 1);
+				return getNumberedEquation(value)
 			} else if (value.parentElement.nodeName != 'mrow' ||
 				!value.previousElementSibling ||
 				value.previousElementSibling.nodeName != 'mo') {
-				symbol = '═⏳';				// 'lines'
-				sep = '━';					// 'line'
-				ret = cNode + ' ' + symbol;
+				// Follow MathCAT
+				symbol = '═⏳'				// 'lines'
+				if (cNode == 1) {
+					symbol = '━'			// 'line
+					if (value.firstElementChild.firstElementChild.getAttribute('intent')
+						== ':equation-label') {
+						ret = getNumberedEquation(value)
+						break
+					}
+				} else {
+					sep = '━';					// 'line'
+					ret = cNode + ' ' + symbol;
+				}
 				the = '';
 			}
 			if (ret.endsWith('☒'))
@@ -857,13 +873,21 @@ function speech(value, noAddParens) {
 
 		case 'mtr':
 			op = '⏳';
-			let intent = value.parentElement.getAttribute('intent')
+			intent = value.parentElement.getAttribute('intent')
 			if (intent && intent.endsWith('equations'))
 				op = '';
 			ret = nary(value, op, cNode)
 			break
 
 		case 'mtd':
+			intent = value.getAttribute('intent')
+			if (intent == ':equation-label') {
+				let eqno = value.firstElementChild.textContent
+				if (eqno[0] == '(')
+					eqno = eqno.substring(1, eqno.length - 1)
+				ret = 'Equation ' + eqno + '⏳'
+				break
+			}
 			ret = nary(value, '', cNode)
 			break
 

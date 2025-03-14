@@ -76,6 +76,7 @@ const mathML = [
     "<math display=\"block\"><menclose notation=\"box\"><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></menclose></math>",
     "<math display=\"block\"><mrow intent=\":nary(𝑐,,$naryand)\"><msub><mo>∲</mo><mi>𝑐</mi></msub><mrow arg=\"naryand\"><mi>𝑑</mi><mi>𝜙</mi></mrow></mrow><mo>≠</mo><mrow intent=\":nary(𝑐,,$naryand)\"><munder><mo>∑</mo><mi>𝑐</mi></munder><mrow arg=\"naryand\"><mi>𝑑</mi><mi>𝑥</mi></mrow></mrow><mo>=</mo><mn>0</mn></math>",
     "<math display=\"block\"><mo>∫</mo><msup><mi>𝑑</mi><mn>3</mn></msup><mi>𝑟</mi><mrow intent=\":fenced\"><mo>|</mo><mi>𝑟</mi><mo>⟩</mo></mrow><mrow intent=\":fenced\"><mo>⟨</mo><mrow><mi>𝑟</mi><mo>|</mo><mi>𝜓</mi></mrow><mo>⟩</mo></mrow><mo>,</mo><mrow intent=\":fenced\"><mo>⟨</mo><mrow><mi>𝜓</mi><mo>|</mo><mi>ℋ</mi><mo>|</mo><mi>𝜓</mi></mrow><mo>⟩</mo></mrow></math>",
+    "<math display=\"block\"><mtable displaystyle=\"true\"><mtr id=\"-3-\"><mtd intent=\":equation-label\" style=\"margin-right:1em;position:absolute;right:0em;bottom:2em\"><mtext>(3)</mtext></mtd><mtd><mi>𝐸</mi><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mtr></mtable></math>",
 ]
 
 const unicodeMath = [
@@ -153,6 +154,7 @@ const unicodeMath = [
     "▭(𝑎+𝑏)",
     "∲_𝑐 𝑑𝜙≠∑┬𝑐 𝑑𝑥=0",
     "∫𝑑³𝑟|𝑟⟩⟨𝑟│𝜓⟩,⟨𝜓│ℋ│𝜓⟩",
+    "𝐸=𝑚𝑐²#(3)",
 ]
 
 const mathSpeech = [
@@ -187,7 +189,7 @@ const mathSpeech = [
     "eigh + width phantom b + c , end phantom + d",
     "eigh phantom open 4 and eigh + b close c",
     "eigh phantom open 7 and eigh + b close c",
-    "cap E = m c squared , equation 20",
+    "Equation 20 , cap E = m c squared",
     "fraktur cap H",
     "eigh less than or equal to b less than or equal to c",
     "d psi open x comma t close over d t = 0",
@@ -236,6 +238,7 @@ const mathSpeech = [
     "box eigh + b , end box",
     "clockwise contour integral over c of d phi not equal sum over c of d x = 0",
     "integral d cubed r vertical bar r close angle bracket open angle bracket r vertical bar psi close angle bracket comma open angle bracket psi vertical bar script cap H vertical bar psi close angle bracket",
+    "Equation 3 , cap E = m c squared",
 ]
 
 const mathBrailles = [
@@ -313,6 +316,7 @@ const mathBrailles = [
     "⠫⠗⠸⠫⠁⠬⠃⠻",
     "⠮⠈⠫⠪⠢⠔⠻⠰⠉⠐⠙⠨⠋⠀⠌⠨⠅⠀⠐⠨⠠⠎⠩⠉⠻⠙⠭⠀⠨⠅⠀⠼⠴",
     "⠮⠙⠘⠒⠐⠗⠳⠗⠨⠨⠾⠨⠨⠷⠗⠳⠨⠽⠨⠨⠾⠠⠀⠨⠨⠷⠨⠽⠳⠈⠰⠰⠠⠓⠳⠨⠽⠨⠨⠾",
+    "⠷⠒⠾⠀⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆",
 ]
 
 const mathTeXs = [                          // Some cases aren't supported by TeX
@@ -345,7 +349,7 @@ const mathTeXs = [                          // Some cases aren't supported by Te
     '𝑎+\\hphantom{𝑏+𝑐}+𝑑',
     '𝑎⟡(4&𝑎+𝑏)𝑐',                           // TeX doesn't have this & next
     '𝑎⟡(7&𝑎+𝑏)𝑐',
-    '\\begin{equation}𝐸=𝑚𝑐^2\\end{equation}',
+    '\\begin{equation}\\label{eq20}𝐸=𝑚𝑐^2\\end{equation}',
     'ℌ',
     '𝑎≤𝑏≤𝑐',
     '\\frac{𝑑𝜓(𝑥,𝑡)}{𝑑𝑡}=0',
@@ -390,6 +394,7 @@ const mathTeXs = [                          // Some cases aren't supported by Te
     '\\boxed{𝑎+𝑏}',
     '∲_𝑐𝑑𝜙≠∑_𝑐𝑑𝑥=0',
     '∫𝑑^3𝑟|𝑟⟩⟨𝑟|𝜓⟩,⟨𝜓|ℋ|𝜓⟩',
+    '\\begin{equation}\\label{eq3}𝐸=𝑚𝑐^2\\end{equation}',
 ]
 
 function testMathMLtoUnicodeMath() {

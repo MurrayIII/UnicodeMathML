@@ -20,16 +20,18 @@
 </head>
 <body onresize="checkResize()" style="max-width:90em">
     <h1 id="heading">UnicodeMathML</h1>
-    <span>  <a id="help" href="help.html" target="_blank" title="Alt+h">Help</a> </span>
-    <button type="button" id="demos" onclick="startDemo()" title="Alt+p"><span> Demo</span></button>
-    <button type="button" id="speech" onclick="mathSpeak()" title="Alt+s"><span> Speak</span></button>
-    <button type="button" id="braille" onclick="mathBraille()" title="Alt+b"><span> Braille</span></button>
-    <button type="button" id="TeX" onclick="mathTeX()" title="Alt+t"><span> TeX</span></button>
-    <button type="button" id="dictation" onclick="startDictation()" title="Alt+d"><span> Dictate</span></button>
-    <span>  <a id="about" href="https://github.com/MurrayIII/UnicodeMathML/" target="_blank" title="Alt+a">About</a> </span>
+    <div>
+        <a id="help" href="help.html" target="_blank" title="Alt+h">Help</a>
+        <button type="button" id="demo" onclick="startDemo()" title="Alt+p"><span> Demo</span></button>
+        <button type="button" id="speech" onclick="mathSpeak()" title="Alt+s"><span> Speak</span></button>
+        <button type="button" id="braille" onclick="mathBraille()" title="Alt+b"><span> Braille</span></button>
+        <button type="button" id="TeX" onclick="mathTeX()" title="Alt+t"><span> TeX</span></button>
+        <button type="button" id="dictation" onclick="startDictation()" title="Alt+d"><span> Dictate</span></button>
+        <a id="about" href="https://github.com/MurrayIII/UnicodeMathML/" target="_blank" title="Alt+a">About</a>
+    </div>
     <aside id="config" contenteditable="true" spellcheck="false"><h2>⚙︎</h2></aside>
     <script>
-        const buttons = [
+        const buttons = [       // Define symbol galleries and examples
             {
                 label: 'Operators', symbols: {
                     '±': '\\pm, +-', '∓': '\\mp, -+', '×': '\\times', '⋅': '\\cdot',
@@ -236,7 +238,7 @@
             <td>
                 <form autocomplete="off" action="/action_page.php">
                     <div class="autocomplete" style="width:100%;">
-                        <textarea id="input" placeholder="Enter UnicodeMath here..." autocomplete="off" spellcheck="false"></textarea>
+                        <textarea id="input" placeholder="Enter UnicodeMath here..." autocomplete="off" spellcheck="false" autofocus></textarea>
                     </div>
                 </form>
                 <div id="codepoints"></div>
@@ -305,21 +307,25 @@
     <script>
         function openCategory(evt, categoryName) {
             let i, categorytabcontent, categorytablinks;
+
+            // Hide all galleries
             categorytabcontent = document.getElementsByClassName("categorytabcontent");
             for (i = 0; i < categorytabcontent.length; i++) {
                 categorytabcontent[i].style.display = "none";
             }
+            // Deactivate all galleries
             categorytablinks = document.getElementsByClassName("categorytablinks");
             for (i = 0; i < categorytablinks.length; i++) {
                 categorytablinks[i].className = categorytablinks[i].className.replace(" active", "");
             }
+            // Activate and display gallery with id = categoryName
             document.getElementById(categoryName).style.display = "block";
             evt.currentTarget.className += " active";
             window.localStorage.setItem('categoryButtonId', categoryName.toLowerCase());
         }
         var symbolTooltips = {};
         buttons.forEach(function (entry) {
-            document.write(`<div id=${entry['label']} contenteditable="true" class="categorytabcontent"><p>`);
+            document.write(`<div id=${entry['label']} contenteditable="true" class="categorytabcontent" spellcheck="off"><p>`);
             let syms = {};
             Object.keys(entry['symbols']).forEach(function (c) {
                 if (/^[0-9A-F]+$/i.test(c)) {
@@ -354,7 +360,7 @@
         ops.click();
     </script>
 
-    <!-- config -->
+    <!-- config (settings) -->
     <script>
         const defaultConfig = {             // Order same as configDescriptions
             splitInput: true,
