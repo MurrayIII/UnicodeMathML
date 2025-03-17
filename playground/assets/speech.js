@@ -795,15 +795,6 @@ function speech(value, noAddParens) {
 		}
 	}
 
-	function getNumberedEquation(node) {
-		let eqno = value.firstElementChild.firstElementChild.firstElementChild.textContent
-		if (!eqno)
-			return ''
-		if (eqno[0] == '(')
-			eqno = eqno.substring(1, eqno.length - 1)
-		return 'Equation ' + eqno + '⏳' + speech(value.firstElementChild.lastElementChild)
-	}
-
 	// Function called recursively to convert MathML to speech
 	let cNode = value.children.length
 	let intent
@@ -841,24 +832,16 @@ function speech(value, noAddParens) {
 						break;
 					}
 				}
-			} else if (value.firstElementChild.nodeName == 'mlabeledtr' &&
-				value.firstElementChild.children.length == 2 &&
-				value.firstElementChild.firstElementChild.firstElementChild.nodeName == 'mtext') {
-				return getNumberedEquation(value)
 			} else if (value.parentElement.nodeName != 'mrow' ||
 				!value.previousElementSibling ||
 				value.previousElementSibling.nodeName != 'mo') {
 				// Follow MathCAT
 				symbol = '═⏳'				// 'lines'
 				if (cNode == 1) {
-					symbol = '━'			// 'line
-					if (value.firstElementChild.firstElementChild.getAttribute('intent')
-						== ':equation-label') {
-						ret = getNumberedEquation(value)
-						break
-					}
+					sep = symbol = '━'		// 'line
+					ret = ''
 				} else {
-					sep = '━';					// 'line'
+					sep = '━';				// 'line'
 					ret = cNode + ' ' + symbol;
 				}
 				the = '';
@@ -866,7 +849,18 @@ function speech(value, noAddParens) {
 			if (ret.endsWith('☒'))
 				ret += value.firstElementChild.children.length + symbol;
 			for (let i = 0; i < cNode; i++) {
-				ret += sep + (i + 1) + '⏳' + speech(value.children[i]);
+				let node = value.children[i]
+				let text = ''
+				ret += sep + (i + 1) + '⏳'
+				if (node.nodeName == 'mlabeledtr') {
+					let text = node.firstElementChild.textContent
+					if (text[0] == '(' && text[text.length - 1] == ')')
+						text = text.substring(1, text.length - 1)
+					ret += 'label ' + text + '⏳' + speech(node.lastElementChild)
+					the = ''
+				} else {
+					ret += speech(node);
+				}
 			}
 			ret = the ? the + ret + '⏳¶' + symbol : ret
 			break
@@ -885,7 +879,7 @@ function speech(value, noAddParens) {
 				let eqno = value.firstElementChild.textContent
 				if (eqno[0] == '(')
 					eqno = eqno.substring(1, eqno.length - 1)
-				ret = 'Equation ' + eqno + '⏳'
+				ret = 'label ' + eqno
 				break
 			}
 			ret = nary(value, '', cNode)

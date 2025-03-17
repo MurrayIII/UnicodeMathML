@@ -2,36 +2,7 @@
 
 function MathMLtoBraille(mathML) {
 	const doc = getMathMLDOM(mathML);
-	let text = braille(doc, false, '');		// Get braille symbols
-	let ret = '';							// Collects speech
-	let cchCh;								// Code count of current char
-	let ch;									// Current char
-	let code;								// UTF-32 code of current char
-
-	if (isAsciiDigit(text[0]))				// Prefix numeric indicator since
-		ret = '⠼';							//  digit starts expression
-
-	// Convert symbols to braille chars
-	for (let i = 0; i < text.length; i += cchCh) {
-		code = text.codePointAt(i);
-		cchCh = code > 0xFFFF ? 2 : 1;
-		ch = text.substring(i, i + cchCh);
-		if (isAsciiDigit(ch) && ret[ret.length - 1] == '\u2800') {
-			// Need numeric indicator after braille space
-			ret += '⠼';
-		}
-		ch = symbolBraille(ch);
-		if (ch[0] == '\u2800' && ret[ret.length - 1] == '⠐') {
-			// Braille space returns to base line, so don't need '⠐'
-			ret = ret.substring(0, ret.length - 1);
-		}
-		ret += ch;
-	}
-	if (ret[ret.length - 1] == '⠐') {
-		// Don't need '⠐' at end either
-		ret = ret.substring(0, ret.length - 1);
-	}
-	return ret;
+	return getBraille(doc)
 }
 
 const symbolBrailleStrings = {
@@ -631,6 +602,39 @@ function styleBraille(mathStyle) {
 	}
 }
 
+function getBraille(node) {
+	let text = braille(node, true)
+	let ret = '';							// Collects speech
+	let cchCh;								// Code count of current char
+	let ch;									// Current char
+	let code;								// UTF-32 code of current char
+
+	if (isAsciiDigit(text[0]))				// Prefix numeric indicator since
+		ret = '⠼';							//  digit starts expression
+
+	// Convert symbols to braille chars
+	for (let i = 0; i < text.length; i += cchCh) {
+		code = text.codePointAt(i);
+		cchCh = code > 0xFFFF ? 2 : 1;
+		ch = text.substring(i, i + cchCh);
+		if (isAsciiDigit(ch) && ret[ret.length - 1] == '\u2800') {
+			// Need numeric indicator after braille space
+			ret += '⠼';
+		}
+		ch = symbolBraille(ch);
+		if (ch[0] == '\u2800' && ret[ret.length - 1] == '⠐') {
+			// Braille space returns to base line, so don't need '⠐'
+			ret = ret.substring(0, ret.length - 1);
+		}
+		ret += ch;
+	}
+	if (ret[ret.length - 1] == '⠐') {
+		// Don't need '⠐' at end either
+		ret = ret.substring(0, ret.length - 1);
+	}
+	return ret;
+}
+
 function braille(value, noAddParens, subsup) {
 	// Function called recursively to convert MathML to Nemeth math braille
 
@@ -713,8 +717,14 @@ function braille(value, noAddParens, subsup) {
 				value.parentElement.getAttribute('intent').endsWith('equations'))
 				op = '';
 			ret = '';
-			if (value.firstElementChild.firstElementChild.nodeName == 'mn')
+			if (value.firstElementChild.firstElementChild &&
+				value.firstElementChild.firstElementChild.nodeName == 'mn')
 				ret = '⠼';
+			else if (value.firstElementChild.getAttribute('intent') == ':equation-label') {
+				ret = braille(value.firstElementChild)
+				ret	+= op + braille(value.lastElementChild)
+				return ret
+			}
 			return ret + nary(value, op, cNode);
 
 		case 'mtd':

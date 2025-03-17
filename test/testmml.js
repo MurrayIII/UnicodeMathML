@@ -189,7 +189,7 @@ const mathSpeech = [
     "eigh + width phantom b + c , end phantom + d",
     "eigh phantom open 4 and eigh + b close c",
     "eigh phantom open 7 and eigh + b close c",
-    "Equation 20 , cap E = m c squared",
+    "line 1 , label 20 , cap E = m c squared",
     "fraktur cap H",
     "eigh less than or equal to b less than or equal to c",
     "d psi open x comma t close over d t = 0",
@@ -238,7 +238,7 @@ const mathSpeech = [
     "box eigh + b , end box",
     "clockwise contour integral over c of d phi not equal sum over c of d x = 0",
     "integral d cubed r vertical bar r close angle bracket open angle bracket r vertical bar psi close angle bracket comma open angle bracket psi vertical bar script cap H vertical bar psi close angle bracket",
-    "Equation 3 , cap E = m c squared",
+    "line 1 , label 3 , cap E = m c squared",
 ]
 
 const mathBrailles = [
@@ -1130,18 +1130,20 @@ function testHotKeys() {
     speechSynthesis.cancel()
 
     // Test Tab navigation
-    input.value = '1/2𝜋'
-    input.selectionEnd = input.selectionStart = 3
-
     //          →output →config →history
     const keys = ['Tab', 'Tab', 'Tab', 'Enter', 'Enter']
+
+    input.value = '1/2𝜋'
+    selectionEnd = selectionStart = 3
+    hist = ['→']
+
     for (i = 0; i < keys.length; i++) {
         const event = new Event('keydown')
         event.key = keys[i]
         document.dispatchEvent(event)
     }
     if (input.value != '1/2→𝜋')
-        console.log('Tab navigation failed: ' + input.textContent)
+        console.log('Tab navigation failed: ' + input.value)
     else
         console.log('Tab navigation succeeded')
     input.value = ''

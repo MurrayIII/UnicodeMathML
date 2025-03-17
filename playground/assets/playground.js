@@ -528,8 +528,8 @@ Object.entries(controlWords).forEach(([key, value]) => {
 //};
 
 // via https://stackoverflow.com/a/49458964
-function indentMathML(str) {
-    let formatted = '', indent = '';
+function indentMathML(str, indent = '') {
+    let formatted = ''
     str.split(/>\s*</).forEach(node => {
         if (node.match(/^\/\w/)) {
             indent = indent.substring(2);   // End tag decreases indent
@@ -1065,8 +1065,9 @@ input.addEventListener("keydown", function (e) {
         }
     }
     if (e.shiftKey && e.key == 'Enter') {   // Shift+Enter
-        //e.preventDefault()
-        //insertAtCursorPos('\u200B')       // Want VT for math paragraph
+        e.preventDefault()
+        insertAtCursorPos('\v')             // Want VT for math paragraph
+        return
     }
     if (e.key == 'F1') {
         e.preventDefault()
@@ -3597,10 +3598,14 @@ document.addEventListener('keydown', function (e) {
             case 'b':                       // Alt+b
             case '∫':
                 // Braille MathML
-                let mathML = isMathML(input.value)
-                    ? input.value
-                    : document.getElementById('output_source').innerText
-                let braille = MathMLtoBraille(mathML)
+                let braille = ''
+                if (isMathML(input.value)) {
+                    braille = MathMLtoBraille(input.value)
+                } else {
+                    let node = output.firstElementChild.nodeName == 'MJX-CONTAINER'
+                        ? getMathJaxMathMlNode() : output.firstElementChild
+                    braille = getBraille(node)
+                }
                 console.log('Math braille = ' + braille)
                 speechDisplay.innerText += '\n' + braille
                 break
@@ -3656,10 +3661,14 @@ document.addEventListener('keydown', function (e) {
                 if (speechSynthesis.speaking) {
                     speechSynthesis.cancel()
                 } else {
-                    let mathML = isMathML(input.value)
-                        ? input.value
-                        : document.getElementById('output_source').innerText
-                    let speech = MathMLtoSpeech(mathML)
+                    let speech = ''
+                    if (isMathML(input.value)) {
+                        speech = MathMLtoSpeech(input.value)
+                    } else {
+                        let node = output.firstElementChild.nodeName == 'MJX-CONTAINER'
+                            ? getMathJaxMathMlNode() : output.firstElementChild
+                        speech = getSpeech(node)
+                    }
                     console.log('Math speech = ' + speech)
                     speechDisplay.innerText = '\n' + speech
                     let utterance = new SpeechSynthesisUtterance(speech)
@@ -4511,12 +4520,24 @@ async function draw(undo) {
         }
     }
 
-    // get input(s) – depending on the ummlConfig.splitInput option, either...
-    let inp;
-    if (ummlConfig.splitInput && !input.value.startsWith("<math")) {
-        inp = input.value.split("\n");  // ...process each line of input separately...
+    // get input(s)
+    let inp
+    let mathPara = false
+
+    if (!input.value.startsWith("<math") && input.value.indexOf('\n') != -1) {
+        inp = input.value.split("\n")
+        for (let i = 0; i < inp.length; i++) {
+            if (!inp[i])
+                inp.splice(i, 1)            // Remove empty line
+        }
+        if (!ummlConfig.splitInput && inp.length > 1) {
+            // Math paragraph. In OfficeMath, this consists of 2 or more
+            // equations separated by \v's. Here use \n's since \v's don't
+            // display on different lines in the input textarea.
+            mathPara = true
+        }
     } else {
-        inp = [input.value];  // ...or treat the entire input as a UnicodeMath expression
+        inp = [input.value]
     }
 
     // compile inputs and accumulate outputs
@@ -4528,28 +4549,72 @@ async function draw(undo) {
     let output_pegjs_ast_HTML = "";
     let output_preprocess_ast_HTML = "";
     let output_mathml_ast_HTML = "";
-    let output_source_HTML = "";
-    inp.forEach(val => {
+    let output_source_HTML = ""
+    let iEq = 0                             // inp equation index
 
+    // TODO: This loop should be implemented in unicodemathml.js so that
+    // unicodemathml() can generate the MathML for a math paragraph.
+    inp.forEach(val => {
         // ignore empty lines
         if (val.trim() == "")
             return;
+        iEq++
 
-        // tell the user that unicodemath delimiters aren't required if they've
+        // tell user that UnicodeMath delimiters aren't required if they've
         // used them
-        if (val.includes("⁅") || val.includes("⁆")) {
+        if (val.includes("⁅") || val.includes("⁆"))
             output_HTML += '<div class="notice">Note that the UnicodeMath delimiters ⁅⋯⁆ you\'ve used in the expression below aren\'t required – ' + (ummlConfig.splitInput? 'each line of the' : 'the entire') + ' input is automatically treated as a UnicodeMath expression.</div>';
-        }
 
-        // mathml output
+        // MathML output
         let mathml, details;
         ({mathml, details} = unicodemathml(val, ummlConfig.displaystyle));
-        output_HTML += mathml;
-        if (isMathML(input.value)) {
-            output_source_HTML = MathMLtoUnicodeMath(input.value);
-        } else {
-            output_source_HTML += highlightMathML(escapeHTMLSpecialChars(indentMathML(mathml))) + "\n";
+
+        let indent = ''
+        let prefix
+
+        if (mathPara) {
+            // Math paragraph. Model as a table with appropriate attributes.
+            // MathJax uses <mlabeledtr> for equation numbers, while native
+            // rendering uses <mtr intent=":equation-label">
+            let i = mathml.indexOf(ummlConfig.forceMathJax ? '<mlabeledtr' : '<mtr')
+            let j = 16
+            if (iEq > 1) {                  // Append next equation MathML
+                indent = '     '
+                if (i != -1) {
+                    // Remove <math ...><mtable ...> from next equation
+                    mathml = mathml.substring(i)
+                } else {                    // No equation number
+                    prefix = '<mtr><mtd>'
+                    if (!ummlConfig.forceMathJax)
+                        prefix += '</mtd><mtd>'
+                    i = mathml.indexOf('>')
+                    mathml = prefix + mathml.substring(i + 1, mathml.length - 7) + '</mtd></mtr>'
+                    j = 0
+                }
+            } else if (i == -1) {  // First equation doesn't have equation #
+                prefix = `<math display="block"><mtable displaystyle="true" intent = ":math-paragraph"><mtr><mtd>`
+                if (!ummlConfig.forceMathJax)
+                    prefix += '</mtd><mtd>'
+                i = mathml.indexOf('>')
+                mathml = prefix + mathml.substring(i + 1, mathml.length - 7) + '</mtd></mtr>'
+                j = 0
+            } else {               // Insert math-paragraph property
+                mathml = mathml.substring(0, i - 1) + ' intent=":math-paragraph"' +
+                    mathml.substring(i - 1)
+            }
+            if (iEq < inp.length) {
+                // Remove </mtable></math> except from last equation
+                if (j)
+                    mathml = mathml.substring(0, mathml.length - j)
+            } else if (!mathml.endsWith('</mtable></math>')) {
+                mathml = mathml.substring(0, mathml.length - 7) + '</mtable></math>'
+            }
         }
+        output_HTML += mathml;
+        if (isMathML(input.value))
+            output_source_HTML = MathMLtoUnicodeMath(input.value);
+        else
+            output_source_HTML += highlightMathML(escapeHTMLSpecialChars(indentMathML(mathml, indent))) + "\n";
 
         // show parse tree and mathml ast
         if (details["intermediates"]) {
