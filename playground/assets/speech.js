@@ -850,7 +850,6 @@ function speech(value, noAddParens) {
 				ret += value.firstElementChild.children.length + symbol;
 			for (let i = 0; i < cNode; i++) {
 				let node = value.children[i]
-				let text = ''
 				ret += sep + (i + 1) + '⏳'
 				if (node.nodeName == 'mlabeledtr') {
 					let text = node.firstElementChild.textContent
@@ -1301,10 +1300,10 @@ function MathMLtoSpeech(mathML) {
 
 function getSpeech(doc) {
 	let text = speech(doc);					// Get speech symbols
-	return resolveSymbols(text);
+	return resolveSpeechSymbols(text);
 }
 
-function resolveSymbols(text) {
+function resolveSpeechSymbols(text) {
 	let ret = '';							// Collects speech
 	let cchText = text.length;
 	let ch;									// Current char

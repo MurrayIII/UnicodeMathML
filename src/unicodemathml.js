@@ -3384,7 +3384,7 @@ function mtransform(dsty, puast) {
             // the vertical alignment of equations higher than 1em but native
             // renderers don't support <mlabeledtr>. MathJax doesn't support
             // this second method.
-            let attrsEqNo = {intent: ':equation-label', style: 'margin-right:1em;position:absolute;right:0em;bottom:2em' }
+            let attrsEqNo = {intent: ':equation-label', style: 'margin-right:1em;position:absolute;right:0em' }
             return {math: withAttrs(attrs,
                 {mtable: withAttrs({displaystyle: true}, {
                     mtr: withAttrs({id: id}, [
@@ -4387,7 +4387,8 @@ function dump(value, noAddParens) {
     switch (value.localName) {
         case 'mtable':
             symbol = '■';
-            if (value.getAttribute('intent') == ':equations') {
+            intent = value.getAttribute('intent')
+            if (intent == ':equations') {
                 symbol = '█';
             } else if (value.parentElement.hasAttribute('intent')) {
                 intent = value.parentElement.getAttribute('intent');
@@ -4398,14 +4399,21 @@ function dump(value, noAddParens) {
                         break;
                     }
                 }
-            } else if (value.firstElementChild.childElementCount == 2 &&
-                value.firstElementChild.firstElementChild.firstElementChild.nodeName == 'mtext' &&
-                (value.firstElementChild.nodeName == 'mlabeledtr' ||
-                 value.firstElementChild.firstElementChild.getAttribute('intent')
-                    == ':equation-label')) {
-                // Numbered equation: convert to UnicodeMath like 𝐸=𝑚𝑐²#(20)
-                let eqno = value.firstElementChild.firstElementChild.firstElementChild.textContent
-                return dump(value.firstElementChild.lastElementChild) + '#' + eqno
+            } else if (intent == ':math-paragraph') {
+                for (let i = 0; i < cNode; i++) {
+                    let node = value.children[i] // <mtr> or <mlabeledtr>
+                    if (node.nodeName == 'mlabeledtr' ||
+                        node.firstElementChild.getAttribute('intent')
+                            == ':equation-label') {
+                        let text = node.firstElementChild.textContent
+                        ret += dump(node.lastElementChild) + '#' + text
+                    } else {
+                        ret += dump(node)
+                    }
+                    if (i < cNode - 1)
+                    ret += '\n'             // Separate eqs by \n
+                }
+                break
             }
             ret = symbol + '(' + nary(value, '@', cNode) + ')';
             break;

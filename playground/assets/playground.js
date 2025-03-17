@@ -206,7 +206,7 @@ function getFunctionName(node) {
     node = node.firstElementChild
     if (node.nodeName == 'mi' || (node.nodeName == 'msup' &&
             isAsciiDigit(node.lastElementChild.textContent))) {
-        return resolveSymbols(speech(node))
+        return speech(node)
     }
     return 'function'
 }
@@ -457,7 +457,7 @@ function mathTeX() {
 }
 
 function speak(s) {
-    s = resolveSymbols(s)
+    s = resolveSpeechSymbols(s)
     if(!testing)
         console.log("'" + s + "'")
     if (!speechSynthesis.pending && (!testing || speechCurrent == 'q')) {
@@ -1449,7 +1449,7 @@ function getName(node) {
         }
     }
     if (!name)
-        name = resolveSymbols(getCh(node.textContent, 0))
+        name = getCh(node.textContent, 0)
     return name
 }
 
@@ -1616,7 +1616,7 @@ function checkEmulationIntent(node) {
     let name = elementsWithLimits[node.nodeName]
     if (name)
         node = node.firstElementChild
-    let narySymbol = resolveSymbols(node.textContent)
+    let narySymbol = node.textContent
     return name ? narySymbol + ' with ' + name : 'indefinite ' + narySymbol
 }
 
@@ -1901,7 +1901,7 @@ function handleKeyboardInput(node, key, sel) {
             setSelAttributes(node, 'selanchor', offset)
             nodeP.innerHTML = nodeP.innerHTML // Force redraw
             refreshDisplays()
-            speak(resolveSymbols(key))
+            speak(key)
             return autocl
         }
         let symbol = resolveCW(node.textContent)
@@ -1977,7 +1977,7 @@ function handleKeyboardInput(node, key, sel) {
                 key = '\u202F'          // Use NNBSP to maintain ' ' in mml
             break
     }
-    speak(resolveSymbols(key))
+    speak(key)
     if (!nodeNewName) {
         // node textContent modified; no new node
         setSelAttributes(node, 'selanchor', -offset)
@@ -2458,7 +2458,7 @@ function checkAutocomplete(node) {
         closeAutocompleteList()
         nodeP.innerHTML = nodeP.innerHTML // Force redraw
         refreshDisplays()
-        speak(resolveSymbols(symbol))
+        speak(symbol)
         onac = true    // Suppress default speech, e.g., for 'mi'
     })
 }
@@ -3643,9 +3643,13 @@ document.addEventListener('keydown', function (e) {
             case 'µ':
                 // Toggle Unicode and MathML in input display
                 ksi = true
-                input.value = isMathML(input.value)
-                    ? MathMLtoUnicodeMath(input.value, true)
-                    : document.getElementById('output_source').innerText
+                if (isMathML(input.value)) {
+                    input.value = MathMLtoUnicodeMath(input.value, true)
+                } else {
+                    let node = output.firstElementChild.nodeName == 'MJX-CONTAINER'
+                        ? getMathJaxMathMlNode() : output.firstElementChild
+                    input.value = node.outerHTML
+                }
                 draw()
                 break
 
@@ -3960,7 +3964,7 @@ output.addEventListener('keydown', function (e) {
                     node = node.nextElementSibling
                 }
                 if (!offset)
-                    speak(resolveSymbols(speech(node)))
+                    speak(speech(node))
                 setSelectionEx(sel, node, offset, e)
                 keydownLast = 'Ctrl'
                 return
