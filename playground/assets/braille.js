@@ -700,14 +700,27 @@ function braille(value, noAddParens, subsup) {
 	switch (value.nodeName) {
 		case 'mtable':
 			sep = '⣍';						// 'inline next row'
-
-			if (value.firstElementChild.nodeName == 'mlabeledtr' &&
-				value.firstElementChild.children.length == 2 &&
-				value.firstElementChild.firstElementChild.firstElementChild.nodeName == 'mtext') {
+			let node = value.firstElementChild	// <mlabeledtr> or <mtr>
+			if (cNode == 1 && hasEqLabel(value)) {
 				// Numbered equation: convert to UnicodeMath like 𝐸=𝑚𝑐²#(20)
-				let eqno = value.firstElementChild.firstElementChild.firstElementChild.textContent;
-				return braille(value.firstElementChild.lastElementChild.firstElementChild) +
-					'#' + eqno.substring(1, eqno.length - 1);
+				let eqno = node.firstElementChild.textContent
+				return braille(node.lastElementChild) +	'⠀' + eqno
+			}
+			if (value.getAttribute('intent') == ':math-paragraph') {
+				for (let i = 0; i < cNode; i++) {
+					let node = value.children[i] // <mtr> or <mlabeledtr>
+					if (node.nodeName == 'mlabeledtr' ||
+						node.firstElementChild.getAttribute('intent')
+							== ':equation-label') {
+						let text = node.firstElementChild.textContent
+						ret += braille(node.lastElementChild) + '⠀' + text
+					} else {
+						ret += braille(node)
+					}
+					if (i < cNode - 1)
+						ret += sep
+				}
+				return ret
 			}
 			return nary(value, sep, cNode);
 
@@ -720,11 +733,6 @@ function braille(value, noAddParens, subsup) {
 			if (value.firstElementChild.firstElementChild &&
 				value.firstElementChild.firstElementChild.nodeName == 'mn')
 				ret = '⠼';
-			else if (value.firstElementChild.getAttribute('intent') == ':equation-label') {
-				ret = braille(value.firstElementChild)
-				ret	+= op + braille(value.lastElementChild)
-				return ret
-			}
 			return ret + nary(value, op, cNode);
 
 		case 'mtd':

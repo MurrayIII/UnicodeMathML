@@ -247,6 +247,15 @@ function removeOuterParens(ret) {
     return ret
 }
 
+function hasEqLabel(node) {
+    if (node.nodeName != 'mtable')
+        return false
+    node = node.firstElementChild           // <mtr> or <mlabeledtr>
+
+    return node.childElementCount == 2 && (node.nodeName == 'mlabeledtr' ||
+        node.firstElementChild.getAttribute('intent') == ':equation-label')
+}
+
 function checkCardinalityIntent(intent, miContent) {
     if (intent) {
         if (intent[0] == 'ⓒ')
@@ -4411,9 +4420,13 @@ function dump(value, noAddParens) {
                         ret += dump(node)
                     }
                     if (i < cNode - 1)
-                    ret += '\n'             // Separate eqs by \n
+                        ret += '\n'             // Separate eqs by \n
                 }
                 break
+            } else if (cNode == 1 && hasEqLabel(value)) {
+                // Numbered equation: convert to UnicodeMath like 𝐸=𝑚𝑐²#(20)
+                let eqno = value.firstElementChild.firstElementChild.firstElementChild.textContent
+                return dump(value.firstElementChild.lastElementChild) + '#' + eqno
             }
             ret = symbol + '(' + nary(value, '@', cNode) + ')';
             break;

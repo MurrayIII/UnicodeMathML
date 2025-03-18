@@ -837,11 +837,11 @@ function speech(value, noAddParens) {
 				value.previousElementSibling.nodeName != 'mo') {
 				// Follow MathCAT
 				symbol = '═⏳'				// 'lines'
+				sep = '━';					// 'line'
 				if (cNode == 1) {
-					sep = symbol = '━'		// 'line
+					symbol = '━'			// 'line
 					ret = ''
 				} else {
-					sep = '━';				// 'line'
 					ret = cNode + ' ' + symbol;
 				}
 				the = '';
@@ -850,16 +850,20 @@ function speech(value, noAddParens) {
 				ret += value.firstElementChild.children.length + symbol;
 			for (let i = 0; i < cNode; i++) {
 				let node = value.children[i]
-				ret += sep + (i + 1) + '⏳'
+				ret += sep + (i + 1)
+				if (sep != '━')
+					ret += '⏳'
 				if (node.nodeName == 'mlabeledtr') {
 					let text = node.firstElementChild.textContent
 					if (text[0] == '(' && text[text.length - 1] == ')')
 						text = text.substring(1, text.length - 1)
-					ret += 'label ' + text + '⏳' + speech(node.lastElementChild)
+					ret += 'with label ' + text + '⏳' + speech(node.lastElementChild)
 					the = ''
 				} else {
 					ret += speech(node);
 				}
+				if (sep == '━' && i < cNode - 1)
+					ret += '⏳'
 			}
 			ret = the ? the + ret + '⏳¶' + symbol : ret
 			break
@@ -878,7 +882,7 @@ function speech(value, noAddParens) {
 				let eqno = value.firstElementChild.textContent
 				if (eqno[0] == '(')
 					eqno = eqno.substring(1, eqno.length - 1)
-				ret = 'label ' + eqno
+				ret = 'with label ' + eqno
 				break
 			}
 			ret = nary(value, '', cNode)
