@@ -399,6 +399,7 @@ const mathTeXs = [                          // Some cases aren't supported by Te
     '∲_𝑐𝑑𝜙≠∑_𝑐𝑑𝑥=0',
     '∫𝑑^3𝑟|𝑟⟩⟨𝑟|𝜓⟩,⟨𝜓|ℋ|𝜓⟩',
     '\\begin{equation}\\label{eq3}𝐸=𝑚𝑐^2\\end{equation}',
+    '\\begin{equation}\\label{eq1}𝐸=𝑚𝑐^2\\end{equation}\\\\𝐸=𝑚𝑐²\\\\\\begin{equation}\\label{eq3}𝐸=𝑚𝑐^2\\end{equation}',
 ]
 
 function testMathMLtoUnicodeMath() {

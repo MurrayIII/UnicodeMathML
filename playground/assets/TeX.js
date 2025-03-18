@@ -121,11 +121,13 @@ function TeX(value, noAddParens) {
 
     switch (value.localName) {
         case 'mtable':
-            var symbol = 'matrix'
-            if (value.getAttribute('intent') == ':equations')
+            let symbol = 'matrix'
+            intent = value.getAttribute('intent')
+            if (intent == ':equations')
                 symbol = 'aligned'
             if (value.parentElement.firstElementChild.textContent == '{' &&
-                (value.parentElement.childElementCount == 2 || !value.parentElement.lastElementChild.textContent) &&
+                (value.parentElement.childElementCount == 2 ||
+                    !value.parentElement.lastElementChild.textContent) &&
                 value.parentElement.children[1] == value) {
                     ret = '\\begin{cases}' + nary(value, '\\\\', cNode) + '\\end{cases}'
                     break
@@ -138,17 +140,33 @@ function TeX(value, noAddParens) {
                         break;
                     }
                 }
-            } else if (value.firstElementChild.childElementCount == 2 &&
-                value.firstElementChild.firstElementChild.firstElementChild.nodeName == 'mtext' &&
-                (value.firstElementChild.nodeName == 'mlabeledtr' ||
-                    value.firstElementChild.firstElementChild.getAttribute('intent')
-                    == ':equation-label')) {
+            } else if (intent == ':math-paragraph') {
+                for (let i = 0; i < cNode; i++) {
+                    let node = value.children[i] // <mtr> or <mlabeledtr>
+                    if (node.nodeName == 'mlabeledtr' ||
+                        node.firstElementChild.getAttribute('intent')
+                        == ':equation-label') {
+                        let eq = node.firstElementChild.textContent
+                        if (eq && eq[0] == '(')
+                            eq = eq.substring(1, eq.length - 1)
+                        ret += '\\begin{equation}\\label{eq' + eq + '}' +
+                            TeX(value.firstElementChild.lastElementChild) +
+                            '\\end{equation}'
+
+                    } else {
+                        ret += dump(node)
+                    }
+                    if (i < cNode - 1)
+                        ret += '\\\\'             // Separate eqs by \\
+                }
+                break
+            } else if (cNode == 1 && hasEqLabel(value)) {
                 // Numbered equation
                 let eq = value.firstElementChild.firstElementChild.firstElementChild.textContent
                 if (eq && eq[0] == '(')
                     eq = eq.substring(1, eq.length - 1)
-                ret = '\\begin{equation}\\label{eq' + eq + '}' + TeX(value.firstElementChild.lastElementChild) +
-                    '\\end{equation}'
+                ret = '\\begin{equation}\\label{eq' + eq + '}' +
+                    TeX(value.firstElementChild.lastElementChild) + '\\end{equation}'
                 break;
             }
             ret = '\\begin{' + symbol + '}' + nary(value, '\\\\', cNode) + '\\end{' + symbol + '}'
