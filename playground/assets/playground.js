@@ -16,9 +16,9 @@ var output_source = document.getElementById("output_source");
 var activeTab = "source"
 var anchorNode
 var contextmenuNode
-var dataAttributes = false                  // True if data-arg attributes are present
+var dataAttributes = false           // True if data-arg attributes are present
 var focusNode
-var hist = [];                              // History stack
+var hist = [];                       // History symbol stack
 var inputRedoStack = []
 var inputUndoStack = [{uMath: ''}]
 var inSelChange = false
@@ -28,10 +28,10 @@ var outputUndoStack = ['']
 var prevInputValue = "";
 var Safari = navigator.userAgent.indexOf('Macintosh') != -1
 var selectionChangeEventPending
-var selectionEnd = 0                        // Used when editing input
-var selectionStart = 0                      // Used when editing input
-var shadedArgNode                           // Used for IP when editing output
-var uMathSave = ''                          // Used to restore output selection on focus
+var selectionEnd = 0                 // Used when editing in input window
+var selectionStart = 0               // Used when editing in input window
+var shadedArgNode                    // Used for IP when editing in output window
+var uMathSave = ''                   // Used to restore output selection on regaining focus
 
 const SELECTNODE = -1024
 
@@ -212,13 +212,15 @@ function getFunctionName(node) {
 
 function setSelectionEx(sel, node, offset, e) {
     e.preventDefault()
-    if (e.shiftKey)
+    if (e.shiftKey)                         // Extend selection
         sel.setBaseAndExtent(sel.anchorNode, sel.anchorOffset, node, offset)
-    else
+    else {
+                                            // Insertion point
+    }
         sel.setBaseAndExtent(node, offset, node, offset)
     if (testing)
         document.onselectionchange()
-    else if (Safari) {
+    else if (Safari) {                      // Safari doesn't support selection change event
         setTimeout(checkSelectionChangeEvent, 100)
         selectionChangeEventPending = true
     }
@@ -310,6 +312,7 @@ function setOutputSelection() {
 }
 
 function labelArgs(node) {
+    // Tree-walker callback function for labelFixedArgs()
     let cNode = node.childElementCount
     if (!cNode)
         return NodeFilter.FILTER_SKIP
@@ -333,7 +336,8 @@ function labelFixedArgs() {
     // set/remove the data-arg attribute on children of MathML elements that
     // have fixed numbers of arguments like <mfrac> (see mmlElemFixedArgs).
     // The value of the data-arg attribute is the 0-based child index, e.g.,
-    // '0' for an < mfrac > numerator.
+    // '0' for an < mfrac > numerator. This function isn't used currently
+    // but an argument index is used a lot in the OfficeMath implementations.
     let node = output.firstElementChild
     if (node.nodeName != 'math') {
         console.log("Can't label fixed args")
@@ -399,16 +403,16 @@ function startDemo() {
     nextEq();
     demoID = setInterval(nextEq, 3000);     // Display next equation every 3 seconds
     demoPause = false;                      // Not paused (pause by entering ' ')
-    let demoEq = document.getElementById('demos');
-    demoEq.style.backgroundColor = 'DodgerBlue'; // Show user demo mode is active
+    let demos = document.getElementById('demos');
+    demos.style.backgroundColor = 'DodgerBlue'; // Show user demo mode is active
 }
 
 function endDemo() {
-    let demoEq = document.getElementById('demos');
+    let demos = document.getElementById('demos');
     clearInterval(demoID);
     demoID = 0;
-    demoEq.style.backgroundColor = 'inherit';
-    demoEq.style.color = 'inherit';
+    demos.style.backgroundColor = 'inherit';
+    demos.style.color = 'inherit';
 }
 
 function nextEq() {
@@ -1053,7 +1057,7 @@ input.addEventListener("keydown", function (e) {
         return
     }
     if (demoID) {
-        let demoEq = document.getElementById('demos')
+        let demos = document.getElementById('demos')
         switch (e.key) {
             case 'ArrowRight':
                 nextEq()
@@ -1074,7 +1078,7 @@ input.addEventListener("keydown", function (e) {
                 } else {
                     demoPause = true
                     clearInterval(demoID)
-                    demoEq.style.backgroundColor = 'green'
+                    demos.style.backgroundColor = 'green'
                 }
                 return
         }
@@ -3501,7 +3505,7 @@ function moveToSibling(e) {
     let sel = window.getSelection()
     let activeID = document.activeElement.id
     let node = sel.anchorNode
-    if (!areas.includes(activeID) && (node.nodeName != 'BUTTON' || node.id))
+    if (demoID || !areas.includes(activeID) && (node.nodeName != 'BUTTON' || node.id))
         return                              // Not a symbol button
 
     node = e.key == 'ArrowLeft' || e.key == 'ArrowUp'
@@ -3660,10 +3664,10 @@ document.addEventListener('keydown', function (e) {
 
             default:
                 return
-        }
+        }           // switch (e.key) {}
         e.preventDefault()
         return
-    }
+    }               // if (e.altKey) {}
     let id
     let node
     let sel = window.getSelection()
@@ -3679,8 +3683,17 @@ document.addEventListener('keydown', function (e) {
         case 'Tab':
             let x = document.getElementsByClassName("autocomplete-items")
             if (x && x.length)
-                return                      // Tab inserts selected autocomplete char
+                return         // Tab inserted selected autocomplete char
 
+            // Since the UnicodeMathML Playground has myriad default Tab stops,
+            // users need a Tab hierarchy. Following are the Tab stops at the
+            // top of the hierarchy. The Enter key activates the current stop's
+            // facility. In an activated facility, the → & ← arrow keys move
+            // between the facility's options. The Enter key then runs the
+            // option. For an active symbol gallery, the Enter key inserts
+            // the current symbol. For most config settings, the Enter key
+            // toggles the current option. For menu stops, the Enter key sends
+            // the associated hot key.
             const IDs = { //next   previous
                 'help': ['demos', 'examples'],
                 'demos': ['speech', 'help'],
@@ -3813,8 +3826,9 @@ document.addEventListener('keydown', function (e) {
                 case 'accents':
                 case 'greek':
                 case 'examples':
+                    // Activate a symbol gallery
                     e.preventDefault()
-                    node.click()            // Activate gallery
+                    node.click()
                     id = id[0].toUpperCase() + id.substring(1)
                     node = document.getElementById(id)
                     // Set focus on first gallery entry
@@ -3831,12 +3845,15 @@ document.addEventListener('keydown', function (e) {
                     }
                     let key = cmds[id]
                     if (key) {
+                        // Send Help, Demo, etc., hot key
                         e.preventDefault()
                         const event = new Event('keydown')
                         event.key = key
                         event.altKey = true
                         document.dispatchEvent(event)
                     } else if (node.nodeName == 'BUTTON') {
+                        // Insert current symbol of active gallery into
+                        // input window
                         e.preventDefault()
                         input.selectionStart = selectionStart
                         input.selectionEnd = selectionEnd

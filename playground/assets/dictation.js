@@ -637,6 +637,14 @@ function dictationToUnicodeMath(dictation) {
 					// Convert, e.g., 1/3 to ⅓
 					ch = getUnicodeFraction(ch, result[i + 2]);
 					i += 2;
+				} else if (result.length > i + 1) {
+					if (ch == '/' && result[i + 1] in negs) {
+						ch = negs[result[i + 1]]
+						i++
+					} else if (chPrev + ch in mappedPair) {
+						ch = mappedPair[chPrev + ch]
+						result1 = result1.substring(0, result1.length - 1)
+					}
 				}
 			}
 			result1 += ch;
