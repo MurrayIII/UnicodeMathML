@@ -589,7 +589,60 @@ function dictationToUnicodeMath(dictation) {
 		if (nary == 'naryAnd') nary = '';
 		i++;
 	}	// for loop over dictation
-	return dictation;
+
+	let result = dictation
+	let quote = false
+	let result1 = '';
+	ch = '';
+
+	// Convert ASCII and lower-case Greek letters to math italic
+	// unless they comprise function names
+	for (let i = 0; i < result.length; i++) {
+		chPrev = ch;
+		ch = result[i];
+		if (ch == '"') {
+			quote = !quote
+			result1 += ch
+		} else if (quote) {
+			result1 += ch
+		} else if (isLcAscii(ch) || isUcAscii(ch)) {
+			let fn = ch
+			let j = i + 1
+			for (; j < result.length; j++) {
+				if (!isLcAscii(result[j]) && !isUcAscii(result[j]))
+					break;
+				fn += result[j]
+			}
+			if (result[j] == '\u2061' || isFunctionName(fn) || chPrev == '\\')
+				result1 += fn
+			else
+				result1 += italicizeCharacters(fn)
+			i = j - 1;
+		} else {
+			ch = italicizeCharacter(ch);     // Might be lc Greek
+			if (ch == result[i]) {           // Isn't
+				if (result.length > i + 1) { // Convert eg '^2 ' to '²'
+					let delim = result.length > i + 2 ? result[i + 2] : ' ';
+					let chScriptDigit = getSubSupDigit(result, i + 1, delim);
+					if (chScriptDigit) {
+						result1 += chScriptDigit;
+						i += (delim == ' ' && result.length > i + 2) ? 2 : 1;
+						continue;
+					}
+				}
+				if (result.length > i + 2 && isAsciiDigit(ch) &&
+					result[i + 1] == '/' && isAsciiDigit(result[i + 2]) &&
+					!isAsciiDigit(chPrev) && (result.length == i + 3 ||
+						!isAlphanumeric(result[i + 3]))) {
+					// Convert, e.g., 1/3 to ⅓
+					ch = getUnicodeFraction(ch, result[i + 2]);
+					i += 2;
+				}
+			}
+			result1 += ch;
+		}
+	}
+	return result1
 }
 
 root.dictationToUnicodeMath = dictationToUnicodeMath;

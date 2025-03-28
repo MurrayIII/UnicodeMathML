@@ -1096,7 +1096,7 @@ const controlWords = {
     'sqcap':            '⊓',	    // 2293
     'sqcup':            '⊔',	    // 2294
     'sqrt':             '√',	// 221A
-    'sqsupset':         '⊐',    	// 2290
+    'sqsubset':         '⊏',    	// 228F
     'sqsubseteq':       '⊑',    	// 2291
     'sqsupset':         '⊐',    	// 2290
     'sqsupseteq':       '⊒',    	// 2292

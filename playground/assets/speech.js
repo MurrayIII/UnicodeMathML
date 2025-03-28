@@ -6,6 +6,8 @@
 // generation can be guided by MathML intent attributes, which may allow one
 // to change the speech ordering from English.
 
+var speechCurrent = ''
+
 const symbolSpeechStrings = {
 	// This list includes speech strings for math symbols. In addition, it has
 	// some nonmath symbols used to represent connecting words like 'from' and
@@ -551,31 +553,6 @@ const mathstyles = {
 const ordinals = {
 	'1': 'first', '2': 'second', '3': 'third', '4': 'fourth', '5': 'fifth',
 	'6': 'sixth', '7': 'seventh', '8': 'eighth', '9': 'ninth', '10': 'tenth'
-}
-
-function symbolSpeech(ch) {
-	if (ch >= 'ℂ' && (ch <= 'ℴ' || ch > '〗')) {
-		// Get speech for math alphanumerics
-		let code = ch.codePointAt(0);
-		let mathstyle;
-		[mathstyle, ch] = foldMathAlphanumeric(code, ch);
-
-		if (mathstyle) {
-			if (ch > 'z')
-				ch = symbolSpeechStrings[ch]; // Greek
-				if (mathstyle == 'mit' || mathstyle == 'mup')
-					mathstyle = '';			  // Suppress 'italic'
-				else
-				mathstyle = mathstyles[mathstyle] + ' ';
-			let cap = inRange('A', ch, 'Z') ? 'cap ' : '';
-			if (ch == 'a' || ch == 'A')
-				ch = symbolSpeechStrings['A'];
-			return mathstyle + cap + ch + ' ';
-		}
-	}
-	// Get speech for operators and other symbols
-	let ret = symbolSpeechStrings[ch];
-	return ret ? ret + ' ' : ch;
 }
 
 const boxNotations = { 'left': '┠', 'right': '┨', 'top': '┯', 'bottom': '┷' }
@@ -1297,14 +1274,71 @@ function speech(value, noAddParens) {
 	return ret;
 }
 
-function MathMLtoSpeech(mathML) {
-	const doc = getMathMLDOM(mathML);
-	return getSpeech(doc.firstElementChild);
+function setSpeech() {
+	return new Promise(
+		function (resolve, reject) {
+			let synth = window.speechSynthesis;
+			let id = setInterval(() => {
+				if (synth.getVoices().length !== 0) {
+					resolve(synth.getVoices());
+					clearInterval(id);
+				}
+			}, 10);
+		}
+	)
 }
 
-function getSpeech(doc) {
-	let text = speech(doc);					// Get speech symbols
-	return resolveSpeechSymbols(text);
+function MathMLtoSpeech(mathML) {
+	const doc = getMathMLDOM(mathML);
+	return resolveSpeechSymbols(speech(doc.firstElementChild))
+}
+
+function speak(s) {
+	s = resolveSpeechSymbols(s)
+	if (!testing)
+		console.log("'" + s + "'")
+	if (!speechSynthesis.pending && (!testing || speechCurrent == 'q')) {
+		// Some build-up tests insert 'q'; if so, delete 'q'
+		speechCurrent = ''
+	} else {
+		if (speechCurrent) {
+			if (speechCurrent == s)
+				speechCurrent = ''
+			else
+				speechCurrent += ' '
+		}
+		speechSynthesis.cancel()
+	}
+	speechCurrent += s
+	let utterance = new SpeechSynthesisUtterance(speechCurrent)
+	if (voiceZira)
+		utterance.voice = voiceZira
+	speechSynthesis.speak(utterance)
+}
+
+function symbolSpeech(ch) {
+	if (ch >= 'ℂ' && (ch <= 'ℴ' || ch > '〗')) {
+		// Get speech for math alphanumerics
+		let code = ch.codePointAt(0);
+		let mathstyle;
+		[mathstyle, ch] = foldMathAlphanumeric(code, ch);
+
+		if (mathstyle) {
+			if (ch > 'z')
+				ch = symbolSpeechStrings[ch]; // Greek
+			if (mathstyle == 'mit' || mathstyle == 'mup')
+				mathstyle = '';			  // Suppress 'italic'
+			else
+				mathstyle = mathstyles[mathstyle] + ' ';
+			let cap = inRange('A', ch, 'Z') ? 'cap ' : '';
+			if (ch == 'a' || ch == 'A')
+				ch = symbolSpeechStrings['A'];
+			return mathstyle + cap + ch + ' ';
+		}
+	}
+	// Get speech for operators and other symbols
+	let ret = symbolSpeechStrings[ch];
+	return ret ? ret + ' ' : ch;
 }
 
 function resolveSpeechSymbols(text) {

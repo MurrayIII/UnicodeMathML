@@ -145,7 +145,7 @@ function TeX(value, noAddParens) {
                     let node = value.children[i] // <mtr> or <mlabeledtr>
                     if (node.nodeName == 'mlabeledtr' ||
                         node.firstElementChild.getAttribute('intent')
-                        == ':equation-label') {
+                            == ':equation-label') {
                         let eq = node.firstElementChild.textContent
                         if (eq && eq[0] == '(')
                             eq = eq.substring(1, eq.length - 1)

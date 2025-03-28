@@ -31,7 +31,6 @@ var selectionChangeEventPending
 var selectionEnd = 0                        // Used when editing input
 var selectionStart = 0                      // Used when editing input
 var shadedArgNode                           // Used for IP when editing output
-var speechCurrent = ''
 var uMathSave = ''                          // Used to restore output selection on focus
 
 const SELECTNODE = -1024
@@ -376,7 +375,9 @@ function getNewNode(symbol) {
 const mappedPair = {
     "+-": "\u00B1", "<=": "\u2264", ">=": "\u2265", "~=": "\u2245",
     "~~": "\u2248", "::": "\u2237", ":=": "\u2254", "<<": "\u226A",
-    ">>": "\u226B", "−>": "\u2192", "−+": "\u2213", "!!": "\u203C", "...": "…"
+    ">>": "\u226B", "−>": "\u2192", "−+": "\u2213", "!!": "\u203C",
+    "...": "…", '≯=': '≱', '≮=': '≰', '⊀=': '⪱', '⊁=': '⪲',
+    '⊄=': '⊈', '⊅=': '⊉',
 }
 
 const mappedSingle = {"-": "\u2212", "\'": "\u2032"}
@@ -454,29 +455,6 @@ function mathTeX() {
     let LaTeX = TeX(output.firstElementChild)
     console.log('Math TeX = ' + LaTeX)
     speechDisplay.innerText += '\n' + LaTeX
-}
-
-function speak(s) {
-    s = resolveSpeechSymbols(s)
-    if(!testing)
-        console.log("'" + s + "'")
-    if (!speechSynthesis.pending && (!testing || speechCurrent == 'q')) {
-        // Some build-up tests insert 'q'; if so, delete 'q'
-        speechCurrent = ''
-    } else {
-        if (speechCurrent) {
-            if (speechCurrent == s)
-                speechCurrent = ''
-            else
-                speechCurrent += ' '
-        }
-        speechSynthesis.cancel()
-    }
-    speechCurrent += s
-    let utterance = new SpeechSynthesisUtterance(speechCurrent)
-    if (voiceZira)
-        utterance.voice = voiceZira
-    speechSynthesis.speak(utterance)
 }
 
 function setUnicodeMath(uMath) {
@@ -3662,24 +3640,16 @@ document.addEventListener('keydown', function (e) {
             case 's':                       // Alt+s
             case 'ß':
                 // Speak MathML
-                if (speechSynthesis.speaking) {
-                    speechSynthesis.cancel()
+                let s = ''
+                if (isMathML(input.value)) {
+                    s = MathMLtoSpeech(input.value)
                 } else {
-                    let speech = ''
-                    if (isMathML(input.value)) {
-                        speech = MathMLtoSpeech(input.value)
-                    } else {
-                        let node = output.firstElementChild.nodeName == 'MJX-CONTAINER'
-                            ? getMathJaxMathMlNode() : output.firstElementChild
-                        speech = getSpeech(node)
-                    }
-                    console.log('Math speech = ' + speech)
-                    speechDisplay.innerText = '\n' + speech
-                    let utterance = new SpeechSynthesisUtterance(speech)
-                    if (voiceZira)
-                        utterance.voice = voiceZira
-                    speechSynthesis.speak(utterance)
+                    let node = output.firstElementChild.nodeName == 'MJX-CONTAINER'
+                        ? getMathJaxMathMlNode() : output.firstElementChild
+                    s = speech(node)
                 }
+                speak(s)
+                speechDisplay.innerText = '\n' + resolveSpeechSymbols(s)
                 break
 
             case 't':                       // Alt+t
@@ -4363,19 +4333,6 @@ if (!testing) {
 // Enable autocorrect and autocomplete
 autocomplete()
 
-function setSpeech() {
-    return new Promise(
-        function (resolve, reject) {
-            let synth = window.speechSynthesis;
-            let id = setInterval(() => {
-                if (synth.getVoices().length !== 0) {
-                    resolve(synth.getVoices());
-                    clearInterval(id);
-                }
-            }, 10);
-        }
-    )
-}
 // Use Zira for speech if she's available
 var voiceZira
 let s = setSpeech();
@@ -4476,6 +4433,7 @@ async function draw(undo) {
     }
     if (ummlConfig.tracing)
         output_trace.innerHTML = ""
+    uMathSave = ''
 
     //output.classList.add("hideAll");
 
@@ -4798,25 +4756,25 @@ $('button#insert_controlword').click(function () {
     insertAtCursorPos(symbol);
 })
 
-$('button#insert_dictation').click(function () {
-    let dictation = $('#dictation').val();
-    try {
-        let unicodeMath = dictationToUnicodeMath(dictation);
-        insertAtCursorPos(unicodeMath);
-    }
-    catch {
-        alert('Math dictation is unavailable');
-    }
-})
+//$('button#insert_dictation').click(function () {
+//    let dictation = $('#dictation').val();
+//    try {
+//        let unicodeMath = dictationToUnicodeMath(dictation);
+//        insertAtCursorPos(unicodeMath);
+//    }
+//    catch {
+//        alert('Math dictation is unavailable');
+//    }
+//})
 
-$('#dictation').keydown(function (e) {
-    if (e.key == 'Enter') {
-        // Prevent form from being submitted and simulate a click on the
-        // dictation button
-        e.preventDefault();
-        $('button#insert_dictation').click();
-    }
-})
+//$('#dictation').keydown(function (e) {
+//    if (e.key == 'Enter') {
+//        // Prevent form from being submitted and simulate a click on the
+//        // dictation button
+//        e.preventDefault();
+//        $('button#insert_dictation').click();
+//    }
+//})
 
 // math font conversion (mathFonts[] is defined in unicodemathml.js)
 $('#mathchar').on("change keyup paste", function (e) {
@@ -5017,52 +4975,7 @@ function initDictation() {
             let result = current.transcript;
             console.log(result);
             result = dictationToUnicodeMath(result);
-            let result1 = '';
-            let ch = '';
-            let chPrev;
-
-            // Convert ASCII and lower-case Greek letters to math italic
-            // unless they comprise function names
-            for (let i = 0; i < result.length; i++) {
-                chPrev = ch;
-                ch = result[i];
-                if (isLcAscii(ch) || isUcAscii(ch)) {
-                    let j = i + 1
-                    for ( ; j < result.length; j++) {
-                        if (!isLcAscii(result[j]) && !isUcAscii(result[j]))
-                            break;
-                    }
-                    if (result[j] == '\u2061') { // Function name?
-                        result1 += result.substring(i, j);
-                    } else {
-                        result1 += italicizeCharacters(result.substring(i, j))
-                    }
-                    i = j - 1;
-                } else {
-                    ch = italicizeCharacter(ch);     // Might be lc Greek
-                    if (ch == result[i]) {           // Isn't
-                        if (result.length > i + 1) { // Convert eg '^2 ' to '²'
-                            let delim = result.length > i + 2 ? result[i + 2] : ' ';
-                            let chScriptDigit = getSubSupDigit(result, i + 1, delim);
-                            if (chScriptDigit) {
-                                result1 += chScriptDigit;
-                                i += (delim == ' ' && result.length > i + 2) ? 2 : 1;
-                                continue;
-                            }
-                        }
-                        if (result.length > i + 2 && isAsciiDigit(ch) &&
-                            result[i + 1] == '/' && isAsciiDigit(result[i + 2]) &&
-                            !isAsciiDigit(chPrev) && (result.length == i + 3 ||
-                            !isAlphanumeric(result[i + 3]))) {
-                            // Convert, e.g., 1/3 to ⅓
-                            ch = getUnicodeFraction(ch, result[i + 2]);
-                            i += 2;
-                        }
-                    }
-                    result1 += ch;
-                }
-            }
-            insertAtCursorPos(result1);
+            insertAtCursorPos(result);
             speechDisplay.innerText += current.transcript
         }
     }
