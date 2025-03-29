@@ -3,7 +3,7 @@ var ksi = false
 var testing
 var selanchor
 var selfocus
-var useMfenced = 0
+var useMfenced = 0                          // Generate recommended MathML
 var emitDefaultIntents =
     typeof ummlConfig === "undefined" ||
     typeof ummlConfig.defaultIntents === "undefined" ||
@@ -1610,7 +1610,7 @@ function getScriptArg(dsty, value) {
 function getScript(limit, ref) {
     if (limit == undefined)
         return '';
-    if(!Array.isArray(limit)) {
+    if (!Array.isArray(limit)) {
         if (!limit.hasOwnProperty('expr') || !Array.isArray(limit.expr))
             return '';
         limit = limit.expr[0];

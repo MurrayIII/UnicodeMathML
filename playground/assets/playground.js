@@ -497,18 +497,6 @@ Object.entries(controlWords).forEach(([key, value]) => {
         symbolNames[value] = key
 })
 
-// escape mathml tags and entities, via https://stackoverflow.com/a/13538245
-//function escapeHTMLSpecialChars(str) {
-//    const replacements = {
-//        '&': '&amp;',
-//        '<': '&lt;',
-//        '>': '&gt;'
-//    };
-//    return str.replace(/[&<>]/g, tag => {
-//        return replacements[tag] || tag;
-//    });
-//};
-
 // via https://stackoverflow.com/a/49458964
 function indentMathML(str, indent = '') {
     let formatted = ''

@@ -474,7 +474,14 @@ function dictationToUnicodeMath(dictation) {
 							i--;
 						}
 					} else if (key == 'to' && nary == 'naryLim') {
-						unicodeMath = ')^';		// End lower limit; start upper
+						unicodeMath = ')^'		// End lower limit; start upper
+						let k = dictation.lastIndexOf('_(')
+						if (k != -1 && !needParens(dictation.substring(k + 2, i - 1))) {
+							unicodeMath = '^'	// Don't need parens
+							i--					// Remove opening paren
+							iRem--
+							dictation = dictation.substring(0, k + 1) + dictation.substring(k + 2)
+						}
 					} else if (unicodeMath == '▒') {
 						if (limit) {
 							unicodeMath = ") ";	// End limit subscript
@@ -590,16 +597,21 @@ function dictationToUnicodeMath(dictation) {
 		i++;
 	}	// for loop over dictation
 
+	// Polish the UnicodeMath extracted from dictation. Specifically, convert
+	// ASCII and lower-case Greek letters to math italic unless they comprise
+	// function names, and perform negation, mapped-pair, Unicode-fraction, and
+	// Unicode digit sub/superscript conversions. These conversions aren't
+	// needed for UnicodeMath converters, but they make the UnicodeMath look
+	// more like a mathematical notation, which is nice for use in email,
+	// programs, and plain-text applications in general.
 	let result = dictation
-	let quote = false
-	let result1 = '';
-	ch = '';
+	let quote = false						// No conversions inside double quotes
+	let result1 = ''						// Collects polished UnicodeMath
+	ch = ''									// No previous char
 
-	// Convert ASCII and lower-case Greek letters to math italic
-	// unless they comprise function names
 	for (let i = 0; i < result.length; i++) {
-		chPrev = ch;
-		ch = result[i];
+		chPrev = ch
+		ch = result[i]
 		if (ch == '"') {
 			quote = !quote
 			result1 += ch
@@ -617,17 +629,18 @@ function dictationToUnicodeMath(dictation) {
 				result1 += fn
 			else
 				result1 += italicizeCharacters(fn)
-			i = j - 1;
+			i = j - 1
 		} else {
 			ch = italicizeCharacter(ch);     // Might be lc Greek
 			if (ch == result[i]) {           // Isn't
-				if (result.length > i + 1) { // Convert eg '^2 ' to '²'
+				if (result.length > i + 1) {
+					// Convert eg '^2 ' to '²'
 					let delim = result.length > i + 2 ? result[i + 2] : ' ';
-					let chScriptDigit = getSubSupDigit(result, i + 1, delim);
+					let chScriptDigit = getSubSupDigit(result, i + 1, delim)
 					if (chScriptDigit) {
 						result1 += chScriptDigit;
-						i += (delim == ' ' && result.length > i + 2) ? 2 : 1;
-						continue;
+						i += (delim == ' ' && result.length > i + 2) ? 2 : 1
+						continue
 					}
 				}
 				if (result.length > i + 2 && isAsciiDigit(ch) &&
@@ -635,19 +648,21 @@ function dictationToUnicodeMath(dictation) {
 					!isAsciiDigit(chPrev) && (result.length == i + 3 ||
 						!isAlphanumeric(result[i + 3]))) {
 					// Convert, e.g., 1/3 to ⅓
-					ch = getUnicodeFraction(ch, result[i + 2]);
-					i += 2;
+					ch = getUnicodeFraction(ch, result[i + 2])
+					i += 2
 				} else if (result.length > i + 1) {
 					if (ch == '/' && result[i + 1] in negs) {
+						// Negation conversion
 						ch = negs[result[i + 1]]
 						i++
 					} else if (chPrev + ch in mappedPair) {
+						// Mapped-pair conversion
 						ch = mappedPair[chPrev + ch]
 						result1 = result1.substring(0, result1.length - 1)
 					}
 				}
 			}
-			result1 += ch;
+			result1 += ch
 		}
 	}
 	return result1
@@ -655,4 +670,4 @@ function dictationToUnicodeMath(dictation) {
 
 root.dictationToUnicodeMath = dictationToUnicodeMath;
 
-})(this);
+})(this)
