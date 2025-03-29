@@ -143,6 +143,7 @@ const dictationWords = {
 	'nineth':					'/9 ',		// 1/9
 	'nineths':					'/9 ',		// n/9
 	'no serif':					'style',	// Math sans-serif style (alternate speech)
+	'north':					'n',		// n (speech translates n to north 😒)
 	'not':						'/',		// / (for negation)
 	'nth':						'/n ',		// nth (for nth derivative)
 	'nu':						'ν',		// ν
@@ -475,27 +476,40 @@ function dictationToUnicodeMath(dictation) {
 						}
 					} else if (key == 'to' && nary == 'naryLim') {
 						unicodeMath = ')^'		// End lower limit; start upper
-						let k = dictation.lastIndexOf('_(')
-						if (k != -1 && !needParens(dictation.substring(k + 2, i - 1))) {
+						let k = dictation.lastIndexOf('_(', i)
+						if (k != -1 &&
+							!needParens(dictation.substring(k + 2, i - 1))) {
 							unicodeMath = '^'	// Don't need parens
 							i--					// Remove opening paren
 							iRem--
-							dictation = dictation.substring(0, k + 1) + dictation.substring(k + 2)
+							dictation = dictation.substring(0, k + 1) +
+								dictation.substring(k + 2)
 						}
 					} else if (unicodeMath == '▒') {
 						if (limit) {
 							unicodeMath = ") ";	// End limit subscript
 							limit = false;
 						} else if (nary == 'naryLim') {
-							unicodeMath = ' ';
-							nary = 'naryand';	// End nary limits
+							unicodeMath = ' '
+							nary = 'naryand'	// End nary limits
+							let k = dictation.lastIndexOf('^', i)
+							if (k != -1 &&
+								needParens(dictation.substring(k + 1, i - 1))) {
+								// Parenthesize compound upper limit
+								iRem++
+								i++
+								dictation = dictation.substring(0, k +1) + '(' +
+									dictation.substring(k + 1)
+								unicodeMath = ') '
+							}
 						} else if (derivOrder) {
 							unicodeMath = '(';	// E.g., df(
 							derivClose = true;	// Queue up corresponding ')'
 						} else if (ch2 == '\u2061') {
 							unicodeMath = '⒡';
 						}
-					} else if (mathStyle.length && (isAsciiDigit(unicodeMath) || isLcGreek(unicodeMath))) {
+					} else if (mathStyle.length && (isAsciiDigit(unicodeMath) ||
+						isLcGreek(unicodeMath))) {
 						unicodeMath = getMathAlphanumeric(unicodeMath, mathStyle);
 						mathStyle = [];
 					} else if (ch2 == 'h' && key == 'bar') {

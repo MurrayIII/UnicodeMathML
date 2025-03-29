@@ -1229,6 +1229,7 @@ const mathDictation = [
     'two thirds',
     'open interval from minus infinity to 3 end interval',
     'closed open interval from 3 to b end interval',
+    'Integral from A+B to C + D of DX.',
 ];
 
 const unicodeMathDictation = [
@@ -1264,6 +1265,7 @@ const unicodeMathDictation = [
     '⅔',                                                    // 29
     ']−∞,3[',                                               // 30
     '[3,𝑏)',                                                // 31
+    '∫_(𝑎+𝑏)^(𝑐+ⅆ) 𝑑𝑥',                                     // 32
 ];
 
 function testDictation() {
