@@ -376,16 +376,6 @@ function getNewNode(symbol) {
     return nodeNew
 }
 
-const mappedPair = {
-    "+-": "\u00B1", "<=": "\u2264", ">=": "\u2265", "~=": "\u2245",
-    "~~": "\u2248", "::": "\u2237", ":=": "\u2254", "<<": "\u226A",
-    ">>": "\u226B", "−>": "\u2192", "−+": "\u2213", "!!": "\u203C",
-    "...": "…", '≯=': '≱', '≮=': '≰', '⊀=': '⪱', '⊁=': '⪲',
-    '⊄=': '⊈', '⊅=': '⊉',
-}
-
-const mappedSingle = {"-": "\u2212", "\'": "\u2032"}
-
 ////////////////////
 // DEMO FUNCTIONS //
 ////////////////////
@@ -828,30 +818,6 @@ function setFormatMode(value, list) {
 
     Array.from(document.getElementsByClassName('formatmode-active')).map(t => t.classList.remove('formatmode-active'));
     document.getElementById(value).parentNode.classList.add('formatmode-active');
-}
-
-function getSubSupDigit(str, i, delim) {
-    // Return e.g., '²' for '^2 ' (str[i-1] = '^', str[i] = '2', delim = ' ')
-    let ch = str[i];
-    let op = str[i - 1];
-
-    if (!'_^'.includes(op) || !'+-=/ )]}'.includes(delim) || !/[0-9]/.test(ch))
-        return '';
-
-    // If the preceding op is the other subsup op, return '', e.g., for a_0^2
-    let opSupSub = op == '^' ? '_' : '^';
-    let j = i - 2
-
-    for (; j >= 0; j--) {
-        if (str[j] == opSupSub)
-            return '';
-        if (str[j] < '\u3017' && !isAsciiAlphanumeric(str[j]) && !isDoubleStruck(str[j]))
-            break;                          // Could allow other letters...
-    }
-    if (j == i - 2)
-        return '';                          // No base character(s)
-
-    return (op == '^') ? digitSuperscripts[ch] : digitSubscripts[ch];
 }
 
 ///////////////////////////////
@@ -4508,10 +4474,10 @@ async function draw(undo) {
     }
 
     // compile inputs and accumulate outputs
-    let m_parse = [];
-    let m_preprocess = [];
-    let m_transform = [];
-    let m_pretty = [];
+    let m_parse = 0
+    let m_preprocess = 0
+    let m_transform = 0
+    let m_pretty = 0
     let output_HTML = "";
     let output_pegjs_ast_HTML = "";
     let output_preprocess_ast_HTML = "";
@@ -4537,14 +4503,15 @@ async function draw(undo) {
         ({mathml, details} = unicodemathml(val, ummlConfig.displaystyle));
 
         let indent = ''
-        let prefix
 
         if (mathPara) {
             // Math paragraph. Model as a table with appropriate attributes.
             // MathJax uses <mlabeledtr> for equation numbers, while native
             // rendering uses <mtr intent=":equation-label">
+            let prefix
             let i = mathml.indexOf(ummlConfig.forceMathJax ? '<mlabeledtr' : '<mtr')
             let j = 16
+
             if (iEq > 1) {                  // Append next equation MathML
                 indent = '     '
                 if (i != -1) {
@@ -4596,31 +4563,19 @@ async function draw(undo) {
         // tally measurements
         let extractMeasurement = name => parseInt(details["measurements"][name], 10);
         if (details["measurements"]) {
-            m_parse.push(extractMeasurement("parse"));
-            m_preprocess.push(extractMeasurement("preprocess"));
-            m_transform.push(extractMeasurement("transform"));
-            m_pretty.push(extractMeasurement("pretty"));
+            m_parse += extractMeasurement("parse")
+            m_preprocess += extractMeasurement("preprocess")
+            m_transform += extractMeasurement("transform")
+            m_pretty += extractMeasurement("pretty")
         }
     });
 
     // display measurements
     if (!testing) {
-        let sum = a => a.reduce((a, b) => a + b, 0);
-        measurements_parse.innerHTML = sum(m_parse) + 'ms';
-        measurements_preprocess.innerHTML = sum(m_preprocess) + 'ms';
-        measurements_transform.innerHTML = sum(m_transform) + 'ms';
-        measurements_pretty.innerHTML = sum(m_pretty) + 'ms';
-        if (m_parse.length > 1) {
-            measurements_parse.title = m_parse.map(m => m + 'ms').join(" + ");
-            measurements_preprocess.title = m_preprocess.map(m => m + 'ms').join(" + ");
-            measurements_transform.title = m_transform.map(m => m + 'ms').join(" + ");
-            measurements_pretty.title = m_pretty.map(m => m + 'ms').join(" + ");
-        } else {
-            measurements_parse.title = "";
-            measurements_preprocess.title = "";
-            measurements_transform.title = "";
-            measurements_pretty.title = "";
-        }
+        measurements_parse.innerHTML = m_parse + 'ms';
+        measurements_preprocess.innerHTML = m_preprocess + 'ms';
+        measurements_transform.innerHTML = m_transform + 'ms';
+        measurements_pretty.innerHTML = m_pretty + 'ms';
     }
 
     // write outputs to dom (doing this inside the loop becomes excruciatingly
@@ -5009,8 +4964,6 @@ function startDictation() {
         alert("dictation recognition API not available");
         return;
     }
-    let dictate = document.getElementById('dictation')
-
     if (dictateButton.style.backgroundColor != 'DodgerBlue') {
         try {
             recognition.start()

@@ -970,18 +970,20 @@ async function renderMarkedUnicodemath(node) {
             await updateProgress(i+1, errors);
         }
     }
-    var nfail = 0;
-    var nsucceed = 0;
+    let nfail = 0;
+    let nsucceed = 0;
+
     for (const i in results) {
-        var r = results[i];
-        var c = cache[i];
+        let c = cache[i];
         if (c == undefined) {
             console.log("undefined " + i);
             nfail++;
             continue;
         }
-        var nr = r.length;
-        var nc = c.length;
+        let r = results[i];
+        let nr = r.length;
+        let nc = c.length;
+
         if (nr == nc && r == c) {
             nsucceed++;
             continue;

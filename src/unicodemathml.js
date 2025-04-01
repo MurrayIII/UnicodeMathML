@@ -35,6 +35,40 @@ const unicodeFractions = {
     "⅒": [1, 10]
 };
 
+const mappedSingle = { "-": "\u2212", "\'": "\u2032" }
+
+const mappedPair = {
+    "+-": "\u00B1", "<=": "\u2264", ">=": "\u2265", "~=": "\u2245",
+    "~~": "\u2248", "::": "\u2237", ":=": "\u2254", "<<": "\u226A",
+    ">>": "\u226B", "−>": "\u2192", "−+": "\u2213", "!!": "\u203C",
+    "...": "…", '≯=': '≱', '≮=': '≰', '⊀=': '⪱', '⊁=': '⪲',
+    '⊄=': '⊈', '⊅=': '⊉', '+−': '±', '−+': '∓',
+}
+
+function getSubSupDigit(str, i, delim) {
+    // Return e.g., '²' for '^2 ' (str[i-1] = '^', str[i] = '2', delim = ' ')
+    let ch = str[i];
+    let op = str[i - 1];
+
+    if (!'_^'.includes(op) || !'+-=/ )]}'.includes(delim) || !/[0-9]/.test(ch))
+        return '';
+
+    // If the preceding op is the other subsup op, return '', e.g., for a_0^2
+    let opSupSub = op == '^' ? '_' : '^';
+    let j = i - 2
+
+    for (; j >= 0; j--) {
+        if (str[j] == opSupSub)
+            return '';
+        if (str[j] < '\u3017' && !isAsciiAlphanumeric(str[j]) && !isDoubleStruck(str[j]))
+            break;                          // Could allow other letters...
+    }
+    if (j == i - 2)
+        return '';                          // No base character(s)
+
+    return (op == '^') ? digitSuperscripts[ch] : digitSubscripts[ch];
+}
+
 function getFencedOps(value) {
     let opClose = value.getAttribute('close')
     let opOpen = value.getAttribute('open')

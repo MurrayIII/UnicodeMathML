@@ -362,12 +362,22 @@ function getMathAlphanumeric(ch, mathStyle) {
 
 function dictationToUnicodeMath(dictation) {
 	// Translate dictated text to UnicodeMath
+	let i
+	let d = ''
 
-	if ('.?'.includes(dictation[dictation.length - 1])) {
-		// Discard trailing '.' or '?'
-		dictation = dictation.substring(0, dictation.length - 1);
+	// First convert dictation to lower case without '.,?' unless a digit
+	// precedes '.' or ','
+	for (i = 0; i < dictation.length; i++) {
+		let ch = dictation[i]
+		if (isUcAscii(ch)) {
+			d += ch.toLowerCase()
+		} else if (ch == '.' || ch == ',') {
+			if (i && isAsciiDigit(dictation[i - 1]))
+				d += ch
+		} else if (ch != '?')
+			d += ch
 	}
-	dictation = dictation.replaceAll(',', '').toLowerCase();
+	dictation = d
 
 	let cDerivOrder = 0;
 	let ch = '';
@@ -384,9 +394,8 @@ function dictationToUnicodeMath(dictation) {
 	let mathStyle = [];
 	let nary = '';
 
-	for (let i = 0; i < dictation.length; chPrev = ch) {
-		ch = dictation[i];
-
+	for (i = 0; i < dictation.length; chPrev = ch) {
+		ch = dictation[i]
 		if (i >= 2)
 			ch2 = dictation[i - 2];
 
@@ -657,6 +666,8 @@ function dictationToUnicodeMath(dictation) {
 						continue
 					}
 				}
+				if (ch in mappedSingle)
+					ch = mappedSingle[ch]
 				if (result.length > i + 2 && isAsciiDigit(ch) &&
 					result[i + 1] == '/' && isAsciiDigit(result[i + 2]) &&
 					!isAsciiDigit(chPrev) && (result.length == i + 3 ||

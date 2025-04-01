@@ -319,6 +319,7 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Instead of displaying a large error message for a syntatically incorrect operator, display the operator in red. The user may be entering the whole expression and doesn't want to see an error message, but might like a hint that the syntax is wrong. For example, display “(a^2+” as “<span style="color:red">(</span>𝑎² +” with '(' in red instead of an error message.
 * The operator sequence /" isn't treated as a negated quote. Else "distance"/"time" won't convert into a fraction.
 * Upgrade to MathJax 3, which is noticably faster than MathJax 2.7.5 and doesn't flash an intermediate display.
+* Replace all var declarations by set or const unless they are currently needed globally
 
 ## New features
 * The identity matrix and n×m matrix short cuts are implemented.
@@ -329,9 +330,9 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Variables are displayed in math italic in the Playground input as well as in the output.
 * Many more LaTeX control words are included. \pmatrix, \bmatrix, \Bmatrix, \nmatrix, \vmatrix, \cancel, \bcancel, and \xcancel are implemented. Unicode LaTeX math alphanumeric control words like \mitX for 𝑥 are supported.
 * Math dictation in English is supported
-* In dictation input, ASCII letters and lower-case Greek letters are converted to math italic unless they comprise a function name, simple digit subscripts and superscripts are converted to the corresponding Unicode characters, ane three-character numeric fractions are converted to Unicode fractions.
+* In dictation input, ASCII letters and lower-case Greek letters are converted to math italic unless they comprise a function name, simple digit subscripts and superscripts are converted to the corresponding Unicode characters, ane three-character numeric fractions are converted to Unicode fractions. Negated operators like /= are converted (/= → ≠) along with various operator pairs such as +- → ±. ASCII - and ' are converted to Unicode minus (U+2212) and prime (U+2032), respectively.
 * Most symbols in the Playground galleries have LaTeX control-word tooltips.
-* Alt+x hex-to-Unicode (and vice versa) hot key is implemented in the Playground input. The Ctrl+b hot key toggles the selected characters between math bold and not math bold. Similarly, the Ctrl+i hot key toggles the selected characters between math italic and not math italic.
+* Alt+x hex-to-Unicode (and vice versa) hot key is implemented in the Playground input and output windows. The Ctrl+b hot key toggles the selected characters between math bold and not math bold. Similarly, the Ctrl+i hot key toggles the selected characters between math italic and not math italic.
 * AST (abstract syntax tree) tabs appear only in _debug_ mode and only on screens wider than 786 pixels. The display changes to accomodate small screens, such as on mobile phones.
 * The class "unicodemath" and xmlns attributes are omitted on the <​math> tag. MathML and AST-tab indenting doesn't break a line between adjacent closing tags, thereby conserving screen height.
 * The symbol sets are collected into tabbed arrays with one set displayed at a time.
@@ -339,22 +340,22 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Settings options to define the display characters for ⅅⅆⅇⅈⅉ and ⊺.
 * The Alt+Enter hot key and Demo mode cycle through the Examples. The space key pauses/resumes the Demo mode. When paused, the left/right arrow key displays the previous/next equation. Clicking on the Demo button starts/stops the demo mode.
 * Pasting MathML into the input text area passes the MathML to the renderer, and converts the MathML to UnicodeMath, which it displays in the MathML output window.
-* Unicode numeric fractions like ⁵⁶/₆₂₅ are converted into standard fractions.
-* Math speech is added with support for some intent attributes, e.g., derivatives and intervals.
-* Nemeth math braille support is added.
-* Editing and formula autobuildup is supported in the output window provided native MathML rendering is active (not MathJax). The typography is not up to MathJax and the UI needs more polishing.
+* Unicode numeric fractions like ⁵⁶/₆₂₅ are converted into 2D inline fractions.
+* Math speech is added with support for some intent attributes, e.g., derivatives, n-ary elements, and intervals.
+* Nemeth math braille output is supported by a Braille menu button and by Alt+b
+* Unicode TeX output is supported by a TeX menu button and by Alt+t
+* In-place editing and formula autobuildup is supported in the output window provided native MathML rendering is active (not MathJax). The typography is not up to MathJax and the UI needs more polishing.
 * The input and output windows have multilevel undo executed by Ctrl+z. Input window has redo executed by Ctrl+y.
 * Edit-selection enclosure operators (Ⓐ for anchor, Ⓕ for focus) have been added to UnicodeMath that map to the MathML selection attributes selanchor and selfocus. This enables the current output-window selection to be represented and undone. Selection attributes are needed for accessible editing and for the output undo facility which represents previous editing states using a stack of UnicodeMath strings.
 * Formula autobuild-up tests have been added in testmml.js
-* Unicode TeX output is supported by a TeX menu button and by Alt+t
-* Ctrl+c and Ctrl+x copy MathML for selected output-window nodes to the clipboard. Ctrl+x then deletes the selection. If the selection is collapsed (insertion point), the whole math zone is copied. The result can be pasted into Word via Ctrl+v. If the MathJax display mode is enabled, only Ctrl+c is supported and it copies MathML for the whole math zone.
+* Ctrl+c and Ctrl+x copy MathML for selected output-window nodes to the clipboard. Ctrl+x then deletes the selection. If the selection is collapsed (insertion point), the whole math zone is copied. The result can be pasted into Word via Ctrl+v. For the most faithful copy into Word, use Ctrl+Shift+c, which creates MathML that Word understands better, e.g., uses mfenced instead of an mrow. If the MathJax display mode is enabled, only Ctrl+c is supported and it copies MathML for the whole math zone.
 * Ctrl+v pastes MathML (in text/plain slot) at the current output-window selection
 * Initial drag and drop capability copies the current output-window selection to the drop target
-* Help button pops up help for app
+* Help button launches a help page
 * Shade MathML argument containing the insertion point
 * Eliminate more superfluous mrows and support mrow-like elements, such as math and msqrt, with multiple children without an enclosing mrow
-* Implement Tab hierarchy for Tab navigation since there are so many button elements.
-* Replace many var declarations by set or const.
+* Implement a Tab hierarchy for Tab navigation since there are myriad default tab stops
+* Support simplified OfficeMath math paragraph using an mtable
 
 ## MathML intent-attribute support:
 * Derivative and partial-derivative intent attributes are defined for Leipzig and Euler derivative notations.
