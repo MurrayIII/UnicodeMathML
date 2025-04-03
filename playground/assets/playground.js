@@ -1,17 +1,8 @@
 'use strict';
 
-var dictateButton = document.getElementById('dictation')
 var codepoints = document.getElementById("codepoints");
-var config = document.getElementById("config");
 var input = document.getElementById("input");
-var measurements_parse = document.getElementById("measurements_parse");
-var measurements_pretty = document.getElementById("measurements_pretty");
-var measurements_transform = document.getElementById("measurements_transform");
 var output = document.getElementById("output");
-var output_mathml_ast = document.getElementById("output_mathml_ast");
-var output_pegjs_ast = document.getElementById("output_pegjs_ast");
-var output_preprocess_ast = document.getElementById("output_preprocess_ast");
-var output_source = document.getElementById("output_source");
 
 var activeTab = "source"
 var anchorNode
@@ -4379,6 +4370,62 @@ function getCodePoints() {
     return codepoints_HTML
 }
 
+function getMathParaMtr(mathml, iEq, cEq, cAmp) {
+    // Math paragraph. Model as a table with appropriate attributes.
+    // MathJax uses <mlabeledtr> for equation numbers, while native
+    // rendering uses <mtr intent=":equation-label">. This function
+    // returns the mtr for equation iEq. The first includes the
+    // <math><mtable> and the last includes the </mtable></math>.
+    let prefix
+    let i = mathml.indexOf(ummlConfig.forceMathJax ? '<mlabeledtr' : '<mtr')
+    let j = 16
+
+    if (iEq > 1) {                  // Append next equation MathML
+        if (i != -1) {
+            // Remove <math ...><mtable ...> from next equation
+            mathml = mathml.substring(i)
+        } else {                    // No equation number: insert empty label
+            if (ummlConfig.forceMathJax)
+                prefix = '<mlabeledtr><mtd><mtext></mtext></mtd><mtd>'
+            else
+                prefix = '<mtr><mtd style="margin-right:1em;position:absolute;right:0em"><mtext></mtext></mtd><mtd>'
+            i = mathml.indexOf('>')
+            mathml = prefix + mathml.substring(i + 1, mathml.length - 7) + '</mtd>'
+                + (ummlConfig.forceMathJax ? '</mlabeledtr>' : '</mtr>')
+            j = 0
+        }
+    } else if (i == -1) {  // First equation doesn't have equation #
+        prefix = `<math display="block"><mtable displaystyle="true" intent = ":math-paragraph"><mtr><mtd>`
+        if (!ummlConfig.forceMathJax)
+            prefix += '</mtd><mtd>'
+        i = mathml.indexOf('>')
+        mathml = prefix + mathml.substring(i + 1, mathml.length - 7) + '</mtd></mtr>'
+        j = 0
+    } else {               // Insert math-paragraph property
+        mathml = mathml.substring(0, i - 1) + ' intent=":math-paragraph"' +
+            mathml.substring(i - 1)
+    }
+    if (iEq < cEq) {
+        // Remove </mtable></math> except from last equation
+        if (j)
+            mathml = mathml.substring(0, mathml.length - j)
+    } else if (!mathml.endsWith('</mtable></math>')) {
+        mathml = mathml.substring(0, mathml.length - 7) + '</mtable></math>'
+    }
+    if (cAmp == cEq) {                      // Align at ＆'s
+        i = mathml.indexOf('＆')
+        // <mo>＆</mo> → </mtd><mtd>
+        mathml = mathml.substring(0, i - 4) + '</mtd><mtd>' + mathml.substring(i + 6)
+        if (!ummlConfig.forceMathJax) {
+            i = mathml.lastIndexOf('<mtd>', i - 4)
+            mathml = mathml.substring(0, i + 4) +
+                ' style="padding-left:0;text-align:right;float:right;display:math"' +
+                mathml.substring(i + 4)
+        }
+    }
+    return mathml
+}
+
 // compile and draw mathml code from input field
 async function draw(undo) {
 
@@ -4410,6 +4457,14 @@ async function draw(undo) {
 
     // if the input field is empty (as it is in the beginning), avoid doing much
     // with its contents
+    let measurements_parse = document.getElementById("measurements_parse");
+    let measurements_pretty = document.getElementById("measurements_pretty");
+    let measurements_transform = document.getElementById("measurements_transform");
+    let output_mathml_ast = document.getElementById("output_mathml_ast");
+    let output_pegjs_ast = document.getElementById("output_pegjs_ast");
+    let output_preprocess_ast = document.getElementById("output_preprocess_ast");
+    let output_source = document.getElementById("output_source");
+
     if (input.value == "") {
         output.innerHTML = "";
         output_pegjs_ast.innerHTML = "";
@@ -4456,6 +4511,7 @@ async function draw(undo) {
     // get input(s)
     let inp
     let mathPara = false
+    let cAmp = 0
 
     if (!input.value.startsWith("<math") && input.value.indexOf('\n') != -1) {
         inp = input.value.split("\n")
@@ -4466,13 +4522,34 @@ async function draw(undo) {
         if (!ummlConfig.splitInput && inp.length > 1) {
             // Math paragraph. In OfficeMath, this consists of 2 or more
             // equations separated by \v's. Here use \n's since \v's don't
-            // display on different lines in the input textarea.
+            // display on different lines in the input textarea. Count
+            // equations with '&' alignment marks. If all equations have
+            // the marks, getMathParaMtr() will align the equations.
             mathPara = true
+            let cParen = 0
+
+            for (let k = 0; k < inp.length; k++) {
+                let u = ''
+                let uMath = inp[k]
+
+                for (let i = 0; i < uMath.length; i++) {
+                    if (uMath[i] == '(')    // Track paren nesting
+                        cParen++
+                    else if (uMath[i] == ')')
+                        cParen--
+                    if (!cParen && uMath[i] == '&') {
+                        u += '＆'            // Switch to full-width & for
+                        cAmp++              //  math paragraph alignment
+                    } else {
+                        u += uMath[i]
+                    }
+                }
+                inp[k] = u
+            }
         }
     } else {
         inp = [input.value]
     }
-
     // compile inputs and accumulate outputs
     let m_parse = 0
     let m_preprocess = 0
@@ -4505,46 +4582,13 @@ async function draw(undo) {
         let indent = ''
 
         if (mathPara) {
-            // Math paragraph. Model as a table with appropriate attributes.
-            // MathJax uses <mlabeledtr> for equation numbers, while native
-            // rendering uses <mtr intent=":equation-label">
-            let prefix
-            let i = mathml.indexOf(ummlConfig.forceMathJax ? '<mlabeledtr' : '<mtr')
-            let j = 16
-
-            if (iEq > 1) {                  // Append next equation MathML
-                indent = '     '
-                if (i != -1) {
-                    // Remove <math ...><mtable ...> from next equation
-                    mathml = mathml.substring(i)
-                } else {                    // No equation number
-                    prefix = '<mtr><mtd>'
-                    if (!ummlConfig.forceMathJax)
-                        prefix += '</mtd><mtd>'
-                    i = mathml.indexOf('>')
-                    mathml = prefix + mathml.substring(i + 1, mathml.length - 7) + '</mtd></mtr>'
-                    j = 0
-                }
-            } else if (i == -1) {  // First equation doesn't have equation #
-                prefix = `<math display="block"><mtable displaystyle="true" intent = ":math-paragraph"><mtr><mtd>`
-                if (!ummlConfig.forceMathJax)
-                    prefix += '</mtd><mtd>'
-                i = mathml.indexOf('>')
-                mathml = prefix + mathml.substring(i + 1, mathml.length - 7) + '</mtd></mtr>'
-                j = 0
-            } else {               // Insert math-paragraph property
-                mathml = mathml.substring(0, i - 1) + ' intent=":math-paragraph"' +
-                    mathml.substring(i - 1)
-            }
-            if (iEq < inp.length) {
-                // Remove </mtable></math> except from last equation
-                if (j)
-                    mathml = mathml.substring(0, mathml.length - j)
-            } else if (!mathml.endsWith('</mtable></math>')) {
-                mathml = mathml.substring(0, mathml.length - 7) + '</mtable></math>'
-            }
+            // Get next mtable row. First retains opening <math><mtable> and
+            // last retains closing </mtable></math>.
+            mathml = getMathParaMtr(mathml, iEq, inp.length, cAmp)
+            if (iEq > 1)
+                indent = '     '
         }
-        output_HTML += mathml;
+        output_HTML += mathml
         if (isMathML(input.value))
             output_source_HTML = MathMLtoUnicodeMath(input.value);
         else
@@ -4947,12 +4991,14 @@ function initDictation() {
 
     recognition.onaudiostart = function (event) {
         console.log('Audio start')
+        let dictateButton = document.getElementById('dictation')
         dictateButton.style.backgroundColor = 'DodgerBlue'
         beep(1000)
     }
 
     recognition.onaudioend = function (event) {
         console.log('Audio end')
+        let dictateButton = document.getElementById('dictation')
         dictateButton.style.backgroundColor = 'inherit'
         dictateButton.style.color = 'inherit'
         beep(900)
@@ -4964,6 +5010,7 @@ function startDictation() {
         alert("dictation recognition API not available");
         return;
     }
+    let dictateButton = document.getElementById('dictation')
     if (dictateButton.style.backgroundColor != 'DodgerBlue') {
         try {
             recognition.start()

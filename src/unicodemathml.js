@@ -1914,7 +1914,7 @@ function mapToPrivate(s) {
                     }
                 }
             }
-            u += s[i];
+            u += s[i]
             continue;
         }
 
