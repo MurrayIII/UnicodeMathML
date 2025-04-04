@@ -4386,22 +4386,24 @@ function getMathParaMtr(mathml, iEq, cEq, cAmp) {
             mathml = mathml.substring(i)
         } else {                    // No equation number: insert empty label
             if (ummlConfig.forceMathJax)
-                prefix = '<mlabeledtr><mtd><mtext></mtext></mtd><mtd>'
+                prefix = '<mlabeledtr><mtd intent=":no-equation-label"><mtext></mtext></mtd><mtd>'
             else
-                prefix = '<mtr><mtd style="margin-right:1em;position:absolute;right:0em"><mtext></mtext></mtd><mtd>'
+                prefix = '<mtr><mtd intent=":no-equation-label" style="margin-right:1em;position:absolute;right:0em"><mtext></mtext></mtd><mtd>'
             i = mathml.indexOf('>')
             mathml = prefix + mathml.substring(i + 1, mathml.length - 7) + '</mtd>'
                 + (ummlConfig.forceMathJax ? '</mlabeledtr>' : '</mtr>')
             j = 0
         }
     } else if (i == -1) {  // First equation doesn't have equation #
-        prefix = `<math display="block"><mtable displaystyle="true" intent = ":math-paragraph"><mtr><mtd>`
-        if (!ummlConfig.forceMathJax)
-            prefix += '</mtd><mtd>'
         i = mathml.indexOf('>')
-        mathml = prefix + mathml.substring(i + 1, mathml.length - 7) + '</mtd></mtr>'
+        mathml = mathml.substring(0, i + 1) +
+            `<mtable displaystyle="true" intent = ":math-paragraph">` +
+            (ummlConfig.forceMathJax ? '<mlabeledtr>' : '<mtr>') +
+            '<mtd intent=":no-equation-label" style="margin-right:1em;position:absolute;right:0em"><mtext></mtext></mtd><mtd>' +
+            mathml.substring(i + 1, mathml.length - 7) + '</mtd>' +
+            (ummlConfig.forceMathJax ? '</mlabeledtr>' : '</mtr>')
         j = 0
-    } else {               // Insert math-paragraph property
+    } else {               // Include math-paragraph property in <mtable>
         mathml = mathml.substring(0, i - 1) + ' intent=":math-paragraph"' +
             mathml.substring(i - 1)
     }
@@ -4414,7 +4416,6 @@ function getMathParaMtr(mathml, iEq, cEq, cAmp) {
     }
     if (cAmp == cEq) {                      // Align at ＆'s
         i = mathml.indexOf('＆')
-        // <mo>＆</mo> → </mtd><mtd>
         mathml = mathml.substring(0, i - 4) + '</mtd><mtd>' + mathml.substring(i + 6)
         if (!ummlConfig.forceMathJax) {
             i = mathml.lastIndexOf('<mtd>', i - 4)

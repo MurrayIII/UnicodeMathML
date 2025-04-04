@@ -286,8 +286,8 @@ function hasEqLabel(node) {
         return false
     node = node.firstElementChild           // <mtr> or <mlabeledtr>
 
-    return node.childElementCount == 2 && (node.nodeName == 'mlabeledtr' ||
-        node.firstElementChild.getAttribute('intent') == ':equation-label')
+    return node.nodeName == 'mlabeledtr' ||
+        node.firstElementChild.getAttribute('intent') == ':equation-label'
 }
 
 function checkCardinalityIntent(intent, miContent) {
@@ -4449,6 +4449,8 @@ function dump(value, noAddParens) {
                         node.firstElementChild.getAttribute('intent')
                             == ':equation-label') {
                         let text = node.firstElementChild.textContent
+                        if (node.childElementCount == 3)
+                            ret += dump(node.children[1]) + '&'
                         ret += dump(node.lastElementChild) + '#' + text
                     } else {
                         ret += dump(node)
@@ -4472,6 +4474,9 @@ function dump(value, noAddParens) {
             break;
 
         case 'mtd':
+            intent = value.getAttribute('intent')
+            if (intent == ':no-equation-label')
+                return ''
             ret = nary(value, '', cNode)
             if (ret[0] == '&')
                 ret = ret.substring(1)

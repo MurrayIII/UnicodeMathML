@@ -328,7 +328,7 @@
         }
         var symbolTooltips = {};
         buttons.forEach(function (entry) {
-            document.write(`<div id=${entry['label']} contenteditable="true" class="categorytabcontent" spellcheck="off"><p>`);
+            document.write(`<div id=${entry['label']} contenteditable="true" spellcheck="false" class="categorytabcontent"><p>`);
             let syms = {};
             Object.keys(entry['symbols']).forEach(function (c) {
                 if (/^[0-9A-F]+$/i.test(c)) {

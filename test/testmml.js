@@ -78,6 +78,8 @@ const mathML = [
     "<math display=\"block\"><mo>∫</mo><msup><mi>𝑑</mi><mn>3</mn></msup><mi>𝑟</mi><mrow intent=\":fenced\"><mo>|</mo><mi>𝑟</mi><mo>⟩</mo></mrow><mrow intent=\":fenced\"><mo>⟨</mo><mrow><mi>𝑟</mi><mo>|</mo><mi>𝜓</mi></mrow><mo>⟩</mo></mrow><mo>,</mo><mrow intent=\":fenced\"><mo>⟨</mo><mrow><mi>𝜓</mi><mo>|</mo><mi>ℋ</mi><mo>|</mo><mi>𝜓</mi></mrow><mo>⟩</mo></mrow></math>",
     "<math display=\"block\"><mtable displaystyle=\"true\"><mtr id=\"-3-\"><mtd intent=\":equation-label\" style=\"margin-right:1em;position:absolute;right:0em;bottom:2em\"><mtext>(3)</mtext></mtd><mtd><mi>𝐸</mi><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mtr></mtable></math>",
     "<math display=\"block\"><mtable displaystyle=\"true\" intent=\":math-paragraph\"><mlabeledtr><mtd><mtext>(1)</mtext></mtd><mtd><mi>𝐸</mi><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mlabeledtr><mtr><mtd><mi>𝐸</mi><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mtr><mlabeledtr><mtd><mtext>(3)</mtext></mtd><mtd><mi>𝐸</mi><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mlabeledtr></mtable></math>",
+    "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mtable displaystyle=\"true\" intent=\":math-paragraph\"><mtr id=\"-1-\"><mtd intent=\":equation-label\" style=\"margin-right:1em;position:absolute;right:0em\"><mtext>(1)</mtext></mtd><mtd style=\"padding-left:0;text-align:right;float:right;display:math\"><mi>𝐸</mi><mo>+</mo><mn>1</mn></mtd><mtd><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mtr><mtr><mtd intent=\":no-equation-label\" style=\"margin-right:1em;position:absolute;right:0em\"><mtext></mtext></mtd><mtd style=\"padding-left:0;text-align:right;float:right;display:math\"><mi>𝐸</mi></mtd><mtd><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mtr><mtr id=\"-3-\"><mtd intent=\":equation-label\" style=\"margin-right:1em;position:absolute;right:0em\"><mtext>(3)</mtext></mtd><mtd style=\"padding-left:0;text-align:right;float:right;display:math\"><mi>𝐸</mi></mtd><mtd><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mtr></mtable></math>",
+    "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mtable displaystyle=\"true\" intent=\":math-paragraph\"><mtr><mtd intent=\":no-equation-label\" style=\"margin-right:1em;position:absolute;right:0em\"><mtext></mtext></mtd><mtd style=\"padding-left:0;text-align:right;float:right;display:math\"><mi>𝐸</mi><mo>+</mo><mn>1</mn></mtd><mtd><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mtr><mtr id=\"-1-\"><mtd intent=\":equation-label\" style=\"margin-right:1em;position:absolute;right:0em\"><mtext>(1)</mtext></mtd><mtd style=\"padding-left:0;text-align:right;float:right;display:math\"><mi>𝐸</mi></mtd><mtd><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mtr><mtr id=\"-3-\"><mtd intent=\":equation-label\" style=\"margin-right:1em;position:absolute;right:0em\"><mtext>(3)</mtext></mtd><mtd style=\"padding-left:0;text-align:right;float:right;display:math\"><mi>𝐸</mi></mtd><mtd><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mtr></mtable></math>",
 ]
 
 const unicodeMath = [
@@ -156,7 +158,9 @@ const unicodeMath = [
     "∲_𝑐 𝑑𝜙≠∑┬𝑐 𝑑𝑥=0",
     "∫𝑑³𝑟|𝑟⟩⟨𝑟│𝜓⟩,⟨𝜓│ℋ│𝜓⟩",
     "𝐸=𝑚𝑐²#(3)",
-    "𝐸=𝑚𝑐²#(1)\n𝐸=𝑚𝑐²\n𝐸=𝑚𝑐²#(3)"
+    "𝐸=𝑚𝑐²#(1)\n𝐸=𝑚𝑐²\n𝐸=𝑚𝑐²#(3)",
+    "𝐸+1&=𝑚𝑐²#(1)\n𝐸&=𝑚𝑐²\n𝐸&=𝑚𝑐²#(3)",
+    "𝐸+1&=𝑚𝑐²\n𝐸&=𝑚𝑐²#(1)\n𝐸&=𝑚𝑐²#(3)",
 ]
 
 const mathSpeech = [
@@ -242,6 +246,8 @@ const mathSpeech = [
     "integral d cubed r vertical bar r close angle bracket open angle bracket r vertical bar psi close angle bracket comma open angle bracket psi vertical bar script cap H vertical bar psi close angle bracket",
     "line 1 with label 3 , cap E = m c squared",
     "3 lines , line 1 with label 1 , cap E = m c squared , line 2 cap E = m c squared , line 3 with label 3 , cap E = m c squared",
+    "3 lines , line 1 with label 1 , cap E + 1 , = m c squared , line 2 , cap E , = m c squared , line 3 with label 3 , cap E , = m c squared",
+    "3 lines , line 1 , cap E + 1 , = m c squared , line 2 with label 1 , cap E , = m c squared , line 3 with label 3 , cap E , = m c squared"
 ]
 
 const mathBrailles = [
@@ -321,6 +327,8 @@ const mathBrailles = [
     "⠮⠙⠘⠒⠐⠗⠳⠗⠨⠨⠾⠨⠨⠷⠗⠳⠨⠽⠨⠨⠾⠠⠀⠨⠨⠷⠨⠽⠳⠈⠰⠰⠠⠓⠳⠨⠽⠨⠨⠾",
     "⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆⠀⠷⠒⠾",
     "⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆⠀⠷⠂⠾⣍⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆⠐⣍⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆⠀⠷⠒⠾",
+    "⠠⠑⠬⠂⠀⠨⠅⠀⠍⠉⠘⠆⠀⠷⠂⠾⣍⠀⠠⠑⠀⠀⠨⠅⠀⠍⠉⠘⠆⠐⣍⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆⠀⠷⠒⠾",
+    "⠀⠠⠑⠬⠂⠀⠀⠨⠅⠀⠍⠉⠘⠆⠐⣍⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆⠀⠷⠂⠾⣍⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆⠀⠷⠒⠾",
 ]
 
 const mathTeXs = [                          // Some cases aren't supported by TeX

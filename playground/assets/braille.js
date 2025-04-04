@@ -713,6 +713,8 @@ function braille(value, noAddParens, subsup) {
 						node.firstElementChild.getAttribute('intent')
 							== ':equation-label') {
 						let text = node.firstElementChild.textContent
+						if (node.childElementCount == 3)
+							ret += dump(node.children[1])
 						ret += braille(node.lastElementChild) + '⠀' + text
 					} else {
 						ret += braille(node)
