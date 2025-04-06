@@ -69,6 +69,8 @@ The native rendering is good although not yet as good as LaTeX.
 But an advantage of the native renderer is that you can edit built-up equations directly in the output window and copy all or part of an equation.
 If the selection is an insertion point, the whole equation is copied.
 The only editing feature in the MathJax mode is Ctrl+c, which copies the MathML for the whole equation to the clipboard.
+## Navigating the app
+A mouse or touchpad provides one way to move between and inside the various facilities. Another way is to use the Tab key. Since the app has myriad default Tab stops, users need a Tab hierarchy. The top of the hierarchy has the menu stops Help, Demo, Speak, Braille, TeX, Dictate, and About, followed by the Input and Output windows, Settings, History, math styles, and symbol galleries. The Tab key navigates these stops in the forward direction, while Shift+Tab navigates in the backward direction. The Enter key activates the current stop's facility. In an activated facility, the left and right arrow keys move between the facility's options. The Enter key then runs the option. For an active symbol gallery, the Enter key inserts the current symbol. For most settings, the Enter key toggles the current option. For menu stops, the Enter key sends the associated hot key. Each change is accompanied by explanatory speech.
 ## Intents
 UnicodeMathML generates [Presentation MathML 4](https://w3c.github.io/mathml/).
 A key addition in MathML 4 is the intent attribute, which allows authors to disambiguate math notation and control math speech.

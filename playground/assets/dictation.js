@@ -659,7 +659,7 @@ function dictationToUnicodeMath(dictation) {
 				if (result.length > i + 1) {
 					// Convert eg '^2 ' to '²'
 					let delim = result.length > i + 2 ? result[i + 2] : ' ';
-					let chScriptDigit = getSubSupDigit(result, i + 1, delim)
+					let chScriptDigit = getSubSupDigits(result, i + 1, delim)
 					if (chScriptDigit) {
 						result1 += chScriptDigit;
 						i += (delim == ' ' && result.length > i + 2) ? 2 : 1
