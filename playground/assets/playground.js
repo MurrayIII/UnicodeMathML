@@ -855,10 +855,11 @@ function opAutocorrect(ip, delim) {
     }
 
     if (ip >= 4) {                          // E.g., replace "𝑎^2+" by "𝑎²+"
-        let ch = getSubSupDigit(input.value, ip - 2, delim);
-        if (ch) {
+        let n = getSubSupDigits(input.value, ip - 2, delim);
+        if (n) {
             let j = (delim == ' ') ? ip : ip - 1;
-            input.value = input.value.substring(0, ip - 3) + ch + input.value.substring(j);
+            input.value = input.value.substring(0, ip - n.length - 2) + n +
+                input.value.substring(j);
             input.selectionStart = input.selectionEnd = j;
             return false;
         }
@@ -4525,7 +4526,7 @@ async function draw(undo) {
             // equations separated by \v's. Here use \n's since \v's don't
             // display on different lines in the input textarea. Count
             // equations with '&' alignment marks. If all equations have
-            // the marks, getMathParaMtr() will align the equations.
+            // &'s, getMathParaMtr() will align the equations.
             mathPara = true
             let cParen = 0
 
@@ -4539,9 +4540,9 @@ async function draw(undo) {
                     else if (uMath[i] == ')')
                         cParen--
                     if (!cParen && uMath[i] == '&') {
-                        u += '＆'            // Switch to full-width & for
-                        cAmp++              //  math paragraph alignment
-                    } else {
+                        u += '＆'           // Switch to full-width & for
+                        cAmp++              //  math paragraph alignment;
+                    } else {                //  else won't parse
                         u += uMath[i]
                     }
                 }

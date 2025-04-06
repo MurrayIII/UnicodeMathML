@@ -149,10 +149,11 @@ function TeX(value, noAddParens) {
                         let eq = node.firstElementChild.textContent
                         if (eq && eq[0] == '(')
                             eq = eq.substring(1, eq.length - 1)
-                        ret += '\\begin{equation}\\label{eq' + eq + '}' +
-                            TeX(value.firstElementChild.lastElementChild) +
+                        ret += '\\begin{equation}\\label{eq' + eq + '}'
+                        if (node.childElementCount > 2)
+                            ret += TeX(node.children[1]) + '&'
+                        ret += TeX(value.firstElementChild.lastElementChild) +
                             '\\end{equation}'
-
                     } else {
                         ret += dump(node)
                     }

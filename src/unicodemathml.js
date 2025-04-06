@@ -45,28 +45,40 @@ const mappedPair = {
     '⊄=': '⊈', '⊅=': '⊉', '+−': '±', '−+': '∓',
 }
 
-function getSubSupDigit(str, i, delim) {
+function getSubSupDigits(str, i, delim) {
     // Return e.g., '²' for '^2 ' (str[i-1] = '^', str[i] = '2', delim = ' ')
-    let ch = str[i];
-    let op = str[i - 1];
+    if (!'+-=/ )]}'.includes(delim))
+        return ''
+    let j
+    for (j = i; j > 0 && isAsciiDigit(str[j]); j--)
+        ;                                   // Find digit span indices
+    if (j == i)
+        return ''                           // No digits
+    let op = str[j]                         // Char preceding digits
 
-    if (!'_^'.includes(op) || !'+-=/ )]}'.includes(delim) || !/[0-9]/.test(ch))
-        return '';
+    if (!'_^'.includes(op))                 // Digits not preceded by * or _
+        return ''
+
+    let n = ''                              // Gets sub/sup number from digits
+    let k = j + 1
+    for (; k < i + 1; k++)
+        n += (op == '^') ? digitSuperscripts[str[k]] : digitSubscripts[str[k]]
 
     // If the preceding op is the other subsup op, return '', e.g., for a_0^2
-    let opSupSub = op == '^' ? '_' : '^';
-    let j = i - 2
+    // Code doesn't handle subsups (but could...)
+    let opSupSub = (op == '^') ? '_' : '^'
+    k = j - 1
 
-    for (; j >= 0; j--) {
-        if (str[j] == opSupSub)
-            return '';
-        if (str[j] < '\u3017' && !isAsciiAlphanumeric(str[j]) && !isDoubleStruck(str[j]))
-            break;                          // Could allow other letters...
+    for (; k >= 0; k--) {
+        if (str[k] == opSupSub)
+            return ''
+        if (str[k] < '\u3017' && !isAsciiAlphanumeric(str[k]) && !isDoubleStruck(str[k]))
+            break                           // Could allow other letters...
     }
-    if (j == i - 2)
-        return '';                          // No base character(s)
+    if (k == j - 1)
+        return ''                           // No base character(s)
 
-    return (op == '^') ? digitSuperscripts[ch] : digitSubscripts[ch];
+    return n
 }
 
 function getFencedOps(value) {

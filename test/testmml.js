@@ -1187,6 +1187,11 @@ function testHotKeys() {
     input.value = '𝑎+222b'
     testInputHotKey('x', true, false, '𝑎+∫', 4, 4)
 
+    // Test conversion to Unicode subsups
+    input.value = 'log_10 '
+    input.selectionStart = input.selectionEnd = 7
+    testInputHotKey(' ', false, false, 'log₁₀', 5, 5)
+
     // Test '1/2=' → '½='
     input.value = '1/2='
     input.selectionStart = input.selectionEnd = 4
