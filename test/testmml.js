@@ -512,8 +512,13 @@ function buildUp(uMath, uMathPartial) {
     for (let i = 0, j = 0; i < uMath.length + 1; i++, j++) {
         const event = new Event('keydown')
         event.key = ' '
-        if (i < uMath.length)
+        if (i < uMath.length) {
             event.key = getCh(uMath, i)
+            if (event.key == '\n') {
+                event.key = 'Enter'
+                event.shiftKey = true
+            }
+        }
         output.dispatchEvent(event)
         if (event.key.length == 2)
             i++                             // Bypass trail surrogate
@@ -628,8 +633,7 @@ function testAutoBuildUp() {
     iSuccess = 0
 
     for (let k = 0; k < iFail; k++) {
-        if (unicodeMath[k].indexOf('Ⓐ') != -1 || unicodeMath[k].indexOf('\n') ||
-            unicodeMath[k][0] == 'ⓘ') {
+        if (unicodeMath[k].indexOf('Ⓐ') != -1 || unicodeMath[k][0] == 'ⓘ') {
             iSuccess++
             continue                        // Users don't enter sel info
         }
@@ -638,7 +642,7 @@ function testAutoBuildUp() {
         result = result.replace(/\u202F/g, ' ')
         result = result.replace(/\u00A0/g, ' ')
         if (result != unicodeMath[k]) {
-            console.log('Expect: ' + unicodeMath[k] + '\n');
+            console.log('Test ' + k + '\nExpect: ' + unicodeMath[k] + '\n');
             console.log("Result: " + result + '\n\n')
         } else {
             iSuccess++

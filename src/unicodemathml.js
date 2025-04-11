@@ -251,7 +251,7 @@ function isMathML(unicodemath) {
 
 function isMrowLike(node) {
     return ['math', 'menclose', 'merror', 'mpadded', 'mphantom', 'mrow',
-        'mscarry', 'msqrt', 'mstyle', 'mtd'].includes(node.nodeName)
+        'mscarry', 'msqrt', 'mstyle', 'mtd'].includes(node.localName)
 }
 
 function isNary(op) {

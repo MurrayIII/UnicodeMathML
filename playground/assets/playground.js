@@ -1548,6 +1548,86 @@ function checkEmulationIntent(node) {
     return name ? narySymbol + ' with ' + name : 'indefinite ' + narySymbol
 }
 
+function isEqNo(node) {
+    return node.getAttribute('intent') == ':equation-label'
+}
+
+function handleEqNo(key) {
+    // If selection is in an equation number <mtd>, insert key at appropriate
+    // offset and return true. Else return false
+    let sel = window.getSelection()
+    let node = sel.anchorNode
+    let nodeName = node.nodeName
+    let offset = sel.anchorOffset
+
+    // If key = '#' and sel is in an <mtr> with an equation-label <mtd>,
+    // move the selection into that <mtd> and return.
+    if (key == '#') {
+        while (node.nodeName != 'mtr' && node.nodeName != 'math')
+            node = node.parentElement
+        if (node.nodeName == 'math')
+            return
+        let intent = node.firstElementChild.getAttribute('intent')
+        if (!intent || !intent.endsWith('equation-label'))
+            return
+
+        let uMath = getUnicodeMath(output.firstElementChild, true)
+        node = node.firstElementChild       // Equation number <mtd>
+        if (intent.startsWith(':no')) {     // Needs place holder
+            node.setAttribute('intent', ':equation-label')
+            node = node.firstElementChild   // <mtext>
+            node.textContent = '⬚'
+            setSelAttributes(node, 'selanchor', '-0', 'selfocus', '-1')
+        } else {
+            setSelAttributes(node.firstElementChild, 'selanchor', '-0')
+        }
+        refreshDisplays(uMath)
+        return true
+    }
+
+    switch (nodeName) {
+        case '#text':
+            if (!isEqNo(node.parentElement.parentElement))
+                return false
+            if (node.textContent == '⬚') {
+                node.textContent = key
+            } else {
+                node.textContent = node.textContent.substring(0, offset) + key +
+                    node.textContent.substring(offset)
+            }
+            offset += key.length
+            break
+        case 'mtext':
+            if (!isEqNo(node.parentElement))
+                return false
+            node = node.firstChild
+            break
+        case 'mtd':
+            if (!isEqNo(node))
+                return false
+            node = node.firstElementChild.firstChild
+        default:
+            return false
+    }
+    if (nodeName != '#text') {
+        if (node.textContent == '⬚') {
+            node.textContent = key          // Replace place-holder char with key
+            offset = 1
+        } else if (sel.anchorOffset) {
+            node.textContent += key         // Insert at end of <mtd>
+            offset = node.textContent.length
+        } else {                            // Insert at start of <mtd>
+            node.textContent = key + node.textContent
+            offset = 1
+        }
+    }
+    speak(key)
+    setSelAttributes(node.parentElement, 'selanchor', '-' + offset)
+    setAnchorAndFocus(sel, node, offset, node, offset)
+    refreshDisplays()
+    return true
+}
+
 function checkNaryand(node) {
     let arg = node.getAttribute('arg')
     if (arg != 'naryand')
@@ -1559,9 +1639,9 @@ function checkNaryand(node) {
 
     if (intent.startsWith(':nary')) {
         node = node.parentElement.firstElementChild
-        if (node.childElementCount)         // msubsup, msub, etc.
+        if (node.childElementCount)         // <msubsup>, <msub>, etc.
             text = node.firstElementChild.textContent
-        else                                // mo
+        else                                // <mo>
             text = node.textContent         // Indefinite integrand, etc.
         if (isIntegral(text))
             name = 'int-agrand' // Convince speech to say integrand
@@ -1673,6 +1753,67 @@ function handleEndOfTextNode(node) {
     return node
 }
 
+function addMathParaTable(mathml) {
+    let i = mathml.indexOf('>')
+
+    mathml = mathml.substring(0, i + 1) +
+        `<mtable displaystyle="true" intent=":math-paragraph"><mtr><mtd intent=":no-equation-label" style="margin-right:1em;position:absolute;right:0em"><mtext></mtext></mtd><mtd>` +
+        mathml.substring(i + 1, mathml.length - 7) + '</mtd></mtr>'
+    return mathml
+}
+
+function handleMathParagraph(e) {
+    if (!e.shiftKey)
+        return
+
+    let node = output.firstElementChild
+    if (node.nodeName != 'math')
+        return
+
+    let sel = window.getSelection()
+    if (!sel.isCollapsed)
+        return
+
+    e.preventDefault()
+    removeSelAttributes(node)
+    const emptyMtr = `<mtr><mtd intent=":no-equation-label" style="margin-right:1em;position:absolute;right:0em"><mtext></mtext></mtd><mtd><mi selanchor="0" selfocus="1">⬚</mi></mtd></mtr>`
+
+    let nodeP = node.firstElementChild
+    if (nodeP.nodeName == 'mtable') {
+        node = nodeP.firstElementChild
+        let addNewMtr = nodeP.getAttribute('intent') == ':math-paragraph'
+        if (!addNewMtr) {
+            let intent = node.firstElementChild.getAttribute('intent')
+            if (intent && intent.endsWith('equation-label')) {
+                addNewMtr = true
+                nodeP.setAttribute('intent', ':math-paragraph')
+            }
+        }
+        if (addNewMtr) {
+            // Add new mtr after the one containing the IP. Don't have to consider
+            // mlabeledtr since can't edit MathJax DOM
+            let name = sel.anchorNode.nodeName
+            if (name == 'math' || name == 'mtable') {
+                node = nodeP.firstElementChild
+            } else {
+                node = sel.anchorNode
+                while (node.nodeName != 'mtr')
+                    node = node.parentElement
+            }
+            let nodeNew = document.createElement('mtr')
+            nodeP.appendChild(nodeNew)
+            nodeNew.outerHTML = emptyMtr
+        } else {
+            let mathml = addMathParaTable(node.outerHTML) + emptyMtr + '</mtable></math>'
+            node.outerHTML = mathml
+        }
+    } else {
+        let mathml = addMathParaTable(node.outerHTML) + emptyMtr + '</mtable></math>'
+        node.outerHTML = mathml
+    }
+    refreshDisplays()
+}
+
 function insertNode(node, offset, nodeNew, nodeP) {
     if (node.textContent == '⬚') {
         // Replace empty arg place holder symbol with key
@@ -1739,7 +1880,10 @@ function handleKeyboardInput(node, key, sel) {
         node = sel.anchorNode
     }
     removeSelAttributes()
-    if (key == '#') {
+    if (handleEqNo(key))
+        return
+
+    if (key == '#' && !node.textContent.endsWith('(')) {
         // Create equation number table if child of <math> is <mi>, <mn>,
         // <mo>, or <mtext>
         let nodeT = output.firstElementChild.firstElementChild
@@ -1754,9 +1898,9 @@ function handleKeyboardInput(node, key, sel) {
         if (createEqNo) {
             // Create equation number table with first mtd containing <mtext>
             // with place holder and second mtd containing current MathML
-            let html = `<mtable><mlabeledtr><mtd><mtext selanchor="0" selfocus="1">⬚</mtext></mtd><mtd>` +
+            let html = `<mtable><mtr><mtd intent=":equation-label" style="margin-right:1em;position:absolute;right:0em"><mtext selanchor="0" selfocus="1">⬚</mtext></mtd><mtd>` +
                 output.firstElementChild.innerHTML +
-                `</mtd></mlabeledtr></mtable>`
+                `</mtd></mtr></mtable>`
             output.firstElementChild.innerHTML = html
             refreshDisplays()
             return
@@ -1798,8 +1942,8 @@ function handleKeyboardInput(node, key, sel) {
         return
     }
 
-    if (nodeName == 'mtext' && nodeP.nodeName == 'mtd' &&
-        nodeP.parentElement.nodeName == 'mlabeledtr') {
+    if ((nodeName == 'mtext' || nodeName == 'mi') && nodeP.nodeName == 'mtd' &&
+        nodeP.getAttribute('intent') == ':equation-label') {
         // Entering an equation number
         if (node.textContent == '⬚')
             node.textContent = key
@@ -2061,8 +2205,11 @@ function checkMathSelection(sel) {
                         node = node.parentElement
                         if (isMathMLObject(node.parentElement))
                             name = getArgName(node, '¶▒')
-                        else if (node.nodeName == 'mtd')
-                            name = '＆'      // → ampersand
+                        else if (node.nodeName == 'mtd') {
+                            let intent = node.getAttribute('intent')
+                            if (!intent || !intent.endsWith('equation-label'))
+                                name = '＆'      // → ampersand
+                        }
                     }
                 } else if (isMathMLObject(node.parentElement)) {
                     name = getArgName(node, '¶▒')
@@ -2440,7 +2587,7 @@ function checkEmpty(node, offset, uMath) {
     refreshDisplays(uMath)
 }
 
-function checkAutoBuildUp(node, offset, nodeP, key) {
+function checkAutoBuildUp(node, offset, nodeP, key, shift) {
     // Return new node if formula auto build up succeeds; else null
     if (!isMrowLike(nodeP) && (node.nodeName != 'mtext' || node.textContent[0] != '\\'))
         return null
@@ -2472,7 +2619,8 @@ function checkAutoBuildUp(node, offset, nodeP, key) {
     }
     let [cParen, k, opBuildUp] = checkBrackets(nodeP)
 
-    if ('+=-<> )]|⟩'.includes(key) || iNode + 1 == cNode &&
+    if ('+=-<> )]|⟩'.includes(key) || key == 'Enter' && shift ||
+        iNode + 1 == cNode &&
         (key == '/' && !node.textContent.endsWith(')') ||  // Not end of numerator
          key == '#' && !node.textContent.endsWith('('))) { // Not hex RGB: eq-no
         // Try to build up <mrow> or trailing part of it
@@ -3211,7 +3359,7 @@ output.addEventListener('drop', (e) => {
 })
 
 output.addEventListener("blur", () => {
-    uMathSave = getUnicodeMath(output.firstElementChild, true)
+    //uMathSave = getUnicodeMath(output.firstElementChild, true)
 })
 
 function readPaste() {
@@ -4024,6 +4172,12 @@ output.addEventListener('keydown', function (e) {
             setSelAttributes(node, 'selanchor', offset)
             refreshDisplays('', true)
             return
+        case 'Enter':
+            if (e.shiftKey) {
+                e.preventDefault()
+                handleMathParagraph(e)
+            }
+            return
     }
     if (key.length > 1 && !inRange('\uD800', key[0], '\uDBFF')) // 'Shift', etc.
         return
@@ -4201,7 +4355,7 @@ output.addEventListener('keydown', function (e) {
         nodeP = node.parentElement
 
     let lastChild = getChildIndex(node, nodeP) + 1 == nodeP.childElementCount
-    let nodeT = checkAutoBuildUp(node, offset, nodeP, key)
+    let nodeT = checkAutoBuildUp(node, offset, nodeP, key, e.shiftKey)
     if (nodeT) {
         node = nodeT                        // FAB succeeded: update node
         if (key == ' ' || key == '"') {     // Set insertion point
@@ -4396,13 +4550,7 @@ function getMathParaMtr(mathml, iEq, cEq, cAmp) {
             j = 0
         }
     } else if (i == -1) {  // First equation doesn't have equation #
-        i = mathml.indexOf('>')
-        mathml = mathml.substring(0, i + 1) +
-            `<mtable displaystyle="true" intent = ":math-paragraph">` +
-            (ummlConfig.forceMathJax ? '<mlabeledtr>' : '<mtr>') +
-            '<mtd intent=":no-equation-label" style="margin-right:1em;position:absolute;right:0em"><mtext></mtext></mtd><mtd>' +
-            mathml.substring(i + 1, mathml.length - 7) + '</mtd>' +
-            (ummlConfig.forceMathJax ? '</mlabeledtr>' : '</mtr>')
+        mathml = addMathParaTable(mathml)
         j = 0
     } else {               // Include math-paragraph property in <mtable>
         mathml = mathml.substring(0, i - 1) + ' intent=":math-paragraph"' +
