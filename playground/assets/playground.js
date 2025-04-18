@@ -143,7 +143,8 @@ document.onselectionchange = () => {
 }
 
 function checkMathSelAnchor() {
-    if (!output.firstElementChild.hasAttribute('selanchor'))
+    if (!output.firstElementChild ||
+        !output.firstElementChild.hasAttribute('selanchor'))
         return
 
     // Move <math> selanchor down to lastElementChild. Always at end of math
@@ -920,8 +921,8 @@ input.addEventListener("keydown", function (e) {
             input.value = input.value.substring(0, offsetStart) + ch +
                 input.value.substring(input.selectionEnd)
             input.selectionStart = input.selectionEnd = offsetStart + ch.length
+            return
         }
-        return
     }
     if (e.ctrlKey) {
         switch (e.key) {
@@ -992,11 +993,6 @@ input.addEventListener("keydown", function (e) {
                 return
         }
     }
-    if (e.shiftKey && e.key == 'Enter') {   // Shift+Enter
-        e.preventDefault()
-        insertAtCursorPos('\v')             // Want VT for math paragraph
-        return
-    }
     if (e.key == 'F1') {
         e.preventDefault()
         document.getElementById("help").click()
@@ -1027,6 +1023,17 @@ input.addEventListener("keydown", function (e) {
                     demos.style.backgroundColor = 'green'
                 }
                 return
+        }
+    }
+    if (input.value[0] == '\u2800' && e.key.length == 1 &&
+        !e.ctrlKey && !e.altKey) {
+        let i = e.key.codePointAt(0)
+        i -= (i > 0x5F) ? 0x40 : 0x20
+        let ch = ascii2Braille[i]
+
+        if (ch) {
+            e.preventDefault()
+            insertAtCursorPos(ch)
         }
     }
 })
@@ -4725,9 +4732,14 @@ async function draw(undo) {
         if (val.includes("⁅") || val.includes("⁆"))
             output_HTML += '<div class="notice">Note that the UnicodeMath delimiters ⁅⋯⁆ you\'ve used in the expression below aren\'t required – ' + (ummlConfig.splitInput? 'each line of the' : 'the entire') + ' input is automatically treated as a UnicodeMath expression.</div>';
 
+        if (val[0] == '\u2800')
+            val = braille2UnicodeMath(val)
+
         // MathML output
-        let mathml, details;
-        ({mathml, details} = unicodemathml(val, ummlConfig.displaystyle));
+        let mathml = ''
+        let details = []
+        if (val)
+            ({mathml, details} = unicodemathml(val, ummlConfig.displaystyle))
 
         let indent = ''
 
