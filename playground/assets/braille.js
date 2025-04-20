@@ -1029,6 +1029,8 @@ function checkParens(arg) {
 
 function checkMathAlphanumeric(braille, i) {
 	const charIndicators = ['⠨', '⠸', '⠈', '⠠', '⠰']
+	const brailleDigitMathStyles = {
+		'⠸': 'mbf', '⠠⠨⠸': 'mbfsans'}
 	const brailleEnglishMathStyles = {
 		'⠸': 'mbf', '⠸⠨': 'mbfit', '⠨': 'mit', '⠈': 'mscr', '⠸⠈': 'mbfscr'}
 	const brailleGreekMathStyles = {
@@ -1036,15 +1038,22 @@ function checkMathAlphanumeric(braille, i) {
 	const brailleSansMathStyles = {
 		'⠠⠨': 'msans', '⠠⠨⠨': 'mitsans', '⠠⠨⠸': 'mbfsans', '⠠⠨⠸⠨': 'mbfitsans'}
 	let cap = false
-	let chAscii = ''
 	let k = i + 1
 	let mathStyle = 'mup'					// Default upright
 
 	for (; k < braille.length && charIndicators.includes(braille[k]); k++)
 		;									// Find end of math alpha sequence
-	if (k < braille.length) {
-		let code = braille[k].codePointAt(0) - 0x2800
-		chAscii = braille2Ascii[code]
+	if (k >= braille.length)
+		return ['', 0]
+
+	let code = braille[k].codePointAt(0) - 0x2800
+	let ch
+	let	chAscii = braille2Ascii[code]
+
+	if (isAsciiDigit(chAscii)) {
+		mathStyle = brailleDigitMathStyles[braille.substring(i, k)]
+		ch = mathStyle ? mathFonts[chAscii][mathStyle] : chAscii
+		return [ch, k]
 	}
 	if (!isUcAscii(chAscii))
 		return ['', 0]						// Not a math alphanumeric sequence
@@ -1055,7 +1064,7 @@ function checkMathAlphanumeric(braille, i) {
 		n--									// Don't include cap in math style
 	} else if (braille[i] != '⠨')			// Handle Greek later
 		chAscii = chAscii.toLowerCase()
-	let ch = chAscii
+	ch = chAscii
 
 	if (n > i && braille[n - 1] == '⠰') {	// English letter
 		if (n - 1 > i)
