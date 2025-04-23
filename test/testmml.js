@@ -331,6 +331,11 @@ const mathBrailles = [
     "⠀⠠⠑⠬⠂⠀⠀⠨⠅⠀⠍⠉⠘⠆⠐⣍⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆⠀⠷⠂⠾⣍⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆⠀⠷⠒⠾",
 ]
 
+const unicodeMathB = [
+    "1/2𝜋 ∫_0^2𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)",
+    "𝛁×𝐄=−𝜕𝐁/𝜕𝑡",
+]
+
 const mathTeXs = [                          // Some cases aren't supported by TeX
     '\\frac{1}{2𝜋}∫_0^{2\\hsmash{𝜋}}\\frac{𝑑𝜃}{𝑎+𝑏 \\sin 𝜃}=\\frac{1}{\\sqrt{𝑎^2−𝑏^2}}',
     '𝛁⨯𝐄=−\\frac{𝜕𝐁}{𝜕𝑡}',
@@ -459,6 +464,22 @@ function testMathMLtoBraille() {
     }
     let iFail = mathML.length - iSuccess;
     console.log("Test MathML to braille: " + iSuccess + " passes; " + iFail + " failures\n");
+
+    // Test braille to MathML
+    iSuccess = iFail = 0
+    for (let i = 0; i < unicodeMathB.length; i++) {
+        input.value = '\u2800' + mathBrailles[i]
+        draw()
+        let uMath = getUnicodeMath(output.firstElementChild)
+        if (uMath != unicodeMathB[i]) {
+            console.log("Expect: " + unicodeMath[i] + '\n');
+            console.log("Result: " + uMath + '\n\n')
+            iFail++
+        } else {
+            iSuccess++
+        }
+    }
+    console.log("Test braille to MathML: " + iSuccess + " passes; " + iFail + " failures\n")
 }
 
 function testMathMLtoTeX() {
@@ -1037,7 +1058,7 @@ function testOutputContextMenu(intent, expect) {
 
 function testHotKeys() {
     // Test output Ctrl+c (copy)
-    input.textContent = 'Ⓐ()𝑎/𝑏+Ⓕ(2) 𝑐/𝑑=0'
+    input.value = 'Ⓐ()𝑎/𝑏+Ⓕ(2) 𝑐/𝑑=0'
     prevInputValue = ''
     draw(false)
     let event = new Event('keydown')
