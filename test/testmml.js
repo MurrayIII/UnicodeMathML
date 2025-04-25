@@ -334,6 +334,10 @@ const mathBrailles = [
 const unicodeMathB = [
     "1/2𝜋 ∫_0^2𝜋 𝑑𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)",
     "𝛁×𝐄=−𝜕𝐁/𝜕𝑡",
+    "𝑖ℏ 𝜕𝜓(𝑥,𝑡)/𝜕𝑡=[−ℏ²/2𝑚 𝜕²/𝜕𝑥²+𝑉(𝑥,𝑡)]𝜓(𝑥,𝑡)",
+    "(𝑎+𝑏)^𝑛=∑_(𝑘=0)^𝑛 𝑛⒞𝑘 𝑎^𝑘 𝑏^(𝑛−𝑘)",
+    "𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎",
+    "sin²⁡𝜃+cos²⁡𝜃=1",
 ]
 
 const mathTeXs = [                          // Some cases aren't supported by TeX
@@ -472,7 +476,7 @@ function testMathMLtoBraille() {
         draw()
         let uMath = getUnicodeMath(output.firstElementChild)
         if (uMath != unicodeMathB[i]) {
-            console.log("Expect: " + unicodeMath[i] + '\n');
+            console.log("Expect: " + unicodeMathB[i] + '\n');
             console.log("Result: " + uMath + '\n\n')
             iFail++
         } else {

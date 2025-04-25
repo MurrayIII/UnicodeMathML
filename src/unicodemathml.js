@@ -495,7 +495,7 @@ function needParens(ret) {
             i++;
             continue;
         }
-        if (ret[i] == ' ' && ch1 == '^' || isAlphanumeric(ret[i]))
+        if (ret[i] == ' ' && ch1 == '^' || isAlphanumeric(ret[i]) || ret[i] == '∑')
             continue;                       // Space is removed in build up
 
         if (!digitSuperscripts.includes(ret[i]) &&

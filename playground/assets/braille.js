@@ -1013,11 +1013,12 @@ function findDelimiter(braille, i, delims) {
 	let level = 1
 	let subsup = false
 
-	for (i++; i < braille.length && (level > 1 || frac > 1 ||
+	for (i++; i < braille.length && (level > 1 || frac > 0 ||
 		!delims.includes(braille[i])); i++) {
 		switch (braille[i]) {
 			case '\u2800':
-				subsup = false
+				if(!level)
+					subsup = false
 				break
 			case '⠐':
 				if (subsup)
@@ -1038,7 +1039,8 @@ function findDelimiter(braille, i, delims) {
 					frac--
 				break
 			case '⠈':
-				if (braille[i + 1] == '⠙')	// ⠈⠙ → ∂
+				let ch = braille[i + 1]
+				if (ch == '⠙' || ch == '⠓')	// ⠈⠙ → ∂, ⠈⠓ → ℏ
 					break
 			case '⠜':
 				level++
@@ -1052,7 +1054,7 @@ function findDelimiter(braille, i, delims) {
 }
 
 function checkParens(arg) {
-	return needParens(arg) ? '(' + arg + ')' : arg
+	return needParens(arg) && !isNary(arg) ? '(' + arg + ')' : arg
 }
 
 function getGreek(chAscii, cap, alt) {
@@ -1066,21 +1068,56 @@ function getGreek(chAscii, cap, alt) {
 	return ch
 }
 
+function checkBinomialCoefficient(braille, i) {
+	// Check for binomial coefficient
+	let j = i
+	let n = 0
+	let paren = 0
+
+	for (; j < braille.length; j++) {
+		switch (braille[j]) {
+			case '⠷':
+				paren++
+				break
+			case '⠩':
+				if (paren == 1)
+					n = j
+				break
+			case '⠾':
+				paren--
+				if (!paren) {
+					let uMath = ''
+					if (n > 0) {
+						let top = checkParens(braille2UnicodeMath(braille.substring(i + 1, n)))
+						let bot = checkParens(braille2UnicodeMath(braille.substring(n + 1, j)))
+						uMath = top + '⒞' + bot + ' '
+					}
+					return [uMath, j]
+				}
+		}
+	}
+	return ['', j]
+}
+
+const brailleIndicators = ['⠨', '⠸', '⠈', '⠠', '⠰']
+const brailleDigitMathStyles = {
+	'⠸': 'mbf', '⠠⠨⠸': 'mbfsans'}
+const brailleEnglishMathStyles = {
+	'⠸': 'mbf', '⠸⠨': 'mbfit', '⠨': 'mit', '⠈': 'mscr', '⠸⠈': 'mbfscr'}
+const brailleFrakMathStyles = {	// Fraktur and bold Greek
+	'⠸⠨': 'mbf', '⠸⠨⠨': 'mbfit', '⠸': 'mfrak', '⠸⠸': 'mbffrak'}
+const brailleSansMathStyles = {
+	'⠠⠨': 'msans', '⠠⠨⠨': 'mitsans', '⠠⠨⠸': 'mbfsans', '⠠⠨⠸⠨': 'mbfitsans'}
+const fourNineSymbols = {
+  //⠨⠷		  ⠨⠾		⠨⠌		  ⠨⠡		⠨⠤		  ⠨⠩		⠨⠬		  ⠨⠼
+	'⠷': '{', '⠾': '}', '⠌': '÷', '⠡': '∘', '⠤': '∸', '⠩': '∩', '⠬': '∪', '⠼': '#'}
+
 function checkMathAlphanumeric(braille, i) {
-	const charIndicators = ['⠨', '⠸', '⠈', '⠠', '⠰']
-	const brailleDigitMathStyles = {
-		'⠸': 'mbf', '⠠⠨⠸': 'mbfsans'}
-	const brailleEnglishMathStyles = {
-		'⠸': 'mbf', '⠸⠨': 'mbfit', '⠨': 'mit', '⠈': 'mscr', '⠸⠈': 'mbfscr'}
-	const brailleFrakMathStyles = {	// Fraktur and bold Greek
-		'⠸⠨': 'mbf', '⠸⠨⠨': 'mbfit', '⠸': 'mfrak', '⠸⠸': 'mbffrak'}
-	const brailleSansMathStyles = {
-		'⠠⠨': 'msans', '⠠⠨⠨': 'mitsans', '⠠⠨⠸': 'mbfsans', '⠠⠨⠸⠨': 'mbfitsans'}
 	let cap = false
 	let k = i + 1
 	let mathStyle = ''						// Default upright
 
-	for (; k < braille.length && charIndicators.includes(braille[k]); k++)
+	for (; k < braille.length && brailleIndicators.includes(braille[k]); k++)
 		;									// Find end of math alpha sequence
 	if (k >= braille.length)
 		return ['', 0]
@@ -1116,7 +1153,7 @@ function checkMathAlphanumeric(braille, i) {
 				if (braille[n - 1] == '⠈')
 					alt = true
 				ch = getGreek(chAscii, cap, alt)
-				if (braille[n - 1] == '⠨')
+				if (braille[i + 1] == '⠨')
 					mathStyle = 'mit'
 				break
 			case '⠸':						// [bold]Fraktur, bold[italic]Greek
@@ -1176,6 +1213,9 @@ function braille2UnicodeMath(braille) {
 
 		switch (ch) {
 			case '⠠':
+				if (braille[i + 1] == '\u2800') {
+					break
+				}
 				cap = true
 				continue
 
@@ -1236,8 +1276,9 @@ function braille2UnicodeMath(braille) {
 
 			// Math alphanumerics, superposition, floors, ceilings
 			case '⠈':
-				if (braille[i + 1] == '⠙') {
-					uMath += '∂'
+				ch1 = braille[i + 1]
+				if (ch1 == '⠙' || ch1 == '⠓') {
+					uMath += (ch1 == '⠙') ? '∂' : 'ℏ'
 					i++
 					continue
 				}
@@ -1288,21 +1329,16 @@ function braille2UnicodeMath(braille) {
 
 			// More brackets
 			case '⠷':
-				j = findDelimiter(braille, i, '⠩')
-				if (j >= braille.length) {
-					uMath += '('			// Not binomial coefficient
+				[ch1, k] = checkBinomialCoefficient(braille, i)
+				if (ch1) {
+					if (uMath[uMath.length - 1] != '▒')
+						uMath += ' '
+					uMath += ch1
+					i = k
 					continue
 				}
-				// Check for binomial coefficient
-				k = findDelimiter(braille, j, '⠾')
-				if (k >= braille.length)
-					break
-				top = checkParens(braille2UnicodeMath(braille.substring(i + 1, j)))
-				bottom = checkParens(braille2UnicodeMath(braille.substring(j + 1, k)))
-				uMath += ' ' + top + '⒞' + bottom + ' '
-				i = k
+				uMath += '('
 				continue
-
 			case '⠾':
 			case '⠻':
 				uMath += ')'
@@ -1323,48 +1359,28 @@ function braille2UnicodeMath(braille) {
 				ch1 = braille[i + 1]
 				if (braille.length > i + 1)
 					ch2 = braille[i + 2]
-				switch (ch1) {
-					case '⠷':				// ⠨⠷
-						uMath += '{'
-						break
-					case '⠾':				// ⠨⠾
-						uMath += '}'
-						break
-					case '⠌':
-						uMath += '÷'		// ⠨⠌  ÷ Division sign
-						break
-					case '⠡':
-						uMath += '∘'			// ⠨⠡  ∘ Ring operator
-						break
-					case '⠤':
-						uMath += '∸'			// ⠨⠤  ∸ Dot minus
-						break
-					case '⠩':				// ⠨⠩  ∩ Intersection
-						uMath += '∩'
-						break
-					case '⠼':				// ⠨⠼  # Number sign
-						uMath += '#'
-						break
-					case '⠨':				// Bra, ket
-						if (ch2 == '⠷') {
-							uMath += '⟨'
-							i++
-						} else if (ch2 == '⠾') {
-							uMath += '⟩'
-							i++
-						}
-						break
-					case '⠸':
-						if (ch2 == '⠷') {	// Left white curly brace
-							uMath += '⦃'
-							i++
-						} else if (ch2 == '⠾') {
-							uMath += '⦄'
-							i++
-						}
-						break
-					default:
-						i--
+
+				chT = fourNineSymbols[ch1]
+				if (chT) {
+					uMath += chT
+				} else if (ch1 == '⠨') {	// Bra, ket
+					if (ch2 == '⠷') {
+						uMath += '⟨'
+						i++
+					} else if (ch2 == '⠾') {
+						uMath += '⟩'
+						i++
+					}
+				} else if (ch1 == '⠸') {
+					if (ch2 == '⠷') {		// Left white curly brace
+						uMath += '⦃'
+						i++
+					} else if (ch2 == '⠾') {
+						uMath += '⦄'
+						i++
+					}
+				} else {
+					continue
 				}
 				i++
 				continue
@@ -1376,6 +1392,27 @@ function braille2UnicodeMath(braille) {
 				// Search for ⠻ and check span in braille2Symbol
 				break
 			case '\u2800':					// Relational ops go to baseline
+				if (sup) {
+					sup = 0
+					if (uMath[uMath.length - 2] == '(') {
+						uMath = uMath.substring(0, uMath.length - 2) +
+							uMath[uMath.length - 1] + ' '
+					} else {
+						uMath += ') '
+					}
+				}
+				// Since ch is a braille space, look for relational operator,
+				// which starts and ends with a braille space.
+				j = braille.indexOf('\u2800', i + 1)
+				if (j != -1) {
+					let chT = braille2Symbol[braille.substring(i, j + 1)]
+					if (chT) {
+						uMath += chT
+						i = j
+						continue
+					}
+				}
+				break
 			case '⠐':						// Multipurpose indicator
 				if (sup) {
 					sup = 0
@@ -1385,38 +1422,39 @@ function braille2UnicodeMath(braille) {
 					} else {
 						uMath += ') '
 					}
-					if (ch == '⠐')
-						continue
+					continue
 				}
-				// If ch is a braille space, look for relational operator,
-				// which starts and ends with a braille space. Else look
-				// for a symbol defined by a modifier sequence, which starts
-				// with '⠐' and ends with '⠻'
-				j = braille.indexOf(ch == '\u2800' ? '\u2800' : '⠻', i + 1)
-				if (j != -1) {
-					let chT = braille2Symbol[braille.substring(i, j + 1)]
-					if (chT) {
-						uMath += chT
-						i = j
-						continue
-					}
-					if (ch == '⠐') {
-						// Handle modifier sequence. Find above/below code,
-						// allowing for nested modifier sequences
-						j = findDelimiter(braille, i, ['⠣', '⠩']) // Find end of base
-						if (j >= braille.length)
-							break			// End not found
-						k = findDelimiter(braille, j, '⠻') // Find end of script
-						if (k >= braille.length)
-							break
-						let op = braille[j] == '⠣' ? '┴' : '┬'
-						let base = checkParens(braille2UnicodeMath(braille.substring(i + 1, j)))
-						let script = checkParens(braille2UnicodeMath(braille.substring(j + 1, k)))
-						uMath += base + op + script + ' '
-						i = k
-						continue
-					}
+				// Look for a symbol defined by a modifier sequence, which
+				// starts with '⠐' and ends with '⠻'
+				j = findDelimiter(braille, i, '⠻')
+				if (j >= braille.length)
+					break			// End not found
+				let chT = braille2Symbol[braille.substring(i, j + 1)]
+				if (chT) {
+					uMath += chT
+					i = j
+					continue
 				}
+				// Not a symbol. Check for under/over constructs
+				k = findDelimiter(braille, i, ['⠣', '⠩'])
+				if (k == -1 || k >= braille.length)
+					break
+				let op = braille[k] == '⠣' ? '┴' : '┬'
+				let base = checkParens(braille2UnicodeMath(braille.substring(i + 1, k)))
+				if (base == 'Σ')
+					base = '∑'
+				else if (base == 'Π')
+					base = '∏'
+				let n = findDelimiter(braille, k, ['⠣'])
+				let up = ''
+				i = j
+				if (n != -1 && n < j) {
+					up = '┴' + checkParens(braille2UnicodeMath(braille.substring(n + 1, j)))
+					j = n
+				}
+				let down = checkParens(braille2UnicodeMath(braille.substring(k + 1, j)))
+				uMath += base + op + down + up + '▒'
+				continue
 		}
 		if (uMath && isAsciiAlphabetic(uMath[uMath.length - 1]) && isAsciiDigit(chAscii)) {
 			// Convert Nemeth simple numeric subscripts like a2 to UnicodeMath
@@ -1432,6 +1470,15 @@ function braille2UnicodeMath(braille) {
 			i = j - 1
 		} else {
 			uMath += chAscii
+		}
+	}
+	if (sup) {
+		sup = 0
+		if (uMath[uMath.length - 2] == '(') {
+			uMath = uMath.substring(0, uMath.length - 2) +
+				uMath[uMath.length - 1] + ' '
+		} else {
+			uMath += ') '
 		}
 	}
 	return uMath

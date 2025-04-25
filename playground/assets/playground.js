@@ -1025,7 +1025,7 @@ input.addEventListener("keydown", function (e) {
                 return
         }
     }
-    if (input.value[0] == '\u2800' && e.key.length == 1 &&
+    if (isBraille(input.value[0]) && e.key.length == 1 &&
         !e.ctrlKey && !e.altKey) {
         let i = e.key.codePointAt(0)
         i -= (i > 0x5F) ? 0x40 : 0x20
@@ -4681,7 +4681,7 @@ async function draw(undo) {
             // equations separated by \v's. Here use \n's since \v's don't
             // display on different lines in the input textarea. Count
             // equations with '&' alignment marks. If all equations have
-            // &'s, getMathParaMtr() will align the equations.
+            // &'s, getMathParaMtr() will align the equations at the &'s.
             mathPara = true
             let cParen = 0
 
@@ -4732,7 +4732,7 @@ async function draw(undo) {
         if (val.includes("⁅") || val.includes("⁆"))
             output_HTML += '<div class="notice">Note that the UnicodeMath delimiters ⁅⋯⁆ you\'ve used in the expression below aren\'t required – ' + (ummlConfig.splitInput? 'each line of the' : 'the entire') + ' input is automatically treated as a UnicodeMath expression.</div>';
 
-        if (val[0] == '\u2800')
+        if (isBraille(val[0]))
             val = braille2UnicodeMath(val)
 
         // MathML output
