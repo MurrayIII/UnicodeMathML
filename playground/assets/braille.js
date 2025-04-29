@@ -496,8 +496,9 @@ const greek2Ascii = 'ABGDEZ:?IKLMNXOPR STUF&YW'
 
 //					 ABCDEFGHIJKLMNOPQRSTUVWXYZ
 const ascii2Greek = 'ΑΒ ΔΕΦΓ Ι ΚΛΜΝΟΠ ΡΣΤΥ ΩΞΨΖ'
-const ascii2Greek2 = { ':': 'η', '?': 'θ', '&': 'χ', '$': '∇' } // :?&$ → ηθχ∇
+const ascii2Greek2 = {':': 'η', '?': 'θ', '&': 'χ', '$': '∇'} // :?&$ → ηθχ∇
 const greekAlts = {'θ': 'ϑ', 'κ': 'ϰ', 'π': 'ϖ', 'ρ': 'ϱ'}
+const doubleStruck2Braille = {'ⅅ': '⠠⠙', 'ⅆ': '⠙', 'ⅇ': '⠑', 'ⅈ': '⠊', 'ⅉ': '⠚'}
 
 function isBraille(ch) {					// In Unicode braille block?
 	return inRange('\u2800', ch, '\u28FF')
@@ -923,11 +924,11 @@ function braille(value, noAddParens, subsup) {
 
 		case 'mi':
 			let c = value.innerHTML;
-			//if (value.hasAttribute('intent')) {
-			//	let ch = value.getAttribute('intent')
-			//	if (isDoubleStruck(ch))
-			//		c = ch;
-			//}
+			if (value.hasAttribute('intent')) {
+				let ch = value.getAttribute('intent')
+				if (isDoubleStruck(ch))
+					return '⠈⠈⠨⠰' + doubleStruck2Braille[ch]
+			}
 			let mathvariant = value.getAttribute('mathvariant')
 
 			if (mathvariant) {
@@ -1040,8 +1041,10 @@ function findDelimiter(braille, i, delims) {
 				break
 			case '⠈':
 				let ch = braille[i + 1]
-				if (ch == '⠙' || ch == '⠓')	// ⠈⠙ → ∂, ⠈⠓ → ℏ
-					break
+				ch1 = dot4Symbols[ch]
+				if (ch1)					// ⠈⠙ → ∂, ⠈⠓ → ℏ, ⠈⠱ → ~
+					ch = ch1
+				break
 			case '⠜':
 				level++
 				break
@@ -1066,6 +1069,23 @@ function getGreek(chAscii, cap, alt) {
 	if (alt)
 		ch = greekAlts[ch]
 	return ch
+}
+
+function getSubSupCode(braille, i, subSupCode) {
+	// Return string containing the braille subscript/superscript code
+	// sequence that starts with braille[i]. Also return the characters
+	// to add to uMath
+	let str = ''
+	let sbspcd = ''
+
+	for (; i < braille.length && ['⠰', '⠘'].includes(braille[i]); i++)
+		sbspcd += braille[i]
+
+	if (sbspcd.length > subSupCode.length)  // Start script object
+		str = sbspcd[sbspcd.length - 1] == '⠘' ? '^(' : '_('
+	else
+		str = ') '							// End script object
+	return [sbspcd, str]
 }
 
 function checkBinomialCoefficient(braille, i) {
@@ -1103,7 +1123,9 @@ const brailleIndicators = ['⠨', '⠸', '⠈', '⠠', '⠰']
 const brailleDigitMathStyles = {
 	'⠸': 'mbf', '⠠⠨⠸': 'mbfsans'}
 const brailleEnglishMathStyles = {
-	'⠸': 'mbf', '⠸⠨': 'mbfit', '⠨': 'mit', '⠈': 'mscr', '⠸⠈': 'mbfscr'}
+	'⠸': 'mbf', '⠸⠨': 'mbfit', '⠨': 'mit', '⠈': 'mscr', '⠸⠈': 'mbfscr',
+	'⠈⠈': 'Bbb', '⠈⠈⠨': 'Ibbb'
+}
 const brailleFrakMathStyles = {	// Fraktur and bold Greek
 	'⠸⠨': 'mbf', '⠸⠨⠨': 'mbfit', '⠸': 'mfrak', '⠸⠸': 'mbffrak'}
 const brailleSansMathStyles = {
@@ -1111,6 +1133,8 @@ const brailleSansMathStyles = {
 const fourNineSymbols = {
   //⠨⠷		  ⠨⠾		⠨⠌		  ⠨⠡		⠨⠤		  ⠨⠩		⠨⠬		  ⠨⠼
 	'⠷': '{', '⠾': '}', '⠌': '÷', '⠡': '∘', '⠤': '∸', '⠩': '∩', '⠬': '∪', '⠼': '#'}
+const dot4Symbols = { '⠙': '∂', '⠓': 'ℏ', '⠱': '~' }
+const italicBbb = { 'D': 'ⅅ', 'd': 'ⅆ', 'e': 'ⅇ', 'i': 'ⅈ', 'j': 'ⅉ' }
 
 function checkMathAlphanumeric(braille, i) {
 	let cap = false
@@ -1177,8 +1201,15 @@ function checkMathAlphanumeric(braille, i) {
 				break
 		}
 	}
-	if (mathStyle)
-		ch = mathFonts[ch][mathStyle]
+	if (mathStyle) {
+		if (mathStyle == 'Ibbb') {
+			let ch1 = italicBbb[ch]
+			if (ch1)
+				ch = ch1
+		} else {
+			ch = mathFonts[ch][mathStyle]
+		}
+	}
 	if (!ch)
 		ch = chAscii
 
@@ -1191,6 +1222,7 @@ function braille2UnicodeMath(braille) {
 		braille2Symbol = flip(symbol2Braille)
 
 	let bottom
+	let subSupCode = ''
 	let cap = false
 	let ch1, ch2
 	let i = braille[0] == '\u2800' ? 1 : 0
@@ -1213,8 +1245,12 @@ function braille2UnicodeMath(braille) {
 
 		switch (ch) {
 			case '⠠':
-				if (braille[i + 1] == '\u2800') {
+				if (braille[i + 1] == '\u2800')
 					break
+				if (braille[i + 1] == '⠿') {
+					uMath += '∞'
+					i++
+					continue
 				}
 				cap = true
 				continue
@@ -1240,20 +1276,6 @@ function braille2UnicodeMath(braille) {
 				}
 				break
 
-			// Subscripts and superscripts
-			case '⠘':						// Handle single-level subsups for now
-				sup++
-				if (!sup) {
-					uMath += ')'
-					sup = 1
-				}
-				uMath += '^('
-				continue
-			case '⠰':
-				sup--
-				uMath += '_('
-				continue
-
 			// Roots
 			case '⠣':						// nᵗʰ root
 				k = findDelimiter(braille, i, '⠜')
@@ -1277,12 +1299,23 @@ function braille2UnicodeMath(braille) {
 			// Math alphanumerics, superposition, floors, ceilings
 			case '⠈':
 				ch1 = braille[i + 1]
-				if (ch1 == '⠙' || ch1 == '⠓') {
-					uMath += (ch1 == '⠙') ? '∂' : 'ℏ'
+				if (ch1 == '⠙' || ch1 == '⠓' || ch1 == '⠱') {
+					uMath += (ch1 == '⠙') ? '∂' : (ch1 == '⠓') ? 'ℏ' : '~'
 					i++
 					continue
 				}
+				[ch1, k] = checkMathAlphanumeric(braille, i)
+				if (ch1) {
+					uMath += ch1
+					i = k
+					continue
+				}
 			case '⠸':
+				if (braille[i + 1] == '⠲') {
+					uMath += '.'			// '.' instead of 𝟒
+					i++
+					continue
+				}
 				[ch1, k] = checkMathAlphanumeric(braille, i)
 				if (ch1) {
 					uMath += ch1
@@ -1321,7 +1354,7 @@ function braille2UnicodeMath(braille) {
 							i++
 						}
 						break
-					default:
+				default:
 						i--
 				}
 				i++
@@ -1391,6 +1424,31 @@ function braille2UnicodeMath(braille) {
 			case '⠫':						// Shape
 				// Search for ⠻ and check span in braille2Symbol
 				break
+
+			// Subscripts and superscripts
+			case '⠘':
+				sup++
+				if (!sup) {
+					uMath += ')'
+					sup = 1
+					uMath += '^('
+					subSupCode = '⠘'
+					continue
+				}
+				[subSupCode, ch1] = getSubSupCode(braille, i, subSupCode)
+				if (subSupCode.length > 1) {
+					uMath += ch1
+					i += subSupCode.length - 1
+					continue
+				}
+				uMath += '^('
+				continue
+			case '⠰':
+				[subSupCode, ch1] = getSubSupCode(braille, i, subSupCode)
+				sup--
+				uMath += '_('
+				continue
+
 			case '\u2800':					// Relational ops go to baseline
 				if (sup) {
 					sup = 0
@@ -1400,6 +1458,9 @@ function braille2UnicodeMath(braille) {
 					} else {
 						uMath += ') '
 					}
+					if (subSupCode.length > 1)
+						uMath += ') '
+					subSupCode = ''
 				}
 				// Since ch is a braille space, look for relational operator,
 				// which starts and ends with a braille space.
@@ -1422,6 +1483,9 @@ function braille2UnicodeMath(braille) {
 					} else {
 						uMath += ') '
 					}
+					if (subSupCode.length > 1)
+						uMath += ') '
+					subSupCode = 0
 					continue
 				}
 				// Look for a symbol defined by a modifier sequence, which
@@ -1441,19 +1505,33 @@ function braille2UnicodeMath(braille) {
 					break
 				let op = braille[k] == '⠣' ? '┴' : '┬'
 				let base = checkParens(braille2UnicodeMath(braille.substring(i + 1, k)))
-				if (base == 'Σ')
-					base = '∑'
-				else if (base == 'Π')
-					base = '∏'
-				let n = findDelimiter(braille, k, ['⠣'])
+				let of1 = ''
+				if (base == 'Σ') {			// Upper-case sigma
+					base = '∑'				// Summation sign
+					of1 = '▒'				// n-ary conversions need this...
+				} else if (base == 'Π') {	// Upper-case pi
+					base = '∏'				// Product sign
+					of1 = '▒'
+				}
 				let up = ''
-				i = j
-				if (n != -1 && n < j) {
-					up = '┴' + checkParens(braille2UnicodeMath(braille.substring(n + 1, j)))
-					j = n
+				if (braille[k] != '⠣') {
+					let n = findDelimiter(braille, k, ['⠣'])
+					i = j
+					if (n != -1 && n < j) {
+						up = '┴' + checkParens(braille2UnicodeMath(braille.substring(n + 1, j)))
+						j = n
+					}
 				}
 				let down = checkParens(braille2UnicodeMath(braille.substring(k + 1, j)))
-				uMath += base + op + down + up + '▒'
+				if (down == '^')
+					down = '\u0302'
+				if (down[1] == '~')
+					down = '\u0303'
+				if (isAccent(down)) {
+					op = ''
+					i = j
+				}
+				uMath += base + op + down + up + of1
 				continue
 		}
 		if (uMath && isAsciiAlphabetic(uMath[uMath.length - 1]) && isAsciiDigit(chAscii)) {

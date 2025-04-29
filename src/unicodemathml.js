@@ -201,6 +201,10 @@ function inRange(ch0, ch, ch1) {
     return ch >= ch0 && ch <= ch1 && ch.length == ch0.length;
 }
 
+function isAccent(ch) {
+    return inRange('\u0300', ch, '\u034F')
+}
+
 function isAlphanumeric(ch) {
     return /[\w]/.test(ch) || ch >= '\u3018' || isGreek(ch) || inRange('ℂ', ch, 'ⅉ');
 }
