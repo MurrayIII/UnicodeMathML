@@ -57,20 +57,20 @@ const symbol2Braille = {
 	'\u2236': '⠀⠐⠂⠀',			// ∶	Ratio
 	'\u2A74': '⠀⠐⠂⠐⠂⠨⠅⠀',		// ⩴	Double colon equal
 	'\u2254': '⠀⠐⠂⠨⠅⠀',			// ≔		Colon equals
-	'\u003C': '⠀⠐⠅⠀',			// <	less than sign
+	'\u003C': '⠀⠐⠅⠀',			// <	Less than sign
 	'\u22D8': '⠀⠐⠅⠈⠐⠅⠈⠐⠅⠻⠀',	// ⋘		Much less than
 	'\u226A': '⠀⠐⠅⠈⠐⠅⠻⠀',		// ≪	Much less than
 	'\u2A79': '⠀⠐⠅⠈⠨⠡⠻⠀',		// ⩹	Less than w circle inside
-	'\u2272': '⠀⠐⠅⠈⠱⠀',			// ≲		less than or equivalent to
-	'\u2A85': '⠀⠐⠅⠈⠱⠈⠱⠀',		// ⪅	less than or approximate
-	'\u2A8F': '⠀⠐⠅⠈⠱⠨⠂⠀',		// ⪏	less than above similar above greater than
-	'\u2A8D': '⠀⠐⠅⠈⠱⠱⠀',		// ⪍	less than above similar or equal to
-	'\u2268': '⠀⠐⠅⠌⠨⠅⠀',		// ≨		less than but not equal to
-	'\u2276': '⠀⠐⠅⠨⠂⠀',			// ≶		less than or greater than
-	'\u2A91': '⠀⠐⠅⠨⠂⠨⠅⠀',		// ⪑	less than above greater than above double - line equal
-	'\u2266': '⠀⠐⠅⠨⠅⠀',			// ≦	less than over equal to
-	'\u2A8B': '⠀⠐⠅⠨⠅⠨⠂⠀',		// ⪋	less than above double - line equal above greater than
-	'\u2264': '⠀⠐⠅⠱⠀',			// ≤	less than or equal to
+	'\u2272': '⠀⠐⠅⠈⠱⠀',			// ≲		Less than or equivalent to
+	'\u2A85': '⠀⠐⠅⠈⠱⠈⠱⠀',		// ⪅	Less than or approximate
+	'\u2A8F': '⠀⠐⠅⠈⠱⠨⠂⠀',		// ⪏	Less than above similar above greater than
+	'\u2A8D': '⠀⠐⠅⠈⠱⠱⠀',		// ⪍	Less than above similar or equal to
+	'\u2268': '⠀⠐⠅⠌⠨⠅⠀',		// ≨		Less than but not equal to
+	'\u2276': '⠀⠐⠅⠨⠂⠀',			// ≶		Less than or greater than
+	'\u2A91': '⠀⠐⠅⠨⠂⠨⠅⠀',		// ⪑	Less than above greater than above double - line equal
+	'\u2266': '⠀⠐⠅⠨⠅⠀',			// ≦	Less than over equal to
+	'\u2A8B': '⠀⠐⠅⠨⠅⠨⠂⠀',		// ⪋	Less than above double - line equal above greater than
+	'\u2264': '⠀⠐⠅⠱⠀',			// ≤	Less than or equal to
 	'\u22F5': '⠀⠐⠈⠑⠣⠡⠻⠀',		// ⋵	Element of w dot above
 	'\u2A6F': '⠀⠐⠈⠱⠈⠱⠣⠸⠣⠻⠀',	// ⩯	Almost equal to w circumflex
 	'\u2A6A': '⠀⠐⠈⠱⠣⠡⠻⠀',		// ⩪	Tilde operator w dot above
@@ -105,8 +105,8 @@ const symbol2Braille = {
 	'\u223D': '⠀⠠⠱⠀',			// ∽	Reversed tilde
 	'\u224C': '⠀⠠⠱⠨⠅⠀',			// ≌		All equal to
 	'\u22CD': '⠀⠠⠱⠱⠀',			// ⋍		Reversed tilde equals
-	'\u22D6': '⠀⠡⠈⠐⠅⠻⠀',		// ⋖		less than w dot
-	'\u22D7': '⠀⠡⠈⠨⠂⠻⠀',		// ⋗		greater than w dot
+	'\u22D6': '⠀⠡⠈⠐⠅⠻⠀',		// ⋖		Less than w dot
+	'\u22D7': '⠀⠡⠈⠨⠂⠻⠀',		// ⋗		Greater than w dot
 	'\u2ABD': '⠀⠡⠈⠸⠐⠅⠻⠀',		// ⪽	Subset w dot
 	'\u2ABE': '⠀⠡⠈⠸⠨⠂⠻⠀',		// ⪾	Superset w dot
 	'\u2239': '⠀⠤⠐⠂⠀',			// ∹		Excess
@@ -635,6 +635,8 @@ function getBraille(node) {
 		code = text.codePointAt(i);
 		cchCh = code > 0xFFFF ? 2 : 1;
 		ch = text.substring(i, i + cchCh);
+		if (ch == '\u00A0' || ch == '\u0020')
+			ch = '\u2800'
 		if (isAsciiDigit(ch) && ret[ret.length - 1] == '\u2800') {
 			// Need numeric indicator after braille space
 			ret += '⠼';
@@ -899,31 +901,15 @@ function braille(value, noAddParens, subsup) {
 			return ret + opClose;
 
 		case 'mo':
-			val = value.innerHTML;
-			if (val[0] == '&') {
-				if (val.startsWith('&#') && val.endsWith(';')) {
-					ret = value.innerHTML.substring(2, val.length - 1);
-					if (ret[0] == 'x')
-						ret = '0' + ret;
-					val = String.fromCodePoint(ret);
-				} else switch (val) {
-					case '&ApplyFunction;':
-						val = '\u2061';
-						break;
-					case '&lt;':
-						val = '<';
-						break;
-					case '&gt;':
-						val = '>';
-						break;
-				}
-			}
+			val = value.textContent
 			if (val == '\u0302')
-				val = '^';
-			return val;
+				val = '^'
+			if (val == '\u0303')
+				val = '~'
+			return val
 
 		case 'mi':
-			let c = value.innerHTML;
+			let c = value.textContent;
 			if (value.hasAttribute('intent')) {
 				let ch = value.getAttribute('intent')
 				if (isDoubleStruck(ch))
@@ -970,6 +956,8 @@ function braille(value, noAddParens, subsup) {
 				open = open[0] + '⠠⠷';
 				close = close[0] + '⠠⠾';
 			}
+		} else if (close == '\u200B') {
+			close = ''
 		}
 		return open + braille(value.children[1], true) + close;
 	}
@@ -1221,16 +1209,16 @@ function braille2UnicodeMath(braille) {
 	if (!braille2Symbol)
 		braille2Symbol = flip(symbol2Braille)
 
-	let bottom
 	let subSupCode = ''
 	let cap = false
-	let ch1, ch2
+	let ch1, ch2, chT
+	let eqArray = false
 	let i = braille[0] == '\u2800' ? 1 : 0
 	let index
 	let j, k
 	let radicand
 	let sup = 0
-	let top
+	let table = false
 	let uMath = ''
 
 	for (; i < braille.length; i++) {
@@ -1245,15 +1233,28 @@ function braille2UnicodeMath(braille) {
 
 		switch (ch) {
 			case '⠠':
-				if (braille[i + 1] == '\u2800')
-					break
-				if (braille[i + 1] == '⠿') {
-					uMath += '∞'
-					i++
-					continue
+				switch (braille[i + 1]) {
+					case '\u2800':
+						uMath += ','
+						i++
+						continue
+					case '⠿':
+						uMath += '∞'
+						i++
+						continue
+					case '⠷':
+						table = true
+						uMath += '(■'
+						continue
+					case '⠾':
+						table = false
+						uMath += ')'
+						continue
+					default:
+						cap = true
+						continue
 				}
-				cap = true
-				continue
+				break
 
 			case '⠹':
 				// Fraction: uMath += ⍁...&...〗
@@ -1294,6 +1295,10 @@ function braille2UnicodeMath(braille) {
 					radicand = checkParens(radicand)
 				uMath += '√' + radicand + ' '
 				i = j
+				continue
+
+			case '⣍':						// Table row separator
+				uMath += '@'
 				continue
 
 			// Math alphanumerics, superposition, floors, ceilings
@@ -1354,7 +1359,7 @@ function braille2UnicodeMath(braille) {
 							i++
 						}
 						break
-				default:
+					default:
 						i--
 				}
 				i++
@@ -1396,6 +1401,13 @@ function braille2UnicodeMath(braille) {
 				chT = fourNineSymbols[ch1]
 				if (chT) {
 					uMath += chT
+					if (chT == '{') {
+						j = findDelimiter(braille, i + 1, '⣍')
+						if (j != -1) {
+							eqArray = true
+							uMath += '█('
+						}
+					}
 				} else if (ch1 == '⠨') {	// Bra, ket
 					if (ch2 == '⠷') {
 						uMath += '⟨'
@@ -1462,11 +1474,24 @@ function braille2UnicodeMath(braille) {
 						uMath += ') '
 					subSupCode = ''
 				}
+				if (table) {
+					uMath += '&'
+					continue
+				}
+				let code = braille[i + 1].codePointAt(0) - 0x2800
+				if (eqArray && isAsciiAlphabetic(braille2Ascii[code])) {
+					// Quote preceding ASCII word
+					for (k = i - 1; k > 0 && isAsciiAlphabetic(uMath[k]); k--)
+						;
+					k++
+					uMath = uMath.substring(0, k) + '"' + uMath.substring(k) + ' "'
+					continue
+				}
 				// Since ch is a braille space, look for relational operator,
 				// which starts and ends with a braille space.
 				j = braille.indexOf('\u2800', i + 1)
 				if (j != -1) {
-					let chT = braille2Symbol[braille.substring(i, j + 1)]
+					chT = braille2Symbol[braille.substring(i, j + 1)]
 					if (chT) {
 						uMath += chT
 						i = j
@@ -1493,7 +1518,7 @@ function braille2UnicodeMath(braille) {
 				j = findDelimiter(braille, i, '⠻')
 				if (j >= braille.length)
 					break			// End not found
-				let chT = braille2Symbol[braille.substring(i, j + 1)]
+				chT = braille2Symbol[braille.substring(i, j + 1)]
 				if (chT) {
 					uMath += chT
 					i = j
@@ -1551,7 +1576,6 @@ function braille2UnicodeMath(braille) {
 		}
 	}
 	if (sup) {
-		sup = 0
 		if (uMath[uMath.length - 2] == '(') {
 			uMath = uMath.substring(0, uMath.length - 2) +
 				uMath[uMath.length - 1] + ' '
@@ -1559,5 +1583,8 @@ function braille2UnicodeMath(braille) {
 			uMath += ') '
 		}
 	}
+	if (eqArray)
+		uMath += ')┤'
+
 	return uMath
 }
