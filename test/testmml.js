@@ -269,7 +269,7 @@ const mathBrailles = [
     "⠳⠁⠬⠃⠳",
     "⠨⠁",
     "⠁⠬⠃",
-    "⠰⠝⠀⠠⠉⠰⠅⠀⠨⠅⠀⠷⠝⠩⠅⠾⠀⠨⠅⠀⠹⠝⠸⠖⠌⠅⠸⠖⠷⠝⠤⠅⠾⠸⠖⠼",
+    "⠰⠝⠐⠠⠉⠰⠅⠀⠨⠅⠀⠷⠝⠩⠅⠾⠀⠨⠅⠀⠹⠝⠸⠖⠌⠅⠸⠖⠷⠝⠤⠅⠾⠸⠖⠼",
     "⠷⠁⠬⠃⠠⠀⠉⠬⠙⠾",
     "⠫⠗⠸⠫⠁⠬⠃⠻",
     "⠳⠐⠁⠬⠃⠩⠱⠻⠳",
@@ -346,6 +346,14 @@ const unicodeMathB = [
     'cos⁡𝜃=1/2 𝑒^ⅈ𝜃+𝑐.𝑐.',
     "(■(𝑎&𝑏@𝑐&𝑑))",
     "|𝑥|=Ⓒ(\"if \"𝑥≥0,𝑥@\"if \"𝑥<0,−𝑥)",
+    "█(10𝑥+3𝑦=2@3𝑥+13𝑦=4)",
+    "|𝑎+𝑏|",
+    "𝛼",
+    "𝑎+𝑏",
+    "_𝑛 𝐶_𝑘=𝑛⒞𝑘=𝑛!/𝑘!(𝑛−𝑘)!",
+    "(𝑎+𝑏,𝑐+𝑑)",
+    "▭(𝑎+𝑏)",
+    "▭(1&𝑎+𝑏)",
 ]
 
 const mathTeXs = [                          // Some cases aren't supported by TeX
@@ -475,12 +483,13 @@ function testMathMLtoBraille() {
         }
     }
     let iFail = mathML.length - iSuccess;
-    console.log("Test MathML to braille: " + iSuccess + " passes; " + iFail + " failures\n");
+    console.log("Test MathML to braille: " + iSuccess + " passes; " +
+        iFail + " failures\n")
 
     // Test braille to MathML
     iSuccess = iFail = 0
     for (let i = 0; i < unicodeMathB.length; i++) {
-        input.value = '\u2800' + mathBrailles[i]
+        input.value = mathBrailles[i]
         draw()
         let uMath = getUnicodeMath(output.firstElementChild)
         if (uMath != unicodeMathB[i]) {
@@ -491,7 +500,8 @@ function testMathMLtoBraille() {
             iSuccess++
         }
     }
-    console.log("Test braille to MathML: " + iSuccess + " passes; " + iFail + " failures\n")
+    console.log("Test braille to MathML: " + iSuccess + " passes; " +
+        iFail + " failures\n")
 }
 
 function testMathMLtoTeX() {

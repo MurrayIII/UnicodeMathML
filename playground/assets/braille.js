@@ -879,7 +879,7 @@ function braille(value, noAddParens, subsup) {
 				if (value.children[5].nodeName != 'none')
 					ret += '⠘' + braille(value.children[5]);
 				if (ret)
-					ret += ' ';
+					ret += '⠐';
 			}
 			ret += braille(value.children[0]);
 			if (value.children[1].nodeName != 'none')
@@ -999,7 +999,7 @@ function findDelimiter(braille, i, delims) {
 	// Starting at braille[i + 1], find the first delimiter in delims at
 	// the starting level. Nested sequences are bypassed.
 	let frac = 0
-	let level = 1
+	let level = braille[i] == '⠐' ? 0 : 1
 	let subsup = false
 
 	for (i++; i < braille.length && (level > 1 || frac > 0 ||
@@ -1134,9 +1134,8 @@ function checkMathAlphanumeric(braille, i) {
 	if (k >= braille.length)
 		return ['', 0]
 
-	let code = braille[k].codePointAt(0) - 0x2800
 	let ch
-	let	chAscii = braille2Ascii[code]
+	let chAscii = getAsciiFromBraille(braille[k])
 
 	if (isAsciiDigit(chAscii)) {
 		mathStyle = brailleDigitMathStyles[braille.substring(i, k)]
@@ -1211,6 +1210,7 @@ function braille2UnicodeMath(braille) {
 
 	let subSupCode = ''
 	let cap = false
+	let cases = false
 	let ch1, ch2, chT
 	let eqArray = false
 	let i = braille[0] == '\u2800' ? 1 : 0
@@ -1256,6 +1256,14 @@ function braille2UnicodeMath(braille) {
 				}
 				break
 
+			case '⠄':
+				if (braille[i + 1] == '⠄' && braille[i + 2] == '⠄') {
+					uMath += '…'
+					i += 2
+					continue
+				}
+				break
+
 			case '⠹':
 				// Fraction: uMath += ⍁...&...〗
 				j = findDelimiter(braille, i, '⠌') // Find end of numerator
@@ -1271,8 +1279,7 @@ function braille2UnicodeMath(braille) {
 
 			case '⠼':
 				if (i + 1 < braille.length) {
-					let code = braille[i + 1].codePointAt(0)
-					if (isAsciiDigit(braille2Ascii[code - 0x2800]))
+					if (isAsciiDigit(getAsciiFromBraille(braille[i + 1])))
 						continue				// Ignore numeric indicator
 				}
 				break
@@ -1298,6 +1305,13 @@ function braille2UnicodeMath(braille) {
 				continue
 
 			case '⣍':						// Table row separator
+				if (!table && !cases && !eqArray) {
+					// Assume equation array since no enclosing parens
+					eqArray = true
+					uMath = '█('
+					i = -1					// Start over
+					continue
+				}
 				uMath += '@'
 				continue
 
@@ -1318,6 +1332,11 @@ function braille2UnicodeMath(braille) {
 			case '⠸':
 				if (braille[i + 1] == '⠲') {
 					uMath += '.'			// '.' instead of 𝟒
+					i++
+					continue
+				}
+				if (braille[i + 1] == '⠖') {
+					uMath += '!'			// '! instead of 𝟔
 					i++
 					continue
 				}
@@ -1382,6 +1401,27 @@ function braille2UnicodeMath(braille) {
 				uMath += ')'
 				continue
 			case '⠳':						// Absolute value?
+				if (braille[i + 1] == '⠐') {
+					// Check for partial box enclosure
+					// TODO: generalize to handle cases with no left side
+					k = findDelimiter(braille, i + 1, '⠻')
+					if (k < braille.length && braille[k - 1] == '⠱') {
+						// Line under or over: collect bit mask
+						let n = 11			// ⠳ implies left side is present
+						j = k
+						if (braille[k - 2] == '⠩')
+							n -= 2			// Bottom present
+						if (braille[k + 1] == '⠳') {
+							n -= 8			// Right side present
+							j++
+						}
+						if (braille[k - 2] == '⠣')
+							n -= 1			// Top is present
+						uMath += '▭(' + n + '&' + braille2UnicodeMath(braille.substring(i + 2, k - 2)) + ')'
+						i = j
+						continue
+					}
+				}
 				uMath += '|'
 				continue
 
@@ -1404,7 +1444,7 @@ function braille2UnicodeMath(braille) {
 					if (chT == '{') {
 						j = findDelimiter(braille, i + 1, '⣍')
 						if (j != -1) {
-							eqArray = true
+							cases = true
 							uMath += '█('
 						}
 					}
@@ -1434,8 +1474,16 @@ function braille2UnicodeMath(braille) {
 				uMath += '∫'
 				continue
 			case '⠫':						// Shape
-				// Search for ⠻ and check span in braille2Symbol
-				break
+				// Search for terminating ⠻
+				k = findDelimiter(braille, i, '⠻')
+				if (k >= braille.length)
+					break
+				if (braille.substring(i + 1, i + 4) == '⠗⠸⠫') {	// box?
+					// TODO: check for other shapes
+					uMath += '▭(' + braille2UnicodeMath(braille.substring(i + 4, k)) + ')'
+					i = k
+					continue
+				}
 
 			// Subscripts and superscripts
 			case '⠘':
@@ -1473,13 +1521,17 @@ function braille2UnicodeMath(braille) {
 					if (subSupCode.length > 1)
 						uMath += ') '
 					subSupCode = ''
+					ch1 = braille[i + 1]
+					if (ch1 == '⠠')			// Cap?
+						ch1 = braille[i + 2]
+					if (isAsciiAlphanumeric(getAsciiFromBraille(ch1)))
+						continue			// Bypass space
 				}
 				if (table) {
 					uMath += '&'
 					continue
 				}
-				let code = braille[i + 1].codePointAt(0) - 0x2800
-				if (eqArray && isAsciiAlphabetic(braille2Ascii[code])) {
+				if (cases && isAsciiAlphabetic(getAsciiFromBraille(braille[i + 1]))) {
 					// Quote preceding ASCII word
 					for (k = i - 1; k > 0 && isAsciiAlphabetic(uMath[k]); k--)
 						;
@@ -1575,6 +1627,7 @@ function braille2UnicodeMath(braille) {
 			uMath += chAscii
 		}
 	}
+	// Terminate unfinished expressions
 	if (sup) {
 		if (uMath[uMath.length - 2] == '(') {
 			uMath = uMath.substring(0, uMath.length - 2) +
@@ -1583,8 +1636,10 @@ function braille2UnicodeMath(braille) {
 			uMath += ') '
 		}
 	}
-	if (eqArray)
+	if (cases)
 		uMath += ')┤'
+	if (eqArray)
+		uMath += ')'
 
 	return uMath
 }
