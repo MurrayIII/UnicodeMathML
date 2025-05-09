@@ -1611,17 +1611,19 @@ function braille2UnicodeMath(braille) {
 				uMath += base + op + down + up + of1
 				continue
 		}
-		if (uMath && isAsciiAlphabetic(uMath[uMath.length - 1]) && isAsciiDigit(chAscii)) {
-			// Convert Nemeth simple numeric subscripts like a2 to UnicodeMath
-			// e.g., a_2
-			uMath += '_' + chAscii
+		if (uMath && isAsciiDigit(chAscii) &&
+			isMathAlphabetic(uMath, uMath.length - 1)) {
+			// Convert Nemeth simple numeric subscripts like a2 to
+			// UnicodeMath, e.g., to a₂
+			uMath += digitSubscripts[chAscii]
 			for (j = i + 1; j < braille.length; j++) {
 				chAscii = getAsciiFromBraille(braille[j])
 				if (!isAsciiDigit(chAscii))
 					break
 				uMath += chAscii
 			}
-			uMath += ' '
+			if (braille[j] != '⠘')
+				uMath += ' '
 			i = j - 1
 		} else {
 			uMath += chAscii

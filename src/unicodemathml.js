@@ -209,6 +209,17 @@ function isAlphanumeric(ch) {
     return /[\w]/.test(ch) || ch >= '\u3018' || isGreek(ch) || inRange('ℂ', ch, 'ⅉ');
 }
 
+function isMathAlphabetic(str, i) {
+    let ch = str[i]
+    let code = str.codePointAt(i)
+    if (isTrailSurrogate(code)) {
+        code = str.codePointAt(i - 1)
+        ch = str.substring(i - 1, i + 1)
+    }
+    let [font, chFolded] = foldMathAlphanumeric(code, ch);
+    return isAsciiAlphabetic(chFolded) || isGreek(chFolded)
+}
+
 function isAsciiAlphabetic(ch) { return /[A-Za-z]/.test(ch); }
 
 function isAsciiAlphanumeric(ch) { return /[\w]/.test(ch); }
