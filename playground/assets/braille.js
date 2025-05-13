@@ -99,7 +99,7 @@ const symbol2Braille = {
 	'\u2ABF': '⠀⠐⠸⠐⠅⠩⠬⠻⠀',		// ⪿	Subset with plus sign below
 	'\u2AC2': '⠀⠐⠸⠨⠂⠩⠈⠡⠻⠀',		// ⫂	Superset with multiplication sign below
 	'\u2AC0': '⠀⠐⠸⠨⠂⠩⠬⠻⠀',		// ⫀	Superset with plus sign below
-	'\u22EF': '⠀⠄⠄⠄ ',			// ⋯		Midline horizontal ellipsis
+	'\u22EF': '⠀⠄⠄⠄',			// ⋯		Midline horizontal ellipsis
 	'\u22F0': '⠀⠘⠒⠒⠒⠀',			// ⋰		Up right diagonal ellipsis
 	'\u2234': '⠀⠠⠡⠀',			// ∴	Therefore
 	'\u223D': '⠀⠠⠱⠀',			// ∽	Reversed tilde
@@ -516,6 +516,7 @@ function symbolBraille(ch) {
 	let code = ch.codePointAt(0);
 	let cap = '';
 	let mathstyle = '';
+	let mathstyleB
 	let ret = '';
 
 	if (ch >= 'ℂ' && (ch <= 'ℴ' || ch > '〗')) {
@@ -524,12 +525,12 @@ function symbolBraille(ch) {
 
 		if (mathstyle) {
 			if (mathstyle == 'mit' || mathstyle == 'mup')
-				mathstyle = '';			    // Suppress 'italic'
+				mathstyleB = '';			// Suppress 'italic'
 			else
-				mathstyle = mathstylesBraille[mathstyle];
+				mathstyleB = mathstylesBraille[mathstyle];
 		}
 		code = ch.codePointAt(0);
-		ret = mathstyle;
+		ret = mathstyleB
 	}
 	if (isGreek(ch)) {
 		ret += '⠨';							// Add Greek indicator
@@ -584,7 +585,7 @@ function symbolBraille(ch) {
 		}
 	}
 	if (isAsciiAlphanumeric(ch)) {
-		if (ret)
+		if (ret && mathstyle != 'mfrak' && mathstyle != 'mbffrak')
 			ret += '⠰';						// Add English indicator
 		if (ch >= 'A') {
 			if (ch <= 'Z') {
@@ -622,7 +623,7 @@ function styleBraille(mathStyle) {
 
 function getBraille(node) {
 	let text = braille(node, true)
-	let ret = '';							// Collects speech
+	let ret = '';							// Collects braille
 	let cchCh;								// Code count of current char
 	let ch;									// Current char
 	let code;								// UTF-32 code of current char
@@ -918,7 +919,7 @@ function braille(value, noAddParens, subsup) {
 			let mathvariant = value.getAttribute('mathvariant')
 
 			if (mathvariant) {
-				// Convert to Unicode math alphanumeric. Conversion to speech
+				// Convert to Unicode math alphanumeric. Conversion to braille
 				// is done upon returning from the original braille() call.
 				let mathstyle = mathvariants[mathvariant];
 				if (c in mathFonts && mathstyle in mathFonts[c])
@@ -1200,15 +1201,18 @@ function checkMathAlphanumeric(braille, i) {
 	if (!ch)
 		ch = chAscii
 
+	let alpha = isAsciiAlphabetic(chAscii)
+
 	//console.log('chAscii=' + chAscii + ' mathStyle=' + mathStyle + ' k=' + k + ' ch=' + ch)
-	return [ch, k]							// [math alphanumeric, end index]
+	return [ch, k, alpha]					// [math alphanumeric, end index, alphabetic]
 }
 
 function braille2UnicodeMath(braille) {
 	if (!braille2Symbol)
 		braille2Symbol = flip(symbol2Braille)
 
-	let subSupCode = ''
+	let alpha = false						// Current char is math alphabetic
+	let alphaPrev							// For numeric subscript recognition
 	let cap = false
 	let cases = false
 	let ch1, ch2, chT
@@ -1217,6 +1221,7 @@ function braille2UnicodeMath(braille) {
 	let index
 	let j, k
 	let radicand
+	let subSupCode = ''
 	let sup = 0
 	let table = false
 	let uMath = ''
@@ -1225,6 +1230,8 @@ function braille2UnicodeMath(braille) {
 		let ch = braille[i]
 		let chAscii = getAsciiFromBraille(ch)
 		ch1 = ch2 = ''
+		alphaPrev = alpha					// Save for numeric subscript case
+		alpha = false						// Default not alphabetic
 
 		if (!cap && isUcAscii(chAscii))
 			chAscii = chAscii.toLowerCase()
@@ -1236,7 +1243,8 @@ function braille2UnicodeMath(braille) {
 				switch (braille[i + 1]) {
 					case '\u2800':
 						uMath += ','
-						i++
+						if (braille[i + 2] != '⠄')
+							i++
 						continue
 					case '⠿':
 						uMath += '∞'
@@ -1253,14 +1261,6 @@ function braille2UnicodeMath(braille) {
 					default:
 						cap = true
 						continue
-				}
-				break
-
-			case '⠄':
-				if (braille[i + 1] == '⠄' && braille[i + 2] == '⠄') {
-					uMath += '…'
-					i += 2
-					continue
 				}
 				break
 
@@ -1323,7 +1323,7 @@ function braille2UnicodeMath(braille) {
 					i++
 					continue
 				}
-				[ch1, k] = checkMathAlphanumeric(braille, i)
+				[ch1, k, alpha] = checkMathAlphanumeric(braille, i)
 				if (ch1) {
 					uMath += ch1
 					i = k
@@ -1340,7 +1340,7 @@ function braille2UnicodeMath(braille) {
 					i++
 					continue
 				}
-				[ch1, k] = checkMathAlphanumeric(braille, i)
+				[ch1, k, alpha] = checkMathAlphanumeric(braille, i)
 				if (ch1) {
 					uMath += ch1
 					i = k
@@ -1426,7 +1426,7 @@ function braille2UnicodeMath(braille) {
 				continue
 
 			case '⠨':
-				[ch1, k] = checkMathAlphanumeric(braille, i)
+				[ch1, k, alpha] = checkMathAlphanumeric(braille, i)
 				if (ch1) {
 					uMath += ch1
 					i = k
@@ -1550,6 +1550,16 @@ function braille2UnicodeMath(braille) {
 						continue
 					}
 				}
+				if (braille.length >= i + 4 &&
+					braille.substring(i, i + 4) == '⠀⠄⠄⠄') {
+					// Handle baseline and math-axis ellipses
+					i += 3
+					let op = '…'			// Ellipsis
+					if (uMath[uMath.length - 1] == '+')
+						op = '⋯'
+					uMath += op
+					continue
+				}
 				break
 			case '⠐':						// Multipurpose indicator
 				if (sup) {
@@ -1599,20 +1609,29 @@ function braille2UnicodeMath(braille) {
 						j = n
 					}
 				}
-				let down = checkParens(braille2UnicodeMath(braille.substring(k + 1, j)))
-				if (down == '^')
+				let down
+				ch1 = braille.substring(k + 1, j)
+				chT = braille2Symbol[ch1]
+				if (chT && (overBrackets.includes(chT) || underBrackets.includes(chT))) {
+					uMath += chT + base
+					i = j
+					continue
+				}
+				down = braille2UnicodeMath(ch1)
+				if (down == '^') {
 					down = '\u0302'
-				if (down[1] == '~')
+				} if (down == '~') {
 					down = '\u0303'
-				if (isAccent(down)) {
+				} if (isAccent(down)) {
 					op = ''
 					i = j
+				} else {
+					down = checkParens(down)
 				}
 				uMath += base + op + down + up + of1
 				continue
 		}
-		if (uMath && isAsciiDigit(chAscii) &&
-			isMathAlphabetic(uMath, uMath.length - 1)) {
+		if (alphaPrev && isAsciiDigit(chAscii)) {
 			// Convert Nemeth simple numeric subscripts like a2 to
 			// UnicodeMath, e.g., to a₂
 			uMath += digitSubscripts[chAscii]
@@ -1620,13 +1639,12 @@ function braille2UnicodeMath(braille) {
 				chAscii = getAsciiFromBraille(braille[j])
 				if (!isAsciiDigit(chAscii))
 					break
-				uMath += chAscii
+				uMath += digitSubscripts[chAscii]
 			}
-			if (braille[j] != '⠘')
-				uMath += ' '
 			i = j - 1
 		} else {
 			uMath += chAscii
+			alpha = isAsciiAlphabetic(chAscii)
 		}
 	}
 	// Terminate unfinished expressions
