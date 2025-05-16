@@ -455,6 +455,7 @@ const symbol2Braille = {
 	'\u007C': '⠳',				// |	Vertical bar
 	'\u2502': '⠳',				// |	Vertical bar
 	'\u0028': '⠷',				// (	Left paren
+	'\u23DC': '⠷',				//  ⏜ 	Overparen
 	'\u003B': '⠸⠆',				// ;	Semicolon
 	'\u002F': '⠌',				// /	Solidus (nonmath mapping: ⠸⠌)
 	'\u2215': '⠸⠌',				// ∕	Division slash
@@ -471,6 +472,7 @@ const symbol2Braille = {
 	'\u2021': '⠸⠸⠻',			// ‡	Double dagger
 	'\u2020': '⠸⠻',				// †	Dagger
 	'\u0029': '⠾',				// )	Right paren
+	'\u23DD': '⠾',				//  ⏝	Underparen
 }
 
 const mathstylesBraille = {
@@ -605,7 +607,13 @@ function symbolBraille(ch) {
 
 	// Get braille for operators and other symbols
 	ret = symbol2Braille[ch];
-	return ret ? ret : ch;
+	if (ret)
+		return ret
+	if (ch == '\u23B4')
+		return '⠈⠷'
+	if (ch == '\u23B5')
+		return '⠈⠾'
+	return ch;
 }
 
 function isNumericSubscript(value) {
@@ -1000,7 +1008,7 @@ function findDelimiter(braille, i, delims) {
 	// Starting at braille[i + 1], find the first delimiter in delims at
 	// the starting level. Nested sequences are bypassed.
 	let frac = 0
-	let level = braille[i] == '⠐' ? 0 : 1
+	let level = braille[i] == '⠐' ? 1 : 0
 	let subsup = false
 
 	for (i++; i < braille.length && (level > 1 || frac > 0 ||
@@ -1124,6 +1132,8 @@ const fourNineSymbols = {
 	'⠷': '{', '⠾': '}', '⠌': '÷', '⠡': '∘', '⠤': '∸', '⠩': '∩', '⠬': '∪', '⠼': '#'}
 const dot4Symbols = { '⠙': '∂', '⠓': 'ℏ', '⠱': '~' }
 const italicBbb = { 'D': 'ⅅ', 'd': 'ⅆ', 'e': 'ⅇ', 'i': 'ⅈ', 'j': 'ⅉ' }
+const horzBrackets = {'{': '\u23DE', '}': '\u23DF', '[': '\u23B4', ']': '\u23B5',
+	'(': '\u23DC', ')': '\u23DD'}
 
 function checkMathAlphanumeric(braille, i) {
 	let cap = false
@@ -1208,8 +1218,10 @@ function checkMathAlphanumeric(braille, i) {
 }
 
 function braille2UnicodeMath(braille) {
-	if (!braille2Symbol)
+	if (!braille2Symbol) {
 		braille2Symbol = flip(symbol2Braille)
+		braille2Symbol['⠀⠫⠕⠀'] = '→'
+	}
 
 	let alpha = false						// Current char is math alphabetic
 	let alphaPrev							// For numeric subscript recognition
@@ -1593,6 +1605,7 @@ function braille2UnicodeMath(braille) {
 				let op = braille[k] == '⠣' ? '┴' : '┬'
 				let base = checkParens(braille2UnicodeMath(braille.substring(i + 1, k)))
 				let of1 = ''
+				i = j
 				if (base == 'Σ') {			// Upper-case sigma
 					base = '∑'				// Summation sign
 					of1 = '▒'				// n-ary conversions need this...
@@ -1601,20 +1614,21 @@ function braille2UnicodeMath(braille) {
 					of1 = '▒'
 				}
 				let up = ''
+				let m = j
 				if (braille[k] != '⠣') {
 					let n = findDelimiter(braille, k, ['⠣'])
-					i = j
 					if (n != -1 && n < j) {
 						up = '┴' + checkParens(braille2UnicodeMath(braille.substring(n + 1, j)))
-						j = n
+						m = n
 					}
 				}
 				let down
-				ch1 = braille.substring(k + 1, j)
+				ch1 = braille.substring(k + 1, m)
 				chT = braille2Symbol[ch1]
+				if (chT in horzBrackets)
+					chT = horzBrackets[chT]
 				if (chT && (overBrackets.includes(chT) || underBrackets.includes(chT))) {
 					uMath += chT + base
-					i = j
 					continue
 				}
 				down = braille2UnicodeMath(ch1)
@@ -1624,7 +1638,6 @@ function braille2UnicodeMath(braille) {
 					down = '\u0303'
 				} if (isAccent(down)) {
 					op = ''
-					i = j
 				} else {
 					down = checkParens(down)
 				}
