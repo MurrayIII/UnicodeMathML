@@ -1272,7 +1272,7 @@ function testHotKeys() {
 
     input.value = '1+2+...+'
     input.selectionStart = input.selectionEnd = 8
-    testInputHotKey('+', false, false, '1+2+⋯+', 7, 7)
+    testInputHotKey('+', false, false, '1+2+⋯+', 6, 6)
 
     const cwch = [['𝓠', '\\mbfscrQ'], ['∈', '\\in'], ['ℋ', '\\mscrH'],]
 
