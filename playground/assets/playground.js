@@ -1108,7 +1108,22 @@ function autocomplete() {
             input.selectionStart = input.selectionEnd = ip;
             return false;
         }
+        if (ip >= 4 && delim != '.' && input.value.substring(ip - 4, ip - 1) == '...') {
+            // Autocorrect ellipses
+            let ch = italicizeCharacter(delim)
+            let cch = ch.length
+            let ellipsis = '…'              // Base-line ellipsis
 
+            if (ch != delim)
+                delim = ch
+            if (input.value[ip - 5] == '+')
+                ellipsis = '⋯'              // Math-axis ellipsis
+
+            input.value = input.value.substring(0, ip - 4) + ellipsis +
+                delim + input.value.substring(ip)
+            input.selectionStart = input.selectionEnd = ip - 3 + cch
+            return false
+        }
         // Move back alphanumeric span
         while (i > 0 && /[a-zA-Z0-9]/.test(input.value[i])) { i--; }
 

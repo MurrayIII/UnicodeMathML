@@ -1265,6 +1265,15 @@ function testHotKeys() {
     input.selectionStart = input.selectionEnd = 4
     testInputHotKey('=', false, false, '½=', 2, 2)
 
+    // Test ellipsis autocorrection
+    input.value = '𝑎...b'
+    input.selectionStart = input.selectionEnd = 6
+    testInputHotKey('b', false, false, '𝑎…𝑏', 5, 5)
+
+    input.value = '1+2+...+'
+    input.selectionStart = input.selectionEnd = 8
+    testInputHotKey('+', false, false, '1+2+⋯+', 7, 7)
+
     const cwch = [['𝓠', '\\mbfscrQ'], ['∈', '\\in'], ['ℋ', '\\mscrH'],]
 
     // Test symbol-to-control-word conversion
