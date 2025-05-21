@@ -501,6 +501,7 @@ const ascii2Greek = 'ΑΒ ΔΕΦΓ Ι ΚΛΜΝΟΠ ΡΣΤΥ ΩΞΨΖ'
 const ascii2Greek2 = {':': 'η', '?': 'θ', '&': 'χ', '$': '∇'} // :?&$ → ηθχ∇
 const greekAlts = {'θ': 'ϑ', 'κ': 'ϰ', 'π': 'ϖ', 'ρ': 'ϱ'}
 const doubleStruck2Braille = {'ⅅ': '⠠⠙', 'ⅆ': '⠙', 'ⅇ': '⠑', 'ⅈ': '⠊', 'ⅉ': '⠚'}
+const subsupIndicators = ['⠰', '⠘', '⠐']
 
 function isBraille(ch) {					// In Unicode braille block?
 	return inRange('\u2800', ch, '\u28FF')
@@ -716,10 +717,23 @@ function braille(value, noAddParens, subsup) {
 			braille(node.lastElementChild, true) + '⠐';
 	}
 
+	function removeTrailingScriptLevel(val) {
+		if (!val)							// Nothing there
+			return val
+
+		let k = val.length - 1
+		for (; k > 0 && subsupIndicators.includes(val[k]); k--)
+			;
+		if (k < val.length - 1)
+			val = val.substring(0, k + 1)
+		return val
+	}
+
 	let cNode = value.children.length;
 	let op;
 	let ret = '';
 	let sep;
+	let subsupSave
 	let val;
 
 	//ret = checkIntent(value);				// Check for MathML intent
@@ -819,8 +833,26 @@ function braille(value, noAddParens, subsup) {
 
 			return '⠹' + num + '⠌' + den + '⠼';
 
+		case 'msub':
+			ret = braille(value.firstElementChild, false, subsup);
+			subsupSave = subsup ? subsup : '⠐'
+			if (subsup == undefined || subsup[0] != '⠘' && subsup[0] != '⠰')
+				subsup = '⠰';
+			else
+				subsup += '⠰';
+			if (isNumericSubscript(value))
+				return binary(value, '');	// No sub op for sub'd numerals
+
+			val = braille(value.lastElementChild, true, subsup);
+
+			// Remove possible trailing subsup level since that level should
+			// be subsupSave
+			val = removeTrailingScriptLevel(val)
+			return val ? ret + subsup + val + subsupSave : ret
+
 		case 'msup':
 			ret = braille(value.firstElementChild, false, subsup);
+			subsupSave = subsup ? subsup : '⠐'
 			if (subsup == undefined || subsup[0] != '⠘' && subsup[0] != '⠰')
 				subsup = '⠘';
 			else
@@ -830,10 +862,10 @@ function braille(value, noAddParens, subsup) {
 				ret += val[0];
 				val = val.substring(1);
 			}
-			if (val && !val.endsWith('⠐'))
-				val += '⠐';
-
-			return val ? ret + subsup + val : ret;
+			// Remove possible trailing subsup level since that level should
+			// be subsupSave
+			val = removeTrailingScriptLevel(val)
+			return val ? ret + subsup + val + subsupSave : ret
 
 		case 'mover':
 			//if (value.hasAttribute('accent'))
@@ -851,20 +883,6 @@ function braille(value, noAddParens, subsup) {
 
 			//return 'modified ' + braille(value.firstElementChild, true) +
 			//	'⁐' + braille(value.lastElementChild, true) + '┬'; // 'with' ... 'below'
-
-		case 'msub':
-			if (subsup == undefined || subsup[0] != '⠘' && subsup[0] != '⠰')
-				subsup = '⠰';
-			else
-				subsup += '⠰';
-			if (isNumericSubscript(value))
-				return binary(value, '');	// No sub op for sub'd numerals
-
-			val = braille(value.lastElementChild, true, subsup);
-			if (!val.endsWith('⠐'))
-				val += '⠐';
-
-			return braille(value.firstElementChild, true) + subsup + val;
 
 		case 'munderover':
 			return '⠐' + braille(value.firstElementChild) + '⠩' +
@@ -915,6 +933,8 @@ function braille(value, noAddParens, subsup) {
 				val = '^'
 			if (val == '\u0303')
 				val = '~'
+			if (val == '/' && value.getAttribute('intent') == ':text')
+				return '⠸⠌'
 			return val
 
 		case 'mi':
@@ -1007,6 +1027,7 @@ const flip = (data) => Object.fromEntries(
 function findDelimiter(braille, i, delims) {
 	// Starting at braille[i + 1], find the first delimiter in delims at
 	// the starting level. Nested sequences are bypassed.
+	let ch
 	let frac = 0
 	let level = braille[i] == '⠐' ? 1 : 0
 	let subsup = false
@@ -1037,7 +1058,7 @@ function findDelimiter(braille, i, delims) {
 					frac--
 				break
 			case '⠈':
-				let ch = braille[i + 1]
+				ch = braille[i + 1]
 				ch1 = dot4Symbols[ch]
 				if (ch1)					// ⠈⠙ → ∂, ⠈⠓ → ℏ, ⠈⠱ → ~
 					ch = ch1
@@ -1047,6 +1068,10 @@ function findDelimiter(braille, i, delims) {
 				break
 			case '⠻':
 				level--
+				break
+			case '⠸':
+				if (braille[i + 1] == '⠌')
+					i++						// Bypass literal slash op
 				break
 		}
 	}
@@ -1070,7 +1095,7 @@ function getGreek(chAscii, cap, alt) {
 
 function getSubSupCode(braille, i, subSupCode) {
 	// Return string containing the braille subscript/superscript code
-	// sequence that starts with braille[i]. Also return the characters
+	// sequence that starts with braille[i]. Also return the character(s)
 	// to add to uMath
 	let str = ''
 	let sbspcd = ''
@@ -1352,6 +1377,11 @@ function braille2UnicodeMath(braille) {
 					i++
 					continue
 				}
+				if (braille[i + 1] == '⠌') {
+					uMath += '\\/'
+					i++
+					continue
+				}
 				[ch1, k, alpha] = checkMathAlphanumeric(braille, i)
 				if (ch1) {
 					uMath += ch1
@@ -1508,17 +1538,14 @@ function braille2UnicodeMath(braille) {
 					continue
 				}
 				[subSupCode, ch1] = getSubSupCode(braille, i, subSupCode)
-				if (subSupCode.length > 1) {
-					uMath += ch1
-					i += subSupCode.length - 1
-					continue
-				}
-				uMath += '^('
+				uMath += ch1
+				i += subSupCode.length - 1
 				continue
 			case '⠰':
 				[subSupCode, ch1] = getSubSupCode(braille, i, subSupCode)
 				sup--
-				uMath += '_('
+				uMath += ch1
+				i += subSupCode.length - 1
 				continue
 
 			case '\u2800':					// Relational ops go to baseline
@@ -1584,7 +1611,7 @@ function braille2UnicodeMath(braille) {
 					}
 					if (subSupCode.length > 1)
 						uMath += ') '
-					subSupCode = 0
+					subSupCode = ''
 					continue
 				}
 				// Look for a symbol defined by a modifier sequence, which

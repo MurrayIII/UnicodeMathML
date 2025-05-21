@@ -37,7 +37,7 @@ const mathML = [
     "<math display=\"block\"><mrow><mi>𝑎</mi><mo>&#x2264;</mo><mi>𝑏</mi><mo>&#8804;</mo><mi>𝑐</mi></mrow></math>",
     "<math display=\"block\"><mrow><mfrac><mrow><mi>𝑑</mi><mrow intent=\":function\"><mi>𝜓</mi><mo>⁡</mo><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑥</mi><mo>,</mo><mi>𝑡</mi></mrow><mo>)</mo></mrow></mrow></mrow><mrow><mi>𝑑</mi><mi>𝑡</mi></mrow></mfrac><mo>=</mo><mn>0</mn></mrow></math>",
     "<mml:math display=\"block\"><mml:mrow><mml:msup><mml:mi>𝑎</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo>+</mml:mo><mml:msup><mml:mi>𝑏</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo>=</mml:mo><mml:msup><mml:mi>𝑐</mml:mi><mml:mn>2</mml:mn></mml:msup></mml:mrow></mml:math>",
-    "<math display=\"block\"><mrow><mrow><mi>𝑍</mi><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝛾</mi><mo>+</mo><mrow><mi>𝑖</mi><mi>𝜔</mi></mrow><mo>−</mo><mrow><mi>𝑖</mi><mi>𝜈</mi></mrow></mrow><mo>)</mo></mrow></mrow><mo>=</mo><mfrac><mi>𝑖</mi><msqrt><mi>𝜋</mi></msqrt></mfrac><mrow intent=\":nary($l,∞,$n)\"><msubsup><mo>∫</mo><mrow arg=\"l\"><mo>−</mo><mi>∞</mi></mrow><mi>∞</mi></msubsup><mrow arg=\"n\"><mfrac><msup><mi>𝑒</mi><mrow><mo>−</mo><mrow><msup><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝜔</mi><mo>−</mo><msup><mi>𝜔</mi><mo>′</mo></msup></mrow><mo>)</mo></mrow><mn>2</mn></msup><mo>/</mo><msup><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>Δ</mi><mi>𝜔</mi></mrow><mo>)</mo></mrow><mn>2</mn></msup></mrow></mrow></msup><mrow><mi>𝛾</mi><mo>+</mo><mrow><mi>𝑖</mi><mrow intent=\":fenced\"><mo>(</mo><mrow><msup><mi>𝜔</mi><mo>′</mo></msup><mo>−</mo><mi>𝜈</mi></mrow><mo>)</mo></mrow></mrow></mrow></mfrac><mrow><mi intent=\"ⅆ\">𝑑</mi><msup><mi>𝜔</mi><mo>′</mo></msup></mrow></mrow></mrow></mrow></math>",
+    "<math display=\"block\"><mrow><mrow><mi>𝑍</mi><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝛾</mi><mo>+</mo><mrow><mi>𝑖</mi><mi>𝜔</mi></mrow><mo>−</mo><mrow><mi>𝑖</mi><mi>𝜈</mi></mrow></mrow><mo>)</mo></mrow></mrow><mo>=</mo><mfrac><mi>𝑖</mi><msqrt><mi>𝜋</mi></msqrt></mfrac><mrow intent=\":nary($l,∞,$n)\"><msubsup><mo>∫</mo><mrow arg=\"l\"><mo>−</mo><mi>∞</mi></mrow><mi>∞</mi></msubsup><mrow arg=\"n\"><mfrac><msup><mi>𝑒</mi><mrow><mo>−</mo><mrow><msup><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝜔</mi><mo>−</mo><msup><mi>𝜔</mi><mo>′</mo></msup></mrow><mo>)</mo></mrow><mn>2</mn></msup><mo intent=\":text\">/</mo><msup><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>Δ</mi><mi>𝜔</mi></mrow><mo>)</mo></mrow><mn>2</mn></msup></mrow></mrow></msup><mrow><mi>𝛾</mi><mo>+</mo><mrow><mi>𝑖</mi><mrow intent=\":fenced\"><mo>(</mo><mrow><msup><mi>𝜔</mi><mo>′</mo></msup><mo>−</mo><mi>𝜈</mi></mrow><mo>)</mo></mrow></mrow></mrow></mfrac><mrow><mi intent=\"ⅆ\">𝑑</mi><msup><mi>𝜔</mi><mo>′</mo></msup></mrow></mrow></mrow></mrow></math>",
     "<math display=\"block\"><mrow intent=\":function\"><mi>sin</mi><mo>⁡</mo><mrow intent=\":fenced\"><mo></mo><mfrac><mrow><mi>𝑥</mi><mo>+</mo><mi>𝑎</mi></mrow><mn>2</mn></mfrac><mo></mo></mrow></mrow></math>",
     "<math display=\"block\"><mrow><mrow intent=\":fenced\"><mo>|</mo><mi>𝑥</mi><mo>|</mo></mrow><mo>=</mo><mrow intent=\":fenced\"><mo>{</mo><mtable intent=\":equations\" columnalign=\"right\"><mtr><mtd><maligngroup /><mspace width=\"0\" /><malignmark /><mrow><mrow><mi>𝑥</mi><mtext> if </mtext><mi>𝑥</mi></mrow><mo>≥</mo><mn>0</mn></mrow></mtd></mtr><mtr><mtd><maligngroup /><mo>−</mo><malignmark /><mrow><mrow><mi>𝑥</mi><mtext> if </mtext><mi>𝑥</mi></mrow><mo>&lt;</mo><mn>0</mn></mrow></mtd></mtr></mtable><mo></mo></mrow></mrow></math>",
     "<m:math xmlns:m=\"http://www.w3.org/1998/Math/MathML\" altimg=\"E7.png\" altimg-height=\"49px\" altimg-valign=\"-16px\" altimg-width=\"249px\" alttext=\"\\frac{\\mathrm{d}}{\\mathrm{d}z}\\operatorname{arcsin}z=(1-z^{2})^{-1/2},\" display=\"block\"><m:mrow><m:mrow><m:mrow><m:mfrac><m:mo href=\"DLMF:/1.4#E4\" title=\"derivative\">d</m:mo><m:mrow><m:mo href=\"DLMF:/1.4#E4\" rspace=\"0em\" title=\"derivative\">d</m:mo><m:mi href=\"DLMF:/4.1#p2.t1.r4\" title=\"complex variable\">z</m:mi></m:mrow></m:mfrac><m:mo lspace=\"0.167em\">⁡</m:mo><m:mrow><m:mi href=\"DLMF:/4.23#ii.p1\" title=\"arcsine function\">arcsin</m:mi><m:mo lspace=\"0.167em\">⁡</m:mo><m:mi href=\"DLMF:/4.1#p2.t1.r4\" title=\"complex variable\">z</m:mi></m:mrow></m:mrow><m:mo>=</m:mo><m:msup><m:mrow><m:mo stretchy=\"false\">(</m:mo><m:mrow><m:mn>1</m:mn><m:mo>−</m:mo><m:msup><m:mi href=\"DLMF:/4.1#p2.t1.r4\" title=\"complex variable\">z</m:mi><m:mn>2</m:mn></m:msup></m:mrow><m:mo stretchy=\"false\">)</m:mo></m:mrow><m:mrow><m:mo>−</m:mo><m:mrow><m:mn>1</m:mn><m:mo>/</m:mo><m:mn>2</m:mn></m:mrow></m:mrow></m:msup></m:mrow><m:mo>,</m:mo></m:mrow></m:math>",
@@ -80,6 +80,7 @@ const mathML = [
     "<math display=\"block\"><mtable displaystyle=\"true\" intent=\":math-paragraph\"><mlabeledtr><mtd><mtext>(1)</mtext></mtd><mtd><mi>𝐸</mi><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mlabeledtr><mtr><mtd><mi>𝐸</mi><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mtr><mlabeledtr><mtd><mtext>(3)</mtext></mtd><mtd><mi>𝐸</mi><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mlabeledtr></mtable></math>",
     "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mtable displaystyle=\"true\" intent=\":math-paragraph\"><mtr id=\"-1-\"><mtd intent=\":equation-label\" style=\"margin-right:1em;position:absolute;right:0em\"><mtext>(1)</mtext></mtd><mtd style=\"padding-left:0;text-align:right;float:right;display:math\"><mi>𝐸</mi><mo>+</mo><mn>1</mn></mtd><mtd><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mtr><mtr><mtd intent=\":no-equation-label\" style=\"margin-right:1em;position:absolute;right:0em\"><mtext></mtext></mtd><mtd style=\"padding-left:0;text-align:right;float:right;display:math\"><mi>𝐸</mi></mtd><mtd><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mtr><mtr id=\"-3-\"><mtd intent=\":equation-label\" style=\"margin-right:1em;position:absolute;right:0em\"><mtext>(3)</mtext></mtd><mtd style=\"padding-left:0;text-align:right;float:right;display:math\"><mi>𝐸</mi></mtd><mtd><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mtr></mtable></math>",
     "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mtable displaystyle=\"true\" intent=\":math-paragraph\"><mtr><mtd intent=\":no-equation-label\" style=\"margin-right:1em;position:absolute;right:0em\"><mtext></mtext></mtd><mtd style=\"padding-left:0;text-align:right;float:right;display:math\"><mi>𝐸</mi><mo>+</mo><mn>1</mn></mtd><mtd><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mtr><mtr id=\"-1-\"><mtd intent=\":equation-label\" style=\"margin-right:1em;position:absolute;right:0em\"><mtext>(1)</mtext></mtd><mtd style=\"padding-left:0;text-align:right;float:right;display:math\"><mi>𝐸</mi></mtd><mtd><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mtr><mtr id=\"-3-\"><mtd intent=\":equation-label\" style=\"margin-right:1em;position:absolute;right:0em\"><mtext>(3)</mtext></mtd><mtd style=\"padding-left:0;text-align:right;float:right;display:math\"><mi>𝐸</mi></mtd><mtd><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mtr></mtable></math>",
+    "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>𝑎</mi><mrow><msup><mi>𝑏</mi><mi>𝑖</mi></msup><mo>+</mo><mn>1</mn></mrow></msub><mo>+</mo><mn>1</mn><mo>+</mo><msup><mi>𝑐</mi><mrow><msub><mi>𝑑</mi><mi>𝑖</mi></msub><mo>+</mo><mn>2</mn></mrow></msup><mo>+</mo><mn>1</mn></math>",
 ]
 
 const unicodeMath = [
@@ -161,6 +162,7 @@ const unicodeMath = [
     "𝐸=𝑚𝑐²#(1)\n𝐸=𝑚𝑐²\n𝐸=𝑚𝑐²#(3)",
     "𝐸+1&=𝑚𝑐²#(1)\n𝐸&=𝑚𝑐²\n𝐸&=𝑚𝑐²#(3)",
     "𝐸+1&=𝑚𝑐²\n𝐸&=𝑚𝑐²#(1)\n𝐸&=𝑚𝑐²#(3)",
+    "𝑎_(𝑏^𝑖+1)+1+𝑐^(𝑑_𝑖+2)+1",
 ]
 
 const mathSpeech = [
@@ -247,7 +249,8 @@ const mathSpeech = [
     "line 1 with label 3 , cap E = m c squared",
     "3 lines , line 1 with label 1 , cap E = m c squared , line 2 cap E = m c squared , line 3 with label 3 , cap E = m c squared",
     "3 lines , line 1 with label 1 , cap E + 1 , = m c squared , line 2 , cap E , = m c squared , line 3 with label 3 , cap E , = m c squared",
-    "3 lines , line 1 , cap E + 1 , = m c squared , line 2 with label 1 , cap E , = m c squared , line 3 with label 3 , cap E , = m c squared"
+    "3 lines , line 1 , cap E + 1 , = m c squared , line 2 with label 1 , cap E , = m c squared , line 3 with label 3 , cap E , = m c squared",
+    "eigh sub open b to the i , + 1 close + 1 + c to the d sub i + 2 power + 1",
 ]
 
 const mathBrailles = [
@@ -286,7 +289,7 @@ const mathBrailles = [
     "⠁⠀⠐⠅⠱⠀⠃⠀⠐⠅⠱⠀⠉",
     "⠹⠙⠨⠽⠀⠷⠭⠠⠀⠞⠾⠌⠙⠞⠼⠀⠨⠅⠀⠼⠴",
     "⠁⠘⠆⠐⠬⠃⠘⠆⠀⠨⠅⠀⠉⠘⠆",
-    "⠠⠵⠷⠨⠛⠬⠊⠨⠺⠤⠊⠨⠝⠾⠀⠨⠅⠀⠹⠊⠌⠜⠨⠏⠻⠼⠮⠰⠤⠠⠿⠘⠠⠿⠐⠹⠑⠘⠤⠷⠨⠺⠤⠨⠺⠄⠾⠘⠘⠆⠐⠌⠷⠨⠠⠙⠨⠺⠾⠘⠘⠆⠐⠌⠨⠛⠬⠊⠷⠨⠺⠄⠤⠨⠝⠾⠼⠈⠈⠨⠰⠙⠨⠺⠄",
+    "⠠⠵⠷⠨⠛⠬⠊⠨⠺⠤⠊⠨⠝⠾⠀⠨⠅⠀⠹⠊⠌⠜⠨⠏⠻⠼⠮⠰⠤⠠⠿⠘⠠⠿⠐⠹⠑⠘⠤⠷⠨⠺⠤⠨⠺⠄⠾⠘⠘⠆⠘⠸⠌⠷⠨⠠⠙⠨⠺⠾⠘⠘⠆⠐⠌⠨⠛⠬⠊⠷⠨⠺⠄⠤⠨⠝⠾⠼⠈⠈⠨⠰⠙⠨⠺⠄",
     "⠎⠊⠝⠀⠹⠭⠬⠁⠌⠆⠼",
     "⠳⠭⠳⠀⠨⠅⠀⠨⠷⠭⠀⠊⠋⠀⠭⠀⠨⠂⠱⠀⠼⠴⣍⠤⠭⠀⠊⠋⠀⠭⠀⠐⠅⠀⠼⠴",
     "⠹⠙⠌⠙⠵⠼⠀⠁⠗⠉⠎⠊⠝⠀⠵⠀⠨⠅⠀⠷⠂⠤⠵⠘⠆⠐⠾⠘⠤⠂⠌⠆⠐⠠⠀",
@@ -329,6 +332,7 @@ const mathBrailles = [
     "⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆⠀⠷⠂⠾⣍⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆⠐⣍⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆⠀⠷⠒⠾",
     "⠠⠑⠬⠂⠀⠨⠅⠀⠍⠉⠘⠆⠀⠷⠂⠾⣍⠀⠠⠑⠀⠀⠨⠅⠀⠍⠉⠘⠆⠐⣍⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆⠀⠷⠒⠾",
     "⠀⠠⠑⠬⠂⠀⠀⠨⠅⠀⠍⠉⠘⠆⠐⣍⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆⠀⠷⠂⠾⣍⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆⠀⠷⠒⠾",
+    "⠁⠰⠃⠰⠘⠊⠰⠬⠂⠐⠬⠂⠬⠉⠘⠙⠘⠰⠊⠘⠬⠆⠐⠬⠂",
 ]
 
 const unicodeMathB = [
@@ -357,6 +361,17 @@ const unicodeMathB = [
     "𝛼₂³/(𝛽₂³+𝛾₂³)",
     "⏞(𝑥₁+⋯+𝑥_𝑘)┴𝑘𝑡𝑖𝑚𝑒𝑠",
     "⏟(𝑥₁+⋯+𝑥_𝑘)┬𝑘𝑡𝑖𝑚𝑒𝑠",
+    "𝑎𝑎+𝑏+1",
+    "1+▭(1/2/3/4/5)",
+    "𝑎+𝑏+𝑐+𝑑",
+    "𝑎𝑎+𝑏𝑐",
+    "𝑎𝑎+𝑏𝑐",
+    "𝐸=𝑚𝑐²(20)",
+    "ℌ",
+    "𝑎≤𝑏≤𝑐",
+    "𝑑𝜓(𝑥,𝑡)/𝑑𝑡=0",
+    "𝑎²+𝑏²=𝑐²",
+    "𝑍(𝛾+𝑖𝜔−𝑖𝜈)=𝑖/√𝜋 ∫_−∞^∞ 𝑒^(−(𝜔−𝜔′)²\\/(Δ𝜔)²)/(𝛾+𝑖(𝜔′−𝜈)) ⅆ𝜔′",
 ]
 
 const mathTeXs = [                          // Some cases aren't supported by TeX
@@ -395,7 +410,7 @@ const mathTeXs = [                          // Some cases aren't supported by Te
     '𝑎≤𝑏≤𝑐',
     '\\frac{𝑑𝜓(𝑥,𝑡)}{𝑑𝑡}=0',
     '𝑎^2+𝑏^2=𝑐^2',
-    '𝑍(𝛾+𝑖𝜔−𝑖𝜈)=\\frac{𝑖}{\\sqrt{𝜋}}∫_{−∞}^∞\\frac{𝑒^{−(𝜔−𝜔′)^2/(Δ𝜔)^2}}{𝛾+𝑖(𝜔′−𝜈)}𝑑𝜔′',
+    '𝑍(𝛾+𝑖𝜔−𝑖𝜈)=\\frac{𝑖}{\\sqrt{𝜋}}∫_{−∞}^∞\\frac{𝑒^{−(𝜔−𝜔′)^2\\/(Δ𝜔)^2}}{𝛾+𝑖(𝜔′−𝜈)}𝑑𝜔′',
     '\\sin {\\frac{𝑥+𝑎}{2}}',
     '|𝑥|=\\begin{cases}​&𝑥\\textrm{ if }𝑥≥0\\\\−&𝑥\\textrm{ if }𝑥<0\\end{cases}',
     '\\frac{𝑑}{𝑑𝑧}\\arcsin 𝑧=(1−𝑧^2)^{−1/2},',
@@ -436,6 +451,9 @@ const mathTeXs = [                          // Some cases aren't supported by Te
     '∫𝑑^3𝑟|𝑟⟩⟨𝑟|𝜓⟩,⟨𝜓|ℋ|𝜓⟩',
     '\\begin{equation}\\label{eq3}𝐸=𝑚𝑐^2\\end{equation}',
     '\\begin{equation}\\label{eq1}𝐸=𝑚𝑐^2\\end{equation}\\\\𝐸=𝑚𝑐²\\\\\\begin{equation}\\label{eq3}𝐸=𝑚𝑐^2\\end{equation}',
+    '\\begin{equation}\\label{eq1}𝐸+1&=𝑚𝑐^2\\end{equation}\\\\𝐸&=𝑚𝑐²\\\\\\begin{equation}\\label{eq3}𝐸&=𝑚𝑐^2\\end{equation}',
+    '𝐸+1&=𝑚𝑐²\\\\\\begin{equation}\\label{eq1}𝐸&=𝑚𝑐^2\\end{equation}\\\\\\begin{equation}\\label{eq3}𝐸&=𝑚𝑐^2\\end{equation}',
+    '𝑎_{𝑏^𝑖+1}+1+𝑐^{𝑑_𝑖+2}+1',
 ]
 
 function testMathMLtoUnicodeMath() {
