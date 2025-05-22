@@ -4616,9 +4616,11 @@ function dump(value, noAddParens) {
                     op = '⒞';
             }
             ret = binary(value, op);
-            // TODO: also add space for mi mrow mfrac
-            if (value.previousElementSibling && value.previousElementSibling.nodeName != 'mo') {
-                ret = ' ' + ret;                    // Separate variable and numerator
+            if (value.parentElement.getAttribute('intent') == ':function') {
+                ret = '〖' + ret + '〗'      // Keep denominator in function argument
+            } else if (value.previousElementSibling && value.previousElementSibling.nodeName != 'mo') {
+                // TODO: also add space for mi mrow mfrac
+                ret = ' ' + ret;            // Separate variable and numerator
             }
             break;
 
