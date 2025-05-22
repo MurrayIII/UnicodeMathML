@@ -1153,10 +1153,8 @@ function testHotKeys() {
 
     // More right-arrow navigation tests
     for (i = 0; i < rats.length; i++) {
-        testRightArrow(rats[i].uMath,
-                       rats[i].homeExpect,
-                       rats[i].rightArrowExpect,
-                       rats[i].speechExpect)
+        testRightArrow(rats[i].uMath, rats[i].homeExpect,
+            rats[i].rightArrowExpect, rats[i].speechExpect)
     }
 
     // Check intra-equation build up, e.g., build up not at end of math zone
@@ -1255,24 +1253,21 @@ function testHotKeys() {
     input.value = '𝑎+222b'
     testInputHotKey('x', true, false, '𝑎+∫', 4, 4)
 
-    // Test conversion to Unicode subsups
-    input.value = 'log_10 '
-    input.selectionStart = input.selectionEnd = 7
-    testInputHotKey(' ', false, false, 'log₁₀', 5, 5)
-
-    // Test '1/2=' → '½='
-    input.value = '1/2='
-    input.selectionStart = input.selectionEnd = 4
-    testInputHotKey('=', false, false, '½=', 2, 2)
-
-    // Test ellipsis autocorrection
-    input.value = '𝑎...b'
-    input.selectionStart = input.selectionEnd = 6
-    testInputHotKey('b', false, false, '𝑎…𝑏', 5, 5)
-
-    input.value = '1+2+...+'
-    input.selectionStart = input.selectionEnd = 8
-    testInputHotKey('+', false, false, '1+2+⋯+', 6, 6)
+    // Test some input-window autocorrections
+    const autocorrects = [
+        {in: 'log_10 ', ip: 7, expect: 'log₁₀', ipNew: 5},
+        {in: '1/2=', ip: 4, expect: '½=', ipNew: 2},
+        {in: '𝑎...b', ip: 6, expect: '𝑎…𝑏', ipNew: 5},
+        {in: '1+2+...+', ip: 8, expect: '1+2+⋯+', ipNew: 6},
+        {in: '𝑎/=', ip: 4, expect: '𝑎≠', ipNew: 3},
+        {in: '𝑎+-', ip: 4, expect: '𝑎±', ipNew: 3},
+    ]
+    autocorrects.forEach(x => {
+        let key = x.in[x.in.length - 1]
+        input.value = x.in
+        input.selectionStart = input.selectionEnd = x.ip
+        testInputHotKey(key, false, false, x.expect, x.ipNew, x.ipNew)
+    })
 
     const cwch = [['𝓠', '\\mbfscrQ'], ['∈', '\\in'], ['ℋ', '\\mscrH'],]
 
