@@ -614,6 +614,8 @@ function symbolBraille(ch) {
 		return '⠈⠷'
 	if (ch == '\u23B5')
 		return '⠈⠾'
+	if (ch == '\u2062')
+		return ''
 	return ch;
 }
 
@@ -930,11 +932,13 @@ function braille(value, noAddParens, subsup) {
 		case 'mo':
 			val = value.textContent
 			if (val == '\u0302')
-				val = '^'
+				return '^'
 			if (val == '\u0303')
-				val = '~'
-			if (val == '/' && value.getAttribute('intent') == ':text')
+				return '~'
+			if (val == '/')
 				return '⠸⠌'
+			if (val == 'd' && value.getAttribute('title') == 'derivative')
+				return '⠈⠈⠨⠰⠙'				// (for DLMF conversions)
 			return val
 
 		case 'mi':
@@ -991,7 +995,7 @@ function braille(value, noAddParens, subsup) {
 		return open + braille(value.children[1], true) + close;
 	}
 	if (mrowIntent == ':function') {
-		// Separate function name and argument by braille space
+		// Insert braille space between function name and argument
 		ret = braille(value.firstElementChild, true) + '⠀' +
 			braille(value.lastElementChild, true);
 
@@ -1570,13 +1574,20 @@ function braille2UnicodeMath(braille) {
 					uMath += '&'
 					continue
 				}
-				if (cases && isAsciiAlphabetic(getAsciiFromBraille(braille[i + 1]))) {
-					// Quote preceding ASCII word
-					for (k = i - 1; k > 0 && isAsciiAlphabetic(uMath[k]); k--)
-						;
-					k++
-					uMath = uMath.substring(0, k) + '"' + uMath.substring(k) + ' "'
-					continue
+				if (cases) {
+					// If space is preceded or followed by 'if', quote the 'if'.
+					// For a general UnicodeMath ordinary text round trip, could
+					// have a mode in which math italic characters appear as
+					// math italic braille instead of just ordinary letters.
+					k = uMath.length
+					if (uMath.substring(k - 2, k) == 'if') {
+						uMath = uMath.substring(0, k - 2) + '"if "'
+						continue
+					} else if (braille.substring(i + 1, i + 3) == '⠊⠋') {
+						uMath += '" if "'
+						i += 2
+						continue
+					}
 				}
 				// Since ch is a braille space, look for relational operator,
 				// which starts and ends with a braille space.
