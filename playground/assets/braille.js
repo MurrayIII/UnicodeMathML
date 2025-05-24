@@ -1288,6 +1288,13 @@ function braille2UnicodeMath(braille) {
 		index = ''
 
 		switch (ch) {
+			case '⠤':
+				if (braille[i + 1] != '⠬' && braille[i - 1] != '⠬') {
+					uMath += '\u2212'		// +-, -+ will go to ±, ∓, respectively
+					continue
+				}
+				break
+
 			case '⠠':
 				switch (braille[i + 1]) {
 					case '\u2800':
@@ -1378,6 +1385,15 @@ function braille2UnicodeMath(braille) {
 					i = k
 					continue
 				}
+				if (k > i) {
+					ch1 = braille2Symbol[braille.substring(i, k + 1)]
+					if (ch1) {
+						uMath += ch1
+						i = k
+						continue
+					}
+				}
+				break
 			case '⠸':
 				if (braille[i + 1] == '⠲') {
 					uMath += '.'			// '.' instead of 𝟒
@@ -1613,7 +1629,7 @@ function braille2UnicodeMath(braille) {
 					// Handle baseline and math-axis ellipses
 					i += 3
 					let op = '…'			// Ellipsis
-					if (uMath[uMath.length - 1] == '+')
+					if (uMath[uMath.length - 1] != ',')
 						op = '⋯'
 					uMath += op
 					continue

@@ -206,7 +206,7 @@ function isAccent(ch) {
 }
 
 function isAlphanumeric(ch) {
-    return /[\w]/.test(ch) || ch >= '\u3018' || isGreek(ch) || inRange('ℂ', ch, 'ⅉ');
+    return /[\w]/.test(ch) && ch != '_' || ch >= '\u3018' || isGreek(ch) || inRange('ℂ', ch, 'ⅉ')
 }
 
 function isMathAlphabetic(str, i) {
@@ -510,12 +510,13 @@ function needParens(ret) {
             i++;
             continue;
         }
-        if (ret[i] == ' ' && ch1 == '^' || isAlphanumeric(ret[i]) || ret[i] == '∑')
+        if (ret[i] == ' ' && (ch1 == '^' || ch1 == '_') || isAlphanumeric(ret[i]) ||
+            ret[i] == '∑') {
             continue;                       // Space is removed in build up
-
+        }
         if (!digitSuperscripts.includes(ret[i]) &&
             !isPrime(ret[i]) && !digitSubscripts.includes(ret[i]) &&
-            !'\u2061∞⬌!^ⒶⒻ'.includes(ret[i]) && (i || ret[i] != '−')) {
+            !'\u2061∞⬌!^_ⒶⒻ'.includes(ret[i]) && (i || ret[i] != '−')) {
             return true;
         }
         ch1 = ret[i];
