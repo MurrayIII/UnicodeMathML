@@ -1174,6 +1174,7 @@ function checkMathAlphanumeric(braille, i) {
 	if (k >= braille.length)
 		return ['', 0]
 
+	let alpha = false
 	let ch
 	let chAscii = getAsciiFromBraille(braille[k])
 
@@ -1206,6 +1207,8 @@ function checkMathAlphanumeric(braille, i) {
 				ch = getGreek(chAscii, cap, alt)
 				if (braille[i + 1] == '⠨')
 					mathStyle = 'mit'
+				if (ch)
+					alpha = true
 				break
 			case '⠸':						// [bold]Fraktur, bold[italic]Greek
 				if (braille[i + 1] == '⠨') {
@@ -1214,6 +1217,8 @@ function checkMathAlphanumeric(braille, i) {
 						n--					// Don't include alt in mathstyle
 					}
 					ch = getGreek(chAscii, cap, alt)
+					if (ch)
+						alpha = true
 				}
 				mathStyle = brailleFrakMathStyles[braille.substring(i, n)]
 				break
@@ -1236,11 +1241,14 @@ function checkMathAlphanumeric(braille, i) {
 		} else {
 			ch = mathFonts[ch][mathStyle]
 		}
+		if (ch)
+			alpha = true
 	}
 	if (!ch)
 		ch = chAscii
 
-	let alpha = isAsciiAlphabetic(chAscii)
+	if (!alpha)
+		alpha = isAsciiAlphabetic(chAscii)
 
 	//console.log('chAscii=' + chAscii + ' mathStyle=' + mathStyle + ' k=' + k + ' ch=' + ch)
 	return [ch, k, alpha]					// [math alphanumeric, end index, alphabetic]
@@ -1679,6 +1687,8 @@ function braille2UnicodeMath(braille) {
 				} else {
 					down = checkParens(down)
 				}
+				if (uMath && isAlphanumeric(uMath[uMath.length - 1]))
+					uMath += '\u2062'
 				uMath += base + op + down + up + of1
 				continue
 		}
