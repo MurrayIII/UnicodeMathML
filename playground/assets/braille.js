@@ -1410,6 +1410,10 @@ function braille2UnicodeMath(braille) {
 					i++
 					continue
 				}
+				if (braille[i + 1] == '⠩' || braille[i + 1] == '⠱') {
+					i++						// Bypass Nemeth code delimiters
+					continue
+				}
 				[ch1, k, alpha] = checkMathAlphanumeric(braille, i)
 				if (ch1) {
 					uMath += ch1
@@ -1544,6 +1548,13 @@ function braille2UnicodeMath(braille) {
 				uMath += '∫'
 				continue
 			case '⠫':						// Shape
+				ch1 = '⠀' + braille.substring(i, i + 2) + '⠀'
+				ch1 = braille2Symbol[ch1]
+				if (ch1) {
+					uMath += ch1
+					i++
+					continue
+				}
 				// Search for terminating ⠻
 				k = findDelimiter(braille, i, '⠻')
 				if (k >= braille.length)
@@ -1726,12 +1737,9 @@ function braille2UnicodeMath(braille) {
 	}
 	// Terminate unfinished expressions
 	if (sup) {
-		if (uMath[uMath.length - 2] == '(') {
-			uMath = uMath.substring(0, uMath.length - 2) +
-				uMath[uMath.length - 1] + ' '
-		} else {
-			uMath += ') '
-		}
+		for (i = 0; i < subSupCode.length; i++)
+			uMath += ')'
+		uMath += ' '
 	}
 	if (cases)
 		uMath += ')┤'
