@@ -4862,42 +4862,41 @@ function setActiveTab(id) {
 $(input).on("change keyup paste", function (e) {
     if (e.type == 'paste') {
         // If input.value[0] is Unicode braille or if clipText starts with '_%'
-        // (corresponding to the Nement-code start delimiter ⠸⠩), convert ASCII
+        // (corresponding to the Nemeth-code start delimiter ⠸⠩), convert ASCII
         // in clipText to Unicode braille (U+2800..U+285F). This allows ASCII
         // braille (such as sourced from 𝑇ℎ𝑒 𝑁𝑒𝑚𝑒𝑡ℎ 𝐵𝑟𝑎𝑖𝑙𝑙𝑒 𝐶𝑜𝑑𝑒 𝑓𝑜𝑟 𝑀𝑎𝑡ℎ𝑒𝑚𝑎𝑡𝑖𝑐𝑠
         // 𝑎𝑛𝑑 𝑆𝑐𝑖𝑒𝑛𝑐𝑒 𝑁𝑜𝑡𝑎𝑡𝑖𝑜𝑛) to be pasted into the UnicodeMathML Playground.
         e.preventDefault()
         navigator.clipboard.readText().then((clipText) => {
-            console.log('clipText: ' + clipText)
-            if (clipText) {
-                if (!clipText.startsWith('_%') && !isBraille(clipText[0])) {
-                    insertAtCursorPos(clipText)
-                    return
-                }
-                let braille = ''
-                for (let i = 0; i < clipText.length; i++) {
-                    if (clipText[i] == '·') { // U+00B7 sometimes appears
-                        braille += '⠀'        //  in Nemeth spec
+            if (!clipText)
+                return
+            if (!clipText.startsWith('_%') && !isBraille(clipText[0])) {
+                insertAtCursorPos(clipText)
+                return
+            }
+            let braille = ''
+            for (let i = 0; i < clipText.length; i++) {
+                if (clipText[i] == '·') { // U+00B7 sometimes appears
+                    braille += '⠀'        //  in Nemeth copy
+                } else {
+                    let code = clipText.codePointAt(i)
+                    if (code < 0x007F) {
+                        // ASCII braille → Unicode braille
+                        code -= (code > 0x5F) ? 0x40 : 0x20
+                        braille += ascii2Braille[code]
                     } else {
-                        let code = clipText.codePointAt(i)
-                        if (code < 0x007F) {
-                            // ASCII braille → Unicode braille
-                            code -= (code > 0x5F) ? 0x40 : 0x20
-                            braille += ascii2Braille[code]
-                        } else {
-                            // Assume Unicode braille
-                            braille += clipText[i]
-                        }
+                        // Assume Unicode braille
+                        braille += clipText[i]
                     }
                 }
-                // Remove Nemeth code indicators
-                if (braille.startsWith('⠸⠩⠀'))
-                    braille = braille.substring(3)
-                if (braille.endsWith('⠀⠸⠱'))
-                    braille = braille.substring(0, braille.length - 3)
-                console.log('braille: ' + braille)
-                insertAtCursorPos(braille)
             }
+            // Remove Nemeth-code indicators
+            if (braille.startsWith('⠸⠩⠀'))
+                braille = braille.substring(3)
+            if (braille.endsWith('⠀⠸⠱'))
+                braille = braille.substring(0, braille.length - 3)
+            console.log('braille: ' + braille)
+            insertAtCursorPos(braille)
         })
     }
     draw();

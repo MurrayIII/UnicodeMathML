@@ -712,7 +712,7 @@ function braille(value, noAddParens, subsup) {
 		return ret;
 	}
 
-	function Nary(node) {
+	function Nary(node, subsup) {
 		// symbol sub lower-limit sup upper-limit
 		return braille(node.firstElementChild) + '⠰' +
 			braille(node.children[1], true) + '⠘' +
@@ -759,7 +759,7 @@ function braille(value, noAddParens, subsup) {
 							== ':equation-label') {
 						let text = node.firstElementChild.textContent
 						if (node.childElementCount == 3)
-							ret += dump(node.children[1])
+							ret += braille(node.children[1])
 						ret += braille(node.lastElementChild) + '⠀' + text
 					} else {
 						ret += braille(node)
@@ -819,15 +819,15 @@ function braille(value, noAddParens, subsup) {
 			return braille(value.firstElementChild);
 
 		case 'mroot':
-			return '⠣' + braille(value.lastElementChild, true) + '⠜' +
-				braille(value.firstElementChild, true) + '⠻'
+			return '⠣' + braille(value.lastElementChild) + '⠜' +
+				braille(value.firstElementChild) + '⠻'
 
 		case 'msqrt':
 			return ret += '⠜' + unary(value, '') + '⠻'
 
 		case 'mfrac':
-			let num = braille(value.firstElementChild, true);
-			let den = braille(value.lastElementChild, true);
+			let num = braille(value.firstElementChild);
+			let den = braille(value.lastElementChild);
 			let linethickness = value.getAttribute('linethickness')
 
 			if (linethickness == '0' || linethickness == '0.0pt')
@@ -873,29 +873,29 @@ function braille(value, noAddParens, subsup) {
 			//if (value.hasAttribute('accent'))
 			//	return binary(value, '');
 
-			return '⠐' + braille(value.firstElementChild, true) +
-				'⠣' + braille(value.lastElementChild, true) + '⠻';
+			return '⠐' + braille(value.firstElementChild) +
+				'⠣' + braille(value.lastElementChild) + '⠻';
 
 		case 'munder':
-			return '⠐' + braille(value.firstElementChild, true) + '⠩' +
-				braille(value.lastElementChild, true) + '⠻';
+			return '⠐' + braille(value.firstElementChild) + '⠩' +
+				braille(value.lastElementChild) + '⠻';
 
 			//if (value.hasAttribute('accentunder'))
 			//	return binary(value, '');
 
-			//return 'modified ' + braille(value.firstElementChild, true) +
-			//	'⁐' + braille(value.lastElementChild, true) + '┬'; // 'with' ... 'below'
+			//return 'modified ' + braille(value.firstElementChild) +
+			//	'⁐' + braille(value.lastElementChild) + '┬'; // 'with' ... 'below'
 
 		case 'munderover':
 			return '⠐' + braille(value.firstElementChild) + '⠩' +
-				braille(value.children[1], true) + '⠣' +
-				braille(value.lastElementChild, true) + '⠻';
+				braille(value.children[1]) + '⠣' +
+				braille(value.lastElementChild) + '⠻';
 
 		case 'msubsup':
 			if (isNary(value.firstElementChild.innerHTML))
-				return Nary(value);
+				return Nary(value, false, subsup);
 			if (isNumericSubscript(value))
-				val = binary(value, '') + '⠘' + braille(value.lastElementChild, true);
+				val = binary(value, '') + '⠘' + braille(value.lastElementChild);
 			else
 				val = ternary(value, '⠰', '⠘');
 			return val.endsWith('⠐') ? val : val + '⠐';
@@ -972,7 +972,7 @@ function braille(value, noAddParens, subsup) {
 
 	if (mrowIntent.startsWith('absolute-value') ||
 		mrowIntent.startsWith('cardinality')) {
-		return '|' + braille(value.children[1], true) + '|';
+		return '|' + braille(value.children[1]) + '|';
 	}
 
 	if (cNode == 3 && value.children[1].nodeName == 'mtable') {
@@ -992,12 +992,12 @@ function braille(value, noAddParens, subsup) {
 		} else if (close == '\u200B') {
 			close = ''
 		}
-		return open + braille(value.children[1], true) + close;
+		return open + braille(value.children[1]) + close;
 	}
 	if (mrowIntent == ':function') {
 		// Insert braille space between function name and argument
-		ret = braille(value.firstElementChild, true) + '⠀' +
-			braille(value.lastElementChild, true);
+		ret = braille(value.firstElementChild) + '⠀' +
+			braille(value.lastElementChild);
 
 		if (value.previousElementSibling &&
 			value.firstElementChild.nodeName == 'mi' &&
@@ -1014,11 +1014,6 @@ function braille(value, noAddParens, subsup) {
 		ret += braille(node, false, subsup);
 	}
 
-	if (cNode > 1 && value.nodeName != 'math' && !noAddParens &&
-		(!mrowIntent || mrowIntent != ':fenced') &&
-		isMathMLObject(value.parentElement, true) && needParens(ret)) {
-		ret = '(' + ret + ')';
-	}
 	return ret;
 }
 
