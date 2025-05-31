@@ -396,6 +396,36 @@ const unicodeMathB = [
     "[𝑎+𝑏,𝑐+𝑑]",
 ]
 
+const unicodeMathA = [
+    "∫_(𝑎²+1)^(𝑏^𝑟+𝑞) 𝑑𝑥",
+    "𝑎₂3",
+    "𝑥^(𝑛_𝑎)",
+    "𝑥_(𝑛^𝑎)",
+    "𝑛_𝑥_𝑦",
+    "𝑥^(𝑦_(𝑎^𝑛))",
+    "𝑥_(𝑎^(𝑛_𝑏))",
+]
+
+const brailleA = [
+    "⠮⠰⠁⠰⠘⠆⠰⠬⠂⠘⠃⠘⠘⠗⠘⠬⠟⠐⠙⠭",
+    "⠁⠆⠐⠒",
+    "⠭⠘⠝⠘⠰⠁",
+    "⠭⠰⠝⠰⠘⠁",
+    "⠝⠰⠭⠰⠰⠽",
+    "⠭⠘⠽⠘⠰⠁⠘⠰⠘⠝",
+    "⠭⠰⠁⠰⠘⠝⠰⠘⠰⠃",
+]
+
+const unicodeMathC = [
+    "∫_(a^2 +1)^(b^r +q) dx",
+    "a₂3",
+    "x^(n_a) ",
+    "x_(n^a) ",
+    "n_(x_y) ",
+    "x^(y_(a^n)) ",
+    "x_(a^(n_b)) ",
+]
+
 const mathTeXs = [                          // Some cases aren't supported by TeX
     '\\frac{1}{2𝜋}∫_0^{2\\hsmash{𝜋}}\\frac{𝑑𝜃}{𝑎+𝑏 \\sin 𝜃}=\\frac{1}{\\sqrt{𝑎^2−𝑏^2}}',
     '𝛁⨯𝐄=−\\frac{𝜕𝐁}{𝜕𝑡}',
@@ -544,6 +574,29 @@ function testMathMLtoBraille() {
         }
     }
     console.log("Test braille to MathML: " + iSuccess + " passes; " +
+        iFail + " failures\n")
+
+    // Additional braille-to-MathML tests
+    iSuccess = iFail = 0
+    for (let i = 0; i < unicodeMathA.length; i++) {
+        let t = unicodemathml(unicodeMathA[i], true) 	// uMath → MathML
+        let braille = MathMLtoBraille(t.mathml)		    // Test braille
+        if (braille != brailleA[i]) {
+            console.log("Expect: " + braille[i] + '\n');
+            console.log("Result: " + braille + ' i = ' + i + '\n\n')
+            iFail++
+        }
+        let uMath = braille2UnicodeMath(braille)		// Test uMathOut
+
+        if (uMath != unicodeMathC[i]) {
+            console.log("Expect: " + unicodeMathC[i] + '\n');
+            console.log("Result: " + uMath + '\n\n')
+            iFail++
+        } else {
+            iSuccess++
+        }
+    }
+    console.log("More braille-to-MathML tests: " + iSuccess + " passes; " +
         iFail + " failures\n")
 }
 

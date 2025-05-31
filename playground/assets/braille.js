@@ -633,7 +633,7 @@ function styleBraille(mathStyle) {
 }
 
 function getBraille(node) {
-	let text = braille(node, true)
+	let text = braille(node)
 	let ret = '';							// Collects braille
 	let cchCh;								// Code count of current char
 	let ch;									// Current char
@@ -667,7 +667,7 @@ function getBraille(node) {
 	return ret;
 }
 
-function braille(value, noAddParens, subsup) {
+function braille(value, subsup) {
 	// Function called recursively to convert MathML to Nemeth math braille
 
 	function unary(node, op) {
@@ -713,10 +713,27 @@ function braille(value, noAddParens, subsup) {
 	}
 
 	function Nary(node, subsup) {
-		// symbol sub lower-limit sup upper-limit
-		return braille(node.firstElementChild) + '⠰' +
-			braille(node.children[1], true) + '⠘' +
-			braille(node.lastElementChild, true) + '⠐';
+		// Return symbol sub lower-limit sup upper-limit
+		let ret = braille(value.firstElementChild, subsup);
+		let subsupSave = subsup ? subsup : ''
+		if (subsup == undefined || subsup[0] != '⠘' && subsup[0] != '⠰')
+			subsup = '⠰'
+		else
+			subsup += '⠰'
+		let val = braille(node.children[1], subsup)
+		val = removeTrailingScriptLevel(val)
+		ret += subsup + val
+		subsup = subsupSave
+		if (subsup == undefined || subsup[0] != '⠘' && subsup[0] != '⠰')
+			subsup = '⠘'
+		else
+			subsup += '⠘'
+		val = braille(node.lastElementChild, subsup)
+		val = removeTrailingScriptLevel(val)
+		if (!subsupSave)
+			subsupSave = '⠐'				// Back to baseline
+		ret += subsup + val + subsupSave
+		return ret
 	}
 
 	function removeTrailingScriptLevel(val) {
@@ -813,7 +830,7 @@ function braille(value, noAddParens, subsup) {
 
 		case 'mphantom':
 		case 'mpadded':
-			return braille(value.firstElementChild, true);
+			return braille(value.firstElementChild);
 
 		case 'mstyle':
 			return braille(value.firstElementChild);
@@ -836,7 +853,7 @@ function braille(value, noAddParens, subsup) {
 			return '⠹' + num + '⠌' + den + '⠼';
 
 		case 'msub':
-			ret = braille(value.firstElementChild, false, subsup);
+			ret = braille(value.firstElementChild, subsup);
 			subsupSave = subsup ? subsup : '⠐'
 			if (subsup == undefined || subsup[0] != '⠘' && subsup[0] != '⠰')
 				subsup = '⠰';
@@ -845,7 +862,7 @@ function braille(value, noAddParens, subsup) {
 			if (isNumericSubscript(value))
 				return binary(value, '');	// No sub op for sub'd numerals
 
-			val = braille(value.lastElementChild, true, subsup);
+			val = braille(value.lastElementChild, subsup);
 
 			// Remove possible trailing subsup level since that level should
 			// be subsupSave
@@ -853,13 +870,13 @@ function braille(value, noAddParens, subsup) {
 			return val ? ret + subsup + val + subsupSave : ret
 
 		case 'msup':
-			ret = braille(value.firstElementChild, false, subsup);
+			ret = braille(value.firstElementChild, subsup);
 			subsupSave = subsup ? subsup : '⠐'
 			if (subsup == undefined || subsup[0] != '⠘' && subsup[0] != '⠰')
 				subsup = '⠘';
 			else
 				subsup += '⠘';
-			val = braille(value.lastElementChild, true, subsup);
+			val = braille(value.lastElementChild, subsup);
 			if (isPrime(val[0])) {
 				ret += val[0];
 				val = val.substring(1);
@@ -1009,11 +1026,19 @@ function braille(value, noAddParens, subsup) {
 		return ret;
 	}
 
-	for (let i = 0; i < cNode; i++) {
-		let node = value.children[i];
-		ret += braille(node, false, subsup);
-	}
+	let prevNumericSub = false
 
+	for (let i = 0; i < cNode; i++) {
+		let node = value.children[i]
+		let val = braille(node, subsup)
+		if (prevNumericSub && isAsciiDigit(val[0])) {
+			// Separate subscript digits from following digits (see Nemeth
+			// spec ex. 24 - 5)
+			ret += subsup ? subsup : '⠐'
+		}
+		prevNumericSub = node.nodeName == 'msub' && isAsciiDigit(val[val.length - 1])
+		ret += val
+	}
 	return ret;
 }
 
@@ -1564,25 +1589,27 @@ function braille2UnicodeMath(braille) {
 			// Subscripts and superscripts
 			case '⠘':
 				sup++
-				if (!sup) {
+				if (!sup || subSupCode[0] == '⠰') {
+					// subsup expression: terminate sub; start sup
 					uMath += ')'
 					sup = 1
 					uMath += '^('
 					subSupCode = '⠘'
 					continue
 				}
-				[subSupCode, ch1] = getSubSupCode(braille, i, subSupCode)
-				uMath += ch1
-				i += subSupCode.length - 1
-				continue
+				sup++						// Cancel sup-- on falling through
 			case '⠰':
-				[subSupCode, ch1] = getSubSupCode(braille, i, subSupCode)
 				sup--
-				uMath += ch1
+				[subSupCode, ch1] = getSubSupCode(braille, i, subSupCode)
+				j = uMath.length - 1
+				if (ch1[0] == ')' && uMath[j - 1] == '(')
+					uMath = uMath.substring(0, j - 1) + uMath[j] + ' '
+				else
+					uMath += ch1
 				i += subSupCode.length - 1
 				continue
 
-			case '\u2800':					// Relational ops go to baseline
+			case '\u2800':					// Relational ops usually go to baseline
 				if (sup) {
 					sup = 0
 					if (uMath[uMath.length - 2] == '(') {
@@ -1724,6 +1751,11 @@ function braille2UnicodeMath(braille) {
 					break
 				uMath += digitSubscripts[chAscii]
 			}
+			if (braille[j] == '⠐') {		// Skip baseline indicator
+				// Should also check for ⠘ and ⠰, but expressions like 𝑎₂3
+				// usually appear with multiplier in front: 3𝑎₂
+				j++
+			}
 			i = j - 1
 		} else {
 			uMath += chAscii
@@ -1732,7 +1764,13 @@ function braille2UnicodeMath(braille) {
 	}
 	// Terminate unfinished expressions
 	if (sup) {
-		for (i = 0; i < subSupCode.length; i++)
+		j = subSupCode.length
+		if (uMath[uMath.length - 2] == '(') {
+			uMath = uMath.substring(0, uMath.length - 2) +
+				uMath[uMath.length - 1]
+			j--
+		}
+		for (i = 0; i < j; i++)
 			uMath += ')'
 		uMath += ' '
 	}

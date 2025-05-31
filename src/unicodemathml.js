@@ -4364,6 +4364,10 @@ function binary(node, op) {
     let ret = dump(node.firstElementChild);
     let retd = dump(node.lastElementChild);
 
+    if (op == '^' && node.lastElementChild.nodeName == 'msub' ||
+        op == '_' && node.lastElementChild.nodeName == 'msup') {
+        return ret + op + '(' + retd + ')'
+    }
     if (isMathMLObject(node) && node.childElementCount) {
         // Add enclosing parens for parenthesized arguments that lose their
         // outermost parens when built up.
