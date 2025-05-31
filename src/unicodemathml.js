@@ -202,7 +202,7 @@ function inRange(ch0, ch, ch1) {
 }
 
 function isAccent(ch) {
-    return inRange('\u0300', ch, '\u034F')
+    return inRange('\u0300', ch, '\u034F') || inRange('\u20D0', ch, '\u20F0')
 }
 
 function isAlphanumeric(ch) {

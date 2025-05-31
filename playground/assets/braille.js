@@ -364,9 +364,9 @@ const symbol2Braille = {
 	'\u2A40': '⠡⠈⠨⠩⠻',			// ⩀	Intersection w dot
 	'\u228D': '⠡⠈⠨⠬⠻',			// ⊍		Multiset multiplication
 	'\u0308': '⠡⠡',				// ̈		Double-dot accent
-	// '\u20DB': '⠡⠡⠡':	'',		// ⃛	Triple-dot accent
-	// '\u20DC': '⠡⠡⠡⠡':	'',		// ⃜	Quadruple-dot accent
-	// '\u221B': '⠣⠒⠜':	'',		// ∛		Cube root
+	'\u20DB': '⠡⠡⠡',			// ⃛	Triple-dot accent
+	'\u20DC': '⠡⠡⠡⠡',			// ⃜	Quadruple-dot accent
+	'\u221B': '⠣⠒⠜',			// ∛		Cube root
 	'\u2A1B': '⠣⠮',				// ⨛	Integral w overbar(upper)	
 	//'\u221C': ;⠣⠲⠜',			// ∜		Fourth root
 	'\u2212': '⠤',				// −	Minus sign
@@ -952,6 +952,8 @@ function braille(value, subsup) {
 				return '^'
 			if (val == '\u0303')
 				return '~'
+			if (val == '\u0307')
+				return '⠡'
 			if (val == '/')
 				return '⠸⠌'
 			if (val == 'd' && value.getAttribute('title') == 'derivative')
@@ -1047,6 +1049,14 @@ var braille2Symbol
 const flip = (data) => Object.fromEntries(
 	Object.entries(data).map(([key, value]) => [value, key])
 )
+
+function getSymbol(braille) {
+	let ch = braille2Symbol[braille]
+	if (ch)
+		return ch
+	ch = braille2Symbol['⠀' + braille + '⠀']
+	return ch
+}
 
 function findDelimiter(braille, i, delims) {
 	// Starting at braille[i + 1], find the first delimiter in delims at
@@ -1719,21 +1729,25 @@ function braille2UnicodeMath(braille) {
 				}
 				let down
 				ch1 = braille.substring(k + 1, m)
-				chT = braille2Symbol[ch1]
+				chT = getSymbol(ch1)
 				if (chT in horzBrackets)
 					chT = horzBrackets[chT]
 				if (chT && (overBrackets.includes(chT) || underBrackets.includes(chT))) {
 					uMath += chT + base
 					continue
 				}
-				down = braille2UnicodeMath(ch1)
-				if (down == '^') {
-					down = '\u0302'
-				} if (down == '~') {
-					down = '\u0303'
-				} if (isAccent(down)) {
-					op = ''
+				if (chT) {
+					down = chT
+					if (down == '^')
+						down = '\u0302'
+					else if (down == '~')
+						down = '\u0303'
+					else if (down == '⋅')
+						down = '\u0307'
+					if (isAccent(down))
+						op = ''
 				} else {
+					down = braille2UnicodeMath(ch1)
 					down = checkParens(down)
 				}
 				if (uMath && isAlphanumeric(uMath[uMath.length - 1]))

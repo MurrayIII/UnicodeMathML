@@ -404,6 +404,9 @@ const unicodeMathA = [
     "𝑛_𝑥_𝑦",
     "𝑥^(𝑦_(𝑎^𝑛))",
     "𝑥_(𝑎^(𝑛_𝑏))",
+    "𝑥̈+2𝛾𝑥̇+𝜔²𝑥=0",
+    "∛(𝑎+𝑏)",
+    "𝑥⃜=0",
 ]
 
 const brailleA = [
@@ -414,6 +417,9 @@ const brailleA = [
     "⠝⠰⠭⠰⠰⠽",
     "⠭⠘⠽⠘⠰⠁⠘⠰⠘⠝",
     "⠭⠰⠁⠰⠘⠝⠰⠘⠰⠃",
+    "⠐⠭⠣⠡⠡⠻⠬⠆⠨⠛⠐⠭⠣⠡⠻⠬⠨⠺⠘⠆⠐⠭⠀⠨⠅⠀⠼⠴",
+    "⠣⠒⠜⠁⠬⠃⠻",
+    "⠐⠭⠣⠡⠡⠡⠡⠻⠀⠨⠅⠀⠼⠴",
 ]
 
 const unicodeMathC = [
@@ -424,6 +430,9 @@ const unicodeMathC = [
     "n_(x_y) ",
     "x^(y_(a^n)) ",
     "x_(a^(n_b)) ",
+    "ẍ+2γ⁢ẋ+ω^2 x=0",
+    "√(3&a+b) ",
+    "x⃜=0",
 ]
 
 const mathTeXs = [                          // Some cases aren't supported by TeX
@@ -582,7 +591,7 @@ function testMathMLtoBraille() {
         let t = unicodemathml(unicodeMathA[i], true) 	// uMath → MathML
         let braille = MathMLtoBraille(t.mathml)		    // Test braille
         if (braille != brailleA[i]) {
-            console.log("Expect: " + braille[i] + '\n');
+            console.log("Expect: " + brailleA[i] + '\n');
             console.log("Result: " + braille + ' i = ' + i + '\n\n')
             iFail++
         }
