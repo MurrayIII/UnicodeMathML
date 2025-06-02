@@ -432,7 +432,7 @@ const unicodeMathC = [
     "x_(a^(n_b)) ",
     "ẍ+2γ⁢ẋ+ω^2 x=0",
     "√(3&a+b) ",
-    "x⃜=0",
+    "x⃜=0",                                 // x\ddddot=0
 ]
 
 const mathTeXs = [                          // Some cases aren't supported by TeX

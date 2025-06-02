@@ -1180,10 +1180,14 @@ function autocomplete() {
             input.value = input.value.substring(0, i) + ch + input.value.substring(ip);
             speak(ch)
             ip = i + (code > 0xFFFF ? 2 : 1);
-            input.selectionStart = input.selectionEnd = ip;
             if (code >= 0x2061 && code <= 0x2C00)
                 opAutocorrect(ip, ch);
+            e.preventDefault()
+            e.stopPropagation()
             closeAutocompleteList();
+            input.focus()
+            input.selectionStart = input.selectionEnd = ip;
+            draw()
         })
 
         // Append div element as a child of the input autocomplete container
@@ -1316,7 +1320,9 @@ function handleAutocompleteKeys(x, e) {
             if (currentFocus >= 0 && x)
                 x[currentFocus].click();
             if (e.key != '\\') {
-                e.preventDefault();
+                e.preventDefault()
+                e.stopPropagation()
+                closeAutocompleteList()
                 return true
             }                               // Return false to input backslash
     }
