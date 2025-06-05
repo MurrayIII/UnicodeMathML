@@ -1174,12 +1174,15 @@ function autocomplete() {
         let autocl = createAutoCompleteMenu(cw, this.id, (e) => {
             // User clicked matching control word: insert its symbol
             let val = e.currentTarget.innerText;
-            let ch = italicizeCharacter(val[val.length - 1]);
+            let ch = val[val.length - 1]
             let code = ch.codePointAt(0);
-
+            if (isTrailSurrogate(code))
+                ch = val.substring(val.length - 2, val.length)
+            else
+                ch = italicizeCharacter(ch)
             input.value = input.value.substring(0, i) + ch + input.value.substring(ip);
             speak(ch)
-            ip = i + (code > 0xFFFF ? 2 : 1);
+            ip = i + ch.length
             if (code >= 0x2061 && code <= 0x2C00)
                 opAutocorrect(ip, ch);
             e.preventDefault()
@@ -2539,6 +2542,9 @@ function checkAutocomplete(node) {
         // User clicked matching control word: insert its symbol
         let val = e.currentTarget.innerText
         let symbol = val[val.length - 1]
+        let code = symbol.codePointAt(0)
+        if (isTrailSurrogate(code))
+            symbol = val.substring(val.length - 2, val.length)
         let nodeNew = document.createElement(getMmlTag(symbol))
         if (isDoubleStruck(symbol)) {
             let ch = doublestruckChar(symbol)
@@ -4493,10 +4499,13 @@ function getSymbolControlWord(ch) {
         cw = symbolTooltips[ch]
 
     if (!cw) {
-        cw = symbolNames[ch]     // From controlWords
+        cw = symbolNames[ch]                // From flipping controlWords
         if (cw) {
             cw = '\\' + cw
-        } else if (isAlphanumeric(ch)) { // Get math-alphanumeric control word 
+            let i = cw.indexOf(',')
+            if (i != -1)                    // Return first match
+                cw = cw.substring(0, i)
+        } else if (isAlphanumeric(ch)) {    // Get math-alphanumeric control word 
             let [anCode, chFolded] = foldMathAlphanumeric(ch.codePointAt(0), ch)
             if (anCode)
                 cw = '\\' + anCode + chFolded

@@ -177,7 +177,7 @@ const symbolClasses = {
     '̄': 'top',
     '▁': 'bottom',
     '▢': 'roundedbox',
-    '○': 'circle',
+    '◯': 'circle',
     '⟌': 'longdiv',
     "⃧": 'actuarial',
     '⬭': 'circle',
@@ -685,14 +685,18 @@ function debugLog(x) {
 // PARSE //
 ///////////
 
-// control words, to be replaced before parsing proper commences
+// Control words, to be replaced before parsing proper commences
 const controlWords = {
-    // from tech note: Appendix B. Character Keywords and Properties updated
-    // with the Microsoft math autocorrect list. For a more complete list, see
-    // https://ctan.math.utah.edu/ctan/tex-archive/macros/unicodetex/latex/unicode-math/unimath-symbols.pdf
+    // From tech-note Appendix B. Character Keywords and Properties updated
+    // with the Microsoft math autocorrect list and other sources. For a more
+    // complete list, see https://ctan.math.utah.edu/ctan/tex-archive/macros/unicodetex/latex/unicode-math/unimath-symbols.pdf
                                 // Unicode code point
+    '2root':            '√',    // 221A
+    '3root':            '∛',    // 221B
+    '4root':            '∜',    // 221C
     'Angstrom':         'Å',   // 212B
     'Bar':              '̿',	// 033F
+    'Biconditional':    '⇔',	// 21D4
     'Bmatrix':          'Ⓢ',	// 24C8
     'Bumpeq':           '≎',    	// 224E
     'Cap':              '⋒',    	// 22D2
@@ -705,6 +709,8 @@ const controlWords = {
     'Downarrow':        '⇓',    	// 21D3
     'Gamma':            'Γ',	// 0393
     'Im':               'ℑ',    	// 2111
+    'Implication':      '⇒',	// 21D2
+    'Implies':          '⇒',	// 21D2
     'Intersection':     '⋂',    	// 22C2
     'Join':             '⨝',   // 2A1D
     'Lambda':           'Λ',	// 039B
@@ -745,9 +751,11 @@ const controlWords = {
     'above':            '┴',	// 2534
     'abs':              '⒜',	// 249C
     'acute':            '́',	    // 0301
+    'adjoint':          '†',	// 2020
     'aleph':            'ℵ',    	// 2135
     'alpha':            'α',	// 03B1
     'amalg':            '∐',	    // 2210
+    'and':              '∧',	// 2227
     'angle':            '∠',	// 2220
     'angmsd':           '∡',	    // 2221
     'angrtvb':          '⊾',	    // 22BE
@@ -755,6 +763,7 @@ const controlWords = {
     'aoint':            '∳',	    // 2233
     'approx':           '≈',	// 2248
     'approxeq':         '≊',    	// 224A
+    'arc':              '⏜',	    // 23DC
     'arg':              'ⓐ',   // 24D0
     'asmash':           '⬆',    	// 2B06
     'ast':              '∗',    	// 2217
@@ -768,10 +777,12 @@ const controlWords = {
     'bcancel':          '╲',	// 2572
     'because':          '∵',	// 2235
     'begin':            '〖',	// 3016
+    'belongs':          '∈',	// 2208
     'below':            '┬',	// 252C
     'beta':             'β',	// 03B2
     'beth':             'ℶ',    	// 2136
     'between':          '≬',    	// 226C
+    'biconditional':    '↔',	// 2194
     'bigcap':           '⋂',    	// 22C2
     'bigcup':           '⋃',    	// 22C3
     'bigintersection':  '⋂',    	// 22C2
@@ -812,18 +823,22 @@ const controlWords = {
     'choose':           '⒞',	// 249E
     'circ':             '∘',	    // 2218
     'circeq':           '≗',    	// 2257
-    'circle':           '○',	// 25CB
+    'circle':           '◯',	// 25EF
     'circlearrowleft':  '↺',    	// 21BA
     'circlearrowright': '↻',	    // 21BB
+    'circledot':        '⊙',	    // 2299
     'close':            '┤',	// 2524
     'clubsuit':         '♣',	// 2663
     'coint':            '∲',	    // 2232
     'colon':            '∶',	// 2236
     'color':            '✎',	// 270E
+    'comp':             '∘',    // 2218
     'complement':       '∁',	    // 2201
     'cong':             '≅',    	// 2245
-    'contain':          '∋',	// 220B
+    'contains':         '∋',	// 220B
+    'contradiction':    '⊥',	// 22A5
     'coprod':           '∐',	    // 2210
+    'corr':             '⍴',	// 2374
     'cross':            '⨯',	// 2A2F
     'cup':              '∪',	// 222A
     'curlyeqprec':      '⋞',    	// 22DE
@@ -847,6 +862,7 @@ const controlWords = {
     'ddot':             '̈',	    // 0308
     'ddots':            '⋱',	    // 22F1
     'defeq':            '≝',	    // 225D
+    'deg':              '°',	// 00B0
     'degc':             '℃',	// 2103
     'degf':             '℉',	    // 2109
     'degree':           '°',	// 00B0
@@ -854,7 +870,9 @@ const controlWords = {
     'det':              '⒱',	// 24B1
     'diamond':          '⋄',	    // 22C4
     'diamondsuit':      '♢',	    // 2662
+    'directsum':        '⊕',	    // 2295
     'div':              '÷',	// 00F7
+    'divide':           '∣',	    // 2223
     'divideontimes':    '⋇',	    // 22C7
     'dot':              '̇',	    // 0307
     'doteq':            '≐',	    // 2250
@@ -862,19 +880,25 @@ const controlWords = {
     'dotplus':          '∔',	    // 2214
     'dots':             '…',	// 2026
     'doubleH':          'ℍ',    // 210D
+    'doubleint':        '∬',	// 222C
+    'doubleprime':      '″',	// 2033
     'downarrow':        '↓',	// 2193
     'downdownarrows':   '⇊',    	// 21CA
     'downharpoonleft':  '⇃',    	// 21C3
     'downharpoonright': '⇂',    	// 21C2
+    'dprime':           '″',	// 2033
     'dsmash':           '⬇',    	// 2B07
     'ee':               'ⅇ',	// 2147
     'eight':            '8',    // 0038
+    'element':          '∈',	// 2208
     'ell':              'ℓ',	// 2113
     'ellipse':          '⬭',    // 2B2D
     'emptyset':         '∅',	    // 2205
     'emsp':             ' ',	// 2003
     'end':              '〗',	// 3017
+    'endproof':         '∎',	    // 220E
     'ensp':             ' ',	    // 2002
+    'entailment':       '⊨',	    // 22A8
     'epar':             '⋕',    	// 22D5
     'epsilon':          'ϵ',	// 03F5
     'eqalign':          '█',	// 2588
@@ -886,9 +910,14 @@ const controlWords = {
     'equiv':            '≡',	// 2261
     'eta':              'η',	// 03B7
     'exists':           '∃',	// 2203
+    'expect':           '𝔼',	// 1D53C
     'fallingdotseq':    '≒',	// 2252
+    'false':            '⊥',	// 22A5
     'five':             '5',    // 0035
     'forall':           '∀',	// 2200
+    'forces':           '⊩',	    // 22A9
+    'foreach':          '∀',	// 2200
+    'forsome':          '∃',	// 2203
     'four':             '4',    // 0034
     'frakturH':         'ℌ',    // 210C
     'frown':            '⌢',	    // 2322
@@ -904,12 +933,14 @@ const controlWords = {
     'gimel':            'ℷ',    	// 2137
     'gneqq':            '≩',    	// 2269
     'gnsim':            '⋧',    	// 22E7
+    'grad':             '∇',	// 2207
     'grave':            '̀',	    // 0300
     'gtrdot':           '⋗',    	// 22D7
     'gtreqless':        '⋛',    	// 22DB
     'gtrless':          '≷',    	// 2277
     'gtrsim':           '≳',    	// 2273
-    'hairsp': ' ',	    // 200A
+    'hadamard':         '⊙',	    // 2299
+    'hairsp':           ' ',	    // 200A
     'half':             '½',    // 00BD
     'hat':              '̂',	    // 0302
     'hbar':             'ℏ',    	// 210F
@@ -919,14 +950,18 @@ const controlWords = {
     'hphantom':         '⬄',	// 2B04
     'hsmash':           '⬌',	// 2B0C
     'hvec':             '⃑',	// 20D1
+    'identity':         '𝐈',    // 1D408
     'iff':              '⟺',	// 27FA
     'ii':               'ⅈ',    	// 2148
     'iiiint':           '⨌',	// 2A0C
     'iiint':            '∭',	    // 222D
     'iint':             '∬',	// 222C
     'imath':            'ı',	// 0131
+    'implication':      '→',	// 2192
+    'implies':          '→',	// 2192
     'in':               '∈',	// 2208
     'inc':              '∆',	// 2206
+    'infinity':         '∞',	// 221E
     'infty':            '∞',	// 221E
     'int':              '∫',	// 222B
     'intent':           'ⓘ',   // 24D8
@@ -939,12 +974,15 @@ const controlWords = {
     'intercal':         '⊺',    // 22BA
     'jj':               'ⅉ',    	// 2149
     'jmath':            'ȷ',	// 0237
+    'join':             '⋈',	    // 22C8
     'kappa':            'κ',	// 03BA
     'ket':              '⟩',	    // 27E9
+    'kron':             '⊗',	    // 2297
     'labove':           '└',	// 2514
     'lambda':           'λ',	// 03BB
     'land':             '∧',	// 2227
     'langle':           '⟨',	    // 27E8
+    'laplace':          '∆',	// 2206
     'lbbrack':          '⟦',	    // 27E6
     'lbelow':           '┌',	// 250C
     'lbrace':           '{',	// 007B
@@ -999,6 +1037,8 @@ const controlWords = {
     'mapsto':           '↦',	    // 21A6
     'mapstoleft':       '↤',	    // 21A4
     'matrix':           '■',	// 25A0
+    'mean':             'µ',	// 00B5
+    'measangle':        '∡',	    // 2221
     'medsp':            ' ',	    // 205F
     'meq':              '≞',	    // 225E
     'mid':              '∣',	    // 2223
@@ -1006,12 +1046,14 @@ const controlWords = {
     'mp':               '∓',	    // 2213
     'mu':               'μ',	// 03BC
     'multimap':         '⊸',    	// 22B8
+    'owns':             '∋',	// 220B
     'nLeftarrow':       '⇍',    	// 21CD
     'nLeftrightarrow':  '⇎',    	// 21CE
     'nRightarrow':      '⇏',    	// 21CF
     'nVDash':           '⊯',    	// 22AF
     'nVdash':           '⊮',    	// 22AE
     'nabla':            '∇',	// 2207
+    'nand':             '⊼',    // 22BC
     'napprox':          '≉',    	// 2249
     'naryand':          '▒',	// 2592
     'nasymp':           '≭',	    // 226D
@@ -1032,11 +1074,24 @@ const controlWords = {
     'nleftrightarrow':  '↮',	    // 21AE
     'nleq':             '≰',	    // 2270
     'nless':            '≮',	    // 226E
+    'nlt':              '≮',	    // 226E
     'nmid':             '∤',	    // 2224
+    'nor':              '⊽',	    // 22BD
     'norm':             '‖',	    // 2016
     'not':              '/',	// 002F
+    'notapprox':        '≉',    	// 2249
+    'notcong':          '≇',    	// 2247
+    'notdivide':        '∤',	    // 2224
+    'notgeq':           '≱',	    // 2271
+    'notgt':            '≯',	    // 226F
     'notin':            '∉',    	// 2209
+    'notleq':           '≰',	    // 2270
+    'notlt':            '≮',	    // 226E
     'notni':            '∌',    	// 220C
+    'notsubset':        '⊄',    	// 2284
+    'notsubseteq':      '⊈',    	// 2288
+    'notsuperset':      '⊅',    	// 2285
+    'notsuperseteq':    '⊉',    	// 2289
     'nparallel':        '∦',    	// 2226
     'nprec':            '⊀',    	// 2280
     'npreccurlyeq':     '⋠',    	// 22E0
@@ -1075,6 +1130,7 @@ const controlWords = {
     'oo':               '∞',	// 221E
     'open':             '├',	// 251C
     'oplus':            '⊕',	    // 2295
+    'or':               '∨',	// 2228
     'oslash':           '⊘',	    // 2298
     'otimes':           '⊗',	    // 2297
     'over':             '/',	// 002F
@@ -1085,6 +1141,7 @@ const controlWords = {
     'overparen':        '⏜',	    // 23DC
     'overshell':        '⏠',	    // 23E0
     'parallel':         '∥',	// 2225
+    'parallelogram':    '▱',    // 25B1
     'partial':          '∂',	// 2202
     'perp':             '⊥',	// 22A5
     'phantom':          '⟡',	// 27E1
@@ -1093,6 +1150,7 @@ const controlWords = {
     'pitchfork':        '⋔',	    // 22D4
     'pm':               '±',	// 00B1
     'pmatrix':          '⒨',	// 24A8
+    'powerset':         '℘',	    // 2118
     'pppprime':         '⁗',	    // 2057
     'ppprime':          '‴',	// 2034
     'pprime':           '″',	// 2033
@@ -1104,15 +1162,21 @@ const controlWords = {
     'precnsim':         '⋨',	    // 22E8
     'precsim':          '≾',    	// 227E
     'prime':            '′',	// 2032
+    'prob':             'ℙ',    // 2119
     'prod':             '∏',	// 220F
     'propto':           '∝',	// 221D
+    'proves':           '⊢',    	// 22A2
     'psi':              'ψ',	// 03C8
     'qdrt':             '∜',	    // 221C
     'qed':              '∎',	    // 220E
+    'qprime':           '⁗',	    // 2057
     'quad':             ' ',	// 2003
+    'quadprime':        '⁗',	    // 2057
     'quarter':          '¼',    // 00BC
+    'rad':              '㎭',   // 33AD
     'rangle':           '⟩',	    // 27E9
     'ratio':            '∶',	// 2236
+    'ray':              '⃗',	// 20D7
     'rbbrack':          '⟧',	    // 27E7
     'rbelow':           '┐',	// 2510
     'rbrace':           '}',	// 007D
@@ -1120,6 +1184,8 @@ const controlWords = {
     'rceil':            '⌉',    	// 2309
     'rddots':           '⋰',	    // 22F0
     'rect':             '▭',	// 25AD
+    'repeat':           '¯',	// 00AF
+    'repeating':        '¯',	// 00AF
     'rfloor':           '⌋',	    // 230B
     'rho':              'ρ',	// 03C1
     'rhvec':            '⃑',	// 20D1
@@ -1163,9 +1229,11 @@ const controlWords = {
     'sqsupset':         '⊐',    	// 2290
     'sqsupseteq':       '⊒',    	// 2292
     'star':             '⋆',    	// 22C6
+    'stddev':           'σ',	// 03C3
     'subset':           '⊂',	// 2282
     'subseteq':         '⊆',	// 2286
     'subsetneq':        '⊊',    	// 228A
+    'subsetnoteq':      '⊊',    	// 228A
     'subsub':           '⫕',	// 2AD5
     'subsup':           '⫓',	// 2AD3
     'succ':             '≻',	    // 227B
@@ -1177,11 +1245,13 @@ const controlWords = {
     'supset':           '⊃',	// 2283
     'supseteq':         '⊇',	// 2287
     'supsetneq':        '⊋',    	// 228B
+    'supsetnoteq':      '⊋',    	// 228B
     'supsub':           '⫔',	// 2AD4
     'supsup':           '⫖',	// 2AD6
     'surd':             '√',	// 221A
     'swarrow':          '↙',    	// 2199
     'tau':              'τ',	// 03C4
+    'tautology':        '⊤',	    // 22A4
     'therefore':        '∴',	// 2234
     'theta':            'θ',	// 03B8
     'thicksp':         '\u2005',// 2005
@@ -1192,11 +1262,15 @@ const controlWords = {
     'times':            '×',	// 00D7
     'to':               '→',	// 2192
     'top':              '⊤',	    // 22A4
+    'tprime':           '‴',	// 2034
     'triangle':         '△',	// 25B3
     'triangleleft':     '◁',    // 25C1
     'trianglelefteq':   '⊴',	    // 22B4
     'triangleright':    '▷',    // 25B7
     'trianglerighteq':  '⊵',	    // 22B5
+    'tripleint':        '∭',	    // 222D
+    'tripleprime':      '‴',	// 2034
+    'true':             '⊨',	    // 22A8
     'tvec':             '⃡',	// 20E1
     'two':              '2',    // 0032
     'twoheadleftarrow': '↞',	    // 219E
@@ -1233,6 +1307,7 @@ const controlWords = {
     'vectimes':         '⨯',    // 2A2F
     'vee':              '∨',	// 2228
     'vert':             '|',	// 007C
+    'vinculum':         '¯',	// 00AF
     'vmatrix':          '⒱',	// 24B1
     'vphantom':         '⇳',	// 21F3
     'vthicksp':         ' ',    	// 2004
@@ -1243,6 +1318,8 @@ const controlWords = {
     'wr':               '≀',	    // 2240
     'xcancel':          '╳',	// 2573
     'xi':               'ξ',	// 03BE
+    'xnor':             '⊙',	    // 2299
+    'xor':              '⊕',	    // 2295
     'zero':             '0',    // 0030
     'zeta':             'ζ',	// 03B6
     'zwnj':             '‌',
@@ -1394,6 +1471,7 @@ const negs = {
     '≷': '≹',   // /\gtrless
     '≺': '⊀',   // /\prec
     '≻': '⊁',   // /\succ
+    '∥': '∦',  // /\nparallel
     '⪯': '⪱',  // /\preceq
     '⪰': '⪲',  // /\succeq
     '⊂': '⊄',  // /\subset

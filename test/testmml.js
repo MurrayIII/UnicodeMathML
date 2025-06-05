@@ -1353,7 +1353,7 @@ function testHotKeys() {
         testInputHotKey(key, false, false, x.expect, x.ipNew, x.ipNew)
     })
 
-    const cwch = [['𝓠', '\\mbfscrQ'], ['∈', '\\in'], ['ℋ', '\\mscrH'],]
+    const cwch = [['𝓠', '\\mbfscrQ'], ['∈', '\\belongs'], ['ℋ', '\\mscrH'],]
 
     // Test symbol-to-control-word conversion
     for (i = 0; i < cwch.length; i++) {

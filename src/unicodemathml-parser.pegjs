@@ -329,7 +329,7 @@ opFraction
     / "\u2044"  // skewed fraction ¹/₂
     / "\u2215"  // linear fraction 1/2
     / "\u2298"  // small fraction
-opEnclosure = "▭" / "̄" / "▁" / "▢" / "○" / "⟌" / "⃧" / "⬭" / "╱" / "╲" / "╳"
+opEnclosure = "▭" / "̄" / "▁" / "▢" / "◯" / "⟌" / "⃧" / "⬭" / "╱" / "╲" / "╳"
 opEqNumber = "#"
 opPhantom = "⟡" / "⬄" / "⇳"
 opSmash = "⬍" / "⬆" / "⬇" / "⬌"
