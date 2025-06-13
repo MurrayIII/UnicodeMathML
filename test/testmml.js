@@ -648,7 +648,7 @@ function dispatchText(text) {
     }
 }
 
-function buildUp(uMath, uMathPartial) {
+function buildUp(uMath, uMathPartial, noFinalSpace) {
     // Build up UnicodeMath string one character at a time. If uMathPartial
     // is defined, check results against uMathPartial
     output.innerHTML = `<math display='block'><mi selanchor="0" selfocus="1">⬚</mi></math>`
@@ -666,6 +666,8 @@ function buildUp(uMath, uMathPartial) {
                 event.key = 'Enter'
                 event.shiftKey = true
             }
+        } else if (noFinalSpace) {
+            return iSuccess
         }
         output.dispatchEvent(event)
         if (event.key.length == 2)
@@ -1291,6 +1293,10 @@ function testHotKeys() {
     testOutputHotKey('z', '𝑎/𝑏 Ⓐ(-0)+Ⓕ(2) 𝑐/𝑑=0')
     testOutputHotKey('q', '𝑎/𝑏 𝑞Ⓐ()=0')
     speechSynthesis.cancel()
+
+    // Test output autocomplete
+    buildUp('\\al', null, true)
+    testOutputHotKey('Tab', 'Ⓐ(1)𝛼')
 
     // Test Tab navigation
     //          →output →config →history

@@ -1300,16 +1300,18 @@ function handleAutocompleteKeys(x, e) {
                 let nodeNew = getNewNode(symbol)
                 if (node.nodeName == '#text')
                     node = node.parentElement
+                let nodeP = node.parentElement
                 if (e.key == ' ') {
                     // Replace <mtext> by element for corresponding symbol
                     setSelAttributes(nodeNew, 'selanchor', '1')
-                    node.parentElement.replaceChild(nodeNew, node)
+                    nodeP.replaceChild(nodeNew, node)
                 } else {
                     // Insert new node before text node; change latter to \
-                    node.parentElement.insertBefore(nodeNew, node)
+                    nodeP.insertBefore(nodeNew, node)
                     setSelAttributes(node, 'selanchor', '-1')
                     node.textContent = '\\'
                 }
+                nodeP.innerHTML = nodeP.innerHTML
                 refreshDisplays()
             }
                                             // Fall through to Escape
@@ -1948,7 +1950,7 @@ function handleKeyboardInput(node, key, sel) {
             refreshDisplays()
             return
         }
-        if(!testing)
+        if (!testing)
             console.log('Input at end of math zone')
         let nodeNew = document.createElement(nodeNewName)
         nodeNew.textContent = key
@@ -1957,22 +1959,28 @@ function handleKeyboardInput(node, key, sel) {
         refreshDisplays()
         return
     }
-    let autocl
     if (node.nodeName == '#text')
         node = node.parentElement
-    let nodeName = node.nodeName.toLowerCase()
-    let nodeP = node.parentElement
 
-    if (isAsciiAlphabetic(key) && node.textContent.endsWith('\\')) {
+    let nodeP = node.parentElement
+    let offset = sel.anchorOffset
+    let nodePrev = offset ? node : node.previousElementSibling
+
+    if (isAsciiAlphanumeric(key) && key != '_' && nodePrev &&
+        nodePrev.textContent[0] == '\\') {
+        // Collect control word and display autocomplete menu
         let nodeNew = document.createElement('mtext')
-        nodeNew.innerHTML = node.textContent + key
+        nodeNew.innerHTML = nodePrev.textContent + key
         setSelAttributes(nodeNew, 'selanchor', '-' + nodeNew.textContent.length)
-        nodeP.replaceChild(nodeNew, node)
-        nodeP.innerHTML = nodeP.innerHTML
+        nodeP.replaceChild(nodeNew, nodePrev)
+        let autocl = checkAutocomplete(nodeNew)
+        nodeP.innerHTML = nodeP.innerHTML // Force redraw
         refreshDisplays()
-        return
+        speak(key)
+        return autocl
     }
 
+    let nodeName = node.nodeName.toLowerCase()
     if ((nodeName == 'mtext' || nodeName == 'mi') && nodeP.nodeName == 'mtd' &&
         nodeP.getAttribute('intent') == ':equation-label') {
         // Entering an equation number
@@ -1993,20 +2001,8 @@ function handleKeyboardInput(node, key, sel) {
         refreshDisplays()
         return
     }
-    let offset = sel.anchorOffset
 
     if (nodeName == 'mtext' && node.textContent[0] == '\\') {
-        // Collect control word; offer autocompletion menu
-        if (isAsciiAlphabetic(key)) {
-            node.textContent += key         // Collect control word
-            autocl = checkAutocomplete(node)
-            let offset = '-' + node.textContent.length
-            setSelAttributes(node, 'selanchor', offset)
-            nodeP.innerHTML = nodeP.innerHTML // Force redraw
-            refreshDisplays()
-            speak(key)
-            return autocl
-        }
         let symbol = resolveCW(node.textContent)
         if (symbol[0] == '"')
             return
@@ -2021,11 +2017,6 @@ function handleKeyboardInput(node, key, sel) {
         setSelAttributes(nodeNew, 'selanchor', '1')
         nodeP.replaceChild(nodeNew, node)
         node = nodeNew
-        if (key == ' ') {
-            nodeNewName = ''                // Eat ' '
-            key = symbol                    // Set up to speak symbol
-            offset = -1                     // - → + in setSelAttributes()
-        }
     }
     let isFunction
 
@@ -2077,14 +2068,14 @@ function handleKeyboardInput(node, key, sel) {
             } else if (key in mappedSingle) {
                 key = mappedSingle[key]
             } else if (key == ' ')
-                key = '\u202F'          // Use NNBSP to maintain ' ' in mml
+                key = '\u202F'              // Use NNBSP to maintain ' ' in mml
             break
     }
     speak(key)
     if (!nodeNewName) {
         // node textContent modified; no new node
         setSelAttributes(node, 'selanchor', -offset)
-        nodeP.innerHTML = nodeP.innerHTML // Force redraw
+        nodeP.innerHTML = nodeP.innerHTML   // Force redraw
         refreshDisplays();
         return
     }
@@ -2098,9 +2089,8 @@ function handleKeyboardInput(node, key, sel) {
     nodeNew.textContent = key
     setSelAttributes(nodeNew, 'selanchor', '1')
     insertNode(node, offset, nodeNew, nodeP)
-    nodeP.innerHTML = nodeP.innerHTML   // Force redraw
-    refreshDisplays();
-    return autocl
+    nodeP.innerHTML = nodeP.innerHTML       // Force redraw
+    refreshDisplays()
 }
 
 function getMmlTag(ch) {
@@ -4027,7 +4017,6 @@ output.addEventListener('keydown', function (e) {
 
     let i, k
     let cchCh
-    let intent = ''
     let sel = window.getSelection()
 
     let range = document.createRange()

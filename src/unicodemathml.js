@@ -838,7 +838,7 @@ const controlWords = {
     'contains':         '∋',	// 220B
     'contradiction':    '⊥',	// 22A5
     'coprod':           '∐',	    // 2210
-    'corr':             '⍴',	// 2374
+    'corr':             'ρ',	// 03C1
     'cross':            '⨯',	// 2A2F
     'cup':              '∪',	// 222A
     'curlyeqprec':      '⋞',    	// 22DE
@@ -1037,7 +1037,7 @@ const controlWords = {
     'mapsto':           '↦',	    // 21A6
     'mapstoleft':       '↤',	    // 21A4
     'matrix':           '■',	// 25A0
-    'mean':             'µ',	// 00B5
+    'mean':             'μ',	// 03BC
     'measangle':        '∡',	    // 2221
     'medsp':            ' ',	    // 205F
     'meq':              '≞',	    // 225E
