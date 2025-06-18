@@ -1612,6 +1612,38 @@ const mathFonts = {
     '7': {'mbf': '𝟕', 'Bbb': '𝟟', 'msans': '𝟩', 'mbfsans': '𝟳', 'mtt': '𝟽'},
     '8': {'mbf': '𝟖', 'Bbb': '𝟠', 'msans': '𝟪', 'mbfsans': '𝟴', 'mtt': '𝟾'},
     '9': {'mbf': '𝟗', 'Bbb': '𝟡', 'msans': '𝟫', 'mbfsans': '𝟵', 'mtt': '𝟿'},
+    '\u0627': {'mloop': '\u{1EE80}'},
+    '\u0628': {'misol': '\u{1EE01}', 'minit': '\u{1EE21}', 'mstrc': '\u{1EE61}', 'mloop': '\u{1EE81}', 'Bbb': '\u{1EEA1}'},
+    '\u062A': {'misol': '\u{1EE15}', 'minit': '\u{1EE35}', 'mstrc': '\u{1EE75}', 'mloop': '\u{1EE95}', 'Bbb': '\u{1EEB5}'},
+    '\u062B': {'misol': '\u{1EE16}', 'minit': '\u{1EE36}', 'mstrc': '\u{1EE76}', 'mloop': '\u{1EE96}', 'Bbb': '\u{1EEB6}'},
+    '\u062C': {'misol': '\u{1EE02}', 'minit': '\u{1EE22}', 'mtail': '\u{1EE42}', 'mstrc': '\u{1EE62}', 'mloop': '\u{1EE82}', 'Bbb': '\u{1EEA2}'},
+    '\u062D': {'misol': '\u{1EE07}', 'minit': '\u{1EE27}', 'mtail': '\u{1EE47}', 'mstrc': '\u{1EE67}', 'mloop': '\u{1EE87}', 'Bbb': '\u{1EEA7}'},
+    '\u062E': {'misol': '\u{1EE17}', 'minit': '\u{1EE37}', 'mtail': '\u{1EE57}', 'mstrc': '\u{1EE77}', 'mloop': '\u{1EE97}', 'Bbb': '\u{1EEB7}'},
+    '\u062F': {'misol': '\u{1EE03}', 'mloop': '\u{1EE83}', 'Bbb': '\u{1EEA3}'},
+    '\u0630': {'misol': '\u{1EE18}', 'mloop': '\u{1EE98}', 'Bbb': '\u{1EEB8}'},
+    '\u0631': {'misol': '\u{1EE13}', 'mloop': '\u{1EE93}', 'Bbb': '\u{1EEB3}'},
+    '\u0632': {'misol': '\u{1EE06}', 'mloop': '\u{1EE86}', 'Bbb': '\u{1EEA6}'},
+    '\u0633': {'misol': '\u{1EE0E}', 'minit': '\u{1EE2E}', 'mtail': '\u{1EE4E}', 'mstrc': '\u{1EE6E}', 'mloop': '\u{1EE8E}', 'Bbb': '\u{1EEAE}'},
+    '\u0634': {'misol': '\u{1EE14}', 'minit': '\u{1EE34}', 'mtail': '\u{1EE54}', 'mstrc': '\u{1EE74}', 'mloop': '\u{1EE94}', 'Bbb': '\u{1EEB4}'},
+    '\u0635': {'misol': '\u{1EE11}', 'minit': '\u{1EE31}', 'mtail': '\u{1EE51}', 'mstrc': '\u{1EE71}', 'mloop': '\u{1EE91}', 'Bbb': '\u{1EEB1}'},
+    '\u0636': {'misol': '\u{1EE19}', 'minit': '\u{1EE39}', 'mtail': '\u{1EE59}', 'mstrc': '\u{1EE79}', 'mloop': '\u{1EE99}', 'Bbb': '\u{1EEB9}'},
+    '\u0637': {'misol': '\u{1EE08}', 'mstrc': '\u{1EE68}', 'mloop': '\u{1EE88}', 'Bbb': '\u{1EEA8}'},
+    '\u0638': {'misol': '\u{1EE1A}', 'mstrc': '\u{1EE7A}', 'mloop': '\u{1EE9A}', 'Bbb': '\u{1EEBA}'},
+    '\u0639': {'misol': '\u{1EE0F}', 'minit': '\u{1EE2F}', 'mtail': '\u{1EE4F}', 'mstrc': '\u{1EE6F}', 'mloop': '\u{1EE8F}', 'Bbb': '\u{1EEAF}'},
+    '\u063A': {'misol': '\u{1EE1B}', 'minit': '\u{1EE3B}', 'mtail': '\u{1EE5B}', 'mstrc': '\u{1EE7B}', 'mloop': '\u{1EE9B}', 'Bbb': '\u{1EEBB}'},
+    '\u0641': {'misol': '\u{1EE10}', 'minit': '\u{1EE30}', 'mstrc': '\u{1EE70}', 'mloop': '\u{1EE90}', 'Bbb': '\u{1EEB0}'},
+    '\u0642': {'misol': '\u{1EE12}', 'minit': '\u{1EE32}', 'mtail': '\u{1EE52}', 'mstrc': '\u{1EE72}', 'mloop': '\u{1EE92}', 'Bbb': '\u{1EEB2}'},
+    '\u0643': {'misol': '\u{1EE0A}', 'minit': '\u{1EE2A}', 'mstrc': '\u{1EE6A}'},
+    '\u0644': {'misol': '\u{1EE0B}', 'minit': '\u{1EE2B}', 'mtail': '\u{1EE4B}', 'mloop': '\u{1EE8B}', 'Bbb': '\u{1EEAB}'},
+    '\u0645': {'misol': '\u{1EE0C}', 'minit': '\u{1EE2C}', 'mstrc': '\u{1EE6C}', 'mloop': '\u{1EE8C}', 'Bbb': '\u{1EEAC}'},
+    '\u0646': {'misol': '\u{1EE0D}', 'minit': '\u{1EE2D}', 'mtail': '\u{1EE4D}', 'mstrc': '\u{1EE6D}', 'mloop': '\u{1EE8D}', 'Bbb': '\u{1EEAD}'},
+    '\u0647': {'minit': '\u{1EE24}', 'mstrc': '\u{1EE64}', 'mloop': '\u{1EE84}'},
+    '\u0648': {'misol': '\u{1EE05}', 'mloop': '\u{1EE85}', 'Bbb': '\u{1EEA5}'},
+    '\u064A': {'misol': '\u{1EE09}', 'minit': '\u{1EE29}', 'mtail': '\u{1EE49}', 'mstrc': '\u{1EE69}', 'mloop': '\u{1EE89}', 'Bbb': '\u{1EEA9}'},
+    '\u066E': {'misol': '\u{1EE1C}', 'mstrc': '\u{1EE7C}',},
+    '\u066F': {'misol': '\u{1EE1F}', 'mtail': '\u{1EE5F}',},
+    '\u06A1': {'misol': '\u{1EE1E}', 'mstrc': '\u{1EE7E}',},
+    '\u06BA': {'misol': '\u{1EE1D}', 'mtail': '\u{1EE5D}',},
 };
 
 function isFunctionName(fn) {
@@ -1971,7 +2003,10 @@ const astralPrivateMap = [
     {astral: {begin: 0x1FA70, end: 0x1FA73}, private: {begin: 0xE7F9, end: 0xE7FC}},
     {astral: {begin: 0x1FA78, end: 0x1FA7A}, private: {begin: 0xE7FD, end: 0xE7FF}},
     {astral: {begin: 0x1FA80, end: 0x1FA82}, private: {begin: 0xE800, end: 0xE802}},
-    {astral: {begin: 0x1FA90, end: 0x1FA95}, private: {begin: 0xE803, end: 0xE808}}
+    {astral: {begin: 0x1FA90, end: 0x1FA95}, private: {begin: 0xE803, end: 0xE808}},
+
+    // Arabic math alphabetics
+    {astral: {begin: 0x1EE00, end: 0x1EEFF}, private: {begin: 0xE900, end: 0xE9FF}},
 ];
 
 // carries out all codepoint range sustitutions listed in astralPrivateMap on

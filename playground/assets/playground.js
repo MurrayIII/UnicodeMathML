@@ -4048,9 +4048,7 @@ output.addEventListener('keydown', function (e) {
                 if (node.nodeName == '#text')
                     node = node.parentElement
                 let nodeP = node.parentElement
-                while (!isMathMLObject(nodeP)) {
-                    if (nodeP.nodeName == 'math')
-                        break
+                while (!isMathMLObject(nodeP) && nodeP.nodeName != 'math') {
                     node = nodeP
                     nodeP = node.parentElement
                 }
@@ -4066,6 +4064,8 @@ output.addEventListener('keydown', function (e) {
                     if (node.nodeName == 'math')
                         break
                     node = node.nextElementSibling
+                    if (node.nodeName == 'mrow')
+                        node = node.firstElementChild
                 }
                 if (!offset)
                     speak(speech(node))
