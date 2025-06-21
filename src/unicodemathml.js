@@ -45,6 +45,9 @@ const mappedPair = {
     '⊄=': '⊈', '⊅=': '⊉', '+−': '±', '−+': '∓',
 }
 
+//                    0    1    2    3    4    5    6    7    8    9
+const indicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩']
+
 function getSubSupDigits(str, i, delim) {
     // Return e.g., '²' for '^2 ' (str[i-1] = '^', str[i] = '2', delim = ' ')
     if (!'+-=/ )]}'.includes(delim))
@@ -147,6 +150,7 @@ const letterLikeSymbols = {
 
 const mathvariants = {
     // MathML mathvariant values to TeX unicode-math names in unimath-symbols.pdf
+    // along with proposed 'TeX' names for the Arabic math styles (isolated, ...).
     'normal': 'mup',
     'bold': 'mbf',
     'italic': 'mit',
@@ -161,6 +165,11 @@ const mathvariants = {
     'sans-serif-italic': 'mitsans',
     'sans-serif-bold-italic': 'mbfitsans',
     'monospace': 'mtt',
+    'isolated': 'misol',
+    'initial': 'minit',
+    'tailed': 'mtail',
+    'looped': 'mloop',
+    'stretched': 'mstrc'
 };
 
 const matrixIntents = {
@@ -219,6 +228,8 @@ function isMathAlphabetic(str, i) {
     let [font, chFolded] = foldMathAlphanumeric(code, ch);
     return isAsciiAlphabetic(chFolded) || isGreek(chFolded)
 }
+
+function isArabic(ch) { return inRange('\u0627', ch, '\u06BA') }
 
 function isAsciiAlphabetic(ch) { return /[A-Za-z]/.test(ch); }
 
@@ -752,6 +763,8 @@ const controlWords = {
     'abs':              '⒜',	// 249C
     'acute':            '́',	    // 0301
     'adjoint':          '†',	// 2020
+    'ain':		        'ع',    // u0639
+    'alef':		        'ا',    // u0627
     'aleph':            'ℵ',    	// 2135
     'alpha':            'α',	// 03B1
     'amalg':            '∐',	    // 2210
@@ -776,6 +789,7 @@ const controlWords = {
     'bar':              '̅',	// 0305
     'bcancel':          '╲',	// 2572
     'because':          '∵',	// 2235
+    'beh':              'ب',    // 0628
     'begin':            '〖',	// 3016
     'belongs':          '∈',	// 2208
     'below':            '┬',	// 252C
@@ -848,8 +862,10 @@ const controlWords = {
     'curvearrowleft':   '↶',    	// 21B6
     'curvearrowright':  '↷',    	// 21B7
     'cwint':            '∱',    	// 2231
+    'dad':		        'ض',    // u0636
     'dag':              '†',	// 2020
     'dagger':           '†',	// 2020
+    'dal':		        'د',    // u062F
     'daleth':           'ℸ',	    // 2138
     'dashleftarrow':    '⇠',	    // 21E0
     'dashrightarrow':   '⇢',	    // 21E2
@@ -913,6 +929,7 @@ const controlWords = {
     'expect':           '𝔼',	// 1D53C
     'fallingdotseq':    '≒',	// 2252
     'false':            '⊥',	// 22A5
+    'feh':		        'ف',    // u0641
     'five':             '5',    // 0035
     'forall':           '∀',	// 2200
     'forces':           '⊩',	    // 22A9
@@ -923,6 +940,7 @@ const controlWords = {
     'frown':            '⌢',	    // 2322
     'fullouterjoin':    '⟗',   // 27D7
     'funcapply':        '⁡',	    // 2061
+    'ghain':	        'غ',    // u063A
     'gamma':            'γ',	// 03B3
     'ge':               '≥',	// 2265
     'geq':              '≥',	// 2265
@@ -940,11 +958,13 @@ const controlWords = {
     'gtrless':          '≷',    	// 2277
     'gtrsim':           '≳',    	// 2273
     'hadamard':         '⊙',	    // 2299
+    'hah':		        'ح',    // u062D
     'hairsp':           ' ',	    // 200A
     'half':             '½',    // 00BD
     'hat':              '̂',	    // 0302
     'hbar':             'ℏ',    	// 210F
     'heartsuit':        '♡',    	// 2661
+    'heh':		        'ه',    // u0647
     'hookleftarrow':    '↩',    	// 21A9
     'hookrightarrow':   '↪',    	// 21AA
     'hphantom':         '⬄',	// 2B04
@@ -972,13 +992,17 @@ const controlWords = {
     'isep':             '⁣',	    // 2063
     'itimes':           '⁢',	    // 2062
     'intercal':         '⊺',    // 22BA
+    'jeem':		        'ج',    // u062C
     'jj':               'ⅉ',    	// 2149
     'jmath':            'ȷ',	// 0237
     'join':             '⋈',	    // 22C8
+    'kaf':		        'ك',    // u0643
     'kappa':            'κ',	// 03BA
     'ket':              '⟩',	    // 27E9
+    'khah':		        'خ',    // u062E
     'kron':             '⊗',	    // 2297
     'labove':           '└',	// 2514
+    'lam':		        'ل',    // u0644
     'lambda':           'λ',	// 03BB
     'land':             '∧',	// 2227
     'langle':           '⟨',	    // 27E8
@@ -1040,6 +1064,7 @@ const controlWords = {
     'mean':             'μ',	// 03BC
     'measangle':        '∡',	    // 2221
     'medsp':            ' ',	    // 205F
+    'meem':		        'م',    // u0645
     'meq':              '≞',	    // 225E
     'mid':              '∣',	    // 2223
     'models':           '⊨',	    // 22A8
@@ -1076,6 +1101,11 @@ const controlWords = {
     'nless':            '≮',	    // 226E
     'nlt':              '≮',	    // 226E
     'nmid':             '∤',	    // 2224
+    'nodotbeh':	        'ٮ',    // u066E
+    'nodotqaf':	        'ٯ',    // u066F
+    'nodotfeh':	        'ڡ',    // u06A1
+    'nodotnoon':        'ں',    // u06BA
+    'noon':		        'ن',    // u0646
     'nor':              '⊽',	    // 22BD
     'norm':             '‖',	    // 2016
     'not':              '/',	// 002F
@@ -1167,6 +1197,7 @@ const controlWords = {
     'propto':           '∝',	// 221D
     'proves':           '⊢',    	// 22A2
     'psi':              'ψ',	// 03C8
+    'qaf':		        'ق',    // u0642
     'qdrt':             '∜',	    // 221C
     'qed':              '∎',	    // 220E
     'qprime':           '⁗',	    // 2057
@@ -1184,6 +1215,7 @@ const controlWords = {
     'rceil':            '⌉',    	// 2309
     'rddots':           '⋰',	    // 22F0
     'rect':             '▭',	// 25AD
+    'reh':		        'ر',    // u0631
     'repeat':           '¯',	// 00AF
     'repeating':        '¯',	// 00AF
     'rfloor':           '⌋',	    // 230B
@@ -1209,11 +1241,14 @@ const controlWords = {
     'rparen':           ')',    // 0029
     'rrect':            '▢',	// 25A2
     'rtimes':           '⋊',    	// 22CA
+    'sad':		        'ص',    // u0635
     'sdiv':             '⁄',	// 2044
     'sdivide':          '⁄',	// 2044
     'searrow':          '↘',	    // 2198
+    'seen':		        'س',    // u0633
     'setminus':         '∖',	    // 2216
     'seven':            '7',    // 0037
+    'sheen':	        'ش',    // u0634
     'sigma':            'σ',	// 03C3
     'sim':              '∼',	    // 223C
     'simeq':            '≃',	    // 2243
@@ -1250,9 +1285,12 @@ const controlWords = {
     'supsup':           '⫖',	// 2AD6
     'surd':             '√',	// 221A
     'swarrow':          '↙',    	// 2199
+    'tah':		        'ط',    // u0637
     'tau':              'τ',	// 03C4
     'tautology':        '⊤',	    // 22A4
-    'therefore':        '∴',	// 2234
+    'thal':		        'ذ',    // u0630
+    'teh':		        'ت',    // u062A
+    'theh':		        'ث',    // u062B
     'theta':            'θ',	// 03B8
     'thicksp':         '\u2005',// 2005
     'thinsp':           ' ',	    // 2009
@@ -1311,6 +1349,7 @@ const controlWords = {
     'vmatrix':          '⒱',	// 24B1
     'vphantom':         '⇳',	// 21F3
     'vthicksp':         ' ',    	// 2004
+    'waw':		        'و',    // u0648
     'wedge':            '∧',	// 2227
     'widehat':          '̂',	    // 0302
     'widetilde':        '̃',	    // 0303
@@ -1320,6 +1359,9 @@ const controlWords = {
     'xi':               'ξ',	// 03BE
     'xnor':             '⊙',	    // 2299
     'xor':              '⊕',	    // 2295
+    'yeh':		        'ي',    // u064A
+    'zah':		        'ظ',    // u0638
+    'zain':		        'ز',    // u0632
     'zero':             '0',    // 0030
     'zeta':             'ζ',	// 03B6
     'zwnj':             '‌',
@@ -1331,9 +1373,13 @@ const controlWords = {
 // in order to be properly terminated.
 // this control word replacement would fly in the face of the UnicodeMath
 // "literal" operator if there were single-character control words
+const mathStyles = [
+    'mup', 'mscr', 'mfrak', 'msans', 'mitBbb', 'mitsans', 'mit', 'mtt',
+    'mbfscr', 'mbffrak', 'mbfsans', 'mbfitsans', 'mbfit', 'mbf', 'misol',
+    'minit', 'mtail', 'mloop', 'mstrc']
+
 function resolveCW(unicodemath) {
     let res = unicodemath.replace(/\\([A-Za-z0-9]+) ?/g, (match, cw) => {
-
         // check custom control words first (i.e. custom ones shadow built-in ones)
         if (typeof ummlConfig !== "undefined" &&
             typeof ummlConfig.customControlWords !== "undefined" &&
@@ -1363,11 +1409,7 @@ function resolveCW(unicodemath) {
                 mathStyle = 'Bbb';
             }
             else if (cw[0] == 'm') {
-                // Check for the 14 other math styles
-                const mathStyles = [
-                    'mup', 'mscr', 'mfrak', 'msans', 'mitBbb', 'mitsans', 'mit', 'mtt',
-                    'mbfscr', 'mbffrak', 'mbfsans', 'mbfitsans', 'mbfit', 'mbf'];
-
+                // Check for the 19 other math styles
                 for (let i = 0; i < mathStyles.length; i++) {
                     if (cw.startsWith(mathStyles[i])) {
                         mathStyle = mathStyles[i];
@@ -3544,7 +3586,9 @@ function mtransform(dsty, puast) {
             if (autoBuildUp)                // Used for WYSIWYG editing
                 return mtransform(dsty, value.content);
             attrs = getAttrs(value, '')
-            attrs.display = dsty ? "block" : "inline"
+            attrs.display = dsty & 1 ? "block" : "inline"
+            if (dsty & 2)
+                attrs.dir = 'rtl'
             if (value.eqnumber == null)
                 return {math: withAttrs(attrs, mtransform(dsty, value.content))};
 
@@ -4182,6 +4226,10 @@ function mtransform(dsty, puast) {
             }
 
         case "number":
+            // If dir is 'rtl' & value is ASCII digit, convert to indic digit
+            // May want to handle multidigit numbers...
+            if (dsty & 2 && isAsciiDigit(value))
+                value = indicDigits[value]
             return {mn: withAttrs(getAttrs(value, ''), value)};
 
         case "bracketed":
@@ -4437,6 +4485,8 @@ function pretty(mast) {
         case "none":
             return tag(key, attributes, pretty(value));
         case "mi":
+            if (value[0] == '\uD83B')       // Arabic math alphabetic
+                attributes.style = 'font-family:XITS Math'
         case "mn":
         case "mo":
         case "mtext":
@@ -5167,7 +5217,12 @@ function unicodemathml(unicodemath, displaystyle) {
         debugLog(puast);
 
         let t3s = performance.now();
-        mast = mtransform(displaystyle, puast);
+        dsty = displaystyle ? 1 : 0
+        // If unicodemath contains Arabic math char(s), signal RTL math zone.
+        // (there are a couple of nonmath obscure scripts that also have D83B)
+        if (unicodemath.indexOf('\uD83B') != -1)
+            dsty |= 2
+        mast = mtransform(dsty, puast);
         if (selanchor && mast.math) {
             mast.math.attributes.selanchor = '1'
             selanchor = ''

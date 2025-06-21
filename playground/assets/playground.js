@@ -1157,7 +1157,9 @@ function autocomplete() {
                     delim = "";
                 }
                 if (cch < 3) {
-                    symbol = italicizeCharacter(symbol);
+                    symbol = isArabic(symbol) && mathFonts[symbol]
+                           ? mathFonts[symbol]['misol']
+                           : italicizeCharacter(symbol)
                     cch = symbol.length;
                 }
                 input.value = input.value.substring(0, i) + symbol + delim

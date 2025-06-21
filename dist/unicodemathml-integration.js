@@ -908,6 +908,7 @@ async function renderMarkedUnicodemath(node) {
     "1123a_11+1234ab/2/W_v_v_v_v_v_v/4/a":  "<math display=\"block\"><mn>123</mn><msub><mi>𝑎</mi><mn>11</mn></msub><mo>+</mo><mfrac><mfrac><mfrac><mfrac><mrow><mn>1234</mn><mi>𝑎</mi><mi>𝑏</mi></mrow><mn>2</mn></mfrac><msub><mi>𝑊</mi><msub><msub><msub><msub><msub><mi>𝑣</mi><mi>𝑣</mi></msub><mi>𝑣</mi></msub><mi>𝑣</mi></msub><mi>𝑣</mi></msub><mi>𝑣</mi></msub></msub></mfrac><mn>4</mn></mfrac><mi>𝑎</mi></mfrac></math>",
     "1123┴↔ + ↔┴123.":  "<math display=\"block\"><mover><mn>123</mn><mo stretchy=\"true\">↔</mo></mover><mo>+</mo><mover><mo stretchy=\"true\">↔</mo><mn>123</mn></mover><mo>.</mo></math>",
     "1300-3.14^10000^2":  "<math display=\"block\"><mn>300</mn><mo>−</mo><msup><mn>3.14</mn><msup><mn>10000</mn><mn>2</mn></msup></msup></math>",
+    //"𞸁²+𞸕²=𞸖^2": "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msup><mi style=\"font-family:XITS Math\">𞸁</mi><mn>٢</mn></msup><mo>+</mo><msup><mi style=\"font-family:XITS Math\">𞸕</mi><mn>٢</mn></msup><mo>=</mo><msup><mi style=\"font-family:XITS Math\">𞸖</mi><mn>٢</mn></msup></math>",
     };
 
     // extract unicodemath expressions from node
