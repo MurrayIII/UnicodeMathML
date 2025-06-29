@@ -407,11 +407,6 @@ function TeX(value, noAddParens) {
                     break;
                 }
                 var mathstyle = mathvariants[value.getAttribute('mathvariant')];
-                if (c in mathFonts && mathstyle in mathFonts[c] && (c < 'Α' || c > 'Ω' && c != '∇')) {
-                    ret = mathFonts[c][mathstyle];
-                    break;
-                }
-
                 if (mathstyle == 'mup') {
                     if (value.hasAttribute('title')) {
                         // Differential d (ⅆ) appears in 'mo'
@@ -430,6 +425,9 @@ function TeX(value, noAddParens) {
                         ret = '"' + c + '"';
                         break;
                     }
+                } else if (mathstyle) {
+                    ret = getMathAlphanumeric(c, mathstyle)
+                    break
                 }
             } else if (isFunctionName(value.textContent)) {
                 ret = '\\' + value.textContent + ' '

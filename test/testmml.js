@@ -81,6 +81,7 @@ const mathML = [
     "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mtable displaystyle=\"true\" intent=\":math-paragraph\"><mtr id=\"-1-\"><mtd intent=\":equation-label\" style=\"margin-right:1em;position:absolute;right:0em\"><mtext>(1)</mtext></mtd><mtd style=\"padding-left:0;text-align:right;float:right;display:math\"><mi>𝐸</mi><mo>+</mo><mn>1</mn></mtd><mtd><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mtr><mtr><mtd intent=\":no-equation-label\" style=\"margin-right:1em;position:absolute;right:0em\"><mtext></mtext></mtd><mtd style=\"padding-left:0;text-align:right;float:right;display:math\"><mi>𝐸</mi></mtd><mtd><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mtr><mtr id=\"-3-\"><mtd intent=\":equation-label\" style=\"margin-right:1em;position:absolute;right:0em\"><mtext>(3)</mtext></mtd><mtd style=\"padding-left:0;text-align:right;float:right;display:math\"><mi>𝐸</mi></mtd><mtd><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mtr></mtable></math>",
     "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mtable displaystyle=\"true\" intent=\":math-paragraph\"><mtr><mtd intent=\":no-equation-label\" style=\"margin-right:1em;position:absolute;right:0em\"><mtext></mtext></mtd><mtd style=\"padding-left:0;text-align:right;float:right;display:math\"><mi>𝐸</mi><mo>+</mo><mn>1</mn></mtd><mtd><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mtr><mtr id=\"-1-\"><mtd intent=\":equation-label\" style=\"margin-right:1em;position:absolute;right:0em\"><mtext>(1)</mtext></mtd><mtd style=\"padding-left:0;text-align:right;float:right;display:math\"><mi>𝐸</mi></mtd><mtd><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mtr><mtr id=\"-3-\"><mtd intent=\":equation-label\" style=\"margin-right:1em;position:absolute;right:0em\"><mtext>(3)</mtext></mtd><mtd style=\"padding-left:0;text-align:right;float:right;display:math\"><mi>𝐸</mi></mtd><mtd><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></mtd></mtr></mtable></math>",
     "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>𝑎</mi><mrow><msup><mi>𝑏</mi><mi>𝑖</mi></msup><mo>+</mo><mn>1</mn></mrow></msub><mo>+</mo><mn>1</mn><mo>+</mo><msup><mi>𝑐</mi><mrow><msub><mi>𝑑</mi><mi>𝑖</mi></msub><mo>+</mo><mn>2</mn></mrow></msup><mo>+</mo><mn>1</mn></math>",
+    "<math display=\"block\"><mi mathvariant=\"roundhand\">H</mi><mo>+</mo><mi mathvariant=\"chancery\">Q</mi><mo>≠</mo><mi mathvariant=\"script\">T</mi></math>",
 ]
 
 const unicodeMath = [
@@ -163,6 +164,7 @@ const unicodeMath = [
     "𝐸+1&=𝑚𝑐²#(1)\n𝐸&=𝑚𝑐²\n𝐸&=𝑚𝑐²#(3)",
     "𝐸+1&=𝑚𝑐²\n𝐸&=𝑚𝑐²#(1)\n𝐸&=𝑚𝑐²#(3)",
     "𝑎_(𝑏^𝑖+1)+1+𝑐^(𝑑_𝑖+2)+1",
+    "ℋ︁+𝒬︀≠𝒯",
 ]
 
 const mathSpeech = [
@@ -251,6 +253,7 @@ const mathSpeech = [
     "3 lines , line 1 with label 1 , cap E + 1 , = m c squared , line 2 , cap E , = m c squared , line 3 with label 3 , cap E , = m c squared",
     "3 lines , line 1 , cap E + 1 , = m c squared , line 2 with label 1 , cap E , = m c squared , line 3 with label 3 , cap E , = m c squared",
     "eigh sub open b to the i , + 1 close + 1 + c to the d sub i + 2 power + 1",
+    "roundhand cap H + chancery cap Q not equal script cap T",
 ]
 
 const mathBrailles = [
@@ -333,6 +336,7 @@ const mathBrailles = [
     "⠠⠑⠬⠂⠀⠨⠅⠀⠍⠉⠘⠆⠀⠷⠂⠾⣍⠀⠠⠑⠀⠀⠨⠅⠀⠍⠉⠘⠆⠐⣍⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆⠀⠷⠒⠾",
     "⠀⠠⠑⠬⠂⠀⠀⠨⠅⠀⠍⠉⠘⠆⠐⣍⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆⠀⠷⠂⠾⣍⠠⠑⠀⠨⠅⠀⠍⠉⠘⠆⠀⠷⠒⠾",
     "⠁⠰⠃⠰⠘⠊⠰⠬⠂⠐⠬⠂⠬⠉⠘⠙⠘⠰⠊⠘⠬⠆⠐⠬⠂",
+    "⠈⠰⠰⠠⠓︁⠬⠈⠰⠰⠠⠟︀⠀⠌⠨⠅⠀⠈⠰⠰⠠⠞",
 ]
 
 const unicodeMathB = [

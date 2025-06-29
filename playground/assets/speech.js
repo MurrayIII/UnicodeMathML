@@ -548,6 +548,8 @@ const mathstyles = {
 	'mitsans': 'sans-serif-italic',
 	'mbfitsans': 'sans-serif-bold-italic',
 	'mtt': 'monospace',
+	'mrhnd': 'roundhand',
+	'mchan': 'chancery'
 };
 
 const ordinals = {
@@ -1135,8 +1137,7 @@ function speech(value, noAddParens) {
 				// Convert to Unicode math alphanumeric. Conversion to speech
 				// is done upon returning from the original speech() call.
 				let mathstyle = mathvariants[mathvariant];
-				if (c in mathFonts && mathstyle in mathFonts[c])
-					c = mathFonts[c][mathstyle];
+				c = getMathAlphanumeric(c, mathstyle)
 			} else if (c in functions) {
 				c = functions[c] + ' ';
 			}
@@ -1316,7 +1317,7 @@ function speak(s) {
 	speechSynthesis.speak(utterance)
 }
 
-function symbolSpeech(ch) {
+function symbolSpeech(ch, vs) {
 	if (ch >= 'ℂ' && (ch <= 'ℴ' || ch > '〗')) {
 		// Get speech for math alphanumerics
 		let code = ch.codePointAt(0);
@@ -1328,8 +1329,11 @@ function symbolSpeech(ch) {
 				ch = symbolSpeechStrings[ch]; // Greek
 			if (mathstyle == 'mit' || mathstyle == 'mup')
 				mathstyle = '';			  // Suppress 'italic'
-			else
+			else {
+				if (mathstyle == 'mscr' && (vs == '\uFE00' || vs == '\uFE01'))
+					mathstyle = vs == '\uFE00' ? 'mchan' : 'mrhnd'
 				mathstyle = mathstyles[mathstyle] + ' ';
+			}
 			let cap = inRange('A', ch, 'Z') ? 'cap ' : '';
 			if (ch == 'a' || ch == 'A')
 				ch = symbolSpeechStrings['A'];
@@ -1423,7 +1427,10 @@ function resolveSpeechSymbols(text) {
 		else if (ch == 'Ⓐ' && !focus && text.indexOf('Ⓕ', i + 1) == -1)
 			ch = 'Ⓘ'
 
-		let c = symbolSpeech(ch);
+		let vs = text[i + cchCh]
+		if (vs == '\uFE00' || vs == '\uFE01')
+			cchCh++
+		let c = symbolSpeech(ch, vs);
 		if (c != ch) {
 			ch = c;
 			if (i && isAsciiAlphabetic(text[i - 1]))

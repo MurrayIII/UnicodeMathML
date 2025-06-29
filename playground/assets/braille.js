@@ -973,8 +973,7 @@ function braille(value, subsup) {
 				// Convert to Unicode math alphanumeric. Conversion to braille
 				// is done upon returning from the original braille() call.
 				let mathstyle = mathvariants[mathvariant];
-				if (c in mathFonts && mathstyle in mathFonts[c])
-					c = mathFonts[c][mathstyle];
+				c = getMathAlphanumeric(c, mathstyle)
 			}
 			return c;
 
@@ -1210,7 +1209,7 @@ function checkMathAlphanumeric(braille, i) {
 
 	if (isAsciiDigit(chAscii)) {
 		mathStyle = brailleDigitMathStyles[braille.substring(i, k)]
-		ch = mathStyle ? mathFonts[chAscii][mathStyle] : chAscii
+		ch = getMathAlphanumeric(chAscii, mathStyle)
 		return [ch, k]
 	}
 	if (!isUcAscii(chAscii) && !ascii2Greek2[chAscii])
@@ -1269,7 +1268,7 @@ function checkMathAlphanumeric(braille, i) {
 			if (ch1)
 				ch = ch1
 		} else {
-			ch = mathFonts[ch][mathStyle]
+			ch = getMathAlphanumeric(ch, mathStyle)
 		}
 		if (ch)
 			alpha = true

@@ -328,7 +328,7 @@ function isRelational(ch) {
 	return false;
 }
 
-function getMathAlphanumeric(ch, mathStyle) {
+function getMathAlphanumericFromSpeech(ch, mathStyle) {
 	// Return ch in the math style described by mathStyle
 	let style = '';
 
@@ -356,8 +356,7 @@ function getMathAlphanumeric(ch, mathStyle) {
 			style = 'mit' + style;
 		}
 	}
-	return (ch in mathFonts && style in mathFonts[ch])
-		? mathFonts[ch][style] : ch;
+	return getMathAlphanumeric(ch, style)
 }
 
 function dictationToUnicodeMath(dictation) {
@@ -408,7 +407,7 @@ function dictationToUnicodeMath(dictation) {
 		}
 		if (!chPrev && mathStyle.length && (isLcAscii(ch) || isAsciiDigit(ch)) &&
 			(i == dictation.length - 1 || !isLcAscii(dictation[i + 1]))) {
-			ch = getMathAlphanumeric(ch, mathStyle);
+			ch = getMathAlphanumericFromSpeech(ch, mathStyle);
 			dictation = dictation.substring(0, i) + ch + dictation.substring(i + 1);
 			i += ch.length;
 			mathStyle = [];
@@ -519,7 +518,7 @@ function dictationToUnicodeMath(dictation) {
 						}
 					} else if (mathStyle.length && (isAsciiDigit(unicodeMath) ||
 						isLcGreek(unicodeMath))) {
-						unicodeMath = getMathAlphanumeric(unicodeMath, mathStyle);
+						unicodeMath = getMathAlphanumericFromSpeech(unicodeMath, mathStyle);
 						mathStyle = [];
 					} else if (ch2 == 'h' && key == 'bar') {
 						unicodeMath = 'ℏ';	// 'h bar' → ℏ

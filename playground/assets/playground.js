@@ -742,12 +742,7 @@ function boldItalicToggle(chars, key) {
                 }
                 break;
         }
-        if (font == 'mup') {
-            symbols += chFolded;
-        } else {
-            symbols += (chFolded in mathFonts && font in mathFonts[chFolded])
-                ? mathFonts[chFolded][font] : ch;
-        }
+        symbols += getMathAlphanumeric(chFolded, font)
     }
     return symbols
 }
@@ -1157,8 +1152,8 @@ function autocomplete() {
                     delim = "";
                 }
                 if (cch < 3) {
-                    symbol = isArabic(symbol) && mathFonts[symbol]
-                           ? mathFonts[symbol]['misol']
+                    symbol = isArabic(symbol)
+                           ? getMathAlphanumeric(symbol, 'misol')
                            : italicizeCharacter(symbol)
                     cch = symbol.length;
                 }
@@ -5002,7 +4997,6 @@ $('button#insert_controlword').click(function () {
 //    }
 //})
 
-// math font conversion (mathFonts[] is defined in unicodemathml.js)
 $('#mathchar').on("change keyup paste", function (e) {
     $('.mathfont').removeClass("disabled");
 
@@ -5017,15 +5011,8 @@ $('#mathchar').on("change keyup paste", function (e) {
     code = char.codePointAt(0);
     mathchar.value = char = char.substring(0, code > 0xFFFF ? 2 : 1);  // Max of 1 char
 
-    let fonts;
-    try {
-        fonts = Object.keys(mathFonts[char]);
-    } catch (e) {
-        fonts = [];
-    }
-
     $('.mathfont').each(function () {
-        if (this.id != 'mup' && !(fonts.includes(this.id))) {
+        if (this.id != 'mup' && !(mathStyles.includes(this.id))) {
             $(this).addClass("disabled");
         }
     });
@@ -5050,14 +5037,7 @@ $('button.mathfont').click(function () {
     if (char != "") {
         let symbol = char;
         if (font != 'mup') {
-            try {
-                symbol = mathFonts[char][font];
-                if (symbol == undefined) {
-                    throw undefined;
-                }
-            } catch (e) {
-                return;
-            }
+            symbol = getMathAlphanumeric(char, font)
             symbolSave = symbol
         } else {
             // Quote symbol unless selection is inside a quoted string. Note
@@ -5117,12 +5097,7 @@ $('button.mathfont').click(function () {
                 }
                 [anCode, chFolded] = foldMathAlphanumeric(code, ch);
             }
-            if (font == 'mup') {
-                symbols += chFolded;
-            } else {
-                symbols += (chFolded in mathFonts && font in mathFonts[chFolded])
-                    ? mathFonts[chFolded][font] : ch;
-            }
+            symbols += getMathAlphanumeric(chFolded, font)
         }
         insertAtCursorPos(symbols);
         input.selectionStart -= symbols.length;
