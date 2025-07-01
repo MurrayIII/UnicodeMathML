@@ -691,25 +691,27 @@ const setsGr = ['mbf', 'mit', 'mbfit', 'mbfsans', 'mbfitsans']
 function getMathAlphanumeric(ch, mathStyle) {
     // Return the Unicode math alphanumeric character corresponding to the
     // unstyled character ch and the mathStyle. If no such math alphanumeric
-    // exists, return ch. The Unicode math alphanumerics are divided into
-    // four categories (English, Greek, digits, and Arabic) each of which
-    // contains math-style character sets with specific character counts,
-    // e.g., 10 for the digit sets. This leads to a simple encoding scheme
-    // (see the digits category) that's somewhat complicated by exceptions
-    // in the letter categories.
+    // exists, return ch. The Unicode math alphanumerics are divided into four
+    // categories (ASCII digits, ASCII letters, Greek letters, and Arabic
+    // letters) each of which contains math-style character sets with specific
+    // character counts, e.g., 10 for the digit sets. This leads to a simple
+    // encoding scheme (see the ASCII digits category) that's a bit complicated
+    // by exceptions in the letter categories.
     if (!mathStyle || mathStyle == 'mup')
         return ch                           // No change for upright
 
     let code = ch.charCodeAt(0)
     let n                                   // Set index
 
-    if (ch >= '0' && ch <= '9') {           // ASCII digits
+    // ASCII digits
+    if (ch >= '0' && ch <= '9') {
         code += 0x1D7CE - 0x30              // Get math-digit codepoint
         n = setsDigit.indexOf(mathStyle)
         return n != -1 ? String.fromCodePoint(code + n * 10) : ch
     }
 
-    if (/[A-Za-z]/.test(ch)) {              // ASCII letters
+    // ASCII letters
+    if (/[A-Za-z]/.test(ch)) {
         // Set up roundhand and chancery script styles
         let varsel = ''
         if (mathStyle == 'mchan' || mathStyle == 'mrhnd') {
@@ -747,8 +749,8 @@ function getMathAlphanumeric(ch, mathStyle) {
         return String.fromCodePoint(code + 52 * n + 0x1D400) + varsel
     }
 
+    // Greek letters
     if (ch >= '\u0391' && ch <= '\u03F5' || ch == '∂' || ch == '∇') {
-        // Greek letters
         if (mathStyle == 'mbf') {           // Math bold Greek special cases
             if (ch == 'Ϝ')
                 return '𝟊'                  // Digamma
@@ -1073,6 +1075,7 @@ const controlWords = {
     'foreach':          '∀',	// 2200
     'forsome':          '∃',	// 2203
     'four':             '4',    // 0034
+    'frac':             '⍁',    // 2134
     'frakturH':         'ℌ',    // 210C
     'frown':            '⌢',	    // 2322
     'fullouterjoin':    '⟗',   // 27D7
@@ -5157,7 +5160,10 @@ function unicodemathml(unicodemath, displaystyle) {
         if (unicodemath.startsWith('<mml:math') || unicodemath.startsWith('<m:math'))
             unicodemath = removeMmlPrefixes(unicodemath);
         return {mathml: unicodemath, details: {}};
+    } else if (unicodemath[0] == '$') {
+        unicodemath = TeX2UnicodeMath(unicodemath)
     }
+
     let uast;
     let t1s = performance.now();
     try {

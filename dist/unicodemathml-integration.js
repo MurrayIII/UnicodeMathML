@@ -910,6 +910,7 @@ async function renderMarkedUnicodemath(node) {
     "1300-3.14^10000^2":  "<math display=\"block\"><mn>300</mn><mo>−</mo><msup><mn>3.14</mn><msup><mn>10000</mn><mn>2</mn></msup></msup></math>",
     "1𞸁²+𞸕²=𞸖^2": "<math display=\"block\" dir=\"rtl\"><msup><mi style=\"font-family:XITS Math\">𞸁</mi><mn>٢</mn></msup><mo>+</mo><msup><mi style=\"font-family:XITS Math\">𞸕</mi><mn>٢</mn></msup><mo>=</mo><msup><mi style=\"font-family:XITS Math\">𞸖</mi><mn>٢</mn></msup></math>",
     "1\\mrhndH+\\mchanQ/=\\mscrT": "<math display=\"block\"><mi>ℋ︁</mi><mo>+</mo><mi>𝒬︀</mi><mo>≠</mo><mi>𝒯</mi></math>",
+    "1$\\alpha^2+\\beta^2=\\gamma^2 + \\frac{a+\\frac12}{c+d}": "<math display=\"block\"><msup><mi>𝛼</mi><mn>2</mn></msup><mo>+</mo><msup><mi>𝛽</mi><mn>2</mn></msup><mo>=</mo><msup><mi>𝛾</mi><mn>2</mn></msup><mo>+</mo><mfrac><mrow><mi>𝑎</mi><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac></mrow><mrow><mi>𝑐</mi><mo>+</mo><mi>𝑑</mi></mrow></mfrac></math>",
     };
 
     // extract unicodemath expressions from node

@@ -732,9 +732,11 @@
         <p>⁅ⓒ(𝑥)⁆</p>
         <p>⁅∫𝑑³𝑟|𝑟⟩⟨𝑟│𝜓⟩, ⟨𝜓│ℋ│𝜓⟩⁆</p>
         <p>⁅𞸁²+𞸕²=𞸖^2⁆</p>
+        <p>⁅\mrhndH+\mchanQ/=\mscrT⁆</p>
+        <p>⁅$\alpha^2+\beta^2=\gamma^2 + \frac{a+\frac12}{c+d}⁆</p>
         <!--        <p>⁅𝐸=𝑚𝑐^2#(1)
-    𝐸=𝑚𝑐^2
-    𝐸=𝑚𝑐^2#(3)⁆</p> -->
+        𝐸=𝑚𝑐^2
+        𝐸=𝑚𝑐^2#(3)⁆</p> -->
     </section>
 
     <script>
@@ -746,7 +748,7 @@
         function loadUncachedScript(path) {
             document.write('<script src="' + path + '?' + Math.random() + '"></scr' + 'ipt>');
         }
-   </script>
+    </script>
     <script>
         var unicodemathmlOptions = {
             resolveControlWords: true,
@@ -764,7 +766,7 @@
             if (client.readyState === 4) {
                 try {
                     ummlParser = peg.generate(client.responseText, { cache: true, trace: false });
-              } catch (error) {
+                } catch (error) {
                     document.write("Error during parser generation: " + error + "<br>");
                     console.log(error);
                 }
@@ -773,6 +775,7 @@
         client.send();
     </script>
     <script>loadUncachedScript("../src/unicodemathml.js")</script>
+    <script>loadUncachedScript("../playground/assets/TeX.js")</script>
     <script>loadUncachedScript("unicodemathml-integration.js")</script>
     <script>
         document.body.onload = renderUnicodemath();

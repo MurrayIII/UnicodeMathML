@@ -460,7 +460,7 @@ function TeX(value, noAddParens) {
         return ret
 
     // TeX <mrow> children
-    for (var i = 0; i < cNode; i++) {
+    for (let i = 0; i < cNode; i++) {
         let node = value.children[i];
         if (i == 1 && ret == '{' && node.nodeName == 'mtable' &&
             (value.childElementCount == 2 || !value.lastElementChild.textContent)) {
@@ -530,4 +530,71 @@ function TeX(value, noAddParens) {
         }
     }
     return ret;
+}
+
+//////////////////////////////
+//  [La]TeX to UnicodeMath  //
+/////////////////////////////
+
+function findClosingBrace(text, i) {
+    let cBrace = 1
+    for (; i < text.length; i++) {
+        if (text[i] == '{') {
+            cBrace++
+        } else if (text[i] == '}') {
+            cBrace--
+            if (!cBrace)
+                return i
+        }
+    }
+    return -1
+}
+
+function TeX2UMath(tex) {
+    let uniTeX = ''
+
+    for (i = 0; i < tex.length;) {
+        let ch = tex[i++]
+        uniTeX += ch
+        if (ch == '⍁') {
+            if (tex[i] == '{') {
+                let j = findClosingBrace(tex, i + 1)
+                if (j == -1)
+                    continue
+                uniTeX += TeX2UMath(tex.substring(i + 1, j)) + '&'
+                i = j + 1
+                j = tex.indexOf('}', i + 1)
+                if (tex[i] != '{')
+                    continue
+                uniTeX += tex.substring(i + 1, j) + '〗'
+                i = j + 1
+            } else {                        // E.g., \frac12 is one half
+                uniTeX += tex[i++] + '&' + tex[i++] + '〗'
+            }
+        }
+    }
+    return uniTeX
+}
+function TeX2UnicodeMath(tex) {
+    // Pass 1: Convert control words in tex to Unicode symbols
+    let i = tex[0] == '$' ? 1 : 0
+    let uniTeX = ''
+
+    for (; i < tex.length; ) {
+        if (tex[i] == '\\') {
+            let cw = '\\'
+            for (i++; i < tex.length && isAsciiAlphabetic(tex[i]); i++)
+                cw += tex[i];
+            let symbol = resolveCW(cw)
+            uniTeX += symbol
+        } else {
+            uniTeX += tex[i++]
+        }
+    }
+    // Pass 2: convert uniTeX to UnicodeMath
+    uniTeX = TeX2UMath(uniTeX)
+
+    //console.log('uniTeX = ' + uniTeX)
+    return uniTeX
+
 }
