@@ -376,7 +376,7 @@ opTt = "ￗ"
     / opCommentOpen
     / opCommentClose
     / opTt*/
-opBuildup = [█⒜Ⓒ⍁■@&([{⟨〖⌈⌊├)}⟩〗⌉⌋┤|│∣⏜⏝⏞⏟⏠⏡⎴⎵¯∑⅀⨊∏∐⨋∫∬∭⨌∮∯∰∱⨑∲∳⨍⨎⨏⨕⨖⨗⨘⨙⨚⨛⨜⨒⨓⨔⋀⋁⋂⋃⨃⨄⨅⨆⨀⨁⨂⨉⫿▒ⅅⅆⅇⅈⅉ¦⒞/\u2044\u2215\u2298▭̄▁▢○⟌⃧⬭#⟡⬄⇳⬍⬆⬇⬌□√∛∜_^┬┴Ⅎ✎☁⫷⫸ￗ╱╲╳ⒶⒻ] / "]"  // ⚡ performance optimization
+opBuildup = [█⒜⒝Ⓒ⍁■@&([{⟨〖⌈⌊├)}⟩〗⌉⌋┤|│∣⏜⏝⏞⏟⏠⏡⎴⎵¯∑⅀⨊∏∐⨋∫∬∭⨌∮∯∰∱⨑∲∳⨍⨎⨏⨕⨖⨗⨘⨙⨚⨛⨜⨒⨓⨔⋀⋁⋂⋃⨃⨄⨅⨆⨀⨁⨂⨉⫿▒ⅅⅆⅇⅈⅉ¦⒞/\u2044\u2215\u2298▭̄▁▢○⟌⃧⬭#⟡⬄⇳⬍⬆⬇⬌□√∛∜_^┬┴Ⅎ✎☁⫷⫸ￗ╱╲╳ⒶⒻ] / "]"  // ⚡ performance optimization
 other = !(_ / αn / nn / diacritic / unicodeFraction / opBuildup / "\n") char
 
 
@@ -839,6 +839,10 @@ enclosed
         // Dictation fraction...end-fraction option; prefer '/' to '&'
         // as in OfficeMath implementation but can't get it to parse
         return {fraction: {symbol: '/', of: [r, t]}};
+    }
+    / '⒝' r:exp '&' t:exp '〗' {
+        // TeX binomial coefficient
+        return {binom: {top: r, bottom: t}};
     }
     / e:opSelection "(" o:exp? ")" m:opSubSupEtc? {
         return {enclosed: {mask: m, symbol: e, of: o}};

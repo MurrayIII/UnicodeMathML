@@ -551,26 +551,52 @@ function findClosingBrace(text, i) {
 }
 
 function TeX2UMath(tex) {
+    let j
     let uniTeX = ''
 
     for (i = 0; i < tex.length;) {
-        let ch = tex[i++]
+        let ch = getCh(tex, i)
+        i += ch.length
         uniTeX += ch
-        if (ch == '⍁') {
-            if (tex[i] == '{') {
-                let j = findClosingBrace(tex, i + 1)
-                if (j == -1)
-                    continue
-                uniTeX += TeX2UMath(tex.substring(i + 1, j)) + '&'
-                i = j + 1
-                j = tex.indexOf('}', i + 1)
-                if (tex[i] != '{')
-                    continue
-                uniTeX += tex.substring(i + 1, j) + '〗'
-                i = j + 1
-            } else {                        // E.g., \frac12 is one half
-                uniTeX += tex[i++] + '&' + tex[i++] + '〗'
-            }
+        if (i == tex.length)
+            break
+        switch (ch) {
+            case '⒝':
+            case '⍁':
+                if (tex[i] == '{') {
+                    j = findClosingBrace(tex, i + 1)
+                    if (j == -1)
+                        continue
+                    uniTeX += TeX2UMath(tex.substring(i + 1, j)) + '&'
+                    i = j + 1
+                    j = findClosingBrace(tex, i + 1)
+                    if (tex[i] != '{')
+                        continue
+                    uniTeX += TeX2UMath(tex.substring(i + 1, j)) + '〗 '
+                    i = j + 1
+                } else {                        // E.g., \frac12 is one half
+                    uniTeX += tex[i++] + '&' + tex[i++] + '〗 '
+                }
+                continue
+            case '√':
+            case '^':
+            case '_':
+                if (tex[i] == '{') {
+                    j = findClosingBrace(tex, i + 1)
+                    if (j == -1)
+                        continue
+                    val = TeX2UMath(tex.substring(i + 1, j))
+                    if (needParens(val))
+                        val = '(' + val + ')'
+                    i = j + 1
+                } else {
+                    val = getCh(tex, i)
+                    i += val.length
+                }
+                uniTeX += val
+                if (i < tex.length && !'+-=/^_ )'.includes(tex[i]))
+                    uniTeX += ' '
+                break
         }
     }
     return uniTeX
@@ -582,10 +608,10 @@ function TeX2UnicodeMath(tex) {
 
     for (; i < tex.length; ) {
         if (tex[i] == '\\') {
-            let cw = '\\'
+            let cw = ''
             for (i++; i < tex.length && isAsciiAlphabetic(tex[i]); i++)
                 cw += tex[i];
-            let symbol = resolveCW(cw)
+            let symbol = isFunctionName(cw) ? ' ' + cw : resolveCW('\\' + cw)
             uniTeX += symbol
         } else {
             uniTeX += tex[i++]

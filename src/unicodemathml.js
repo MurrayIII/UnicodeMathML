@@ -949,6 +949,7 @@ const controlWords = {
     'bigunion':         '⋃',    	// 22C3
     'bigvee':           '⋁',    	// 22C1
     'bigwedge':         '⋀',	    // 22C0
+    'binom':            '⒝',    // 249D
     'bmatrix':          'ⓢ',	// 24E2
     'bot':              '⊥',	// 22A5
     'bowtie':           '⋈',	    // 22C8
@@ -5162,6 +5163,8 @@ function unicodemathml(unicodemath, displaystyle) {
         return {mathml: unicodemath, details: {}};
     } else if (unicodemath[0] == '$') {
         unicodemath = TeX2UnicodeMath(unicodemath)
+        if (!testing)
+            console.log('unicodemath = ' + unicodemath)
     }
 
     let uast;

@@ -911,6 +911,7 @@ async function renderMarkedUnicodemath(node) {
     "1𞸁²+𞸕²=𞸖^2": "<math display=\"block\" dir=\"rtl\"><msup><mi style=\"font-family:XITS Math\">𞸁</mi><mn>٢</mn></msup><mo>+</mo><msup><mi style=\"font-family:XITS Math\">𞸕</mi><mn>٢</mn></msup><mo>=</mo><msup><mi style=\"font-family:XITS Math\">𞸖</mi><mn>٢</mn></msup></math>",
     "1\\mrhndH+\\mchanQ/=\\mscrT": "<math display=\"block\"><mi>ℋ︁</mi><mo>+</mo><mi>𝒬︀</mi><mo>≠</mo><mi>𝒯</mi></math>",
     "1$\\alpha^2+\\beta^2=\\gamma^2 + \\frac{a+\\frac12}{c+d}": "<math display=\"block\"><msup><mi>𝛼</mi><mn>2</mn></msup><mo>+</mo><msup><mi>𝛽</mi><mn>2</mn></msup><mo>=</mo><msup><mi>𝛾</mi><mn>2</mn></msup><mo>+</mo><mfrac><mrow><mi>𝑎</mi><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac></mrow><mrow><mi>𝑐</mi><mo>+</mo><mi>𝑑</mi></mrow></mfrac></math>",
+    "1$\\frac{1}{2π}\\int_0^{2π} \\frac{dθ}{a+b\\sin θ}=\\frac{1}{\\sqrt{a^2-b^2}}":  "<math display=\"block\"><mfrac><mn>1</mn><mrow><mn>2</mn><mi>𝜋</mi></mrow></mfrac><mrow intent=\":nary(0,$h,$naryand)\"><msubsup><mo>∫</mo><mn>0</mn><mrow arg=\"h\"><mn>2</mn><mi>𝜋</mi></mrow></msubsup><mrow arg=\"naryand\"><mfrac><mrow><mi>𝑑</mi><mi>𝜃</mi></mrow><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi><mrow intent=\":function\"><mi>sin</mi><mo>⁡</mo><mi>𝜃</mi></mrow></mrow></mfrac></mrow></mrow><mo>=</mo><mfrac><mn>1</mn><msqrt><msup><mi>𝑎</mi><mn>2</mn></msup><mo>−</mo><msup><mi>𝑏</mi><mn>2</mn></msup></msqrt></mfrac></math>",
     };
 
     // extract unicodemath expressions from node
