@@ -5161,8 +5161,29 @@ function unicodemathml(unicodemath, displaystyle) {
         if (unicodemath.startsWith('<mml:math') || unicodemath.startsWith('<m:math'))
             unicodemath = removeMmlPrefixes(unicodemath);
         return {mathml: unicodemath, details: {}};
-    } else if (unicodemath[0] == '$') {
-        unicodemath = TeX2UnicodeMath(unicodemath)
+    } else if (unicodemath[0] == '$' || unicodemath.startsWith('\\[') ||
+        unicodemath.startsWith('\\(')) {
+        // Handle [La]TeX. Remove math-zone delimiters & define display style
+        let j = 2                           // For start delims '$$', '\[', '\)'
+        let k = unicodemath.length          // For no end delims
+        displaystyle = 1                    // display="block"
+
+        if (unicodemath[0] == '$') {
+            if (unicodemath[1] != '$') {
+                j = 1
+                displaystyle = 0            // display="inline"
+            }
+            if (unicodemath[k - 1] == '$')
+                k--                         // Set up to trim off '$'
+            if (unicodemath[k - 1] == '$')
+                k--
+        } else {
+            if (unicodemath[1] == '(')
+                displaystyle = 0            // display="inline"
+            if (unicodemath.endsWith('\\]') || unicodemath.endsWith('\\)'))
+                k -= 2                      // Set up to trim off end delims
+        }
+        unicodemath = TeX2UnicodeMath(unicodemath.substring(j, k))
         if (!testing)
             console.log('unicodemath = ' + unicodemath)
     }

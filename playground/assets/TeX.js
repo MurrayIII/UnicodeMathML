@@ -603,10 +603,9 @@ function TeX2UMath(tex) {
 }
 function TeX2UnicodeMath(tex) {
     // Pass 1: Convert control words in tex to Unicode symbols
-    let i = tex[0] == '$' ? 1 : 0
     let uniTeX = ''
 
-    for (; i < tex.length; ) {
+    for (let i = 0; i < tex.length; ) {
         if (tex[i] == '\\') {
             let cw = ''
             for (i++; i < tex.length && isAsciiAlphabetic(tex[i]); i++)
