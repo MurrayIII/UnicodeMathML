@@ -358,6 +358,7 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Implement a Tab hierarchy for Tab navigation since there are myriad default tab stops
 * Support simplified OfficeMath math paragraph using an mtable
 * Support Arabic math alphabetics and limited RTL math display
+* Support inputting subset of [La]TeX
 
 ## MathML intent-attribute support:
 * Derivative and partial-derivative intent attributes are defined for Leipzig and Euler derivative notations.
