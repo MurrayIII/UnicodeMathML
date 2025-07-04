@@ -550,7 +550,8 @@ function findClosingBrace(text, i) {
                 if (!cBrace)
                     return over > 0 ? [i, over] : i
                 break
-            case '/':                       // For parsing {.../...}
+            case '⒞':                       // For parsing {...\choose...}
+            case '/':                       // For parsing {...\over...}
                 over = !over ? i : -1
                 break
         }
@@ -558,9 +559,31 @@ function findClosingBrace(text, i) {
     return -1
 }
 
+function getArg(tex, i) {
+    // Return argument at tex offset i: can be either ... of {...} or a single
+    // character following optional whitespace
+    let j
+    let val = ''
+
+    if (tex[i] == '{') {
+        i++                                 // Bypass '{'
+        j = findClosingBrace(tex, i)
+        if (j > 0) {
+            val = TeX2UMath(tex.substring(i, j))
+            i++                             // Set up to bypass '}'
+        }
+    } else {
+        while (tex[i] == ' ')
+            i++
+        val = getCh(tex, i)
+    }
+    return [val, i + val.length]
+}
+
 function TeX2UMath(tex) {
     let j
     let uniTeX = ''
+    let val
 
     for (i = 0; i < tex.length;) {
         let ch = getCh(tex, i)
@@ -568,6 +591,7 @@ function TeX2UMath(tex) {
         uniTeX += ch
         if (i == tex.length)
             break
+
         switch (ch) {
             case '⒝':                       // E.g., \binom{n}{k}
             case '⍁':                       // E.g., \frac{a}{b}
@@ -588,45 +612,32 @@ function TeX2UMath(tex) {
                 continue
             case '⒭':                      // E.g., \root n\of{a+b} → ⒭𝑛▒(𝑎+𝑏)
                 j = tex.indexOf('▒', i)
-                if (j != -1 && tex[j + 1] == '{') {
+                if (j != -1) {
                     uniTeX += tex.substring(i, j) + '▒'
-                    i = j + 2           // Bypass '▒{'
-                    j = findClosingBrace(tex, i)
-                    if (j != -1) {
-                        uniTeX += '(' + TeX2UMath(tex.substring(i, j)) + ')'
-                        i = j + 1
-                        break
-                    }
+                    j++                     // Bypass '▒'
+                    [val, i] = getArg(tex, j)
+                    if (needParens(val))
+                        val = '(' + val + ')'
+                    uniTeX += val
+                    break
                 }
                 break
             case '√':
                 if (tex[i] == '[') {        // E.g., √[n]{a+b} → √(n&a+b)
                     j = tex.indexOf(']', i + 1)
-                    if (j != -1 && tex[j + 1] == '{') {
+                    if (j != -1) {
                         uniTeX += '(' + tex.substring(i + 1, j) + '&'
-                        i = j + 2           // Bypass ']{'
-                        j = findClosingBrace(tex, i)
-                        if (j != -1) {
-                            uniTeX += TeX2UMath(tex.substring(i, j)) + ')'
-                            i = j + 1
-                            break
-                        }
+                        j++                 // Bypass ']'
+                        [val, i] = getArg(tex, j)
+                        uniTeX += val + ')'
                     }
+                    break
                 }
             case '^':
             case '_':
-                if (tex[i] == '{') {
-                    j = findClosingBrace(tex, i + 1)
-                    if (j == -1)
-                        continue
-                    val = TeX2UMath(tex.substring(i + 1, j))
-                    if (needParens(val))
-                        val = '(' + val + ')'
-                    i = j + 1
-                } else {
-                    val = getCh(tex, i)
-                    i += val.length
-                }
+                [val, i] = getArg(tex, i)
+                if (needParens(val))
+                    val = '(' + val + ')'
                 uniTeX += val
                 if (i < tex.length && !'+-=/^_ )'.includes(tex[i]))
                     uniTeX += ' '
@@ -634,13 +645,21 @@ function TeX2UMath(tex) {
             case '{':
                 [j, k] = findClosingBrace(tex, i)
                 if (k > 0) {
-                    // E.g., TeX {a+b\over c+d}
-                    uniTeX = uniTeX.substring(0, uniTeX.length - 1) + '⍁' +
-                        TeX2UMath(tex.substring(i, k)) + '&' +
-                        TeX2UMath(tex.substring(k + 1, j)) + '〗'
-                    i = j + 1
+                    let op = tex[k] == '/' ? '⍁' : '⒝'
+                        // E.g., TeX {a+b\over c+d}
+                        uniTeX = uniTeX.substring(0, uniTeX.length - 1) + op +
+                            TeX2UMath(tex.substring(i, k)) + '&' +
+                            TeX2UMath(tex.substring(k + 1, j)) + '〗'
+                        i = j + 1
                 }
                 break
+            default:
+                if (isAccent(ch)) {
+                    [val, i] = getArg(tex, i)
+                    if (needParens(val))
+                        val = '(' + val + ')'
+                    uniTeX = uniTeX.substring(0, uniTeX.length - 1) + val + ch
+                }
         }
     }
     return uniTeX
