@@ -955,6 +955,7 @@ const controlWords = {
     'bowtie':           '⋈',	    // 22C8
     'box':              '□',	// 25A1
     'boxdot':           '⊡',    	// 22A1
+    'boxed':            '▭',	// 25AD
     'boxminus':         '⊟',    	// 229F
     'boxplus':          '⊞',    	// 229E
     'boxtimes':         '⊠',    	// 22A0
@@ -1431,6 +1432,7 @@ const controlWords = {
     'tautology':        '⊤',	    // 22A4
     'thal':		        'ذ',    // u0630
     'teh':		        'ت',    // u062A
+    'text':             'ⓣ',   // 24E3
     'theh':		        'ث',    // u062B
     'theta':            'θ',	// 03B8
     'thicksp':         '\u2005',// 2005

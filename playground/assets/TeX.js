@@ -554,12 +554,18 @@ function findClosingBrace(text, i) {
             case '/':                       // For parsing {...\over...}
                 over = !over ? i : -1
                 break
+            case '\\':                      // End of row/equation?
+                if (text[i + 1] == '\\')
+                    return i
+                break
+            case '〗':
+                return i
         }
     }
     return -1
 }
 
-function getArg(tex, i) {
+function getArg(tex, i, checkNeedParens) {
     // Return argument at tex offset i: can be either ... of {...} or a single
     // character following optional whitespace
     let j
@@ -577,7 +583,10 @@ function getArg(tex, i) {
             i++
         val = getCh(tex, i)
     }
-    return [val, i + val.length]
+    i += val.length
+    if (checkNeedParens && needParens(val))
+        val = '(' + val + ')'
+    return [val, i]
 }
 
 function TeX2UMath(tex) {
@@ -615,9 +624,7 @@ function TeX2UMath(tex) {
                 if (j != -1) {
                     uniTeX += tex.substring(i, j) + '▒'
                     j++                     // Bypass '▒'
-                    [val, i] = getArg(tex, j)
-                    if (needParens(val))
-                        val = '(' + val + ')'
+                    [val, i] = getArg(tex, j, true)
                     uniTeX += val
                     break
                 }
@@ -633,11 +640,11 @@ function TeX2UMath(tex) {
                     }
                     break
                 }
+            case 'ⓣ':
+            case '▭':
             case '^':
             case '_':
-                [val, i] = getArg(tex, i)
-                if (needParens(val))
-                    val = '(' + val + ')'
+                [val, i] = getArg(tex, i, true)
                 uniTeX += val
                 if (i < tex.length && !'+-=/^_ )'.includes(tex[i]))
                     uniTeX += ' '
@@ -653,12 +660,49 @@ function TeX2UMath(tex) {
                         i = j + 1
                 }
                 break
+            case '〖':                       // Begin environment
+                if (tex[i] != '{')
+                    break
+                j = findClosingBrace(tex, i + 1)
+                if (j == -1)
+                    break
+                let label = tex.substring(i + 1, j)
+                i = j + 1                   // Bypass \begin{<label>}
+                uniTeX = uniTeX.substring(0, uniTeX.length - 1) // Delete '〖'
+                switch (label) {
+                    case 'cases':
+                    case 'aligned':
+                        uniTeX += label == 'cases' ? 'Ⓒ(' : '█('
+                        for (; ;) {
+                            // Find end of equation
+                            j = findClosingBrace(tex, i)
+                            if (j == -1)
+                                break
+                            uniTeX += TeX2UMath(tex.substring(i, j))
+                            if (tex[j] == '〗') {
+                                // End of equation array
+                                uniTeX += ')'
+                                j = tex.indexOf('}', j + 2)
+                                i = j + 1
+                                break
+                            }
+                            // End of equation, but more to come
+                            if (tex[j] == '\\')
+                                j++
+                            uniTeX += '@'
+                            i = j + 1
+                        }
+                        break
+                }
+                break
             default:
                 if (isAccent(ch)) {
-                    [val, i] = getArg(tex, i)
-                    if (needParens(val))
-                        val = '(' + val + ')'
+                    // Move accent from before to after the argument
+                    [val, i] = getArg(tex, i, true)
                     uniTeX = uniTeX.substring(0, uniTeX.length - 1) + val + ch
+                } else if (overBrackets.includes(ch) || underBrackets.includes(ch)) {
+                    [val, i] = getArg(tex, i)
+                    uniTeX += '(' + val + ')'
                 }
         }
     }
