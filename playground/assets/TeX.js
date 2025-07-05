@@ -536,6 +536,11 @@ function TeX(value, noAddParens) {
 //  [La]TeX to UnicodeMath  //
 /////////////////////////////
 
+const environments = {
+    'cases': 'Ⓒ', 'aligned': '█', 'pmatrix': '⒨', 'matrix': '■',
+    'vmatrix': '⒱', 'bmatrix': 'ⓢ', 'Vmatrix': '⒩', 'Bmatrix': 'Ⓢ',
+}
+
 function findClosingBrace(text, i) {
     let cBrace = 1
     let over = 0
@@ -666,33 +671,29 @@ function TeX2UMath(tex) {
                 j = findClosingBrace(tex, i + 1)
                 if (j == -1)
                     break
-                let label = tex.substring(i + 1, j)
+                let label = environments[tex.substring(i + 1, j)]
+                if (!label)
+                    return ''
                 i = j + 1                   // Bypass \begin{<label>}
-                uniTeX = uniTeX.substring(0, uniTeX.length - 1) // Delete '〖'
-                switch (label) {
-                    case 'cases':
-                    case 'aligned':
-                        uniTeX += label == 'cases' ? 'Ⓒ(' : '█('
-                        for (; ;) {
-                            // Find end of equation
-                            j = findClosingBrace(tex, i)
-                            if (j == -1)
-                                break
-                            uniTeX += TeX2UMath(tex.substring(i, j))
-                            if (tex[j] == '〗') {
-                                // End of equation array
-                                uniTeX += ')'
-                                j = tex.indexOf('}', j + 2)
-                                i = j + 1
-                                break
-                            }
-                            // End of equation, but more to come
-                            if (tex[j] == '\\')
-                                j++
-                            uniTeX += '@'
-                            i = j + 1
-                        }
+                uniTeX = uniTeX.substring(0, uniTeX.length - 1) + label + '('
+                for (; ;) {
+                    // Find end of equation
+                    j = findClosingBrace(tex, i)
+                    if (j == -1)
                         break
+                    uniTeX += TeX2UMath(tex.substring(i, j))
+                    if (tex[j] == '〗') {
+                        // End of equation array
+                        uniTeX += ')'
+                        j = tex.indexOf('}', j + 2)
+                        i = j + 1
+                        break
+                    }
+                    // End of equation, but more to come
+                    if (tex[j] == '\\')
+                        j++
+                    uniTeX += '@'
+                    i = j + 1
                 }
                 break
             default:
@@ -723,10 +724,10 @@ function TeX2UnicodeMath(tex) {
             uniTeX += tex[i++]
         }
     }
+    //console.log('uniTeX = ' + uniTeX)
     // Pass 2: convert uniTeX to UnicodeMath
     uniTeX = TeX2UMath(uniTeX)
 
     //console.log('uniTeX = ' + uniTeX)
     return uniTeX
-
 }
