@@ -579,20 +579,22 @@ function getArg(tex, i, checkNeedParens) {
     // character following optional whitespace
     let j
     let val = ''
+    while (tex[i] == ' ')
+        i++
 
     if (tex[i] == '{') {
         i++                                 // Bypass '{'
         j = findClosingBrace(tex, i)
         if (j > 0) {
             val = TeX2UMath(tex.substring(i, j))
-            i++                             // Set up to bypass '}'
+            i = j + 1                       // Set up to bypass '}'
         }
     } else {
         while (tex[i] == ' ')
             i++
         val = getCh(tex, i)
+        i += val.length                     // Set up to bypass char
     }
-    i += val.length
     if (checkNeedParens && needParens(val))
         val = '(' + val + ')'
     return [val, i]
@@ -619,6 +621,8 @@ function TeX2UMath(tex) {
                         continue
                     uniTeX += TeX2UMath(tex.substring(i + 1, j)) + '&'
                     i = j + 1
+                    if (tex[i] == ' ')
+                        i++
                     j = findClosingBrace(tex, i + 1)
                     if (tex[i] != '{')
                         continue
@@ -649,6 +653,9 @@ function TeX2UMath(tex) {
                     }
                     break
                 }
+            case 'ⓓ':
+                if (getNonBlankChar(tex, i) != '{')
+                    break
             case '▭':
             case '^':
             case '_':

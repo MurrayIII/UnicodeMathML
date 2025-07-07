@@ -98,6 +98,12 @@ function getFencedOps(value) {
     return [opClose, opOpen, opSeparators]
 }
 
+function getNonBlankChar(tex, i) {
+    while (tex[i] == ' ')
+        i++
+    return getCh(tex, i)
+}
+
 function getUnicodeFraction(chNum, chDenom) {
     if (chNum.length == 1) {
         if (chDenom == '10' && chNum == '1')
@@ -282,11 +288,6 @@ function isMathML(unicodemath) {
            unicodemath.startsWith("<m:math");
 }
 
-function isTeX(unicodemath) {
-    return unicodemath[0] == '$' || unicodemath.startsWith('\\(') ||
-           unicodemath.startsWith('\\[')
-}
-
 function isMrowLike(node) {
     return ['math', 'menclose', 'merror', 'mpadded', 'mphantom', 'mrow',
         'mscarry', 'msqrt', 'mstyle', 'mtd'].includes(node.localName)
@@ -298,6 +299,11 @@ function isNary(op) {
 
 function isOpenDelimiter(op) {
     return '([{⟨〖⌈⌊❲⟦⟨⟪⟬⟮⦃⦅⦇⦉⦋⦍⦏⦑⦓⦕⦗⧘⧚⧼'.includes(op)
+}
+
+function isTeX(unicodemath) {
+    return unicodemath[0] == '$' || unicodemath.startsWith('\\(') ||
+        unicodemath.startsWith('\\[')
 }
 
 function isTrailSurrogate(code) { return code >= 0xDC00 && code <= 0xDFFF; }
@@ -852,6 +858,8 @@ const controlWords = {
     'Angstrom':         'Å',   // 212B
     'Bar':              '̿',	// 033F
     'Biconditional':    '⇔',	// 21D4
+    'Bigl':             '',
+    'Bigr':             '',
     'Bmatrix':          'Ⓢ',	// 24C8
     'Bumpeq':           '≎',    	// 224E
     'Cap':              '⋒',    	// 22D2
@@ -1033,6 +1041,7 @@ const controlWords = {
     'diamond':          '⋄',	    // 22C4
     'diamondsuit':      '♢',	    // 2662
     'directsum':        '⊕',	    // 2295
+    'displaystyle':     'ⓓ',   // 24D3
     'div':              '÷',	// 00F7
     'divide':           '∣',	    // 2223
     'divideontimes':    '⋇',	    // 22C7
@@ -1205,6 +1214,7 @@ const controlWords = {
     'lrhar':            '⇋',	    // 21CB
     'ltimes':           '⋉',    	// 22C9
     'lvec':             '⃖',	// 20D6
+    'lvert':            '|',
     'mapsto':           '↦',	    // 21A6
     'mapstoleft':       '↤',	    // 21A4
     'matrix':           '■',	// 25A0
@@ -1388,6 +1398,7 @@ const controlWords = {
     'rparen':           ')',    // 0029
     'rrect':            '▢',	// 25A2
     'rtimes':           '⋊',    	// 22CA
+    'rvert':            '|',
     'sad':		        'ص',    // u0635
     'sdiv':             '⁄',	// 2044
     'sdivide':          '⁄',	// 2044
@@ -3853,8 +3864,13 @@ function mtransform(dsty, puast) {
 
         case "enclosed":
             let symbol = value.symbol;
-            mask = value.mask;
             attrs = getAttrs(value, '');
+            if (symbol == 'ⓓ') {
+                attrs.displaystyle = true
+                return {mstyle: withAttrs(attrs, mtransform(dsty,
+                        dropOutermostParens(value.of)))}
+            }
+            mask = value.mask;
             attrs.notation = enclosureAttrs(mask, symbol);
 
             return {menclose: withAttrs(attrs, mtransform(dsty,
@@ -5192,6 +5208,12 @@ function unicodemathml(unicodemath, displaystyle) {
                 k -= 2                      // Set up to trim off end delims
         }
         unicodemath = TeX2UnicodeMath(unicodemath.substring(j, k))
+        if (unicodemath[0] == 'ⓓ' &&
+            getNonBlankChar(unicodemath, 1) != '{') {
+            // KaTeX may start with \displaystyle
+            displaystyle = 1
+            unicodemath = unicodemath.substring(1)
+        }
         if (!testing)
             console.log('unicodemath = ' + unicodemath)
     }
