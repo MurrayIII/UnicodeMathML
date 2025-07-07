@@ -1125,7 +1125,7 @@ function autocomplete() {
         if (input.value[i] == 'ⓐ')
             return false;                   // \arg: leave as is
 
-        if (i < 0 || input.value[i] != '\\' &&
+        if (i < 0 || input.value[i] != '\\' && input.value[0] != '<' &&
             (!i || !isMathColor(input.value.substring(i - 1, i + 1)))) {
             // Not control word; check for italicization & operator autocorrect
             let ch = italicizeCharacter(delim);
@@ -3832,7 +3832,7 @@ document.addEventListener('keydown', function (e) {
                 'scripts': ['enclosures', 'logic'],
                 'enclosures': ['misc', 'scripts'],
                 'misc': ['accents', 'enclosures'],
-                'accents': ['greek', 'misc.'],
+                'accents': ['greek', 'misc'],
                 'greek': ['examples', 'accents'],
                 'examples': ['help', 'greek'],
             }
@@ -4686,7 +4686,8 @@ async function draw(undo) {
     let mathPara = false
     let cAmp = 0
 
-    if (!input.value.startsWith("<math") && input.value.indexOf('\n') != -1) {
+    if (!input.value.startsWith("<math") && !isTeX(input.value) &&
+        input.value.indexOf('\n') != -1) {
         inp = input.value.split("\n")
         for (let i = 0; i < inp.length; i++) {
             if (!inp[i])

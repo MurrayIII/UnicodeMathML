@@ -447,6 +447,7 @@ mappedOperator  // character translations noted in section 4.1 of the tech note
     / "->" {return "\u2192"}
     / "!!" {return "\u203C"}
     / "..." {return "…"}  // not in the tech note, but seems sensible
+    / "⋅⋅⋅" {return "⋯"}
 
 // ❶ elements: low-precedence constructs (i.e. ones with low-precedence
 //    operators – thus they are likely to be at the outer level of an expression

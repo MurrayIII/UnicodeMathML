@@ -282,6 +282,11 @@ function isMathML(unicodemath) {
            unicodemath.startsWith("<m:math");
 }
 
+function isTeX(unicodemath) {
+    return unicodemath[0] == '$' || unicodemath.startsWith('\\(') ||
+           unicodemath.startsWith('\\[')
+}
+
 function isMrowLike(node) {
     return ['math', 'menclose', 'merror', 'mpadded', 'mphantom', 'mrow',
         'mscarry', 'msqrt', 'mstyle', 'mtd'].includes(node.localName)
@@ -1433,6 +1438,7 @@ const controlWords = {
     'thal':		        'ذ',    // u0630
     'teh':		        'ت',    // u062A
     'text':             'ⓣ',   // 24E3
+    'textrm':           'ⓣ',   // 24E3
     'theh':		        'ث',    // u062B
     'theta':            'θ',	// 03B8
     'thicksp':         '\u2005',// 2005

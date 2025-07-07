@@ -4,11 +4,12 @@ It works well in Microsoft desktop apps such as Word, PowerPoint, Outlook, and O
 This open-source applet implements UnicodeMath on the web.
 
 ## Entering equations
-You can enter equations in four ways:
-1. Enter UnicodeMath in the input (upper-left) window. The corresponding 2D built-up math displays in the output (upper-right) window and the [MathML](https://w3c.github.io/mathml/) for it displays below the output window. This option is quite reliable.
-2. Enter UnicodeMath directly into the output window. This option builds up what you enter automatically, similarly to entry in the Microsoft Office apps. This option is a work in progress.
-3. Click on the Dictate button or type Alt+d, wait for the bell, and dictate the equation in English. You need to have Internet access, and you need to enunciate clearly. This option is also a work in progress but if you get it to work it’s the fastest entry method except for:
-4. Paste MathML into the input or output window.
+You can enter equations in five ways:
+1. Enter UnicodeMath into the input (upper-left) window. The corresponding 2D built-up math displays in the output (upper-right) window and the [MathML](https://w3c.github.io/mathml/) for it displays below the output window. This option is quite reliable.
+2. Enter Nemeth braille or [La]TeX into the input window. If the input window starts with a Unicode braille character (U+2800..U+28FF), Nemeth ASCII braille input is enabled. If the input starts with $, $$, \\(, or \\[, LaTeX input is enabled. If it starts with <math, MathML input is enabled.
+3. Enter UnicodeMath directly into the output window. This option builds up what you enter automatically, similarly to entry in the Microsoft Office apps. This option is a work in progress.
+4. Click on the Dictate button or type Alt+d, wait for the bell, and dictate the equation in English. You need to have Internet access, and you need to enunciate clearly. This option is also a work in progress but if you get it to work it’s the fastest entry method except for:
+5. Paste MathML into the input or output window.
 
 ## See and/or hear it in action
 Click on the Demo button or type Alt+p in the input window to see it in action!

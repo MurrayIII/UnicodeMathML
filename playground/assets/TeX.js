@@ -541,7 +541,7 @@ const environments = {
     'vmatrix': '⒱', 'bmatrix': 'ⓢ', 'Vmatrix': '⒩', 'Bmatrix': 'Ⓢ',
 }
 
-function findClosingBrace(text, i) {
+function findClosingBrace(text, i, chStop) {
     let cBrace = 1
     let over = 0
 
@@ -561,6 +561,10 @@ function findClosingBrace(text, i) {
                 break
             case '\\':                      // End of row/equation?
                 if (text[i + 1] == '\\')
+                    return i
+                break
+            case '$':
+                if (cBrace == 1 && chStop == text[i]) // At current level
                     return i
                 break
             case '〗':
@@ -645,7 +649,6 @@ function TeX2UMath(tex) {
                     }
                     break
                 }
-            case 'ⓣ':
             case '▭':
             case '^':
             case '_':
@@ -696,6 +699,34 @@ function TeX2UMath(tex) {
                     i = j + 1
                 }
                 break
+            case 'ⓣ':
+                // Flatten embedded math zones
+                if (tex[i] != '{')
+                    break
+                for (; ;) {
+                    // Find a math zone or closing brace
+                    j = findClosingBrace(tex, i + 1, '$')
+                    if (j == -1)
+                        break
+                    if (tex[j] == '$') {    // Found a math zone
+                        k = findClosingBrace(tex, j + 1, '$')
+                        if (tex[k] != '$')
+                            break
+                        uniTeX += '(' + tex.substring(i + 1, j) + ')'
+                        uniTeX += TeX2UMath(tex.substring(j + 1, k) + ' ')
+                        if (tex[k + 1] == '}') {
+                            i = k + 2       // End of text
+                            break
+                        }
+                        i = k               // More text
+                        uniTeX += 'ⓣ'       // Start new text field
+                    } else {                // End of text. Finish text field
+                        uniTeX += '(' + tex.substring(i + 1, j) + ')'
+                        i = j + 1           // Bypass original text field
+                        break
+                    }
+                }
+                break
             default:
                 if (isAccent(ch)) {
                     // Move accent from before to after the argument
@@ -720,6 +751,8 @@ function TeX2UnicodeMath(tex) {
                 cw += tex[i];
             let symbol = isFunctionName(cw) ? ' ' + cw : resolveCW('\\' + cw)
             uniTeX += symbol
+        } else if (tex[i] == '\n') {
+            i++                             // Skip new lines
         } else {
             uniTeX += tex[i++]
         }
