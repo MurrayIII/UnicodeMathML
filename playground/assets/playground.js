@@ -886,14 +886,20 @@ function opAutocorrect(ip, delim) {
     return false;
 }
 
+input.addEventListener("click", () => {
+    closeAutocompleteList()
+})
+
 input.addEventListener("focus", () => {
     input.selectionStart = selectionStart
     input.selectionEnd = selectionEnd
+    closeAutocompleteList()
 })
 
 input.addEventListener("blur", () => {
     selectionStart = input.selectionStart
     selectionEnd = input.selectionEnd
+    closeAutocompleteList()
 })
 
 input.addEventListener("keydown", function (e) {
@@ -1175,7 +1181,7 @@ function autocomplete() {
             let ch = val.substring(k + 1)
             let desc = ''
             if (ch.length == 1) {
-                if (inRange('①'), ch, '⑳') {
+                if (inRange('①', ch, '⑳')) {
                     let x = document.getElementById('Examples').childNodes[0]
                     let iEx = ch.codePointAt(0) - 0x2460
                     ch = x.childNodes[iEx].innerText
@@ -1250,7 +1256,7 @@ function createAutoCompleteMenu(cw, id, onAutoCompleteClick) {
         b.innerHTML += matches[j].substring(cw.length);
         b.innerHTML += "<input type='hidden' value='" + cwOption + "'>";
 
-        if (commonSymbols.includes(cwOption[cwOption.length - 1])) {
+        if (currentFocus == -1 && commonSymbols.includes(cwOption[cwOption.length - 1])) {
             // Activate option for most common symbol, e.g., for '\be'
             // highlight '\beta β'
             currentFocus = j;
@@ -2542,11 +2548,18 @@ function checkAutocomplete(node) {
 
     return createAutoCompleteMenu(cw, 'output', e => {
         // User clicked matching control word: insert its symbol
-        let val = e.currentTarget.innerText
-        let symbol = val[val.length - 1]
-        let code = symbol.codePointAt(0)
-        if (isTrailSurrogate(code))
-            symbol = val.substring(val.length - 2, val.length)
+        let val = e.currentTarget.innerText;
+        let k = val.indexOf(' ')
+        let symbol = val.substring(k + 1)
+        if (inRange('①', symbol, '⑳')) {
+            let x = document.getElementById('Examples').childNodes[0]
+            let iEx = symbol.codePointAt(0) - 0x2460
+            symbol = x.childNodes[iEx].innerText
+            let t = unicodemathml(symbol, true) // uMath → MathML
+            output.innerHTML = t.mathml
+            refreshDisplays('', true)
+            return true
+        }
         let nodeNew = document.createElement(getMmlTag(symbol))
         if (isDoubleStruck(symbol)) {
             let ch = doublestruckChar(symbol)
