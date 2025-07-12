@@ -963,6 +963,7 @@ const controlWords = {
     'bigvee':           '⋁',    	// 22C1
     'bigwedge':         '⋀',	    // 22C0
     'binom':            '⒝',    // 249D
+    'binomial':         '⑧',    // 2467 Binomial expansion
     'bmatrix':          'ⓢ',	// 24E2
     'bot':              '⊥',	// 22A5
     'bowtie':           '⋈',	    // 22C8
@@ -1031,6 +1032,7 @@ const controlWords = {
     'dddot':            '⃛',	// 20DB
     'ddot':             '̈',	    // 0308
     'ddots':            '⋱',	    // 22F1
+    'def':              'Ⓜ',    // 24C2
     'defeq':            '≝',	    // 225D
     'deg':              '°',	// 00B0
     'degc':             '℃',	// 2103
@@ -1140,6 +1142,7 @@ const controlWords = {
     'infinity':         '∞',	// 221E
     'infty':            '∞',	// 221E
     'int':              '∫',	// 222B
+    'integral':         '⑦',    // 2466 Mode locking eq
     'intent':           'ⓘ',   // 24D8
     'intercal':         '⊺',	    // 22BA
     'intersection':     '∩',	// 2229
@@ -1195,6 +1198,7 @@ const controlWords = {
     'lesssim':          '≲',	    // 2272
     'lfloor':           '⌊',	    // 230A
     'lhvec':            '⃐',	// 20D0
+    'limit':            '⑫',    // 246B Definition of e
     'll':               '≪',	// 226A
     'lll':              '⋘',	    // 22D8
     'lmoust':           '⎰',	    // 23B0
@@ -1360,6 +1364,7 @@ const controlWords = {
     'qprime':           '⁗',	    // 2057
     'quad':             ' ',	// 2003
     'quadprime':        '⁗',	    // 2057
+    'quadratic':        '⑩',    // 24d9 Quadratic eq
     'quarter':          '¼',    // 00BC
     'rad':              '㎭',   // 33AD
     'rangle':           '⟩',	    // 27E9
@@ -1373,6 +1378,7 @@ const controlWords = {
     'rddots':           '⋰',	    // 22F0
     'rect':             '▭',	// 25AD
     'reh':		        'ر',    // u0631
+    'relax':            '',     // TeX ignore
     'repeat':           '¯',	// 00AF
     'repeating':        '¯',	// 00AF
     'rfloor':           '⌋',	    // 230B
@@ -1509,6 +1515,7 @@ const controlWords = {
     'vmatrix':          '⒱',	// 24B1
     'vphantom':         '⇳',	// 21F3
     'vthicksp':         ' ',    	// 2004
+    'waveeq':           '⑳',   // 2473 Schrödinger wave equation
     'waw':		        'و',    // u0648
     'wedge':            '∧',	// 2227
     'widehat':          '̂',	    // 0302

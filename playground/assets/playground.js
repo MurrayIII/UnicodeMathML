@@ -1171,15 +1171,23 @@ function autocomplete() {
         let autocl = createAutoCompleteMenu(cw, this.id, (e) => {
             // User clicked matching control word: insert its symbol
             let val = e.currentTarget.innerText;
-            let ch = val[val.length - 1]
-            let code = ch.codePointAt(0);
-            if (isTrailSurrogate(code))
-                ch = val.substring(val.length - 2, val.length)
-            else
-                ch = italicizeCharacter(ch)
+            let k = val.indexOf(' ')
+            let ch = val.substring(k + 1)
+            let desc = ''
+            if (ch.length == 1) {
+                if (inRange('①'), ch, '⑳') {
+                    let x = document.getElementById('Examples').childNodes[0]
+                    let iEx = ch.codePointAt(0) - 0x2460
+                    ch = x.childNodes[iEx].innerText
+                    desc = x.childNodes[iEx].dataset.tooltip
+                } else {
+                    ch = italicizeCharacter(ch)
+                }
+            }
             input.value = input.value.substring(0, i) + ch + input.value.substring(ip);
-            speak(ch)
+            speak(desc ? desc : ch)
             ip = i + ch.length
+            let code = ch.codePointAt(0)
             if (code >= 0x2061 && code <= 0x2C00)
                 opAutocorrect(ip, ch);
             e.preventDefault()
@@ -1343,8 +1351,15 @@ function addActive(x) {
     // Add class "autocomplete-active" to x[currentFocus]
     console.log("x[" + currentFocus + "] = " + x[currentFocus].innerText);
     x[currentFocus].classList.add("autocomplete-active");
-    let cwOption = x[currentFocus].innerText
-    speak(cwOption[cwOption.length - 1])
+    let text = x[currentFocus].innerText
+    let ch = text[text.length - 1]
+
+    if (inRange('①', ch, '⑳')) {
+        let x = document.getElementById('Examples').childNodes[0]
+        let iEx = ch.codePointAt(0) - 0x2460
+        ch = x.childNodes[iEx].dataset.tooltip
+    }
+    speak(ch)
 }
 
 function removeActive(x) {

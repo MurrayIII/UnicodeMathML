@@ -553,7 +553,7 @@ function findClosingBrace(text, i, chStop) {
             case '}':
                 cBrace--
                 if (!cBrace)
-                    return over > 0 ? [i, over] : i
+                    return chStop == '/' ? [i, over] : i
                 break
             case '⒞':                       // For parsing {...\choose...}
             case '/':                       // For parsing {...\over...}
@@ -665,7 +665,7 @@ function TeX2UMath(tex) {
                     uniTeX += ' '
                 break
             case '{':
-                [j, k] = findClosingBrace(tex, i)
+                [j, k] = findClosingBrace(tex, i, '/')
                 if (k > 0) {
                     let op = tex[k] == '/' ? '⍁' : '⒝'
                         // E.g., TeX {a+b\over c+d}
@@ -734,6 +734,8 @@ function TeX2UMath(tex) {
                     }
                 }
                 break
+            case 'Ⓜ':                      // Macro
+                break
             default:
                 if (isAccent(ch)) {
                     // Move accent from before to after the argument
@@ -751,17 +753,27 @@ function TeX2UnicodeMath(tex) {
     // Pass 1: Convert control words in tex to Unicode symbols
     let uniTeX = ''
 
-    for (let i = 0; i < tex.length; ) {
-        if (tex[i] == '\\') {
-            let cw = ''
-            for (i++; i < tex.length && isAsciiAlphabetic(tex[i]); i++)
-                cw += tex[i];
-            let symbol = isFunctionName(cw) ? ' ' + cw : resolveCW('\\' + cw)
-            uniTeX += symbol
-        } else if (tex[i] == '\n') {
-            i++                             // Skip new lines
-        } else {
-            uniTeX += tex[i++]
+    for (let i = 0; i < tex.length;) {
+        switch (tex[i]) {
+            case '\\':
+                let cw = ''
+                for (i++; i < tex.length && isAsciiAlphabetic(tex[i]); i++)
+                    cw += tex[i]
+                let symbol = isFunctionName(cw) ? ' ' + cw : resolveCW('\\' + cw)
+                if (symbol[0] != '"')
+                    uniTeX += symbol
+                break
+            case '\n':
+                i++                         // Skip new lines
+                break
+            case '%':
+                j = tex.indexOf('\n')       // Skip comments
+                if (j == -1)
+                    j = i
+                i = j + 1
+                break
+            default:
+                uniTeX += tex[i++]
         }
     }
     //console.log('uniTeX = ' + uniTeX)
