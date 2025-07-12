@@ -1602,9 +1602,20 @@ function resolveCW(unicodemath) {
         }
 
         // Check built-in control words
-        let symbol = controlWords[cw];
-        if (symbol != undefined)
-            return symbol;
+        let symbol = controlWords[cw]
+        if (symbol != undefined) {
+            if (!inRange('①', symbol, '⑳'))
+                return symbol
+
+            let x = document.getElementById('Examples')
+            if (x && x.childNodes[0]) {
+                // Examples defined as in UnicodeMathML's index.html
+                let iEx = symbol.codePointAt(0) - 0x2460
+                x = x.childNodes[0]
+                symbol = x.childNodes[iEx].innerText
+                return symbol
+            }
+        }
         // Not a control word: display it in upright type
         return '"' + match + '"';
     });
