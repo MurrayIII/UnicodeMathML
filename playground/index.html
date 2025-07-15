@@ -416,6 +416,10 @@
             });
             ummlConfig.doubleStruckMode = tempConfig.doubleStruckMode;
             ummlConfig.transposeChar = tempConfig.transposeChar;
+            if (tempConfig.customControlWords)
+                ummlConfig.customControlWords = tempConfig.customControlWords
+            if (tempConfig.texMacros)
+                ummlConfig.texMacros = tempConfig.texMacros
         }
         function applyConfigAndReload() {
             let tempConfig = {};
@@ -424,6 +428,10 @@
             });
             tempConfig.doubleStruckMode = ummlConfig.doubleStruckMode;
             tempConfig.transposeChar = ummlConfig.transposeChar;
+            if (ummlConfig.customControlWords)
+                tempConfig.customControlWords = ummlConfig.customControlWords
+            if (ummlConfig.texMacros)
+                tempConfig.texMacros = ummlConfig.texMacros
 
             let value = JSON.stringify(tempConfig);
             localStorage.setItem('config', value);

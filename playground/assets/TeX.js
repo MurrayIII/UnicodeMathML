@@ -752,6 +752,8 @@ function TeX2UMath(tex) {
 function TeX2UnicodeMath(tex) {
     // Pass 1: Convert control words in tex to Unicode symbols
     let uniTeX = ''
+    let firstMacroIndex = -1
+    let cwPrev = ''
 
     for (let i = 0; i < tex.length;) {
         switch (tex[i]) {
@@ -759,8 +761,22 @@ function TeX2UnicodeMath(tex) {
                 let cw = ''
                 for (i++; i < tex.length && isAsciiAlphabetic(tex[i]); i++)
                     cw += tex[i]
-                let symbol = isFunctionName(cw) ? ' ' + cw : resolveCW('\\' + cw)
-                if (symbol[0] != '"')
+                if (cwPrev == 'def') {      // Leave cw for defining in macro pass
+                    cwPrev = ''
+                    uniTeX += '\\' + cw
+                    if (firstMacroIndex == -1)
+                        firstMacroIndex = uniTeX.length - cw.length - 2
+                    continue
+                }
+                cwPrev = cw
+                let symbol
+                if (ummlConfig && ummlConfig.texMacros &&
+                    cw in ummlConfig.texMacros) {
+                    symbol = ummlConfig.texMacros[cw]
+                } else {
+                    symbol = resolveCW('\\' + cw, true)
+                }
+                if (symbol[0] != '"')       // Only include recognized control words
                     uniTeX += symbol
                 break
             case '\n':
@@ -772,11 +788,46 @@ function TeX2UnicodeMath(tex) {
                     j = i
                 i = j + 1
                 break
+            case 'ⓜ':
+                firstMacroIndex = i         // Need macro pass
+                break
             default:
                 uniTeX += tex[i++]
         }
     }
-    //console.log('uniTeX = ' + uniTeX)
+    if (firstMacroIndex >= 0) {
+        for (let i = firstMacroIndex; i < uniTeX.length;) {
+            let m = uniTeX.indexOf('ⓜ', i)
+            if (m == -1)
+                break
+            i = m
+            if (uniTeX[i + 1] == '\\') {
+                // Define macro
+                let [cw, body, k] = getMacro(uniTeX, i)
+                if (cw) {
+                    if (!ummlConfig.texMacros)
+                        ummlConfig.texMacros = {}
+                    ummlConfig.texMacros[cw] = body
+                    if (!testing)
+                         console.log('cw: ' + cw + ', body: ' + body)
+                    // Remove macro from uniTeX
+                    uniTeX = uniTeX.substring(0, m) + uniTeX.substring(k + 1)
+                    continue
+                }
+            } else if (uniTeX[i + 1] == '{') {
+                // Execute macro with arguments
+                i++
+                let k = uniTeX.indexOf('}', i)
+                if (k != -1) {
+                    console.log('macro: ' + uniTeX.substring(i, k + 1))
+                    i = k               // TBD. Skip for now
+                }
+                continue
+            }
+        }
+    }
+    if (!testing)
+        console.log('uniTeX = ' + uniTeX)
     // Pass 2: convert uniTeX to UnicodeMath
     uniTeX = TeX2UMath(uniTeX)
 

@@ -346,6 +346,27 @@ function hasEqLabel(node) {
         node.firstElementChild.getAttribute('intent') == ':equation-label'
 }
 
+function getMacro(s, i) {
+    if (s[i] == 'ⓜ' && s[i + 1] == '\\') {
+        // Define macro. No nesting for now...
+        let j = s.indexOf('{', i + 2)       // Find end of control word
+        if (j != -1) {
+            let cw = s.substring(i + 2, j)
+            let k = s.indexOf('}', j + 1)
+            if (k != -1) {                  // Find end of macro body
+                let body = s.substring(j + 1, k)
+                i = k
+                if (body.indexOf('#') != -1) {
+                    // Has arguments: needs execution
+                    body = 'ⓜ{' + body + '}'
+                }
+                return [cw, body, k]
+            }
+        }
+    }
+    return ['']
+}
+
 function checkCardinalityIntent(intent, miContent) {
     if (intent) {
         if (intent[0] == 'ⓒ')
@@ -1032,7 +1053,7 @@ const controlWords = {
     'dddot':            '⃛',	// 20DB
     'ddot':             '̈',	    // 0308
     'ddots':            '⋱',	    // 22F1
-    'def':              'Ⓜ',    // 24C2
+    'def':              'ⓜ',   // 24DC
     'defeq':            '≝',	    // 225D
     'deg':              '°',	// 00B0
     'degc':             '℃',	// 2103
@@ -1540,14 +1561,24 @@ const controlWords = {
 // in order to be properly terminated.
 // this control word replacement would fly in the face of the UnicodeMath
 // "literal" operator if there were single-character control words
-function resolveCW(unicodemath) {
+function resolveCW(unicodemath, noCustomCW) {
+    let cwPrev = ''
     let res = unicodemath.replace(/\\([A-Za-z0-9]+) ?/g, (match, cw) => {
-        // check custom control words first (i.e. custom ones shadow built-in ones)
-        if (typeof ummlConfig !== "undefined" &&
-            typeof ummlConfig.customControlWords !== "undefined" &&
+        if (cwPrev == 'def') {
+            // Leave cw for defining in mapToPrivate() (search for 'ⓜ')
+            cwPrev = ''
+            return match
+        }
+        cwPrev = cw
+        // check custom control words first, i.e. custom control words shadow
+        // built-in ones. noCustomCW is true for TeX input
+        if (!noCustomCW && ummlConfig && ummlConfig.customControlWords &&
             cw in ummlConfig.customControlWords) {
             return ummlConfig.customControlWords[cw];
         }
+
+        if (isFunctionName(cw))
+            return ' ' + cw                 // E.g., TeX \sin
 
         // if the control word begins with "u", try parsing the rest of it as
         // a Unicode code point
@@ -1709,7 +1740,7 @@ function isFunctionName(fn) {
     if (fn.length == 4 && fn[3] == 'h')     // Possibly hyperbolic
         fn = fn.substring(0, 3)             // Remove h suffix
 
-    return ["Im", "Pr", "Re", "arg", "cos", "cot", "csc", "ctg", "def", "deg",
+    return ["Im", "Pr", "Re", "arg", "cos", "cot", "csc", "ctg", "deg",
         "det", "dim", "erf", "exp", "gcd", "hom", "inf", "ker", "lim", "log",
         "ln", "max", "min", "mod", "sec", "sin", "sup", "tan", "tg"].includes(fn)
 }
@@ -2101,6 +2132,27 @@ function mapToPrivate(s) {
                         continue;
                     }
                 }
+            } else if (s[i] == 'ⓜ') {
+                if (s[i + 1] == '\\') {
+                    let [cw, body, k] = getMacro(s, i)
+                    if (cw) {
+                        if (!ummlConfig.customControlWords)
+                            ummlConfig.customControlWords = {}
+                        ummlConfig.customControlWords[cw] = body
+                        if (!testing)
+                            console.log('cw: ' + cw + ', body: ' + body)
+                        i = k
+                        continue
+                    }
+                } else if (s[i + 1] == '{') {
+                    // Execute macro with arguments
+                    let k = s.indexOf('}', i + 2)
+                    if (k != -1) {
+                        console.log('macro: ' + s.substring(i, k + 1))
+                        i = k               // TBD. Skip for now
+                    }
+                    continue
+                }
             }
             u += s[i]
             continue;
@@ -2234,11 +2286,10 @@ function matrixRows(n, m) {
     return {mrows: b};
 }
 
-// parse a string containing a UnicodeMath term to a UnicodeMath AST
 function parse(unicodemath) {
-    if (typeof ummlConfig !== "undefined" && typeof ummlConfig.resolveControlWords !== "undefined" && ummlConfig.resolveControlWords) {
+    // parse a string containing a UnicodeMath term to a UnicodeMath AST
+    if (ummlConfig && ummlConfig.resolveControlWords)
         unicodemath = resolveCW(unicodemath);
-    }
     unicodemath = mapToPrivate(unicodemath);
 
     let uast;
@@ -5205,7 +5256,7 @@ function unicodemathml(unicodemath, displaystyle) {
         return {mathml: unicodemath, details: {}};
     } else if (unicodemath[0] == '$' || unicodemath.startsWith('\\[') ||
         unicodemath.startsWith('\\(')) {
-        // Handle [La]TeX. Remove math-zone delimiters & define display style
+        // Handle [La]TeX. Remove math-zone delimiters and define display style
         let j = 2                           // For start delims '$$', '\[', '\)'
         let k = unicodemath.length          // For no end delims
         displaystyle = 1                    // display="block"
