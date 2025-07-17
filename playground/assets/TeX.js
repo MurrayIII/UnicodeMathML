@@ -578,7 +578,7 @@ function getArg(tex, i, checkNeedParens) {
     // Return argument at tex offset i: can be either ... of {...} or a single
     // character following optional whitespace
     let j
-    let val = ''
+    let arg = ''
     while (tex[i] == ' ')
         i++
 
@@ -586,17 +586,72 @@ function getArg(tex, i, checkNeedParens) {
         i++                                 // Bypass '{'
         j = findClosingBrace(tex, i)
         if (j > 0) {
-            val = TeX2UMath(tex.substring(i, j))
+            arg = TeX2UMath(tex.substring(i, j))
             i = j + 1                       // Set up to bypass '}'
         }
     } else {
-        while (tex[i] == ' ')
-            i++
-        val = getCh(tex, i)
-        i += val.length                     // Set up to bypass char
+        arg = getCh(tex, i)
+        i += arg.length                     // Set up to bypass char
     }
-    if (checkNeedParens && needParens(val))
-        val = '(' + val + ')'
+    if (checkNeedParens && needParens(arg))
+        arg = '(' + arg + ')'
+    return [arg, i]
+}
+
+function applyMacro(tex, i) {
+    // Apply macro starting at tex[i]
+    let k, j
+    let cArg = 0
+
+    for (k = i; k < tex.length && tex[k] != '}'; k++) {
+        if (tex[k] == '#') {
+            if (cArg < 9)
+                cArg++
+            k++                             // Bypass digit
+        }
+    }
+    if (tex[k] != '}')
+        return ''
+    let macro = tex.substring(2, k)
+    i = k + 1
+
+    // Get cArg args
+    let args = []
+
+    for (j = 0; j < cArg && i < tex.length; j++) {
+        let arg = ''
+        while (tex[i] == ' ')
+            i++                             // Bypass '{'
+        if (tex[i] == '{') {
+            k = findClosingBrace(tex, i + 1)
+            if (k == -1)
+                return ''
+            arg = tex.substring(i + 1, k)   // Don't include {}
+            i = k + 1
+        } else {
+            arg = getCh(tex, i)
+            i += arg.length                 // Set up to bypass char
+        }
+        args[j] = arg
+    }
+    for (j = args.length; j < cArg; j++)
+        args[j] = ''                        // Null strings for missing args
+
+    if (!testing)
+        console.log('args: ' + args)
+    // Substitute args for the corresponding #n's
+
+    let val = ''
+    for (k = 0; k < macro.length; k++) {
+        if (macro[k] == '#') {
+            k++                             // Advance to digit
+            val += args[macro[k] - 1]
+        } else {
+            val += macro[k]
+        }
+    }
+    if (!testing)
+        console.log('macro → ' + val)
     return [val, i]
 }
 
@@ -754,6 +809,7 @@ function TeX2UnicodeMath(tex) {
     let uniTeX = ''
     let firstMacroIndex = -1
     let cwPrev = ''
+    let macrosEnabled = ummlConfig && ummlConfig.texMacros
 
     for (let i = 0; i < tex.length;) {
         switch (tex[i]) {
@@ -766,13 +822,16 @@ function TeX2UnicodeMath(tex) {
                     uniTeX += '\\' + cw
                     if (firstMacroIndex == -1)
                         firstMacroIndex = uniTeX.length - cw.length - 2
+                    if (macrosEnabled)
+                        ummlConfig.texMacros[cw] = '' // Don't use prev def
                     continue
                 }
                 cwPrev = cw
                 let symbol
-                if (ummlConfig && ummlConfig.texMacros &&
-                    cw in ummlConfig.texMacros) {
+                if (macrosEnabled && cw in ummlConfig.texMacros) {
                     symbol = ummlConfig.texMacros[cw]
+                    if (symbol[0] == 'ⓜ')
+                        firstMacroIndex = i - 2// Need macro pass
                 } else {
                     symbol = resolveCW('\\' + cw, true)
                 }
@@ -787,9 +846,6 @@ function TeX2UnicodeMath(tex) {
                 if (j == -1)
                     j = i
                 i = j + 1
-                break
-            case 'ⓜ':
-                firstMacroIndex = i         // Need macro pass
                 break
             default:
                 uniTeX += tex[i++]
@@ -815,13 +871,10 @@ function TeX2UnicodeMath(tex) {
                     continue
                 }
             } else if (uniTeX[i + 1] == '{') {
-                // Execute macro with arguments
-                i++
-                let k = uniTeX.indexOf('}', i)
-                if (k != -1) {
-                    console.log('macro: ' + uniTeX.substring(i, k + 1))
-                    i = k               // TBD. Skip for now
-                }
+                // Apply macro with arguments
+                let [val, k] = applyMacro(uniTeX, i + 2)
+                uniTeX = uniTeX.substring(0, i) + val + uniTeX.substring(k)
+                i = k
                 continue
             }
         }

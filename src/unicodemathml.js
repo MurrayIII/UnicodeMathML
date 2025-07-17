@@ -1563,19 +1563,21 @@ const controlWords = {
 // "literal" operator if there were single-character control words
 function resolveCW(unicodemath, noCustomCW) {
     let cwPrev = ''
+    let customCWEnabled = !noCustomCW && ummlConfig && ummlConfig.customControlWords
+
     let res = unicodemath.replace(/\\([A-Za-z0-9]+) ?/g, (match, cw) => {
         if (cwPrev == 'def') {
             // Leave cw for defining in mapToPrivate() (search for 'ⓜ')
             cwPrev = ''
+            if (customCWEnabled)            // Don't use previous def
+                ummlConfig.customControlWords[cw] = ''
             return match
         }
         cwPrev = cw
         // check custom control words first, i.e. custom control words shadow
         // built-in ones. noCustomCW is true for TeX input
-        if (!noCustomCW && ummlConfig && ummlConfig.customControlWords &&
-            cw in ummlConfig.customControlWords) {
-            return ummlConfig.customControlWords[cw];
-        }
+        if (customCWEnabled && cw in ummlConfig.customControlWords)
+            return ummlConfig.customControlWords[cw]
 
         if (isFunctionName(cw))
             return ' ' + cw                 // E.g., TeX \sin
@@ -4517,7 +4519,7 @@ function pretty(mast) {
             }
             arg = pretty(value)
             i = 0
-            if (arg.startsWith('<mrow') && arg.endsWith('</mrow>')) {
+            if (arg && arg.startsWith('<mrow') && arg.endsWith('</mrow>')) {
                 if (arg.startsWith('<mrow selanchor="0"')) {
                     i = 20
                 } else if (arg[5] == '>') {
