@@ -656,10 +656,15 @@ function getCch(chars, i) {
 
 function getCh(str, i) {
     // Get BMP character or surrogate pair at offset i
-    let m = str.codePointAt(i);
-    if (isTrailSurrogate(m))
-        m = str.codePointAt(i - 1)
-    return String.fromCodePoint(m);
+    let ch = str[i]
+    if (ch < '\uD800' || ch > '\uDFFF')
+        return ch
+    if (ch < '\uDC00') {                    // Lead surrogate
+        let ch1 = str[i + 1]                // Check for trail surrogate
+        return ch1 && ch1 >= '\uDC00' && ch1 <= '\uDFFF' ? ch + ch1 : ch
+    }
+    let ch1 = str[i - 1]                    // Check for lead surrogate
+    return ch1 && ch1 >= '\uD800' && ch1 <= '\uBFFF' ? ch1 + ch : ch
 }
 
 function getChars(value) {
@@ -1399,7 +1404,7 @@ const controlWords = {
     'rddots':           '⋰',	    // 22F0
     'rect':             '▭',	// 25AD
     'reh':		        'ر',    // u0631
-    'relax':            '',     // TeX ignore
+    'relax':            'ⓝ',   // TeX ignore
     'repeat':           '¯',	// 00AF
     'repeating':        '¯',	// 00AF
     'rfloor':           '⌋',	    // 230B

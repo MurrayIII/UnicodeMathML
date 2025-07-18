@@ -599,7 +599,7 @@ function getArg(tex, i, checkNeedParens) {
 }
 
 function applyMacro(tex, i) {
-    // Apply macro starting at tex[i]
+    // Apply macro with body starting at tex[i]
     let k, j
     let cArg = 0
 
@@ -612,7 +612,7 @@ function applyMacro(tex, i) {
     }
     if (tex[k] != '}')
         return ''
-    let macro = tex.substring(2, k)
+    let macro = tex.substring(i, k)
     i = k + 1
 
     // Get cArg args
@@ -628,6 +628,8 @@ function applyMacro(tex, i) {
                 return ''
             arg = tex.substring(i + 1, k)   // Don't include {}
             i = k + 1
+        } else if (tex[i] == 'ⓝ') {        // \relax → ''
+            i++
         } else {
             arg = getCh(tex, i)
             i += arg.length                 // Set up to bypass char
@@ -807,21 +809,25 @@ function TeX2UMath(tex) {
 function TeX2UnicodeMath(tex) {
     // Pass 1: Convert control words in tex to Unicode symbols
     let uniTeX = ''
-    let firstMacroIndex = -1
+    let needMacroPass = false
     let cwPrev = ''
     let macrosEnabled = ummlConfig && ummlConfig.texMacros
 
     for (let i = 0; i < tex.length;) {
         switch (tex[i]) {
             case '\\':
+                i++
+                if (tex[i] == ']' || tex[i] == ')') {
+                    i = tex.length          // Set up to leave for(;;)
+                    break
+                }
                 let cw = ''
-                for (i++; i < tex.length && isAsciiAlphabetic(tex[i]); i++)
+                for (; i < tex.length && isAsciiAlphabetic(tex[i]); i++)
                     cw += tex[i]
                 if (cwPrev == 'def') {      // Leave cw for defining in macro pass
                     cwPrev = ''
                     uniTeX += '\\' + cw
-                    if (firstMacroIndex == -1)
-                        firstMacroIndex = uniTeX.length - cw.length - 2
+                    needMacroPass = true
                     if (macrosEnabled)
                         ummlConfig.texMacros[cw] = '' // Don't use prev def
                     continue
@@ -831,7 +837,10 @@ function TeX2UnicodeMath(tex) {
                 if (macrosEnabled && cw in ummlConfig.texMacros) {
                     symbol = ummlConfig.texMacros[cw]
                     if (symbol[0] == 'ⓜ')
-                        firstMacroIndex = i - 2// Need macro pass
+                        needMacroPass = true
+                } else if (tex[i] == ',') {
+                    symbol = '\u2009 '
+                    i++
                 } else {
                     symbol = resolveCW('\\' + cw, true)
                 }
@@ -851,8 +860,11 @@ function TeX2UnicodeMath(tex) {
                 uniTeX += tex[i++]
         }
     }
-    if (firstMacroIndex >= 0) {
-        for (let i = firstMacroIndex; i < uniTeX.length;) {
+    if (!testing)
+        console.log('pass 1 uniTeX: ' + uniTeX)
+
+    if (needMacroPass) {
+        for (let i = 0; i < uniTeX.length;) {
             let m = uniTeX.indexOf('ⓜ', i)
             if (m == -1)
                 break
