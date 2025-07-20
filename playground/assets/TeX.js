@@ -575,8 +575,8 @@ function findClosingBrace(text, i, chStop) {
 }
 
 function getArg(tex, i, checkNeedParens) {
-    // Return argument at tex offset i: can be either ... of {...} or a single
-    // character following optional whitespace
+    // Return argument at tex offset i: can be either the ... of {...}
+    // or a single character, either following optional whitespace
     let j
     let arg = ''
     while (tex[i] == ' ')
@@ -603,29 +603,34 @@ function applyMacro(tex, i) {
     let k, j
     let cArg = 0
 
-    for (k = i; k < tex.length && tex[k] != '}'; k++) {
+    // Count the arguments in macro
+    for (k = i; k < tex.length && tex[k] != '{'; k++) {
         if (tex[k] == '#') {
             if (cArg < 9)
                 cArg++
             k++                             // Bypass digit
         }
     }
-    if (tex[k] != '}')
+    if (tex[k] != '{')
         return ''
-    let macro = tex.substring(i, k)
-    i = k + 1
+    j = findClosingBrace(tex, k + 1)
+    if (j == -1)
+        return ''
 
-    // Get cArg args
+    let macro = tex.substring(k + 1, j)     // Macro body
+    i = j + 1
+
+    // Collect cArg args following macro
     let args = []
 
     for (j = 0; j < cArg && i < tex.length; j++) {
         let arg = ''
-        while (tex[i] == ' ')
-            i++                             // Bypass '{'
+        while (tex[i] == ' ')               // Skip leading spaces
+            i++
         if (tex[i] == '{') {
             k = findClosingBrace(tex, i + 1)
             if (k == -1)
-                return ''
+                return ['', 0]              // Error
             arg = tex.substring(i + 1, k)   // Don't include {}
             i = k + 1
         } else if (tex[i] == 'ⓝ') {        // \relax → ''
@@ -639,10 +644,10 @@ function applyMacro(tex, i) {
     for (j = args.length; j < cArg; j++)
         args[j] = ''                        // Null strings for missing args
 
-    if (!testing)
-        console.log('args: ' + args)
-    // Substitute args for the corresponding #n's
+    //if (!testing)
+    //    console.log('args: ' + args)
 
+    // Substitute args for the corresponding #n's
     let val = ''
     for (k = 0; k < macro.length; k++) {
         if (macro[k] == '#') {
@@ -652,8 +657,8 @@ function applyMacro(tex, i) {
             val += macro[k]
         }
     }
-    if (!testing)
-        console.log('macro → ' + val)
+    //if (!testing)
+    //    console.log('macro → ' + val)
     return [val, i]
 }
 
@@ -808,10 +813,10 @@ function TeX2UMath(tex) {
 }
 function TeX2UnicodeMath(tex) {
     // Pass 1: Convert control words in tex to Unicode symbols
-    let uniTeX = ''
-    let needMacroPass = false
     let cwPrev = ''
     let macrosEnabled = ummlConfig && ummlConfig.texMacros
+    let needMacroPass = false
+    let uniTeX = ''
 
     for (let i = 0; i < tex.length;) {
         switch (tex[i]) {
@@ -844,8 +849,10 @@ function TeX2UnicodeMath(tex) {
                 } else {
                     symbol = resolveCW('\\' + cw, true)
                 }
-                if (symbol[0] != '"')       // Only include recognized control words
+                if (symbol[0] && symbol[0] != '"')
                     uniTeX += symbol
+                else
+                    uniTeX += '\\' + cw
                 break
             case '\n':
                 i++                         // Skip new lines
@@ -860,10 +867,12 @@ function TeX2UnicodeMath(tex) {
                 uniTeX += tex[i++]
         }
     }
-    if (!testing)
-        console.log('pass 1 uniTeX: ' + uniTeX)
+
+    let macroDefined = false
 
     if (needMacroPass) {
+        if (!testing)
+            console.log('pass 1 uniTeX: ' + uniTeX)
         for (let i = 0; i < uniTeX.length;) {
             let m = uniTeX.indexOf('ⓜ', i)
             if (m == -1)
@@ -879,20 +888,43 @@ function TeX2UnicodeMath(tex) {
                     if (!testing)
                          console.log('cw: ' + cw + ', body: ' + body)
                     // Remove macro from uniTeX
-                    uniTeX = uniTeX.substring(0, m) + uniTeX.substring(k + 1)
+                    uniTeX = uniTeX.substring(0, m) + uniTeX.substring(k)
+                    macroDefined = true
                     continue
                 }
-            } else if (uniTeX[i + 1] == '{') {
+            } else {
                 // Apply macro with arguments
-                let [val, k] = applyMacro(uniTeX, i + 2)
+                let [val, k] = applyMacro(uniTeX, i + 1)
                 uniTeX = uniTeX.substring(0, i) + val + uniTeX.substring(k)
-                i = k
+                i += val.length
                 continue
             }
         }
     }
     if (!testing)
         console.log('uniTeX = ' + uniTeX)
+    if (macroDefined) {
+        // Handle any occurrences of newly defined macro(s)
+        for (i = 0; ;) {
+            i = uniTeX.indexOf('\\', i)
+            if (i == -1)
+                break
+            cw = ''                         // Collect control word
+            for (j = i + 1; j < uniTeX.length && isAsciiAlphabetic(uniTeX[j]); j++)
+                cw += uniTeX[j]
+            if (!cw) {                      // Bypass lone backslash
+                i++
+                continue
+            }
+            body = ummlConfig.texMacros[cw]
+            if (body[0] == 'ⓜ') {
+                uniTeX = uniTeX.substring(0, i) + body + uniTeX.substring(i + 1 + cw.length)
+                let [val, k] = applyMacro(uniTeX, i + 1)
+                uniTeX = uniTeX.substring(0, i) + val + uniTeX.substring(k)
+                i += val.length
+            }
+        }
+    }
     // Pass 2: convert uniTeX to UnicodeMath
     uniTeX = TeX2UMath(uniTeX)
 

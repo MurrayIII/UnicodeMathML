@@ -349,20 +349,26 @@ function hasEqLabel(node) {
 function getMacro(s, i) {
     if (s[i] == 'ⓜ' && s[i + 1] == '\\') {
         // Define macro. No nesting for now...
-        let j = s.indexOf('{', i + 2)       // Find end of control word
-        if (j != -1) {
-            let cw = s.substring(i + 2, j)
-            let k = s.indexOf('}', j + 1)
-            if (k != -1) {                  // Find end of macro body
-                let body = s.substring(j + 1, k)
-                i = k
-                if (body.indexOf('#') != -1) {
-                    // Has arguments: needs execution
-                    body = 'ⓜ{' + body + '}'
-                }
-                return [cw, body, k]
-            }
+        let cw = ''                         // Get control word
+        let j
+        for (j = i + 2; isAsciiAlphabetic(s[j]) && j < s.length; j++)
+            cw += s[j]
+
+        while (s[j] == ' ')
+            j++
+
+        // j is index of start of body
+        let k = s.indexOf('{', j)           // Bypass possible arg list
+        k = findClosingBrace(s, k + 1)      // Find end of body
+        if (k != -1) {
+            let body
+            if (s[j] == '#')                // Has arguments: needs execution
+                body = 'ⓜ' + s.substring(j, k + 1)
+            else
+                body = s.substring(j + 1, k)
+            return [cw, body, k + 1]
         }
+        console.log('cw: ' + cw + ', body: ' + body + ', k: ' + k)
     }
     return ['']
 }
@@ -2148,7 +2154,7 @@ function mapToPrivate(s) {
                         ummlConfig.customControlWords[cw] = body
                         if (!testing)
                             console.log('cw: ' + cw + ', body: ' + body)
-                        i = k
+                        i = k - 1
                         continue
                     }
                 } else if (s[i + 1] == '{') {
