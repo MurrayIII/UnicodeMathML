@@ -362,7 +362,7 @@ function getMacro(s, i) {
         k = findClosingBrace(s, k + 1)      // Find end of body
         if (k != -1) {
             let body
-            if (s[j] == '#')                // Has arguments: needs execution
+            if (s[j] == '#' || s[j] == '[') // Has args: needs execution
                 body = 'ⓜ' + s.substring(j, k + 1)
             else
                 body = s.substring(j + 1, k)
@@ -1284,6 +1284,7 @@ const controlWords = {
     'neq':              '≠',	// 2260
     'nequiv':           '≢',	// 2262
     'nexists':          '∄',	    // 2204
+    'newcommand':       'ⓜ',   // 24DC
     'ngeq':             '≱',	    // 2271
     'ngt':              '≯',	    // 226F
     'ni':               '∋',	// 220B

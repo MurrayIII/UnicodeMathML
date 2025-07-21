@@ -603,12 +603,19 @@ function applyMacro(tex, i) {
     let k, j
     let cArg = 0
 
-    // Count the arguments in macro
-    for (k = i; k < tex.length && tex[k] != '{'; k++) {
-        if (tex[k] == '#') {
-            if (cArg < 9)
-                cArg++
-            k++                             // Bypass digit
+    // Get count of macro arguments
+    if (tex[i] == '[') {                    // \newcommand
+        cArg = tex[i + 1]
+        if (tex[i + 2] != ']')
+            return ''
+        k = i + 3                           // Bypass count field
+    } else {                                // \def
+        for (k = i; k < tex.length && tex[k] != '{'; k++) {
+            if (tex[k] == '#') {
+                if (cArg < 9)
+                    cArg++
+                k++                         // Bypass digit
+            }
         }
     }
     if (tex[k] != '{')
@@ -620,7 +627,7 @@ function applyMacro(tex, i) {
     let macro = tex.substring(k + 1, j)     // Macro body
     i = j + 1
 
-    // Collect cArg args following macro
+    // Collect cArg args that follow macro
     let args = []
 
     for (j = 0; j < cArg && i < tex.length; j++) {
@@ -663,6 +670,7 @@ function applyMacro(tex, i) {
 }
 
 function TeX2UMath(tex) {
+    // Recursive function that converts Unicode LaTeX to UnicodeMath
     let j
     let uniTeX = ''
     let val
@@ -812,18 +820,18 @@ function TeX2UMath(tex) {
     return uniTeX
 }
 function TeX2UnicodeMath(tex) {
-    // Pass 1: Convert control words in tex to Unicode symbols
+    // Pass 1: Convert control words in tex to Unicode symbols or strings
     let cwPrev = ''
     let macrosEnabled = ummlConfig && ummlConfig.texMacros
     let needMacroPass = false
-    let uniTeX = ''
+    let uniTeX = ''                         // Collects Unicode LaTeX
 
     for (let i = 0; i < tex.length;) {
         switch (tex[i]) {
             case '\\':
                 i++
                 if (tex[i] == ']' || tex[i] == ')') {
-                    i = tex.length          // Set up to leave for(;;)
+                    i = tex.length          // Set up to exit for(;;)
                     break
                 }
                 let cw = ''
@@ -832,6 +840,8 @@ function TeX2UnicodeMath(tex) {
                 if (cwPrev == 'def') {      // Leave cw for defining in macro pass
                     cwPrev = ''
                     uniTeX += '\\' + cw
+                    if (tex[i] == '}')   // For \newcommand
+                        i++
                     needMacroPass = true
                     if (macrosEnabled)
                         ummlConfig.texMacros[cw] = '' // Don't use prev def
@@ -863,6 +873,12 @@ function TeX2UnicodeMath(tex) {
                     j = i
                 i = j + 1
                 break
+            case '{':
+                if (cwPrev == 'newcommand') {
+                    cwPrev = 'def'
+                    i++
+                    continue
+                }
             default:
                 uniTeX += tex[i++]
         }
