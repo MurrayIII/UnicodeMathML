@@ -917,11 +917,13 @@ function TeX2UnicodeMath(tex) {
                 continue
             }
             body = ummlConfig.texMacros[cw]
+            uniTeX = uniTeX.substring(0, i) + body + uniTeX.substring(i + 1 + cw.length)
             if (body[0] == 'ⓜ') {
-                uniTeX = uniTeX.substring(0, i) + body + uniTeX.substring(i + 1 + cw.length)
                 let [val, k] = applyMacro(uniTeX, i + 1)
                 uniTeX = uniTeX.substring(0, i) + val + uniTeX.substring(k)
                 i += val.length
+            } else {
+                i += body.length
             }
         }
     }

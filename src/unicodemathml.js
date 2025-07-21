@@ -358,7 +358,7 @@ function getMacro(s, i) {
             j++
 
         // j is index of start of body
-        let k = s.indexOf('{', j)           // Bypass possible arg list
+        let k = s.indexOf('{', j)           // Bypass arg list
         k = findClosingBrace(s, k + 1)      // Find end of body
         if (k != -1) {
             let body

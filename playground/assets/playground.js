@@ -4480,10 +4480,10 @@ if (!testing) {
     }
 
     // load local storage data from previous page load
-    //if (window.localStorage.getItem('unicodemath')) {
-    //    input.innerHTML = window.localStorage.getItem('unicodemath').replace(/LINEBREAK/g, '\n');
-    //    draw();
-    //}
+    if (window.localStorage.getItem('unicodemath')) {
+        input.innerHTML = window.localStorage.getItem('unicodemath').replace(/LINEBREAK/g, '\n');
+        draw();
+    }
     if (window.localStorage.getItem('active_tab')) {
         setActiveTab(window.localStorage.getItem('active_tab'));
     } else {
