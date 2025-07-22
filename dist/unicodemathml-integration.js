@@ -222,7 +222,7 @@ async function renderMarkedUnicodemath(node) {
     var results = {
     "0a+b": "<math display=\"inline\"><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></math>",
     "0lim▒_(n→∞) a_n": "<math display=\"inline\"><mrow intent=\":function\"><msub><mi>lim</mi><mrow><mi>𝑛</mi><mo stretchy=\"true\">→</mo><mi>∞</mi></mrow></msub><mo>⁡</mo><msub><mi>𝑎</mi><mi>𝑛</mi></msub></mrow></math>",
-    "1\"A collection of 711 UnicodeMath expressions from various sources\"": "<math display=\"block\"><mtext>A collection of 711 UnicodeMath expressions from various sources</mtext></math>",
+    "1\"A collection of 713 UnicodeMath expressions from various sources\"": "<math display=\"block\"><mtext>A collection of 713 UnicodeMath expressions from various sources</mtext></math>",
     "1\"So long\" ∧ \"thanks\"   ∀  \"🐟🐠🐡\".": "<math display=\"block\"><mtext>So long</mtext><mo>∧</mo><mtext>thanks</mtext><mspace width=\"veryverythinmathspace\" /><mspace width=\"mediummathspace\" /><mo>∀</mo><mspace width=\"mediummathspace\" /><mtext>🐟🐠🐡</mtext><mo>.</mo></math>",
     "1\"hex\"={■(0@1@2@3@4@5@6@7@8@9@A@B@C@D@E@F)┤ \" with \" |\"hex\"|=16": "<math display=\"block\"><mtext>hex</mtext><mo>=</mo><mrow intent=\":fenced\"><mo>{</mo><mtable intent=\":array(16,1)\"><mtr><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mn>1</mn></mtd></mtr><mtr><mtd><mn>2</mn></mtd></mtr><mtr><mtd><mn>3</mn></mtd></mtr><mtr><mtd><mn>4</mn></mtd></mtr><mtr><mtd><mn>5</mn></mtd></mtr><mtr><mtd><mn>6</mn></mtd></mtr><mtr><mtd><mn>7</mn></mtd></mtr><mtr><mtd><mn>8</mn></mtd></mtr><mtr><mtd><mn>9</mn></mtd></mtr><mtr><mtd><mi>𝐴</mi></mtd></mtr><mtr><mtd><mi>𝐵</mi></mtd></mtr><mtr><mtd><mi>𝐶</mi></mtd></mtr><mtr><mtd><mi>𝐷</mi></mtd></mtr><mtr><mtd><mi>𝐸</mi></mtd></mtr><mtr><mtd><mi>𝐹</mi></mtd></mtr></mtable><mo>​</mo></mrow><mtext> with </mtext><mrow intent=\"absolute-value($a)\"><mo>|</mo><mtext arg=\"a\">hex</mtext><mo>|</mo></mrow><mo>=</mo><mn>16</mn></math>",
     "1\"rate\" = \"distance\"/\"time\".":  "<math display=\"block\"><mtext>rate</mtext><mo>=</mo><mfrac><mtext>distance</mtext><mtext>time</mtext></mfrac><mo>.</mo></math>",
@@ -934,6 +934,8 @@ async function renderMarkedUnicodemath(node) {
     "1\\[\\def\\g{a+b}\\g{x}": "<math display=\"block\"><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi><mrow intent=\":fenced\"><mo>{</mo><mi>𝑥</mi><mo>}</mo></mrow></math>",
     "1\\[\\newcommand{\\h}[2]{#1+#2}\\h ab": "<math display=\"block\"><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></math>",
     "1\\[\\newcommand{\\h}{a+b}\\h+c": "<math display=\"block\"><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi><mo>+</mo><mi>𝑐</mi></math>",
+    "1\\newcommand{\\h}[2]{#1+#2}": "<math display=\"block\" />",
+    "1\\h ab": "<math display=\"block\"><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></math>",
     };
 
     // extract unicodemath expressions from node

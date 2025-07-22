@@ -598,77 +598,6 @@ function getArg(tex, i, checkNeedParens) {
     return [arg, i]
 }
 
-function applyMacro(tex, i) {
-    // Apply macro with body starting at tex[i]
-    let k, j
-    let cArg = 0
-
-    // Get count of macro arguments
-    if (tex[i] == '[') {                    // \newcommand
-        cArg = tex[i + 1]
-        if (tex[i + 2] != ']')
-            return ''
-        k = i + 3                           // Bypass count field
-    } else {                                // \def
-        for (k = i; k < tex.length && tex[k] != '{'; k++) {
-            if (tex[k] == '#') {
-                if (cArg < 9)
-                    cArg++
-                k++                         // Bypass digit
-            }
-        }
-    }
-    if (tex[k] != '{')
-        return ''
-    j = findClosingBrace(tex, k + 1)
-    if (j == -1)
-        return ''
-
-    let macro = tex.substring(k + 1, j)     // Macro body
-    i = j + 1
-
-    // Collect cArg args that follow macro
-    let args = []
-
-    for (j = 0; j < cArg && i < tex.length; j++) {
-        let arg = ''
-        while (tex[i] == ' ')               // Skip leading spaces
-            i++
-        if (tex[i] == '{') {
-            k = findClosingBrace(tex, i + 1)
-            if (k == -1)
-                return ['', 0]              // Error
-            arg = tex.substring(i + 1, k)   // Don't include {}
-            i = k + 1
-        } else if (tex[i] == 'ⓝ') {        // \relax → ''
-            i++
-        } else {
-            arg = getCh(tex, i)
-            i += arg.length                 // Set up to bypass char
-        }
-        args[j] = arg
-    }
-    for (j = args.length; j < cArg; j++)
-        args[j] = ''                        // Null strings for missing args
-
-    //if (!testing)
-    //    console.log('args: ' + args)
-
-    // Substitute args for the corresponding #n's
-    let val = ''
-    for (k = 0; k < macro.length; k++) {
-        if (macro[k] == '#') {
-            k++                             // Advance to digit
-            val += args[macro[k] - 1]
-        } else {
-            val += macro[k]
-        }
-    }
-    //if (!testing)
-    //    console.log('macro → ' + val)
-    return [val, i]
-}
-
 function TeX2UMath(tex) {
     // Recursive function that converts Unicode LaTeX to UnicodeMath
     let j
@@ -803,8 +732,6 @@ function TeX2UMath(tex) {
                         break
                     }
                 }
-                break
-            case 'Ⓜ':                      // Macro
                 break
             default:
                 if (isAccent(ch)) {

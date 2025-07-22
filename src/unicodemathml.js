@@ -373,6 +373,77 @@ function getMacro(s, i) {
     return ['']
 }
 
+function applyMacro(tex, i) {
+    // Apply macro with body starting at tex[i]
+    let k, j
+    let cArg = 0
+
+    // Get count of macro arguments
+    if (tex[i] == '[') {                    // \newcommand
+        cArg = tex[i + 1]
+        if (tex[i + 2] != ']')
+            return ''
+        k = i + 3                           // Bypass count field
+    } else {                                // \def
+        for (k = i; k < tex.length && tex[k] != '{'; k++) {
+            if (tex[k] == '#') {
+                if (cArg < 9)
+                    cArg++
+                k++                         // Bypass digit
+            }
+        }
+    }
+    if (tex[k] != '{')
+        return ''
+    j = findClosingBrace(tex, k + 1)
+    if (j == -1)
+        return ''
+
+    let macro = tex.substring(k + 1, j)     // Macro body
+    i = j + 1
+
+    // Collect cArg args that follow macro
+    let args = []
+
+    for (j = 0; j < cArg && i < tex.length; j++) {
+        let arg = ''
+        while (tex[i] == ' ')               // Skip leading spaces
+            i++
+        if (tex[i] == '{') {
+            k = findClosingBrace(tex, i + 1)
+            if (k == -1)
+                return ['', 0]              // Error
+            arg = tex.substring(i + 1, k)   // Don't include {}
+            i = k + 1
+        } else if (tex[i] == 'ⓝ') {        // \relax → ''
+            i++
+        } else {
+            arg = getCh(tex, i)
+            i += arg.length                 // Set up to bypass char
+        }
+        args[j] = arg
+    }
+    for (j = args.length; j < cArg; j++)
+        args[j] = ''                        // Null strings for missing args
+
+    //if (!testing)
+    //    console.log('args: ' + args)
+
+    // Substitute args for the corresponding #n's
+    let val = ''
+    for (k = 0; k < macro.length; k++) {
+        if (macro[k] == '#') {
+            k++                             // Advance to digit
+            val += args[macro[k] - 1]
+        } else {
+            val += macro[k]
+        }
+    }
+    //if (!testing)
+    //    console.log('macro → ' + val)
+    return [val, i]
+}
+
 function checkCardinalityIntent(intent, miContent) {
     if (intent) {
         if (intent[0] == 'ⓒ')
@@ -1578,7 +1649,7 @@ function resolveCW(unicodemath, noCustomCW) {
     let customCWEnabled = !noCustomCW && ummlConfig && ummlConfig.customControlWords
 
     let res = unicodemath.replace(/\\([A-Za-z0-9]+) ?/g, (match, cw) => {
-        if (cwPrev == 'def') {
+        if (cwPrev == 'def' || cwPrev == 'newcommand') {
             // Leave cw for defining in mapToPrivate() (search for 'ⓜ')
             cwPrev = ''
             if (customCWEnabled)            // Don't use previous def
@@ -1588,9 +1659,11 @@ function resolveCW(unicodemath, noCustomCW) {
         cwPrev = cw
         // check custom control words first, i.e. custom control words shadow
         // built-in ones. noCustomCW is true for TeX input
-        if (customCWEnabled && cw in ummlConfig.customControlWords)
-            return ummlConfig.customControlWords[cw]
-
+        if (customCWEnabled) {
+            let symbol = ummlConfig.customControlWords[cw]
+            if (symbol)
+                return symbol
+        }
         if (isFunctionName(cw))
             return ' ' + cw                 // E.g., TeX \sin
 
@@ -2147,24 +2220,32 @@ function mapToPrivate(s) {
                     }
                 }
             } else if (s[i] == 'ⓜ') {
+                if (s[i + 1] == '{') {       // For \newcommand
+                    let k = s.indexOf('}', i + 2)
+                    if (k == -1) {
+                        i++
+                        continue
+                    }
+                    // Remove \newcommand {} around control word
+                    s = s.substring(0, i + 1) + s.substring(i + 2, k) + s.substring(k + 1)
+                }
                 if (s[i + 1] == '\\') {
-                    let [cw, body, k] = getMacro(s, i)
+                    let cw, body
+                    [cw, body, i] = getMacro(s, i)
                     if (cw) {
                         if (!ummlConfig.customControlWords)
                             ummlConfig.customControlWords = {}
                         ummlConfig.customControlWords[cw] = body
                         if (!testing)
                             console.log('cw: ' + cw + ', body: ' + body)
-                        i = k - 1
+                            i--             // Cancel upcoming i++
                         continue
                     }
-                } else if (s[i + 1] == '{') {
-                    // Execute macro with arguments
-                    let k = s.indexOf('}', i + 2)
-                    if (k != -1) {
-                        console.log('macro: ' + s.substring(i, k + 1))
-                        i = k               // TBD. Skip for now
-                    }
+                } else {
+                    // Apply macro with arguments
+                    let val
+                    [val, i] = applyMacro(s, i + 1)
+                    u += val
                     continue
                 }
             }
