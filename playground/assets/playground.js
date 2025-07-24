@@ -1181,7 +1181,7 @@ function autocomplete() {
             let ch = val.substring(k + 1)
             let desc = ''
             if (ch.length == 1) {
-                if (inRange('①', ch, '⑳')) {
+                if (inRange('①', ch, '⒇')) {
                     let x = document.getElementById('Examples').childNodes[0]
                     let iEx = ch.codePointAt(0) - 0x2460
                     ch = x.childNodes[iEx].innerText
@@ -1360,7 +1360,7 @@ function addActive(x) {
     let text = x[currentFocus].innerText
     let ch = text[text.length - 1]
 
-    if (inRange('①', ch, '⑳')) {
+    if (inRange('①', ch, '⒇')) {
         let x = document.getElementById('Examples').childNodes[0]
         let iEx = ch.codePointAt(0) - 0x2460
         ch = x.childNodes[iEx].dataset.tooltip
@@ -2551,7 +2551,7 @@ function checkAutocomplete(node) {
         let val = e.currentTarget.innerText;
         let k = val.indexOf(' ')
         let symbol = val.substring(k + 1)
-        if (inRange('①', symbol, '⑳')) {
+        if (inRange('①', symbol, '⒇')) {
             let x = document.getElementById('Examples').childNodes[0]
             let iEx = symbol.codePointAt(0) - 0x2460
             symbol = x.childNodes[iEx].innerText
@@ -4693,7 +4693,7 @@ async function draw(undo) {
     if (isMathML(input.value)) {
         // Resize to display input MathML
         input.style.height = window.innerHeight > 1000 ? "500px" : "400px";
-        input.style.fontSize = "0.9rem";
+    //    input.style.fontSize = "0.9rem";
     } else if(!testing) {
         codepoints.innerHTML = getCodePoints()
     }

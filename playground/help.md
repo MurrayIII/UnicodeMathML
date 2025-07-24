@@ -6,7 +6,7 @@ This open-source applet implements UnicodeMath on the web.
 ## Entering equations
 You can enter equations in five ways:
 1. Enter UnicodeMath into the input (upper-left) window. The corresponding 2D built-up math displays in the output (upper-right) window and the [MathML](https://w3c.github.io/mathml/) for it displays below the output window. This option is quite reliable.
-2. Enter Nemeth braille or [La]TeX into the input window. If the input window starts with a Unicode braille character (U+2800..U+28FF), Nemeth ASCII braille input is enabled. If the input starts with $, $$, \\(, or \\[, LaTeX input is enabled. If it starts with <math, MathML input is enabled.
+2. Enter Nemeth braille, [La]TeX, or MathML into the input window. If the input window starts with a Unicode braille character (U+2800..U+28FF), Nemeth ASCII braille input is enabled. If the input starts with $, $$, \\(, or \\[, LaTeX input is enabled. If it starts with <math, MathML input is enabled.
 3. Enter UnicodeMath directly into the output window. This option builds up what you enter automatically, similarly to entry in the Microsoft Office apps. This option is a work in progress.
 4. Click on the Dictate button or type Alt+d, wait for the bell, and dictate the equation in English. You need to have Internet access, and you need to enunciate clearly. This option is also a work in progress but if you get it to work it’s the fastest entry method except for:
 5. Paste MathML into the input or output window.
@@ -20,6 +20,23 @@ Escape and Alt+p stop the demo. One of the equations has the UnicodeMath 1/2𝜋
 <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><mfrac><mn>1</mn><mrow><mn>2</mn><mi>𝜋</mi></mrow></mfrac><mrow intent=":integral(0,$h,$naryand)"><msubsup><mo>∫</mo><mn>0</mn><mrow arg="h"><mn>2</mn><mi>𝜋</mi></mrow></msubsup><mfrac arg="naryand"><mrow><mi intent="ⅆ">𝑑</mi><mi>𝜃</mi></mrow><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi><mrow intent=":function"><mi>sin</mi><mo>⁡</mo><mi>𝜃</mi></mrow></mrow></mfrac></mrow><mo>=</mo><mfrac><mn>1</mn><msqrt><mrow><msup><mi>𝑎</mi><mn>2</mn></msup><mo>−</mo><msup><mi>𝑏</mi><mn>2</mn></msup></mrow></msqrt></mfrac></mrow></math>
 
 To speak the equations, type the space bar to pause the demo, type Alt+s to speak the current equation, and then type the right arrow key to advance to the next equation. Alternatively, type Alt+Enter to enter the current Examples equation (and advance the Examples equation ID), and type Alt+s to speak the equation. In these ways, you can cycle through the equations speaking each one.
+
+You can click on an example in the Examples gallery to enter it and the following control words enter the UnicodeMath for selected examples (handy for quick entry on smaller screens):
+
+| Control Word | UnicodeMath    |
+| ------------ | --------------------------- |
+| \absvalue | \|𝑥\|=Ⓒ("if "𝑥>=&0,&𝑥@"if "𝑥<&0,&-𝑥) |
+| \Faraday | 𝛁⨯𝐄=−𝜕𝐁/𝜕𝑡 |
+| \Fourier| 𝑓̂(𝜉)=∫_-∞\^∞ 𝑓(𝑥)ⅇ^-2𝜋ⅈ𝑥𝜉 ⅆ𝑥 |
+| \integral | 1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²) |
+| \integralG | ∫_-∞\^∞ 𝑒^-𝑥² ⅆ𝑥=√𝜋 |
+| \limit | lim_(𝑛→∞) (1+1/𝑛)^𝑛=𝑒 |
+| \plasma | 𝑍(𝛾+𝑖𝜔−𝑖𝜈)=𝑖/√𝜋 ∫_−∞^∞ 𝑒\^(−(𝜔−𝜔′)^2 \/(Δ𝜔)^2)/(𝛾+𝑖(𝜔′−𝜈)) ⅆ𝜔′ |
+| \quadratic | 𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎 |
+| \SHO | 𝑥̈+2𝛾𝑥̇+𝜔²𝑥=0 |
+| \waveeq | 𝑖ℏ 𝜕𝜓(𝑥,𝑡)/𝜕𝑡 =[−ℏ²/2𝑚 𝜕²/𝜕𝑥²+𝑉(𝑥,𝑡)]𝜓(𝑥,𝑡) |
+
+
 ## Entering symbols
 You can enter a symbol by clicking on the symbol in one of the symbol galleries below the input window.
 But it’s faster to type the symbol’s LaTeX control word such as \alpha for α.
@@ -42,6 +59,28 @@ The math autocomplete menu helps you discover a LaTeX control word, and it speed
            width: 25em"/>
 
 The symbol dictionary includes some control-word aliases, such as \union for \cup (∪), since you might not guess \cup is the LaTeX control word for the union operator ∪.
+
+## Entering math alphanumerics
+Unicode has many math styled characters, such as the math fraktur H (ℌ). They can be entered by selecting the letter(s) in the input or output windows and clicking on the 𝔄𝔅ℭ button or other math-style button. 
+You can also enter a character in the Math styles text box and click on the desired math style button.
+
+Or you can enter the control words for the desired characters. The math-style control words consist of a math-style prefix followed by the unstyled character. For example, the prefix "mbf" (math boldface) defines the bold math style and the control word \mbfH gives a bold H, that is, 𝐇. The math-style prefixes are defined in the table
+
+| Math Style | Prefix | Math Style | Prefix |
+|-------|--------|---------|---------|
+| normal | mup | bold | mbf |
+| italic | mit | bold-italic | mbfit |
+| double-struck | Bbb | bold-fraktur | mbffrak |
+| script | mscr | bold-script | mbfscr |
+| fraktur | mfrak | sans-serif | msans |
+| bold-sans-serif | mbfsans | sans-serif-italic | mitsans |
+| sans-serif-bold-italic | mbfitsans | monospace | mtt |
+| chancery | mchan | roundhand | mrhnd |
+| isolated | misol | initial | minit |
+| tailed | mtail | looped | mloop |
+| stretched | mstrc |
+
+Here roundhand and chancery are two script styles, and isolated, initial, tailed, looped, and stretched are Arabic math styles. Currently the Arabic math styles require the XITS font and no fonts support the Chancery and Roundhand variants.
 
 ## Character code points
 Below the input window, there’s a Unicode codepoint window that displays the codepoints of the input symbols above the symbols.
@@ -169,9 +208,6 @@ Unicode has [almost all math symbols](https://www.unicode.org/reports/tr25/) in 
 The symbol galleries located below the input and output windows contain the most common math symbols.
 You can enter a symbol in a gallery by clicking on it or by typing its control word as described in the _Entering symbols_ section above.
 
-Math styled letters, such as the math fraktur H (ℌ), can be entered by selecting the letter(s) and clicking on the 𝔄𝔅ℭ button or other math-style button.
-Math styled letters can also be entered using control words like \mfrakH, in which the final letter determines the math styled letter.
-
 Most symbols have LaTeX control-word tooltips.
 For example, in the codepoint window, hovering over the integral symbol ∫ displays
 
@@ -202,6 +238,21 @@ Note: math autobuildup works with native MathML rendering; if MathJax is active,
 
 Currently arrow-key navigation needs work and there are other glitches.
 The implementation uses JavaScript to manipulate the MathML in the browser DOM.
+
+## TeX macros
+You can use [La]TeX macros with [La]TeX input. Simple examples are:
+
+| Macro | Use | Result
+|-------|------------|-----|
+| \def\f{x_1+...+x_n} | \f | 𝑥₁+⋯+𝑥_𝑛 |
+| \def\g#1#2\{#1+#2} | \g ab | 𝑎 + 𝑏 |
+
+The last equation in the Examples gallery is: \\[\def\g#1#2{#1f(#2)}\g\relax{x}=\int_{-\infty}\^\infty \g\hat\xi\,e\^{2 \pi i \xi x} \,d\xi\\], which displays as
+
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><mi>𝑓</mi><mrow intent=":fenced"><mo>(</mo><mi>𝑥</mi><mo>)</mo></mrow><mo>=</mo><mrow intent=":nary($l,∞,$naryand)"><msubsup><mo>∫</mo><mrow arg="l"><mo>−</mo><mi>∞</mi></mrow><mi>∞</mi></msubsup><mrow arg="naryand"><mover accent="true"><mi>𝑓</mi><mo>̂</mo></mover><mrow intent=":fenced"><mo>(</mo><mi>𝜉</mi><mo>)</mo></mrow><mspace width="thinmathspace"></mspace></mrow></mrow><msup><mi>𝑒</mi><mrow><mn>2</mn><mi>𝜋</mi><mi>𝑖</mi><mi>𝜉</mi><mi>𝑥</mi></mrow></msup><mspace width="thinmathspace"></mspace><mi>𝑑</mi><mi>𝜉</mi></math>
+
+LaTeX \newcommand syntax is also supported.
+
 ## UnicodeMath selection attributes
 __Technical stuff__:
 When you edit the output window, the resulting MathML includes attributes that represent the state of the user selection.

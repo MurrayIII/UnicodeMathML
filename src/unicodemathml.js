@@ -954,7 +954,9 @@ const controlWords = {
     // From tech-note Appendix B. Character Keywords and Properties updated
     // with the Microsoft math autocorrect list and other sources. For a more
     // complete list, see https://ctan.math.utah.edu/ctan/tex-archive/macros/unicodetex/latex/unicode-math/unimath-symbols.pdf
-                                // Unicode code point
+    // Circled and parenthesized symbols index the Examples in the Playground.
+    // E.g., \Faraday gives ⑭, which is the fourteenth Example: 𝛁⨯𝐄=−𝜕𝐁/𝜕𝑡.
+    //                             Unicode code point
     '2root':            '√',    // 221A
     '3root':            '∛',    // 221B
     '4root':            '∜',    // 221C
@@ -973,11 +975,14 @@ const controlWords = {
     'Deltaeq':          '≜',    	// 225C
     'Doteq':            '≑',    	// 2251
     'Downarrow':        '⇓',    	// 21D3
+    'Faraday':          '⑭',   // 2470
+    'Fourier':          '⑤',   // 2464
     'Gamma':            'Γ',	// 0393
     'Im':               'ℑ',    	// 2111
     'Implication':      '⇒',	// 21D2
     'Implies':          '⇒',	// 21D2
     'Intersection':     '⋂',    	// 22C2
+    'InverseFT':        '⒁',   // 2481
     'Join':             '⨝',   // 2A1D
     'Lambda':           'Λ',	// 039B
     'Langle':           '⟪',    	// 27EA
@@ -999,6 +1004,7 @@ const controlWords = {
     'Rightarrow':       '⇒',	// 21D2
     'Rrightarrow':      '⇛',	    // 21DB
     'Rsh':              '↱',    	// 21B1
+    'SHO':              '⑽',   // 247D simple harmonic oscillator
     'Sigma':            'Σ',	// 03A3
     'Subset':           '⋐',    	// 22D0
     'Supset':           '⋑',    	// 22D1
@@ -1016,6 +1022,7 @@ const controlWords = {
     'Xi':               'Ξ',	// 039E
     'above':            '┴',	// 2534
     'abs':              '⒜',	// 249C
+    'absvalue':         '⑨',   // 2468
     'acute':            '́',	    // 0301
     'adjoint':          '†',	// 2020
     'ain':		        'ع',    // u0639
@@ -1245,7 +1252,8 @@ const controlWords = {
     'infinity':         '∞',	// 221E
     'infty':            '∞',	// 221E
     'int':              '∫',	// 222B
-    'integral':         '⑦',    // 2466 Mode locking eq
+    'integral':         '⑦',   // 2466 Mode locking eq
+    'integralG':        '⑪',   // 246A Integral over Gaussian
     'intent':           'ⓘ',   // 24D8
     'intercal':         '⊺',	    // 22BA
     'intersection':     '∩',	// 2229
@@ -1443,6 +1451,7 @@ const controlWords = {
     'phi':              'ϕ',	// 03D5
     'pi':               'π',	// 03C0
     'pitchfork':        '⋔',	    // 22D4
+    'plasma':           '⑿',   // 247F
     'pm':               '±',	// 00B1
     'pmatrix':          '⒨',	// 24A8
     'powerset':         '℘',	    // 2118
@@ -1687,8 +1696,15 @@ function resolveCW(unicodemath, noCustomCW) {
             if (cw.startsWith('Bbb')) {
                 // Blackboard bold (double-struck)
                 mathStyle = 'Bbb';
-            }
-            else if (cw[0] == 'm') {
+            } else if (cw.startsWith('script')) {
+                // Script
+                mathStyle = 'mscr'
+                cw = mathStyle + cw[cw.length - 1]
+            } else if (cw.startsWith('bold')) {
+                // Script
+                mathStyle = 'mbf'
+                cw = mathStyle + cw.substring(4)
+            } else if (cw[0] == 'm') {
                 // Check for the other math styles
                 for (let i = 0; i < mathStyles.length; i++) {
                     if (cw.startsWith(mathStyles[i])) {
@@ -1722,7 +1738,7 @@ function resolveCW(unicodemath, noCustomCW) {
         // Check built-in control words
         let symbol = controlWords[cw]
         if (symbol != undefined) {
-            if (!inRange('①', symbol, '⑳'))
+            if (!inRange('①', symbol, '⒇'))
                 return symbol
 
             let x = document.getElementById('Examples')
@@ -3801,10 +3817,12 @@ function mtransform(dsty, puast) {
         case "operator":
             attrs = (value.content) ? getAttrs(value, '') : {};
             val = value.content ? value.content : value;
-
-            if ('←→↔⇐⇒⇔↩↪↼⇀↽⇁⊢⊣⟵⟶⟷⟸⟹⟺↦⊨'.split('').includes(val)) {
-                attrs.stretchy = true;
+            if (attrs.intent == ':text' && val == '/') {
+                attrs.lspace = '0pt'
+                attrs.rspace = '0pt'
             }
+            if ('←→↔⇐⇒⇔↩↪↼⇀↽⇁⊢⊣⟵⟶⟷⟸⟹⟺↦⊨'.split('').includes(val))
+                attrs.stretchy = true;
             return {mo: withAttrs(attrs, val)};
 
         case "negatedoperator":
