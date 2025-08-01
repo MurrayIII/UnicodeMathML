@@ -36,9 +36,13 @@
     <script>
         const buttons = [       // Define symbol galleries and examples
             {
-                label: 'Operators', symbols: {
+                label: 'Binary', symbols: {
                     '±': '\\pm, +-', '∓': '\\mp, -+', '×': '\\times', '⋅': '\\cdot',
                     '∩': '\\cap, \\intersection', '∪': '\\cup, \\union',
+                }
+            },
+            {
+                label: 'Relational', symbols: {
                     '≤': '\\le, <=', '≥': '\\ge, >=', '≠': '\\ne, /=', '≡': '\\equiv', '∝': '\\propto',
                     '≪': '\\ll, <<', '≫': '\\gg, >>', '≅': '\\cong, ~=', '∈': '\\in', '∋': '\\ni',
                     '∼': '\\sim', '≃': '\\simeq', '≈': '\\approx, ~~', '≍': '\\asymp',
@@ -230,7 +234,7 @@
                     '𝑥̈+2𝛾𝑥̇+𝜔²𝑥=0': ['simple harmonic oscillator', 'min-width: 25em'],
                     '|𝜓⟩=∫ 𝑑³𝑟|𝐫⟩⟨𝐫│𝜓⟩': ['quantum mechanical state vector', 'min-width: 25em'],
                     '𝑍(𝛾+𝑖𝜔−𝑖𝜈)=𝑖/√𝜋 ∫_−∞^∞ 𝑒^(−(𝜔−𝜔′)^2 \\/(Δ𝜔)^2)/(𝛾+𝑖(𝜔′−𝜈)) ⅆ𝜔′': ['plasma dispersion function', 'min-width: 25em'],
-                    '𝑊_𝛿₁𝜌₁𝜎₂^3𝛽=𝑈_𝛿₁𝜌₁^3𝛽+1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[(𝑈_𝛿₁𝜌₁^2𝛽-𝛼′₂𝑈_𝛿₁𝜌₁^1𝛽)/𝑈_𝛿₁𝜌₁^0𝛽]': '',
+                    '𝑊_𝛿₁𝜌₁𝜎₂^3𝛽=𝑈_𝛿₁𝜌₁^3𝛽+1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[(𝑈_𝛿₁𝜌₁^2𝛽-𝛼′₂𝑈_𝛿₁𝜌₂^1𝛽)/𝑈_𝛿₁𝜌₂^0𝛽]': '',
                     '\\[\\def\\g#1#2{#1f(#2)}\\g\\relax{x}=\\int_{-\\infty}^\\infty \\g\\hat\\xi\\,e^{2 \\pi i \\xi x} \\,d\\xi\\]': ['TeX inverse Fourier transform', 'min-width: 25em'],
                 }
             },
@@ -293,9 +297,10 @@
     </p>
     <br />
     <div class="categorytab">
-        <button id="operators" class="categorytablinks" onclick="openCategory(event, 'Operators')"><span data-explanation='Common binary and relational operators'>Operators</span></button>
-        <button id="large" class="categorytablinks" onclick="openCategory(event, 'Large')"><span data-explanation='𝑁-ary (large) operators'>LargeOps</span></button>
-        <button id="build" class="categorytablinks" onclick="openCategory(event, 'Build')"><span data-explanation='UnicodeMath build-up operators: hover over buttons for more information'>BuildOps</span></button>
+        <button id="binary" class="categorytablinks" onclick="openCategory(event, 'Binary')"><span data-explanation='Common binary operators'>Binary</span></button>
+        <button id="relational" class="categorytablinks" onclick="openCategory(event, 'Relational')"><span data-explanation='Common relational operators'>Relational</span></button>
+        <button id="large" class="categorytablinks" onclick="openCategory(event, 'Large')"><span data-explanation='𝑁-ary (large) operators'>Large</span></button>
+        <button id="build" class="categorytablinks" onclick="openCategory(event, 'Build')"><span data-explanation='UnicodeMath build-up operators: hover over buttons for more information'>Build</span></button>
         <button id="invisibles" class="categorytablinks" onclick="openCategory(event, 'Invisibles')"><span data-explanation='Function-apply, invisible times, spaces: hover over each button for more information'>Invisibles</span></button>
         <button id="delimiters" class="categorytablinks" onclick="openCategory(event, 'Delimiters')"><span data-explanation='Vertical and horizontal brackets'>Delimiters</span></button>
         <button id="arrows" class="categorytablinks" onclick="openCategory(event, 'Arrows')">Arrows</button>

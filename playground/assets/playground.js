@@ -3083,6 +3083,9 @@ function moveRight(sel, node, offset, e) {
         node = nodeP
         if (node.nextElementSibling) {
             node = node.nextElementSibling
+            let speech = getArgName(node, '⁋▒')
+            if (speech)
+                speak(speech)
             if (node.nodeName == 'mrow')
                 node = node.firstElementChild
             if (node.nodeName == 'mtd')
@@ -3280,6 +3283,9 @@ function moveRight(sel, node, offset, e) {
             name = checkSimpleSup(node)
             if (!name)
                 name = names[node.nodeName]
+        }
+        if (!name) {
+            name = getArgName(node, '⁋▒')
         }
         if (name)
             speak(name)
@@ -3849,9 +3855,10 @@ document.addEventListener('keydown', function (e) {
                 'output': ['config', 'input'],
                 'config': ['history', 'output'],
                 'history': ['mathstyles', 'config'],
-                'mathstyles': ['operators', 'history'],
-                'operators': ['large', 'mathstyles'],
-                'large': ['build', 'operators'],
+                'mathstyles': ['binary', 'history'],
+                'binary': ['relational', 'mathstyles'],
+                'relational': ['large', 'binary'],
+                'large': ['build', 'relational'],
                 'build': ['invisibles', 'large'],
                 'invisibles': ['delimiters', 'build'],
                 'delimiters': ['arrows', 'invisibles'],
@@ -3882,7 +3889,7 @@ document.addEventListener('keydown', function (e) {
             if (id == 'output')
                 node = node.firstElementChild
 
-            if (id == 'large' || id == 'build')
+            if (['binary', 'build', 'large', 'relational'].includes(id))
                 id += ' operators'
             else if (id == 'misc')
                 id = 'miscellaneous operators'

@@ -38,11 +38,10 @@ const unicodeFractions = {
 const mappedSingle = { "-": "\u2212", "\'": "\u2032" }
 
 const mappedPair = {
-    "+-": "\u00B1", "<=": "\u2264", ">=": "\u2265", "~=": "\u2245",
-    "~~": "\u2248", "::": "\u2237", ":=": "\u2254", "<<": "\u226A",
-    ">>": "\u226B", "−>": "\u2192", "−+": "\u2213", "!!": "\u203C",
-    "...": "…", '≯=': '≱', '≮=': '≰', '⊀=': '⪱', '⊁=': '⪲',
-    '⊄=': '⊈', '⊅=': '⊉', '+−': '±', '−+': '∓',
+    "+-": "±", "<=": "≤", ">=": "≥", "~=": "≅", "~~": "≈", "::": "∷",
+    ":=": "≔", "<<": "≪", ">>": "≫", "−>": "→", "−+": "∓", "!!": "‼",
+    "...": "…", '≯=': '≱', '≮=': '≰', '⊀=': '⪱', '⊁=': '⪲', '⊄=': '⊈',
+    '⊅=': '⊉', '+−': '±', '−+': '∓',
 }
 
 //                    0    1    2    3    4    5    6    7    8    9
@@ -3628,7 +3627,12 @@ function preprocess(dsty, uast, index, arr) {
                 intent = ':text'
             }
             if (value == '<')
-                value = '&lt;';
+                value = '&lt;'
+            else if (value == '…' && index > 0) {
+                let o = arr[index - 1].operator
+                if (o && o.content == '+')
+                    value = '⋯'
+            }
             return {[key]: {intent: intent, arg: arg, content: value}};
 
         case "chars":
@@ -4664,8 +4668,22 @@ function pretty(mast) {
         case "none":
             return tag(key, attributes, pretty(value));
         case "mi":
-            if (value[0] == '\uD83B')       // Arabic math alphabetic
+            if (value[0] == '\uD83B') {
+                // Arabic math alphabetic: XITS Math has the glyphs
                 attributes.style = 'font-family:XITS Math'
+            } else {
+                let cp = value.codePointAt(0)
+                if (cp >= 0x1D49C && cp <= 0x1D503 && value[2] ||
+                    letterLikeSymbols[value[0]] && letterLikeSymbols[value[0]][0] == 3) {
+                    // Script
+                    let vs = value[value.length - 1]
+                    if (vs == '\uFE00' || vs == '\uFE01') {
+                        // Roundhand or chancery script: use STIX Two Math ss01 or ss00
+                        attributes.style = "font-family:STIX Two Math; font-feature-settings: " +
+                            (vs == '\uFE01' ? "'ss01'" : "'ss00'") + " 1"
+                    }
+                }
+            }
         case "mn":
         case "mo":
         case "mtext":
@@ -5363,6 +5381,11 @@ function getUnicodeMath(doc, keepSelInfo, noAddParens) {
 function unicodemathml(unicodemath, displaystyle) {
     debugGroup(unicodemath);
     selanchor = selfocus = null
+    let k = unicodemath.length
+    if (unicodemath[0] == ' ' || unicodemath[k - 1] == ' ') {
+        unicodemath = unicodemath.trim()
+        k = unicodemath.length
+    }
     if (isMathML(unicodemath)) {
         if (unicodemath.startsWith('<mml:math') || unicodemath.startsWith('<m:math'))
             unicodemath = removeMmlPrefixes(unicodemath);
@@ -5371,7 +5394,6 @@ function unicodemathml(unicodemath, displaystyle) {
         unicodemath.startsWith('\\(')) {
         // Handle [La]TeX. Remove math-zone delimiters and define display style
         let j = 2                           // For start delims '$$', '\[', '\)'
-        let k = unicodemath.length          // For no end delims
         displaystyle = 1                    // display="block"
 
         if (unicodemath[0] == '$') {

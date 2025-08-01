@@ -659,6 +659,8 @@ function TeX2UMath(tex) {
             case '^':
             case '_':
                 [val, i] = getArg(tex, i, true)
+                if (tex[i] == '^' && val[0] != '(' && val.indexOf(' ') != -1)
+                    val = '(' + val + ')'
                 uniTeX += val
                 if (i < tex.length && !'+-=/^_ )'.includes(tex[i]))
                     uniTeX += ' '
