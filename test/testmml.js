@@ -859,9 +859,9 @@ const rightArrowExpect = ['Ⓐ()𝑎/𝑏+𝑐/𝑑=0', 'Ⓐ(1)𝑎/𝑏+𝑐/�
     '𝑎/Ⓐ(1)𝑏+𝑐/𝑑=0', '𝑎/𝑏 Ⓐ()+𝑐/𝑑=0', '𝑎/𝑏 Ⓐ(1)+𝑐/𝑑=0', '𝑎/𝑏+Ⓐ()𝑐/𝑑=0',
     '𝑎/𝑏+Ⓐ(1)𝑐/𝑑=0', '𝑎/𝑏+𝑐/Ⓐ()𝑑=0', '𝑎/𝑏+𝑐/Ⓐ(1)𝑑=0', '𝑎/𝑏+𝑐/𝑑 Ⓐ()=0',
     '𝑎/𝑏+𝑐/𝑑=Ⓐ()0', '𝑎/𝑏+𝑐/𝑑=Ⓐ(1)0',]
-const speechExpect = ['eigh', 'end of numerator', 'start of denominator b', 'end of denominator',
-    '+', 'fraction', 'c', 'end of numerator', 'start of denominator d', 'end of denominator',
-    '=', '0', 'end of math',]
+const speechExpect = ['start of numerator eigh', 'end of numerator', 'start of denominator b',
+    'end of denominator', '+', 'fraction', 'start of numerator c', 'end of numerator',
+    'start of denominator d', 'end of denominator', '=', '0', 'end of math',]
 const rightArrowQExpect = ['Ⓐ(1)𝑞𝑎/𝑏+𝑐/𝑑=0', '𝑎Ⓐ(1)𝑞/𝑏+𝑐/𝑑=0', '𝑎/Ⓐ(1)𝑞𝑏+𝑐/𝑑=0',
     '𝑎/𝑏Ⓐ(1)𝑞+𝑐/𝑑=0', '𝑎/𝑏 𝑞Ⓐ()+𝑐/𝑑=0', '𝑎/𝑏+𝑞Ⓐ() 𝑐/𝑑=0', '𝑎/𝑏+Ⓐ(1)𝑞𝑐/𝑑=0',
     '𝑎/𝑏+𝑐Ⓐ(1)𝑞/𝑑=0', '𝑎/𝑏+𝑐/Ⓐ(1)𝑞𝑑=0', '𝑎/𝑏+𝑐/𝑑Ⓐ(1)𝑞=0', '𝑎/𝑏+𝑐/𝑑 𝑞Ⓐ()=0',
@@ -920,19 +920,21 @@ const rats = [    // Right Arrow Tests
             '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−Ⓐ(2) 𝑏²)',   // 46
             '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/Ⓐ(3)√(𝑎²−𝑏²)',    // 46
             '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=Ⓐ(2) 1/√(𝑎²−𝑏²)',], // 47
-        speechExpect: ['1', 'end of numerator', 'start of denominator 2', 'pi',
-            'end of denominator', 'integral with limits', 'integral',
-            'end of base', 'start of lower limit 0', 'end of lower limit',
+        speechExpect: ['start of numerator 1', 'end of numerator',
+            'start of denominator 2', 'pi', 'end of denominator',
+            'integral with limits', 'integral', 'end of base',
+            'start of lower limit 0', 'end of lower limit',
             'start of upper limit 2', 'pi', 'end of upper limit',
-            'int- agrand fraction', 'differential d',
+            'int- agrand fraction', 'start of numerator differential d',
             'theta', 'end of numerator', 'start of denominator eigh', '+',
             'b', 'sine', 's', 'i', 'n', 'function apply', 'theta', 'end of function',
-            'end of denominator', 'end of int- agrand', '=', 'fraction', '1',
-            'end of numerator', 'start of denominator square root', 'eigh squared',
-            'eigh', 'end of base', 'start of superscript 2', 'end of superscript',
-            'minus', 'b squared', 'b', 'end of base', 'start of superscript 2',
-            'end of superscript', 'end of square root', 'end of denominator',
-            'end of math']
+            'end of denominator', 'end of int- agrand', '=', 'fraction',
+            'start of numerator 1', 'end of numerator',
+            'start of denominator square root', 'start of rad- ecand eigh squared',
+            'start of base eigh', 'end of base', 'start of superscript 2',
+            'end of superscript', 'minus', 'b squared', 'start of base b',
+            'end of base', 'start of superscript 2', 'end of superscript',
+            'end of rad- ecand', 'end of denominator', 'end of math']
     },
     {                                       // case 1
         uMath: '𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎',
@@ -945,10 +947,10 @@ const rats = [    // Right Arrow Tests
             '𝑥=(−𝑏±√(𝑏²−Ⓐ()4𝑎𝑐))/2𝑎', '𝑥=(−𝑏±√(𝑏²−4Ⓐ()𝑎𝑐))/2𝑎', '𝑥=(−𝑏±√(𝑏²−4𝑎Ⓐ()𝑐))/2𝑎',
             '𝑥=(−𝑏±√(𝑏²−4𝑎Ⓐ(1)𝑐))/2𝑎', '𝑥=(−𝑏±Ⓐ(5)√(𝑏²−4𝑎𝑐))/2𝑎', '𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/Ⓐ()2𝑎',
             '𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2Ⓐ()𝑎', '𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2Ⓐ(1)𝑎', '𝑥=Ⓐ(2) (−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎',],
-        speechExpect: ['=', 'fraction', 'minus', 'b', 'plus or minus', 'square root',
-            'b squared', 'b', 'end of base', 'start of superscript 2', 'end of superscript',
-            'minus', '4', 'eigh', 'c', 'end of square root', 'end of numerator', '2', 'eigh',
-            'end of denominator', 'end of math',]
+        speechExpect: ['=', 'fraction', 'start of numerator minus', 'b', 'plus or minus',
+            'square root', 'start of rad- ecand b squared', 'start of base b', 'end of base', 'start of superscript 2',
+            'end of superscript', 'minus', '4', 'eigh', 'c', 'end of rad- ecand',
+            'end of numerator', 'start of denominator 2', 'eigh', 'end of denominator', 'end of math',]
     },
     {                                       // case 2
         uMath: '𝑍(𝜔)≠𝑍(𝜔+1)',
@@ -991,10 +993,11 @@ const rats = [    // Right Arrow Tests
             '∫_−∞^∞ 𝑒^−𝑥² ⅆ𝑥=√Ⓐ(1)𝜋', '∫_−∞^∞ 𝑒^−𝑥² ⅆ𝑥=Ⓐ(1)√𝜋',],
         speechExpect: ['integral', 'end of base', 'start of lower limit minus',
             'infinity', 'end of lower limit', 'start of upper limit infinity',
-            'end of upper limit', 'int- agrand superscript', 'e', 'end of base',
-            'start of superscript minus', 'x squared', 'x', 'end of base', 'start of superscript 2', 'end of superscript',
+            'end of upper limit', 'int- agrand superscript', 'start of base e',
+            'end of base', 'start of superscript minus', 'x squared', 'start of base x',
+            'end of base', 'start of superscript 2', 'end of superscript',
             'end of superscript', 'differential d', 'x', 'end of int- agrand',
-            '=', 'square root , pi', 'pi', 'end of square root', 'end of math',]
+            '=', 'square root , pi' , 'start of rad- ecand pi', 'end of rad- ecand', 'end of math',]
     },
     {                                       // case 5
         uMath: '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽-2𝑎′]',
@@ -1031,22 +1034,22 @@ const rats = [    // Right Arrow Tests
             '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎Ⓐ()′]', '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎Ⓐ(1)′]',
             '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎′Ⓐ()]', '1/8𝜋² ∫_𝛼₁^𝛼₂ Ⓐ(3) ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎′]',
             '1/8𝜋² Ⓐ(2) ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽−2𝑎′]',],
-        speechExpect: ['1', 'end of numerator', 'start of denominator 8',
-            'pi squared', 'pi', 'end of base', 'start of superscript 2',
+        speechExpect: ['start of numerator 1', 'end of numerator', 'start of denominator 8',
+            'pi squared', 'start of base pi', 'end of base', 'start of superscript 2',
             'end of superscript', 'end of denominator',
             'integral with limits', 'integral', 'end of base', 'alpha sub 1',
-            'alpha', 'end of base', 'start of subscript 1', 'end of subscript',
-            'end of lower limit', 'alpha sub 2', 'alpha', 'end of base',
-            'start of subscript 2', 'end of subscript',
-            'end of upper limit', '', 'differential d', 'sub soup', 'alpha',
+            'start of base alpha', 'end of base', 'start of subscript 1', 'end of subscript',
+            'end of lower limit', 'start of upper limit alpha sub 2', 'start of base alpha',
+            'end of base', 'start of subscript 2', 'end of subscript',
+            'end of upper limit', '', 'differential d', 'sub soup', 'start of base alpha',
             'end of base', 'start of subscript 2', 'end of subscript',
             'start of superscript prime', 'end of superscript',
-            'fenced', 'open bracket', 'sub soup', 'cap U', 'end of base',
-            'delta sub 1', 'delta', 'end of base', 'start of subscript 1',
-            'end of subscript', 'rho sub 1', 'rho', 'end of base',
+            'fenced', 'open bracket', 'sub soup', 'start of base cap U', 'end of base',
+            'delta sub 1', 'start of base delta', 'end of base', 'start of subscript 1',
+            'end of subscript', 'rho sub 1', 'start of base rho', 'end of base',
             'start of subscript 1', 'end of subscript', 'end of subscript',
-            '2', 'beta', 'end of superscript', 'minus', '2', 'eigh prime',
-            'eigh', 'end of base', 'start of superscript prime',
+            'start of superscript 2', 'beta', 'end of superscript', 'minus', '2', 'eigh prime',
+            'start of base eigh', 'end of base', 'start of superscript prime',
             'end of superscript', 'close bracket', 'end of int- agrand',
             'end of math',]
     },
@@ -1059,11 +1062,12 @@ const rats = [    // Right Arrow Tests
             '𝑛⒞𝑘 𝑎^Ⓐ(1)2 𝑥²/2!', '𝑛⒞𝑘 𝑎²Ⓐ() 𝑥²/2!', '𝑛⒞𝑘 𝑎² Ⓐ() 𝑥²/2!', '𝑛⒞𝑘 𝑎² Ⓐ()𝑥²/2!',
             '𝑛⒞𝑘 𝑎² Ⓐ(1)𝑥²/2!', '𝑛⒞𝑘 𝑎² 𝑥^Ⓐ()2/2!', '𝑛⒞𝑘 𝑎² 𝑥^Ⓐ(1)2/2!', '𝑛⒞𝑘 𝑎² Ⓐ(2) 𝑥²/2!',
             '𝑛⒞𝑘 𝑎² 𝑥²/Ⓐ()2!', '𝑛⒞𝑘 𝑎² 𝑥²/2Ⓐ()!', '𝑛⒞𝑘 𝑎² 𝑥²/2Ⓐ(1)!', '𝑛⒞𝑘 𝑎²Ⓐ(2) 𝑥²/2!',],
-        speechExpect: ['open', 'fraction', 'n', 'end of numerator', 'start of denominator k',
-            'end of denominator', 'close', 'eigh squared', 'eigh', 'end of base', 'start of superscript 2',
-            'end of superscript', 'fraction', 'x squared', 'x', 'end of base', 'start of superscript 2',
-            'end of superscript', 'end of numerator', '2', 'factorial', 'end of denominator',
-            'end of math',]
+        speechExpect: ['open', 'fraction', 'start of numerator n', 'end of numerator',
+            'start of denominator k', 'end of denominator', 'close', 'eigh squared',
+            'start of base eigh', 'end of base', 'start of superscript 2',
+            'end of superscript', 'fraction', 'start of numerator x squared', 'start of base x',
+            'end of base', 'start of superscript 2', 'end of superscript', 'end of numerator',
+            'start of denominator 2', 'factorial', 'end of denominator', 'end of math',]
     },
     {                                       // case 7
         uMath: 'ⅅ_𝑥 𝑓(𝑥)=1',
@@ -1072,8 +1076,9 @@ const rats = [    // Right Arrow Tests
             'ⅅ_Ⓐ(1)𝑥 𝑓(𝑥)=1', 'ⅅ_𝑥 Ⓐ()𝑓(𝑥)=1', 'ⅅ_𝑥 𝑓Ⓐ() (𝑥)=1', 'ⅅ_𝑥 𝑓Ⓐ()(𝑥)=1',
             'ⅅ_𝑥 𝑓(Ⓐ()𝑥)=1', 'ⅅ_𝑥 𝑓(𝑥Ⓐ())=1', 'ⅅ_𝑥 𝑓(𝑥)Ⓐ()=1', 'ⅅ_𝑥 𝑓(𝑥)=Ⓐ()1',
             'ⅅ_𝑥 𝑓(𝑥)=Ⓐ(1)1',],
-        speechExpect: ['cap differential d', 'end of base', 'start of subscript x', 'end of subscript',
-            'f', 'fenced', 'open', 'x', 'close', '=', '1', 'end of math']
+        speechExpect: ['start of base cap differential d', 'end of base',
+            'start of subscript x', 'end of subscript', 'f', 'fenced',
+            'open', 'x', 'close', '=', '1', 'end of math']
     },
     {                                       // case 8
         uMath: '|𝜓⟩=∫▒𝑑^3 𝑟|𝐫⟩⟨𝐫│𝜓⟩',
@@ -1087,9 +1092,10 @@ const rats = [    // Right Arrow Tests
             '|𝜓⟩=∫𝑑³𝑟|𝐫⟩⟨𝐫Ⓐ()│𝜓⟩', '|𝜓⟩=∫𝑑³𝑟|𝐫⟩⟨𝐫│Ⓐ()𝜓⟩', '|𝜓⟩=∫𝑑³𝑟|𝐫⟩⟨𝐫│𝜓Ⓐ()⟩',
             '|𝜓⟩=∫𝑑³𝑟|𝐫⟩Ⓐ(3) ⟨𝐫│𝜓⟩',],
         speechExpect: ['vertical bar', 'psi', 'close angle bracket', '=',
-            'integral', 'd cubed', 'd', 'end of base', 'start of superscript 3', 'end of superscript',
-            'r', 'fenced', 'vertical bar', 'bold r', 'close angle bracket',
-            'fenced', 'open angle bracket', 'bold r', 'vertical bar', 'psi',
+            'integral', 'd cubed', 'start of base d', 'end of base',
+            'start of superscript 3', 'end of superscript', 'r', 'fenced',
+            'vertical bar', 'bold r', 'close angle bracket', 'fenced',
+            'open angle bracket', 'bold r', 'vertical bar', 'psi',
             'close angle bracket', 'end of math',
         ]
     }

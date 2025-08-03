@@ -1104,7 +1104,10 @@ const controlWords = {
     'circle':           '◯',	// 25EF
     'circlearrowleft':  '↺',    	// 21BA
     'circlearrowright': '↻',	    // 21BB
-    'circledot':        '⊙',	    // 2299
+    'circledast':       '⊛',    // 229B
+    'circledcirc':      '⊚',    // 229A
+    'circleddash':      '⊝',    // 229D
+    'circledequal':     '⊜',    // 229C
     'close':            '┤',	// 2524
     'clubsuit':         '♣',	// 2663
     'coint':            '∲',	    // 2232
@@ -1234,6 +1237,7 @@ const controlWords = {
     'heh':		        'ه',    // u0647
     'hookleftarrow':    '↩',    	// 21A9
     'hookrightarrow':   '↪',    	// 21AA
+    'hourglass':        '⏳',   // 23F3
     'hphantom':         '⬄',	// 2B04
     'hsmash':           '⬌',	// 2B0C
     'hvec':             '⃑',	// 20D1
@@ -1331,6 +1335,7 @@ const controlWords = {
     'lvert':            '|',
     'mapsto':           '↦',	    // 21A6
     'mapstoleft':       '↤',	    // 21A4
+    'mathparagraph':    '¶',    // 00B6
     'matrix':           '■',	// 25A0
     'mean':             'μ',	// 03BC
     'measangle':        '∡',	    // 2221
@@ -1493,6 +1498,7 @@ const controlWords = {
     'relax':            'ⓝ',   // TeX ignore
     'repeat':           '¯',	// 00AF
     'repeating':        '¯',	// 00AF
+    'revpilcrow':       '⁋',    // 204B
     'rfloor':           '⌋',	    // 230B
     'rho':              'ρ',	// 03C1
     'rhvec':            '⃑',	// 20D1

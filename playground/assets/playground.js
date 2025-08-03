@@ -2729,10 +2729,13 @@ function checkAutoBuildUp(node, offset, nodeP, key, shift) {
     return null
 }
 function getArgName(node, prefix) {
-    let name = node.parentElement.nodeName
+    let nodeP = node.parentElement
+    let name = nodeP.nodeName
+
     while (name == 'mrow') {
-        node = node.parentElement
-        name = node.parentElement.nodeName
+        node = nodeP
+        nodeP = node.parentElement
+        name = nodeP.nodeName
     }
     if (name[0] == 'M')
         console.log('Upper-case element name: ' + name)
@@ -2750,6 +2753,9 @@ function getArgName(node, prefix) {
         case 'mfrac':
             name = node.nextElementSibling ? 'numerator' : 'denominator'
             break;
+        case 'msqrt':
+            name = 'rad-ecand'
+            break
         case 'mroot':
             name = node.nextElementSibling ? 'radicand' : 'index'
             break;
@@ -2769,9 +2775,6 @@ function getArgName(node, prefix) {
         case 'menclose':
             if (node.parentElement.attributes.notation)
                 return node.parentElement.attributes.notation.nodeValue
-        case 'msqrt':
-            name = names[name]
-            break;
 
         default:
             return ''
@@ -3031,9 +3034,14 @@ function moveRight0(sel, node, e) {
             speak('＆')
         }
     }
-    name = checkSimpleSup(node)
-    if (name)
-        speak(name)
+    let prefix = getArgName(node, '⁋▒')
+    if (!name) {
+        name = checkSimpleSup(node)
+        if (name)
+            prefix += name
+    }
+    if (prefix)
+        speak(prefix)
     setSelectionEx(sel, node, 0, e)
 }
 
@@ -3103,8 +3111,17 @@ function moveRight(sel, node, offset, e) {
     if (offset == node.childElementCount) { // (Excludes mi, mo, etc.)
         if (node.nextElementSibling) {
             node = node.nextElementSibling
-            if (node.nodeName == 'mrow' && !node.getAttribute('intent'))
+            let prefix = getArgName(node, '⁋▒')
+            if (node.nodeName == 'mrow' && !node.getAttribute('intent')) {
                 node = node.firstElementChild
+                name = checkSimpleSup(node)
+                if (!name)
+                    name = names[node.nodeName]
+                if (name)
+                    prefix += name
+            }
+            if (prefix)
+                speak(prefix)
             setSelectionEx(sel, node, 0, e)
             return
         }
@@ -3146,14 +3163,17 @@ function moveRight(sel, node, offset, e) {
                     // E.g., when leaving ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃) move to
                     // nextElementSibling
                     node = node.nextElementSibling
+                    let prefix = getArgName(node, '⁋▒')
                     if (node.nodeName == 'mrow' && !node.getAttribute('intent')) {
                         node = node.firstElementChild
                         name = checkSimpleSup(node)
                         if (!name)
                             name = names[node.nodeName]
                         if (name)
-                            speak(name)
+                            prefix += name
                     }
+                    if (prefix)
+                        speak(prefix)
                     setSelectionEx(sel, node, 0, e)
                     return
                 }
@@ -3177,11 +3197,15 @@ function moveRight(sel, node, offset, e) {
         node.nextElementSibling.childElementCount) {
         // E.g., moving into √ from end of ± in 𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎
         node = node.nextElementSibling.firstElementChild
+        let prefix = getArgName(node, '⁋▒')
         if (node.nodeName == 'mrow')
             node = node.firstElementChild
-        name = checkSimpleSup(node)
+        if (!name)
+            name = checkSimpleSup(node)
         if (name)
-            speak(name)
+            prefix += name
+        if (prefix)
+            speak(prefix)
         setSelectionEx(sel, node, 0, e)
         return
     }
@@ -3284,9 +3308,8 @@ function moveRight(sel, node, offset, e) {
             if (!name)
                 name = names[node.nodeName]
         }
-        if (!name) {
+        if (!name)
             name = getArgName(node, '⁋▒')
-        }
         if (name)
             speak(name)
         setSelectionEx(sel, node, 0, e)
@@ -3837,39 +3860,39 @@ document.addEventListener('keydown', function (e) {
             // Since the UnicodeMathML Playground has myriad default Tab stops,
             // users need a Tab hierarchy. Following are the Tab stops at the
             // top of the hierarchy. The Enter key activates the current stop's
-            // facility. In an activated facility, the → & ← arrow keys move
+            // facility. In an activated facility, the → and ← arrow keys move
             // between the facility's options. The Enter key then runs the
             // option. For an active symbol gallery, the Enter key inserts
             // the current symbol. For most config settings, the Enter key
             // toggles the current option. For menu stops, the Enter key sends
             // the associated hot key.
-            const IDs = { //next   previous
-                'help': ['demos', 'examples'],
-                'demos': ['speech', 'help'],
-                'speech': ['braille', 'demos'],
-                'braille': ['TeX', 'speech'],
-                'TeX': ['dictation', 'braille'],
-                'dictation': ['about', 'TeX'],
-                'about': ['input', 'dictation'],
-                'input': ['output', 'about'],
-                'output': ['config', 'input'],
-                'config': ['history', 'output'],
-                'history': ['mathstyles', 'config'],
-                'mathstyles': ['binary', 'history'],
-                'binary': ['relational', 'mathstyles'],
-                'relational': ['large', 'binary'],
-                'large': ['build', 'relational'],
-                'build': ['invisibles', 'large'],
-                'invisibles': ['delimiters', 'build'],
-                'delimiters': ['arrows', 'invisibles'],
-                'arrows': ['logic', 'delimiters'],
-                'logic': ['scripts', 'arrows'],
-                'scripts': ['enclosures', 'logic'],
-                'enclosures': ['misc', 'scripts'],
-                'misc': ['accents', 'enclosures'],
-                'accents': ['greek', 'misc'],
-                'greek': ['examples', 'accents'],
-                'examples': ['help', 'greek'],
+            const IDs = {       // next   previous
+                'help':         ['demos',       'scripts'],
+                'demos':        ['speech',      'help'],
+                'speech':       ['braille',     'demos'],
+                'braille':      ['TeX',         'speech'],
+                'TeX':          ['dictation',   'braille'],
+                'dictation':    ['about',       'TeX'],
+                'about':        ['input',       'dictation'],
+                'input':        ['output',      'about'],
+                'output':       ['config',      'input'],
+                'config':       ['history',     'output'],
+                'history':      ['mathstyles',  'config'],
+                'mathstyles':   ['accents',     'history'],
+                'accents':      ['arrows',      'mathstyles'],
+                'arrows':       ['binary',      'accents'],
+                'binary':       ['build',       'arrows'],
+                'build':        ['delimiters',  'binary'],
+                'delimiters':   ['enclosures',  'build'],
+                'enclosures':   ['examples',    'delimiters'],
+                'examples':     ['greek',       'enclosures'],
+                'greek':        ['invisibles',  'examples'],
+                'invisibles':   ['large',       'greek'],
+                'large':        ['logic',       'invisibles'],
+                'logic':        ['misc',        'large'],
+                'misc':         ['relational',  'logic'],
+                'relational':   ['scripts',     'misc'],
+                'scripts':      ['help',        'relational'],
             }
             e.preventDefault()
             id = document.activeElement.id
@@ -3889,10 +3912,12 @@ document.addEventListener('keydown', function (e) {
             if (id == 'output')
                 node = node.firstElementChild
 
-            if (['binary', 'build', 'large', 'relational'].includes(id))
+            if (['binary', 'build', 'large', 'logic', 'relational'].includes(id))
                 id += ' operators'
             else if (id == 'misc')
                 id = 'miscellaneous operators'
+            else if (id == 'scripts')
+                id = 'subscripts and superscripts'
             speak(id == 'config' ? 'settings' : id)
             if (!node)
                 break
@@ -4106,7 +4131,7 @@ output.addEventListener('keydown', function (e) {
                 return
             }
             // For debugging ease, break into 2 cases
-            if(offset)
+            if (offset)
                 moveRight(sel, node, offset, e)
             else
                 moveRight0(sel, node, e)    // offset = 0

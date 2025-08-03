@@ -36,27 +36,32 @@
     <script>
         const buttons = [       // Define symbol galleries and examples
             {
+                label: 'Accents', symbols: {
+                    '0302': '\\hat', '030C': '\\check', '0303': '\\tilde', '0301': '\\acute',
+                    '0300': '\\grave', '0307': '\\dot', '0308': '\\ddot', '20DB': '\\dddot',
+                    '0305': '\\bar', '20D7': '\\vec', '′': '\\prime, \''
+                }
+            },
+            {
+                label: 'Arrows', symbols: {
+                    '←': '\\leftarrow', '→': '\\rightarrow', '↔': '\\leftrightarrow', '⇐': '\\Leftarrow',
+                    '⇒': '\\Rightarrow', '⇔': '\\Leftrightarrow', '↩': '\\hookleftarrow', '↪': '\\hookrightarrow',
+                    '↼': '\\leftharpoonup', '⇀': '\\rightharpoonup', '↽': '\\leftharpoondown', '⇁': '\\rightharpoondown',
+                    '⟵': '\\longleftarrow', '⟶': '\\longrightarrow', '⟷': '\\longleftrightarrow',
+                    '⟸': '\\Longleftarrow', '⟹': '\\Longrightarrow', '⟺': '\\Longleftrightarrow', '↑': '\\uparrow',
+                    '↓': '\\downarrow', '↦': '\\mapsto', '⊨': '\\models', '⊢': '\\vdash', '⊣': '\\dashv',
+                }
+            },
+            {
                 label: 'Binary', symbols: {
                     '±': '\\pm, +-', '∓': '\\mp, -+', '×': '\\times', '⋅': '\\cdot',
                     '∩': '\\cap, \\intersection', '∪': '\\cup, \\union',
-                }
-            },
-            {
-                label: 'Relational', symbols: {
-                    '≤': '\\le, <=', '≥': '\\ge, >=', '≠': '\\ne, /=', '≡': '\\equiv', '∝': '\\propto',
-                    '≪': '\\ll, <<', '≫': '\\gg, >>', '≅': '\\cong, ~=', '∈': '\\in', '∋': '\\ni',
-                    '∼': '\\sim', '≃': '\\simeq', '≈': '\\approx, ~~', '≍': '\\asymp',
-                    '≶': '\\lessgtr', '≷': '\\gtrless', '≽': '\\succcurlyeq', '≼': '\\preccurlyeq',
-                    '≺': '\\prcue', '≻': '\\succ', '⊂': '\\subset', '⊃': '\\supset',
-                    '⊆': '\\subseteq', '⊇': '\\supseteq', '⊑': '\\sqsubseteq', '⊒': '\\sqsupseteq'
-                }
-            },
-            {
-                label: 'Large', symbols: {
-                    '∑': '\\sum', '∏': '\\prod', '∫': '\\int', '∬': '\\iint',
-                    '∭': '\\iiint', '⨌': '\\iiiint', '∮': '\\oint', '∱': '\\cwint',
-                    '⨑': '\\ccwint', '⋂': '\\bigcap', '⋃': '\\bigcup', '⨃': '\\bigudot',
-                    '⨄': '\\biguplus', '⨀': '\\bigodot', '⨁': '\\bigoplus', '⨂': '\\bigotimes'
+                    '∧': '\\wedge', '∨': '\\vee', '⊌': '\\cupleftarrow',
+                    '⊍': '\\cupdot', '⊎': '\\uplus', '⊓': '\\sqcap', '⊔': '\\sqcup',
+                    '⊕': '\\oplus', '⊖': '\\ominus', '⊗': '\\otimes', '⊘': '\\oslash',
+                    '⊙': '\\odot', '⊚': '\\circledcirc', '⊛': '\\circledast',
+                    '⊜': '\\circledequal', '⊝': '\\circleddash', '⊞': '\\boxplus',
+                    '⊟': '\\boxminus', '⊠': '\\boxtimes', '⊡': '\\boxdot',
                 }
             },
             {
@@ -100,26 +105,6 @@
                 }
             },
             {
-                label: 'Invisibles', symbols: {
-                    '2061': '\\funcapply: invisible function apply',
-                    '2062': '\\itimes: invisible times',
-                    '2063': '\\isep: invisible separator',
-                    '2064': '\\iplus: invisible plus',
-                    '​': ['\\zwsp: zero-width space', 'width: 1em'],
-                    ' ': ['\\hairsp: 1/18em space (veryverythinmathspace)', 'width: 1.1em'],
-                    '  ': ['2/18em space (verythinmathspace)', 'width: 1.2em'],
-                    ' ': ['\\thinsp: 3/18em space (thinmathspace)', 'width: 1.3em'],
-                    ' ': ['\\medsp: 4/18em space (mediummathspace)', 'width: 1.4em'],
-                    ' ': ['\\thicksp: 5/18em space (thickmathspace)', 'width: 1.5em'],
-                    ' ': ['\\vthicksp: 6/18em space (verythickmathspace)', 'width: 1.6em'],
-                    '  ': ['7/18em space (veryverythickmathspace)', 'width: 1.7em'],
-                    ' ': ['\\ensp: 9/18em space', 'width: 1.9em'],
-                    ' ': ['\\emsp: 1em space', 'width: 2.8em'],
-                    ' ': ['\\numsp: Digit-width space', 'width: 1.67em'],
-                    ' ': ['\\nbsp: space-width space (non-breaking space)', 'width: 1.67em']
-                }
-            },
-            {
                 label: 'Delimiters', symbols: {
                     '(': '\\lparen', ')': '\\rparen', '[': '\\lbrack', ']': '\\rbrack',
                     '{': '\\lbrace', '}': '\\rbrace', '⟨': '\\bra', '⟩': '\\ket',
@@ -127,37 +112,6 @@
                     '⏜': '\\overparen', '⏝': '\\underparen', '⏞': '\\overbrace', '⏟': '\\underbrace',
                     '⏠': '\\overshell', '⏡': '\\undershell', '⎴': '\\overbracket', '⎵': '\\underbracket',
                     '¯': '\\overline'
-                }
-            },
-            {
-                label: 'Arrows', symbols: {
-                    '←': '\\leftarrow', '→': '\\rightarrow', '↔': '\\leftrightarrow', '⇐': '\\Leftarrow',
-                    '⇒': '\\Rightarrow', '⇔': '\\Leftrightarrow', '↩': '\\hookleftarrow', '↪': '\\hookrightarrow',
-                    '↼': '\\leftharpoonup', '⇀': '\\rightharpoonup', '↽': '\\leftharpoondown', '⇁': '\\rightharpoondown',
-                    '⟵': '\\longleftarrow', '⟶': '\\longrightarrow', '⟷': '\\longleftrightarrow',
-                    '⟸': '\\Longleftarrow', '⟹': '\\Longrightarrow', '⟺': '\\Longleftrightarrow', '↑': '\\uparrow',
-                    '↓': '\\downarrow', '↦': '\\mapsto', '⊨': '\\models', '⊢': '\\vdash', '⊣': '\\dashv',
-                }
-            },
-            {
-                label: 'Logic', symbols: {
-                    '∃': '\\exists', '∀': '\\forall', '¬': '\\lnot', '∧': '\\land', '∨': '\\lor',
-                    '⇒': '\\Rightarrow', '⇔': '\\Leftrightarrow', '⊕': '\\oplus', '⊤': '\\top',
-                    '⊥': '\\perp', '⊢': '\\vdash', '⨯': '\\vectimes', '⨝': '\\Join', '⟕': '\\leftouterjoin',
-                    '⟖': '\\rightouterjoin', '⟗': '\\fullouterjoin', '⋉': '\\ltimes', '⋊': '\\rtimes',
-                    '▷': '\\triangleright', '÷': '\\div', 'π': '', 'σ': ''
-                }
-            },
-            {
-                label: 'Scripts', symbols: {
-                    '⁰': '\\u2070', '¹': '\\u00B9', '²': '\\u00B2', '³': '\\u00B3', '⁴': '\\u2074',
-                    '⁵': '\\u2075', '⁶': '\\u2076', '⁷': '\\u2077', '⁸': '\\u2078', '⁹': '\\u2079',
-                    'ⁱ': '\\u2071', 'ⁿ': '\\u207F', 'ˣ': '\\u02E3', '⁺': '\\u207A', '⁻': '\\u207B',
-                    '⁼': '\\u207C', '⁽': '\\u207D', '⁾': '\\u207E', '₀': '\\u2080', '₁': '\\u2081',
-                    '₂': '\\u2082', '₃': '\\u2083', '₄': '\\u2084', '₅': '\\u2085', '₆': '\\u2086',
-                    '₇': '\\u2087', '₈': '\\u2088', '₉': '\\u2089', 'ᵢ': '\\u1D62', 'ⱼ': '\\u2C7C',
-                    'ₖ': '\\u2096', 'ₗ': '\\u2097', 'ₘ': '\\u2098', 'ₙ': '\\u2099', '₊': '\\u208a',
-                    '₋': '\\u208B', '₌': '\\u208C', '₍': '\\u208D', '₎': '\\U208E'
                 }
             },
             {
@@ -171,33 +125,6 @@
                     '⬆': '\\asmash: ascender smash operator',
                     '⬇': '\\dsmash: descender smash operator',
                     '⬌': '\\hsmash: horizontal smash operator'
-                }
-            },
-            {
-                label: 'Misc', symbols: {
-                    'ⅅ': '\\Dd: differential D', 'ⅆ': '\\dd: differential d', 'ⅇ': '\\ee: exponential',
-                    'ⅈ': '\\ii: imaginary unit', 'ⅉ': '\\jj: imaginary unit', '∞': '\\infty', '℘': '\\wp',
-                    'ℏ': '\\hbar', 'ℜ': '\\Re', 'ℑ': '\Im', '∇': '\\nabla', '𝜕': '\\partial', '†': '\\dag',
-                    '½': '\\half', '⅓': '\\third', '⅔': '\\u2154', '¼': '\\quarter', '¾': '\\u00BE'
-                }
-            },
-            {
-                label: 'Accents', symbols: {
-                    '0302': '\\hat', '030C': '\\check', '0303': '\\tilde', '0301': '\\acute',
-                    '0300': '\\grave', '0307': '\\dot', '0308': '\\ddot', '20DB': '\\dddot',
-                    '0305': '\\bar', '20D7': '\\vec', '′': '\\prime, \''
-                }
-            },
-            {
-                label: 'Greek', symbols: {
-                    '𝛼': '\\alpha', '𝛽': '\\beta', 'Γ': '\\Gamma', '𝛾': '\\gamma', 'Δ': '\\Delta',
-                    '𝛿': '\\delta', '𝜖': '\\epsilon', '𝜀': '\\varepsilon', '𝜁': '\\zeta',
-                    '𝜂': '\\eta', 'Θ': '\\Theta', '𝜃': '\\theta', '𝜗': '\\vartheta', '𝜄': '\\iota',
-                    '𝜅': '\\kappa', '𝜘': '\\varkappa', 'Λ': '\\Lambda', '𝜆': '\\lambda', '𝜇': '\\mu',
-                    '𝜈': '\\nu', 'Ξ': '\\Xi', '𝜉': '\\xi', 'Π': '\\Pi', '𝜋': '\\pi', '𝜛': '\\varpi',
-                    '𝜌': '\\rho', '𝜚': '\\varrho', 'Σ': '\\Sigma', '𝜎': '\\sigma', '𝜍': '\\varsigma',
-                    '𝜏': '\\tau', '𝜐': '\\upsilon', 'Φ': '\\Phi', '𝜙': '\\phi', '𝜑': '\\varphi',
-                    '𝜒': '\\chi', 'Ψ': '\\Psi', '𝜓': '\\psi', 'Ω': '\\Omega', '𝜔': '\\omega'
                 }
             },
             {
@@ -236,6 +163,85 @@
                     '𝑍(𝛾+𝑖𝜔−𝑖𝜈)=𝑖/√𝜋 ∫_−∞^∞ 𝑒^(−(𝜔−𝜔′)^2 \\/(Δ𝜔)^2)/(𝛾+𝑖(𝜔′−𝜈)) ⅆ𝜔′': ['plasma dispersion function', 'min-width: 25em'],
                     '𝑊_𝛿₁𝜌₁𝜎₂^3𝛽=𝑈_𝛿₁𝜌₁^3𝛽+1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[(𝑈_𝛿₁𝜌₁^2𝛽-𝛼′₂𝑈_𝛿₁𝜌₂^1𝛽)/𝑈_𝛿₁𝜌₂^0𝛽]': '',
                     '\\[\\def\\g#1#2{#1f(#2)}\\g\\relax{x}=\\int_{-\\infty}^\\infty \\g\\hat\\xi\\,e^{2 \\pi i \\xi x} \\,d\\xi\\]': ['TeX inverse Fourier transform', 'min-width: 25em'],
+                }
+            },
+            {
+                label: 'Greek', symbols: {
+                    '𝛼': '\\alpha', '𝛽': '\\beta', 'Γ': '\\Gamma', '𝛾': '\\gamma', 'Δ': '\\Delta',
+                    '𝛿': '\\delta', '𝜖': '\\epsilon', '𝜀': '\\varepsilon', '𝜁': '\\zeta',
+                    '𝜂': '\\eta', 'Θ': '\\Theta', '𝜃': '\\theta', '𝜗': '\\vartheta', '𝜄': '\\iota',
+                    '𝜅': '\\kappa', '𝜘': '\\varkappa', 'Λ': '\\Lambda', '𝜆': '\\lambda', '𝜇': '\\mu',
+                    '𝜈': '\\nu', 'Ξ': '\\Xi', '𝜉': '\\xi', 'Π': '\\Pi', '𝜋': '\\pi', '𝜛': '\\varpi',
+                    '𝜌': '\\rho', '𝜚': '\\varrho', 'Σ': '\\Sigma', '𝜎': '\\sigma', '𝜍': '\\varsigma',
+                    '𝜏': '\\tau', '𝜐': '\\upsilon', 'Φ': '\\Phi', '𝜙': '\\phi', '𝜑': '\\varphi',
+                    '𝜒': '\\chi', 'Ψ': '\\Psi', '𝜓': '\\psi', 'Ω': '\\Omega', '𝜔': '\\omega'
+                }
+            },
+            {
+                label: 'Invisibles', symbols: {
+                    '2061': '\\funcapply: invisible function apply',
+                    '2062': '\\itimes: invisible times',
+                    '2063': '\\isep: invisible separator',
+                    '2064': '\\iplus: invisible plus',
+                    '​': ['\\zwsp: zero-width space', 'width: 1em'],
+                    ' ': ['\\hairsp: 1/18em space (veryverythinmathspace)', 'width: 1.1em'],
+                    '  ': ['2/18em space (verythinmathspace)', 'width: 1.2em'],
+                    ' ': ['\\thinsp: 3/18em space (thinmathspace)', 'width: 1.3em'],
+                    ' ': ['\\medsp: 4/18em space (mediummathspace)', 'width: 1.4em'],
+                    ' ': ['\\thicksp: 5/18em space (thickmathspace)', 'width: 1.5em'],
+                    ' ': ['\\vthicksp: 6/18em space (verythickmathspace)', 'width: 1.6em'],
+                    '  ': ['7/18em space (veryverythickmathspace)', 'width: 1.7em'],
+                    ' ': ['\\ensp: 9/18em space', 'width: 1.9em'],
+                    ' ': ['\\emsp: 1em space', 'width: 2.8em'],
+                    ' ': ['\\numsp: Digit-width space', 'width: 1.67em'],
+                    ' ': ['\\nbsp: space-width space (non-breaking space)', 'width: 1.67em']
+                }
+            },
+            {
+                label: 'Large', symbols: {
+                    '∑': '\\sum', '∏': '\\prod', '∫': '\\int', '∬': '\\iint',
+                    '∭': '\\iiint', '⨌': '\\iiiint', '∮': '\\oint', '∱': '\\cwint',
+                    '⨑': '\\ccwint', '⋂': '\\bigcap', '⋃': '\\bigcup', '⨃': '\\bigudot',
+                    '⨄': '\\biguplus', '⨀': '\\bigodot', '⨁': '\\bigoplus', '⨂': '\\bigotimes'
+                }
+            },
+            {
+                label: 'Logic', symbols: {
+                    '∃': '\\exists', '∀': '\\forall', '¬': '\\lnot', '∧': '\\land', '∨': '\\lor',
+                    '⇒': '\\Rightarrow', '⇔': '\\Leftrightarrow', '⊕': '\\oplus', '⊤': '\\top',
+                    '⊥': '\\perp', '⊢': '\\vdash', '⨯': '\\vectimes', '⨝': '\\Join', '⟕': '\\leftouterjoin',
+                    '⟖': '\\rightouterjoin', '⟗': '\\fullouterjoin', '⋉': '\\ltimes', '⋊': '\\rtimes',
+                    '▷': '\\triangleright', '÷': '\\div', 'π': '', 'σ': ''
+                }
+            },
+            {
+                label: 'Misc', symbols: {
+                    'ⅅ': '\\Dd: differential D', 'ⅆ': '\\dd: differential d', 'ⅇ': '\\ee: exponential',
+                    'ⅈ': '\\ii: imaginary unit', 'ⅉ': '\\jj: imaginary unit', '∞': '\\infty', '℘': '\\wp',
+                    'ℏ': '\\hbar', 'ℜ': '\\Re', 'ℑ': '\Im', '∇': '\\nabla', '𝜕': '\\partial', '†': '\\dag',
+                    '½': '\\half', '⅓': '\\third', '⅔': '\\u2154', '¼': '\\quarter', '¾': '\\u00BE'
+                }
+            },
+            {
+                label: 'Relational', symbols: {
+                    '≤': '\\le, <=', '≥': '\\ge, >=', '≠': '\\ne, /=', '≡': '\\equiv', '∝': '\\propto',
+                    '≪': '\\ll, <<', '≫': '\\gg, >>', '≅': '\\cong, ~=', '∈': '\\in', '∋': '\\ni',
+                    '∼': '\\sim', '≃': '\\simeq', '≈': '\\approx, ~~', '≍': '\\asymp',
+                    '≶': '\\lessgtr', '≷': '\\gtrless', '≽': '\\succcurlyeq', '≼': '\\preccurlyeq',
+                    '≺': '\\prcue', '≻': '\\succ', '⊂': '\\subset', '⊃': '\\supset',
+                    '⊆': '\\subseteq', '⊇': '\\supseteq', '⊑': '\\sqsubseteq', '⊒': '\\sqsupseteq'
+                }
+            },
+            {
+                label: 'Scripts', symbols: {
+                    '⁰': '\\u2070', '¹': '\\u00B9', '²': '\\u00B2', '³': '\\u00B3', '⁴': '\\u2074',
+                    '⁵': '\\u2075', '⁶': '\\u2076', '⁷': '\\u2077', '⁸': '\\u2078', '⁹': '\\u2079',
+                    'ⁱ': '\\u2071', 'ⁿ': '\\u207F', 'ˣ': '\\u02E3', '⁺': '\\u207A', '⁻': '\\u207B',
+                    '⁼': '\\u207C', '⁽': '\\u207D', '⁾': '\\u207E', '₀': '\\u2080', '₁': '\\u2081',
+                    '₂': '\\u2082', '₃': '\\u2083', '₄': '\\u2084', '₅': '\\u2085', '₆': '\\u2086',
+                    '₇': '\\u2087', '₈': '\\u2088', '₉': '\\u2089', 'ᵢ': '\\u1D62', 'ⱼ': '\\u2C7C',
+                    'ₖ': '\\u2096', 'ₗ': '\\u2097', 'ₘ': '\\u2098', 'ₙ': '\\u2099', '₊': '\\u208a',
+                    '₋': '\\u208B', '₌': '\\u208C', '₍': '\\u208D', '₎': '\\U208E'
                 }
             },
         ];
@@ -297,20 +303,20 @@
     </p>
     <br />
     <div class="categorytab">
-        <button id="binary" class="categorytablinks" onclick="openCategory(event, 'Binary')"><span data-explanation='Common binary operators'>Binary</span></button>
-        <button id="relational" class="categorytablinks" onclick="openCategory(event, 'Relational')"><span data-explanation='Common relational operators'>Relational</span></button>
-        <button id="large" class="categorytablinks" onclick="openCategory(event, 'Large')"><span data-explanation='𝑁-ary (large) operators'>Large</span></button>
-        <button id="build" class="categorytablinks" onclick="openCategory(event, 'Build')"><span data-explanation='UnicodeMath build-up operators: hover over buttons for more information'>Build</span></button>
-        <button id="invisibles" class="categorytablinks" onclick="openCategory(event, 'Invisibles')"><span data-explanation='Function-apply, invisible times, spaces: hover over each button for more information'>Invisibles</span></button>
-        <button id="delimiters" class="categorytablinks" onclick="openCategory(event, 'Delimiters')"><span data-explanation='Vertical and horizontal brackets'>Delimiters</span></button>
-        <button id="arrows" class="categorytablinks" onclick="openCategory(event, 'Arrows')">Arrows</button>
-        <button id="logic" class="categorytablinks" onclick="openCategory(event, 'Logic')">Logic</button>
-        <button id="scripts" class="categorytablinks" onclick="openCategory(event, 'Scripts')"><span data-explanation='Subscripts and superscripts (also use _ and ^)'>Scripts</span></button>
-        <button id="enclosures" class="categorytablinks" onclick="openCategory(event, 'Enclosures')"><span data-explanation='Square roots, enclosures, phantoms, smashes'>Enclosures</span></button>
-        <button id="misc" class="categorytablinks" onclick="openCategory(event, 'Misc')">Misc</button>
         <button id="accents" class="categorytablinks" onclick="openCategory(event, 'Accents')"><span data-explanation='Can use any accent from Unicode "Combining Diacritical Marks" and "Combining Diacritical Marks for Symbols"'>Accents</span></button>
-        <button id="greek" class="categorytablinks" onclick="openCategory(event, 'Greek')">Greek</button>
+        <button id="arrows" class="categorytablinks" onclick="openCategory(event, 'Arrows')">Arrows</button>
+        <button id="binary" class="categorytablinks" onclick="openCategory(event, 'Binary')"><span data-explanation='Common binary operators'>Binary</span></button>
+        <button id="build" class="categorytablinks" onclick="openCategory(event, 'Build')"><span data-explanation='UnicodeMath build-up operators: hover over buttons for more information'>Build</span></button>
+        <button id="delimiters" class="categorytablinks" onclick="openCategory(event, 'Delimiters')"><span data-explanation='Vertical and horizontal brackets'>Delimiters</span></button>
+        <button id="enclosures" class="categorytablinks" onclick="openCategory(event, 'Enclosures')"><span data-explanation='Square roots, enclosures, phantoms, smashes'>Enclosures</span></button>
         <button id="examples" class="categorytablinks" onclick="openCategory(event, 'Examples')">Examples</button>
+        <button id="greek" class="categorytablinks" onclick="openCategory(event, 'Greek')">Greek</button>
+        <button id="invisibles" class="categorytablinks" onclick="openCategory(event, 'Invisibles')"><span data-explanation='Function-apply, invisible times, spaces: hover over each button for more information'>Invisibles</span></button>
+        <button id="large" class="categorytablinks" onclick="openCategory(event, 'Large')"><span data-explanation='𝑁-ary (large) operators'>Large</span></button>
+        <button id="logic" class="categorytablinks" onclick="openCategory(event, 'Logic')">Logic</button>
+        <button id="misc" class="categorytablinks" onclick="openCategory(event, 'Misc')">Misc</button>
+        <button id="relational" class="categorytablinks" onclick="openCategory(event, 'Relational')"><span data-explanation='Common relational operators'>Relational</span></button>
+        <button id="scripts" class="categorytablinks" onclick="openCategory(event, 'Scripts')"><span data-explanation='Subscripts and superscripts (also use _ and ^)'>Scripts</span></button>
     </div>
 
     <script>
