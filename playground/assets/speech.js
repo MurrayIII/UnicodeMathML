@@ -417,6 +417,8 @@ const symbolSpeechStrings = {
 	'⋾': 'small overbar contains',
 	'⋿': 'z notation bag membership',		// 22FF
 
+	'⌃': 'superscript',						// 2303 (for superscript)
+	'⌄': 'subscript',						// 2304 (for subscript)
 	'⌈': 'open ceiling',						// 2308
 	'⌉': 'close ceiling',					// 2309
 	'⌊': 'open floor',						// 230A
@@ -502,6 +504,8 @@ const symbolSpeechStrings = {
 	'⬇': 'descent smash',					// 2B07
 	'⬌': 'width smash',						// 2B0C - horizontal smash
 	'⬍': 'height smash',						// 2B0D
+	'⬒': 'numerator',						// 2B10 (for numerator)
+	'⬓': 'denominator',						// 2B11 (for denominator)
 	'⬚': 'empty',							// 2B1A (for empty argument in fraction, sub/sup, etc.)
 	'⬢': 'hex',								// 2B22 (for hex in color/back color)
 	'⮵': 'to the',							// 2BB5
@@ -1306,7 +1310,7 @@ function speak(s) {
 			if (speechCurrent == s)
 				speechCurrent = ''
 			else
-				speechCurrent += ' '
+				speechCurrent += ' , '
 		}
 		speechSynthesis.cancel()
 	}

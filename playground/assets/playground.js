@@ -1465,21 +1465,20 @@ function getIntent(node) {
     return node.getAttribute('intent')
 }
 
-function checkSimpleSup(node) {
-    if (node.nodeName == 'msup' || node.nodeName == 'msub' ||
-        node.nodeName == 'mover' && node.getAttribute('accent') ||
-        node.nodeName == 'msqrt') {
+function checkSimpleSup(node, pause) {
+    if (['msup', 'msub', 'msqrt'].includes(node.nodeName) ||
+        node.nodeName == 'mover' && node.getAttribute('accent')) {
         let s = speech(node)
         if (s.length <= 6)
-            return s
+            return pause ? '⏳' + s : s
     }
     return ''
 }
 
 const names = {
     'math': 'math', 'mfrac': 'fraction', 'mover': 'modify above',
-    'mroot': 'root', 'msqrt': 'square root', 'msub': 'subscript',
-    'msubsup': 'sub soup', 'msup': 'superscript', 'mtable': 'matrix',
+    'mroot': 'root', 'msqrt': 'square root', 'msub': '⌄',
+    'msubsup': 'sub soup', 'msup': '⌃', 'mtable': 'matrix',
     'mtd': 'element', 'munder': 'modify below', 'munderover': 'below above'
 }
 
@@ -2746,24 +2745,26 @@ function getArgName(node, prefix) {
             if (!node.previousElementSibling)
                 name = 'base';
             else if (node.nextElementSibling)
-                name = isNary(node.previousElementSibling.textContent) ? 'lower limit' : 'subscript';
+                name = isNary(node.previousElementSibling.textContent) ? 'lower limit' : '⌄';
             else
-                name = isNary(node.parentElement.firstElementChild.textContent) ? 'upper limit' : 'superscript';
+                name = isNary(node.parentElement.firstElementChild.textContent) ? 'upper limit' : '⌃';
             break;
         case 'mfrac':
-            name = node.nextElementSibling ? 'numerator' : 'denominator'
+            if (nodeP.getAttribute('linethickness') == 0)
+                name = node.nextElementSibling ? 'top element' : 'bottom element'
+            else
+                name = node.nextElementSibling ? '⬒' : '⬓'
             break;
         case 'msqrt':
             name = 'rad-ecand'
             break
         case 'mroot':
-            name = node.nextElementSibling ? 'radicand' : 'index'
+            name = node.nextElementSibling ? 'rad-ecand' : 'index'
             break;
         case 'msub':
         case 'msup':
             name = node.nextElementSibling ? 'base'
-                 : name == 'msub' ? 'subscript'
-                 : 'superscript'
+                 : name == 'msub' ? '⌄' : '⌃'
             break
         case 'mover':
         case 'munder':
@@ -3036,7 +3037,7 @@ function moveRight0(sel, node, e) {
     }
     let prefix = getArgName(node, '⁋▒')
     if (!name) {
-        name = checkSimpleSup(node)
+        name = checkSimpleSup(node, true)
         if (name)
             prefix += name
     }
@@ -3114,7 +3115,7 @@ function moveRight(sel, node, offset, e) {
             let prefix = getArgName(node, '⁋▒')
             if (node.nodeName == 'mrow' && !node.getAttribute('intent')) {
                 node = node.firstElementChild
-                name = checkSimpleSup(node)
+                name = checkSimpleSup(node, true)
                 if (!name)
                     name = names[node.nodeName]
                 if (name)
@@ -3134,8 +3135,11 @@ function moveRight(sel, node, offset, e) {
             node = node.parentElement
             if (node.nextElementSibling) {
                 node = node.nextElementSibling
+                let prefix = getArgName(node, '⁋▒')
                 if (node.nodeName == 'mrow')
                     node = node.firstElementChild
+                if (prefix)
+                    speak(prefix)
                 setSelectionEx(sel, node, 0, e)
                 return
             }
@@ -3166,7 +3170,7 @@ function moveRight(sel, node, offset, e) {
                     let prefix = getArgName(node, '⁋▒')
                     if (node.nodeName == 'mrow' && !node.getAttribute('intent')) {
                         node = node.firstElementChild
-                        name = checkSimpleSup(node)
+                        name = checkSimpleSup(node, true)
                         if (!name)
                             name = names[node.nodeName]
                         if (name)
@@ -3201,7 +3205,7 @@ function moveRight(sel, node, offset, e) {
         if (node.nodeName == 'mrow')
             node = node.firstElementChild
         if (!name)
-            name = checkSimpleSup(node)
+            name = checkSimpleSup(node, true)
         if (name)
             prefix += name
         if (prefix)
@@ -3314,6 +3318,21 @@ function moveRight(sel, node, offset, e) {
             speak(name)
         setSelectionEx(sel, node, 0, e)
         return
+    }
+    if (name == 'mrow') {                   // E.g., 𝜕𝜓(𝑥,𝑡)/𝜕𝑡 at end of numerator
+        node = nodeP
+        while (!node.nextElementSibling)
+            node = node.parentElement
+        node = node.nextElementSibling
+        let prefix = getArgName(node, '⁋▒')
+        if (node.nodeName == 'mrow')
+            node = node.firstElementChild
+        name = checkSimpleSup(node, true)
+        if (name)
+            prefix += name
+        if (prefix)
+            speak(prefix)
+        setSelectionEx(sel, node, 0, e)
     }
 }
 
