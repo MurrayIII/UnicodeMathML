@@ -2734,8 +2734,8 @@ function getArgName(node, prefix) {
     while (name == 'mrow') {
         node = nodeP
         let intent = node.getAttribute('intent')
-        if (intent == ':function' && prefix == '⁋▒')
-            return '⁋▒function'
+        if (intent == ':function' && prefix)
+            return prefix == '⁋▒' ? '⁋▒function' : '¶▒argument'
         nodeP = node.parentElement
         name = nodeP.nodeName
     }
@@ -2796,6 +2796,8 @@ function moveLeft0(sel, node, e) {
         nodeP = node.parentElement
     }
     if (!node.previousElementSibling) {
+        if (nodeP.nodeName == 'math')
+            return
         if (!getChildIndex(node, nodeP)) {
             node = nodeP
             nodeP = node.parentElement
@@ -2807,7 +2809,8 @@ function moveLeft0(sel, node, e) {
             } else {
                 name = names[node.nodeName]
                 if (!isMrowLike(nodeP) || !getChildIndex(node, nodeP)) {
-                    let prefix = getArgName(node, '⁋▒')
+                    let prefix = nodeP.nodeName == 'math'
+                        ? '⁋▒math' : getArgName(node, '⁋▒')
                     if (prefix)
                         name = prefix + '⏳' + name
                 }
@@ -2827,14 +2830,29 @@ function moveLeft0(sel, node, e) {
     }
     node = node.previousElementSibling
 
-    if (node.childElementCount) {
-        while (node.childElementCount)
-            node = node.lastElementChild
+    let offset = 1
 
-        let prefix = getArgName(node, '¶▒')
-        if (prefix)
-            speak(prefix)
-        setSelectionEx(sel, node, 1, e)
+    if (node.childElementCount) {
+        node = node.lastElementChild
+        let name = checkEmulationIntent(node)
+        if (name)
+            console.log("emulation name: " + name)
+        if (node.childElementCount) {
+            offset = node.childElementCount
+            name = checkNaryand(node)
+            if (name)
+                name = '¶▒' + name
+        }
+        if (!name) {
+            if (node.nodeName == 'mrow') {
+                node = node.lastElementChild
+                offset = node.childElementCount ? node.childElementCount : 1 
+            }
+            name = getArgName(node, '¶▒')
+        }
+        if (name)
+            speak(name)
+        setSelectionEx(sel, node, offset, e)
         return
     }
     nodeP = node.parentElement
@@ -2847,7 +2865,6 @@ function moveLeft0(sel, node, e) {
             return
         }
     }
-    let offset = 1
     let prefix = ''
     if (isMrowLike(nodeP)) {
         if (!getChildIndex(node, nodeP)) {
@@ -2898,7 +2915,7 @@ function moveLeft(sel, node, offset, e) {
     node = node.children[offset - 1]
     offset = node.childElementCount ? node.childElementCount : 1
     let prefix = getArgName(node, '¶▒')
-    if (prefix)
+    if (prefix && prefix != '¶▒⬓')          // ¶▒⬓ handled by checkMathSelection
         speak(prefix)
     setSelectionEx(sel, node, offset, e)
     return
