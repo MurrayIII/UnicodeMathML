@@ -1192,6 +1192,7 @@ const controlWords = {
     'eqgtr':            '⋝',	    // 22DD
     'eqless':           '⋜',	    // 22DC
     'eqno':             '#',	// 0023
+    'equalparallel':    '⋕',    // 22D5
     'equiv':            '≡',	// 2261
     'eta':              'η',	// 03B7
     'exists':           '∃',	// 2203

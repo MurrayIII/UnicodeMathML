@@ -1302,6 +1302,8 @@ function speak(s) {
 	s = resolveSpeechSymbols(s)
 	if (!testing)
 		console.log("'" + s + "'")
+	if (s.length > 4 && speechCurrent.endsWith(s))
+		return
 	if (!speechSynthesis.pending && (!testing || speechCurrent == 'q')) {
 		// Some build-up tests insert 'q'; if so, delete 'q'
 		speechCurrent = ''

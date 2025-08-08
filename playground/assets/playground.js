@@ -2733,6 +2733,9 @@ function getArgName(node, prefix) {
 
     while (name == 'mrow') {
         node = nodeP
+        let intent = node.getAttribute('intent')
+        if (intent == ':function' && prefix == '⁋▒')
+            return '⁋▒function'
         nodeP = node.parentElement
         name = nodeP.nodeName
     }
@@ -2783,6 +2786,84 @@ function getArgName(node, prefix) {
     return prefix ? prefix + name : name
 }
 
+function moveLeft0(sel, node, e) {
+    if (node.nodeName == '#text')
+        node = node.parentElement
+    let nodeP = node.parentElement
+
+    if (nodeP.nodeName == 'mrow' && !node.previousElementSibling) {
+        node = nodeP
+        nodeP = node.parentElement
+    }
+    if (!node.previousElementSibling) {
+        if (!getChildIndex(node, nodeP)) {
+            node = nodeP
+            nodeP = node.parentElement
+            let name
+            if (!getChildIndex(node, nodeP))
+                name = checkEmulationIntent(nodeP)
+            if (name) {
+                node = nodeP
+            } else {
+                name = names[node.nodeName]
+                if (!isMrowLike(nodeP) || !getChildIndex(node, nodeP)) {
+                    let prefix = getArgName(node, '⁋▒')
+                    if (prefix)
+                        name = prefix + '⏳' + name
+                }
+            }
+            if (name)
+                speak(name)
+            setSelectionEx(sel, node, 0, e)
+            return
+        }
+        while (!node.previousElementSibling) {
+            if (node.nodeName == 'math') {
+                setSelectionEx(sel, node, 0, e)
+                return
+            }
+            node = node.parentElement
+        }
+    }
+    node = node.previousElementSibling
+
+    if (node.childElementCount) {
+        while (node.childElementCount)
+            node = node.lastElementChild
+
+        let prefix = getArgName(node, '¶▒')
+        if (prefix)
+            speak(prefix)
+        setSelectionEx(sel, node, 1, e)
+        return
+    }
+    nodeP = node.parentElement
+    if (!node.childElementCount) {          // mi, mn, mtext, mo
+        let text = node.textContent
+        let ch = getCh(text, 0)
+        if (text.length > ch.length) {      // ch might be a surrogate pair
+            ch = getCh(text, text.length - 1)
+            setSelectionEx(sel, node.firstChild, text.length - ch.length, e)
+            return
+        }
+    }
+    let offset = 1
+    let prefix = ''
+    if (isMrowLike(nodeP)) {
+        if (!getChildIndex(node, nodeP)) {
+            // Check if at start of arg
+            prefix = getArgName(node, '⁋▒')
+        }
+        offset = 0
+    } else {
+        prefix = getArgName(node, '¶▒')
+    }
+    if (prefix)
+        speak(prefix)
+    setSelectionEx(sel, node, offset, e)
+    return
+}
+
 function moveLeft(sel, node, offset, e) {
     // Some left-arrow fix-ups are made in checkMathSelection(). Some need
     // to be made here before or instead of the default left-arrow behavior.
@@ -2791,19 +2872,36 @@ function moveLeft(sel, node, offset, e) {
     // we need to stop before elements with children like <mfrac>, <msup>,
     // etc. And we need to stop at the start of the children, such as at the
     // end of a denominator. For now only enable going to start of math zone.
-    if (offset)
-        return
-    if (node.nodeName == '#text')
-        node = node.parentElement
-    if (node.previousElementSibling)
-        return                              // Use default
-    while (!node.previousElementSibling) {
-        node = node.parentElement
-        if (node.nodeName == 'math') {
-            setSelectionEx(sel, node, 0, e)
+    if (node.nodeName == '#text') {
+        offset--
+        if (inRange('\uDC00', node.textContent[offset], '\uDFFF'))
+            offset--
+        if (offset) {
+            setSelectionEx(sel, node, offset, e)
             return
         }
+        node = node.parentElement
     }
+    let nodeP = node.parentElement
+
+    if (!node.childElementCount) {
+        offset = 0
+        if (nodeP.nodeName != 'mrow' || !getChildIndex(node, nodeP)) {
+            // Check if at start of arg
+            let prefix = getArgName(node, '⁋▒')
+            if (prefix)
+                speak(prefix)
+        }
+        setSelectionEx(sel, node, 0, e)
+        return
+    }
+    node = node.children[offset - 1]
+    offset = node.childElementCount ? node.childElementCount : 1
+    let prefix = getArgName(node, '¶▒')
+    if (prefix)
+        speak(prefix)
+    setSelectionEx(sel, node, offset, e)
+    return
 }
 
 function moveRight0(sel, node, e) {
@@ -4157,7 +4255,10 @@ output.addEventListener('keydown', function (e) {
             return
 
         case 'ArrowLeft':
-            moveLeft(sel, node, offset, e)
+            if (offset)
+                moveLeft(sel, node, offset, e)
+            else
+                moveLeft0(sel, node, e)     // offset = 0
             return
 
         case 'Backspace':

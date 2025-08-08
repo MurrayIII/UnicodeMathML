@@ -997,7 +997,8 @@ const rats = [    // Right Arrow Tests
             'end of base', 'start of superscript , minus', 'x squared', 'start of base , x',
             'end of base', 'start of superscript , 2', 'end of superscript',
             'end of superscript', 'differential d', 'x', 'end of int- agrand',
-            '=', 'square root , pi' , 'start of rad- ecand , pi', 'end of rad- ecand', 'end of math',]
+            '=', 'square root , pi', 'start of rad- ecand , pi', 'end of rad- ecand',
+            'end of math',]
     },
     {                                       // case 5
         uMath: '1/8𝜋² ∫_𝛼₁^𝛼₂ ⅆ𝛼′₂[𝑈_𝛿₁𝜌₁^2𝛽-2𝑎′]',
@@ -1048,10 +1049,9 @@ const rats = [    // Right Arrow Tests
             'delta sub 1', 'start of base , delta', 'end of base', 'start of subscript , 1',
             'end of subscript', 'rho sub 1', 'start of base , rho', 'end of base',
             'start of subscript , 1', 'end of subscript', 'end of subscript',
-            'start of superscript , 2', 'beta', 'end of superscript', 'minus', '2', 'eigh prime',
-            'start of base , eigh', 'end of base', 'start of superscript , prime',
-            'end of superscript', 'close bracket', 'end of int- agrand',
-            'end of math',]
+            'start of superscript , 2', 'beta', 'end of superscript', 'minus', '2',
+            'eigh prime', 'start of base , eigh', 'end of base', 'start of superscript , prime',
+            'end of superscript', 'close bracket', 'end of int- agrand', 'end of math',]
     },
     {                                       // case 6
         uMath: '𝑛⒞𝑘 𝑎² 𝑥²/2!',
@@ -1100,6 +1100,41 @@ const rats = [    // Right Arrow Tests
         ]
     }
 ]                   // End of right-arrow tests
+
+const lats = [      // Left Arrow Tests
+    {                                       // case 0
+        uMath: '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)',
+        endExpect: '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=Ⓐ(2) 1/√(𝑎²−𝑏²)',
+        leftArrowExpect: ['1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/Ⓐ(3)√(𝑎²−𝑏²)',
+            '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−Ⓐ(2) 𝑏²)',
+            '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏^Ⓐ(1)2)',
+            '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏^Ⓐ()2)',
+            '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−Ⓐ(1)𝑏²)',
+            '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−Ⓐ()𝑏²)',
+            '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−Ⓐ() 𝑏²)',
+            '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²Ⓐ()−𝑏²)',
+            '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎^Ⓐ(1)2−𝑏²)',
+            '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎^Ⓐ()2−𝑏²)',
+            '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(Ⓐ(1)𝑎²−𝑏²)',
+            '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(Ⓐ()𝑎²−𝑏²)',
+            '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(Ⓐ() 𝑎²−𝑏²)',
+            '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/Ⓐ()√(𝑎²−𝑏²)',
+            '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=Ⓐ(1)1/√(𝑎²−𝑏²)',
+            '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=Ⓐ()1/√(𝑎²−𝑏²)',
+            '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=Ⓐ() 1/√(𝑎²−𝑏²)',
+            '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃) Ⓐ()=1/√(𝑎²−𝑏²)',
+        ],
+        speechExpect: ['end of denominator', 'end of rad- ecand',
+            'end of superscript', 'start of superscript , 2',
+            'end of base', 'start of base , b', 'superscript', 'minus',
+            'end of superscript', 'start of superscript , 2',
+            'end of base', 'start of base , eigh',
+            'start of rad- ecand , superscript',
+            'start of denominator , square root', 'end of numerator',
+            'start of numerator , 1', 'fraction', '=',
+        ]
+    },
+]                   // End of left-arrow tests
 
 const ieqbus = [    // Intra-equation build-up Tests
     {
@@ -1169,6 +1204,19 @@ function testRightArrow(uMath, homeExpect, rightArrowExpect, speechExpect) {
     speechCurrent = ''
     for (let i = 0; i < rightArrowExpect.length; i++) {
         testOutputHotKey('ArrowRight', rightArrowExpect[i])
+        if (speechCurrent != speechExpect[i])
+            console.log(uMath + ' Speech failed. result: ' + speechCurrent + " expect: " + speechExpect[i])
+        speechCurrent = ''
+        speechSynthesis.cancel()
+    }
+}
+
+function testLeftArrow(uMath, endExpect, leftArrowExpect, speechExpect) {
+    buildUp(uMath)
+    testOutputHotKey('End', endExpect)
+    speechCurrent = ''
+    for (let i = 0; i < leftArrowExpect.length; i++) {
+        testOutputHotKey('ArrowLeft', leftArrowExpect[i])
         if (speechCurrent != speechExpect[i])
             console.log(uMath + ' Speech failed. result: ' + speechCurrent + " expect: " + speechExpect[i])
         speechCurrent = ''
@@ -1260,6 +1308,12 @@ function testHotKeys() {
     for (i = 0; i < rats.length; i++) {
         testRightArrow(rats[i].uMath, rats[i].homeExpect,
             rats[i].rightArrowExpect, rats[i].speechExpect)
+    }
+
+    // Left-arrow navigation tests
+    for (i = 0; i < lats.length; i++) {
+        testLeftArrow(lats[i].uMath, lats[i].endExpect,
+            lats[i].leftArrowExpect, lats[i].speechExpect)
     }
 
     // Check intra-equation build up, e.g., build up not at end of math zone
