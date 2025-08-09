@@ -2731,6 +2731,9 @@ function getArgName(node, prefix) {
     let nodeP = node.parentElement
     let name = nodeP.nodeName
 
+    if (name == 'math' && prefix == '⁋▒')
+        return prefix + 'math'
+
     while (name == 'mrow') {
         node = nodeP
         let intent = node.getAttribute('intent')
@@ -2806,6 +2809,10 @@ function moveLeft0(sel, node, e) {
                 name = checkEmulationIntent(nodeP)
             if (name) {
                 node = nodeP
+                if (nodeP.parentElement.nodeName == 'math' &&
+                    !getChildIndex(nodeP, nodeP.parentElement)) {
+                    name = '⁋▒math' + '⏳' + name
+                }
             } else {
                 name = names[node.nodeName]
                 if (!isMrowLike(nodeP) || !getChildIndex(node, nodeP)) {
@@ -4699,47 +4706,54 @@ function getSymbolControlWord(ch) {
     return cw
 }
 
+function getTooltip(ch) {
+    let cp = ch.codePointAt(0).toString(16).padStart(4, '0').toUpperCase();
+
+    // lookup unicode data for tooltip
+    let tooltip = "";
+    if (typeof getCodepointData === "function") {
+        try {
+            let cpd = getCodepointData(cp);
+            tooltip = `Name: ${cpd["name"].replace("<", "&amp;lt;").replace(">", "&amp;gt;")}<br>Block: ${cpd["block"]}<br>Category: ${cpd["category"]}`;
+        } catch (e) {
+            tooltip = "no info found";
+        }
+    }
+    // highlight special invisible characters and spaces (via
+    // https://en.wikipedia.org/wiki/Whitespace_character#Unicode,
+    // https://www.ptiglobal.com/2018/04/26/the-beauty-of-unicode-zero-width-characters/,
+    // https://330k.github.io/misc_tools/unicode_steganography.html)
+    const invisibleChar = [
+        "0009", "000A", "000B", "000C", "000D", "0020", "0085", "00A0",
+        "1680", "2000", "2001", "2002", "2003", "2004", "2005", "2006",
+        "2007", "2008", "2009", "200A", "200B", "200C", "200D", "200E",
+        "2028", "2029", "202A", "202C", "202D", "202F", "205F", "2060",
+        "2061", "2062", "2063", "2064", "2800", "3000", "180E", "FEFF",
+    ].includes(cp);
+
+    return [cp, invisibleChar, tooltip]
+}
+
 function getCodePoints() {
     // display code points and symbol names for the input characters
     if (window.innerHeight < 1000)
         input.style.height = "200px";
     input.style.fontSize = "1.5rem";
     var codepoints_HTML = "";
-    Array.from(input.value).forEach(c => {
-        let cp = c.codePointAt(0).toString(16).padStart(4, '0').toUpperCase();
 
-        // highlight special invisible characters and spaces (via
-        // https://en.wikipedia.org/wiki/Whitespace_character#Unicode,
-        // https://www.ptiglobal.com/2018/04/26/the-beauty-of-unicode-zero-width-characters/,
-        // https://330k.github.io/misc_tools/unicode_steganography.html)
-        const invisibleChar = [
-            "0009", "000A", "000B", "000C", "000D", "0020", "0085", "00A0",
-            "1680", "2000", "2001", "2002", "2003", "2004", "2005", "2006",
-            "2007", "2008", "2009", "200A", "200B", "200C", "200D", "200E",
-            "2028", "2029", "202A", "202C", "202D", "202F", "205F", "2060",
-            "2061", "2062", "2063", "2064", "2800", "3000", "180E", "FEFF",
-        ].includes(cp);
-
-        // lookup unicode data for tooltip
-        let tooltip = "";
-        if (typeof getCodepointData === "function") {
-            try {
-                let cpd = getCodepointData(cp);
-                tooltip = `Name: ${cpd["name"].replace("<", "&amp;lt;").replace(">", "&amp;gt;")}<br>Block: ${cpd["block"]}<br>Category: ${cpd["category"]}`;
-            } catch (e) {
-                tooltip = "no info found";
-            }
-        }
+    Array.from(input.value).forEach(ch => {
+        let [cp, invisibleChar, tooltip] = getTooltip(ch)
 
         // Prepend tooltip symbol names defined for the on-screen buttons,
         // or derived from controlWords or from math alphanumerics
         if (!testing) {
-            let symbol = getSymbolControlWord(c)
+            let symbol = getSymbolControlWord(ch)
             tooltip = symbol + "<hr>" + tooltip
         }
-        codepoints_HTML += '<div class="cp' + (invisibleChar ? ' invisible-char' : '') + '" data-tooltip="' + tooltip + '"><div class="p">' + cp + '</div><div class="c">' + c + '</div></div>'
 
-        if (c == "\n")
+        codepoints_HTML += '<div class="cp' + (invisibleChar ? ' invisible-char' : '') + '" data-tooltip="' + tooltip + '"><div class="p">' + cp + '</div><div class="c">' + ch + '</div></div>'
+
+        if (ch == "\n")
             codepoints_HTML += "<br>"
     });
     return codepoints_HTML
@@ -5318,6 +5332,12 @@ $('button').hover(function (e) {
     let x = $(elem).offset().left;
     let y = $(elem).offset().top + $(elem).outerHeight(true) + 1;
     let text = elem.getAttribute("data-tooltip");
+    let ch = elem.innerText
+
+    if (text && ['/', '_', '^', '\\'].includes(text[0])) {
+        let [cp, invisibleChar, tooltip] = getTooltip(ch)
+        text = 'U+' + cp + '  ' + text + '<hr>' + tooltip
+    }
     showTooltip(x, y, text);
 }, hideTooltip);
 

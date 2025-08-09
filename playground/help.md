@@ -80,7 +80,7 @@ Or you can enter the control words for the desired characters. The math-style co
 | tailed | mtail | looped | mloop |
 | stretched | mstrc |
 
-Here roundhand and chancery are two script styles, and isolated, initial, tailed, looped, and stretched are Arabic math styles. Currently the Arabic math styles require the XITS font and no fonts support the Chancery and Roundhand variants.
+Here roundhand and chancery are two script styles, and isolated, initial, tailed, looped, and stretched are Arabic math styles. Currently the Arabic math styles require the XITS Math font and the chancery and roundhand variants require the STIX Two Math font.
 
 ## Character code points
 Below the input window, there’s a Unicode codepoint window that displays the codepoints of the input symbols above the symbols.
@@ -110,7 +110,7 @@ But an advantage of the native renderer is that you can edit built-up equations 
 If the selection is an insertion point, the whole equation is copied.
 The only editing feature in the MathJax mode is Ctrl+c, which copies the MathML for the whole equation to the clipboard.
 ## Navigating the app
-A mouse or touchpad provides one way to move between and inside the various facilities. Another way is to use the Tab key. Since the app has myriad default Tab stops, users need a Tab hierarchy. The top of the hierarchy has the menu stops Help, Demo, Speak, Braille, TeX, Dictate, and About, followed by the Input and Output windows, Settings, History, math styles, and symbol galleries. The Tab key navigates these stops in the forward direction, while Shift+Tab navigates in the backward direction. The Enter key activates the current stop's facility. In an activated facility, the left and right arrow keys move between the facility's options. The Enter key then runs the option. For an active symbol gallery, the Enter key inserts the current symbol. For most settings, the Enter key toggles the current option. For menu stops, the Enter key sends the associated hot key. Each change is accompanied by explanatory speech.
+A mouse or touchpad provides one way to move between and inside the various facilities. Another way is to use the Tab key. Since the app has myriad default Tab stops, users need a Tab hierarchy. The top of the hierarchy has the menu stops Help, Demo, Speak, Braille, TeX, Dictate, and About, followed by the Input and Output windows, Settings, History, math styles, and the symbol galleries. The galleries appear in alphabetical order, Accents, Arrows, Binary, etc. The Tab key navigates these stops in the forward direction, while Shift+Tab navigates in the backward direction. The Enter key activates the current stop's facility. In an activated facility, the left and right arrow keys move between the facility's options. The Enter key then runs the option. For an active symbol gallery, the Enter key inserts the current symbol. For most settings, the Enter key toggles the current option. For menu stops, the Enter key sends the associated hot key. Each change is accompanied by explanatory speech.
 ## Intents
 UnicodeMathML generates [Presentation MathML 4](https://w3c.github.io/mathml/).
 A key addition in MathML 4 is the intent attribute, which allows authors to disambiguate math notation and control math speech.
@@ -162,7 +162,7 @@ Still others must be declared explicitly by the content author, by a math-knowle
 ## Author intents
 Since most content authors don’t know MathML, we need a way to allow them to enter intents easily.
 To this end, UnicodeMathML has an output-window context-menu option that lets you tag entities with intents.
-For example, clicking on the 𝐸 in 𝐸 = 𝑚𝑐², you get the input box
+For example, right-clicking on the 𝐸 in 𝐸 = 𝑚𝑐², you get the input box
 
 <img src="help-images/intentbox.png" style="display: block; 
            margin-left: auto; margin-right: auto;
@@ -215,7 +215,7 @@ For example, in the codepoint window, hovering over the integral symbol ∫ disp
            margin-left: auto; margin-right: auto;
            width: 20em;"/>
  
-Hovering over the ∪ in the Operators gallery displays
+Hovering over the ∪ in the Binary operator gallery displays
 
 <img src="help-images/OperatorHover.png" style="display: block; 
            margin-left: auto; margin-right: auto;
@@ -247,7 +247,7 @@ You can use [La]TeX macros with [La]TeX input. Simple examples are:
 | \def\f{x_1+...+x_n} | \f | 𝑥₁+⋯+𝑥_𝑛 |
 | \def\g#1#2\{#1+#2} | \g ab | 𝑎 + 𝑏 |
 
-The last equation in the Examples gallery is: \\[\def\g#1#2{#1f(#2)}\g\relax{x}=\int_{-\infty}\^\infty \g\hat\xi\,e\^{2 \pi i \xi x} \,d\xi\\], which displays as
+The last equation in the Examples gallery is LaTeX that defines a macro and then uses it: \\[\def\g#1#2{#1f(#2)}\g\relax{x}=\int_{-\infty}\^\infty \g\hat\xi\,e\^{2 \pi i \xi x} \,d\xi\\]. This displays as
 
 <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><mi>𝑓</mi><mrow intent=":fenced"><mo>(</mo><mi>𝑥</mi><mo>)</mo></mrow><mo>=</mo><mrow intent=":nary($l,∞,$naryand)"><msubsup><mo>∫</mo><mrow arg="l"><mo>−</mo><mi>∞</mi></mrow><mi>∞</mi></msubsup><mrow arg="naryand"><mover accent="true"><mi>𝑓</mi><mo>̂</mo></mover><mrow intent=":fenced"><mo>(</mo><mi>𝜉</mi><mo>)</mo></mrow><mspace width="thinmathspace"></mspace></mrow></mrow><msup><mi>𝑒</mi><mrow><mn>2</mn><mi>𝜋</mi><mi>𝑖</mi><mi>𝜉</mi><mi>𝑥</mi></mrow></msup><mspace width="thinmathspace"></mspace><mi>𝑑</mi><mi>𝜉</mi></math>
 
