@@ -215,11 +215,11 @@ For example, in the codepoint window, hovering over the integral symbol ∫ disp
            margin-left: auto; margin-right: auto;
            width: 20em;"/>
  
-Hovering over the ∪ in the Binary operator gallery displays
+Hovering over the ∪ in the Binary operator gallery displays 
 
-<img src="help-images/OperatorHover.png" style="display: block; 
+<img src="help-images/cupHover.png" style="display: block; 
            margin-left: auto; margin-right: auto;
-           width: 8em;"/>
+           width: 20em;"/>
   
 Here \cup is the standard [La]TeX control word for entering ∪ but since \union is easier to guess, it’s included too.
 
