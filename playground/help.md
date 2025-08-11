@@ -215,7 +215,7 @@ For example, in the codepoint window, hovering over the integral symbol ∫ disp
            margin-left: auto; margin-right: auto;
            width: 20em;"/>
  
-Hovering over the ∩ in the Binary operator gallery displays 
+Simlarly, hovering over the ∩ in the Binary operator gallery displays
 
 <img src="help-images/cupHover.png" style="display: block; 
            margin-left: auto; margin-right: auto;
