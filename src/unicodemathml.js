@@ -563,17 +563,18 @@ function foldSupDigit(char) {   // Fold Unicode superscript digit to ASCII
 }
 
 function foldMathAlphanumeric(code, ch) {   // Generalization of foldMathItalic()
-    let anCode = '';
     if (code < 0x1D400) {
-        if (code < 0x2102)                  // 1st Letterlike math alphabetic
-            return ['mup', ch];
-        let letterLikeSymbol = letterLikeSymbols[ch];
-        return (letterLikeSymbol == undefined) ? ['mup', ch]
-            : [anCodesEng[letterLikeSymbol[0]], letterLikeSymbol[1]];
+        if (code >= 0x2102) {
+            let letterLikeSymbol = letterLikeSymbols[ch];
+            if (letterLikeSymbol)
+                return [anCodesEng[letterLikeSymbol[0]], letterLikeSymbol[1]]
+        }
+        return (isAsciiAlphabetic(ch) || isGreek(ch)) ? ['mup', ch] : ['', ch]
     }
     if (code > 0x1D7FF)
         return ['', ch];                    // Not math alphanumeric
 
+    let anCode = '';
     code -= 0x1D400;
 
     if (code < 13 * 52) {                   // 13 English math alphabets

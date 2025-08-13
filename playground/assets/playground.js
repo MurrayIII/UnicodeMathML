@@ -25,6 +25,23 @@ var shadedArgNode                    // Used for IP when editing in output windo
 var uMathSave = ''                   // Used to restore output selection on regaining focus
 
 const SELECTNODE = -1024
+const charRanges = [
+    [0x3400, 0x4DBF, 'CJK Ideograph Extension A', 'CJK Unified Ideographs Extension A', 'Lo'],
+    [0x4E00, 0x9FFF, 'CJK Ideograph', 'CJK Unified Ideographs', 'Lo'],
+    [0xAC00, 0xD7A3, 'Hangul Syllable', 'Hangul Syllables', 'Lo'],
+    [0xE000, 0xF8FF, 'Private Use', 'Private Use Area', 'Co'],
+    [0x17000, 0x187F7, 'Tangut Ideograph', 'Tangut', 'Lo'],
+    [0x18D00, 0x18D08, 'Tangut Ideograph Supplement', 'Tangut Supplement', 'Lo'],
+    [0x20000, 0x2A6DF, 'CJK Ideograph Extension B', 'CJK Unified Ideographs Extension B', 'Lo'],
+    [0x2A700, 0x2B739, 'CJK Ideograph Extension C', 'CJK Unified Ideographs Extension C', 'Lo'],
+    [0x2B740, 0x2B81D, 'CJK Ideograph Extension D', 'CJK Unified Ideographs Extension D', 'Lo'],
+    [0x2B820, 0x2CEA1, 'CJK Ideograph Extension E', 'CJK Unified Ideographs Extension E', 'Lo'],
+    [0x2CEB0, 0x2EBE0, 'CJK Ideograph Extension F', 'CJK Unified Ideographs Extension F', 'Lo'],
+    [0x2EBF0, 0x2EE5D, 'CJK Ideograph Extension I', 'CJK Unified Ideographs Extension I', 'Lo'],
+    [0x30000, 0x3134A, 'CJK Ideograph Extension G', 'CJK Unified Ideographs Extension G', 'Lo'],
+    [0x31350, 0x323AF, 'CJK Ideograph Extension H', 'CJK Unified Ideographs Extension H', 'Lo'],
+    [0xF0000, 0xFFFFD, 'Plane 15 Private Use', 'Supplementary Private Use Area-A', 'Co'],
+    [0x100000, 0x10FFFD, 'Plane 16 Private Use', 'Supplementary Private Use Area-B', 'Co']]
 
 function getMathJaxMathMlNode() {
     /* MathJax output-element DOM has the form:
@@ -2731,7 +2748,7 @@ function getArgName(node, prefix) {
     let nodeP = node.parentElement
     let name = nodeP.nodeName
 
-    if (name == 'math' && prefix == '⁋▒')
+    if (name == 'math' && prefix == '⁋▒' && !getChildIndex(node, nodeP))
         return prefix + 'math'
 
     while (name == 'mrow') {
@@ -4699,26 +4716,43 @@ function getSymbolControlWord(ch) {
             let [anCode, chFolded] = foldMathAlphanumeric(ch.codePointAt(0), ch)
             if (anCode)
                 cw = '\\' + anCode + chFolded
-        } else {
-            cw = (ch == '"') ? '&#x0022' : ch
         }
+        if (!cw)
+            cw = '\\u' + ch.codePointAt(0).toString(16).padStart(4, '0').toUpperCase()
     }
     return cw
 }
 
 function getTooltip(ch) {
-    let cp = ch.codePointAt(0).toString(16).padStart(4, '0').toUpperCase();
+    let cp = ch.codePointAt(0).toString(16).padStart(4, '0').toUpperCase()
 
-    // lookup unicode data for tooltip
-    let tooltip = "";
-    if (typeof getCodepointData === "function") {
-        try {
-            let cpd = getCodepointData(cp);
-            tooltip = `Name: ${cpd["name"].replace("<", "&amp;lt;").replace(">", "&amp;gt;")}<br>Block: ${cpd["block"]}<br>Category: ${cpd["category"]}`;
-        } catch (e) {
-            tooltip = "no info found";
-        }
+    // Lookup Unicode data for tooltip
+    let tooltip = ''
+    let cpd = getCodepointData(cp)
+
+    if (!cpd["name"]) {
+        // Define data for some large ranges
+        let cp = ch.codePointAt(0)
+
+        for (let i = 0; i < charRanges.length; i++) {
+            if (cp < charRanges[i][0])
+                break
+            if (cp <= charRanges[i][1]) {
+                cpd["name"] = charRanges[i][2] + '-' + cp.toString(16)
+                cpd["block"] = charRanges[i][3]
+                cpd["category"] = charRanges[i][4]
+            }
+       }
     }
+    if (cpd["name"]) {
+        let name = cpd["name"]
+        if (name[0] == '<')
+            name = "&amp;lt;" + name.substring(1, name.length - 1) + "&amp;gt;"
+        tooltip = 'Name: ' + name + '<br>Block: ' + cpd["block"] + '<br>Category: ' + cpd["category"]
+    } else {
+        tooltip = "no info found"
+    }
+
     // highlight special invisible characters and spaces (via
     // https://en.wikipedia.org/wiki/Whitespace_character#Unicode,
     // https://www.ptiglobal.com/2018/04/26/the-beauty-of-unicode-zero-width-characters/,

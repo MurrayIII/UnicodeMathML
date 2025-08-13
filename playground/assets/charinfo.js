@@ -40472,8 +40472,8 @@ function getBlock(i) {
 }
 
 function getCodepointData(cp) {
-    var cpd = codepointData[cp];
-    return {"name": cpd[0], "block": getBlock(cpd[1]), "category": cpd[2]};
+    let cpd = codepointData[cp]
+    if (!cpd)
+        cpd = ['', 0, '']
+    return {"name": cpd[0], "block": getBlock(cpd[1]), "category": cpd[2]}
 }
-
-

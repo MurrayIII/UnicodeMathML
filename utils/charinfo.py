@@ -4,7 +4,7 @@ import urllib.request
 import sys
 
 def parse_file(url):
-    """parse a basic unicode database file into a list of lists representing rows of colums"""
+    """parse a basic unicode database file into a list of lists representing rows of columns"""
 
     response = urllib.request.urlopen(url)
     text = response.read().decode('utf-8')
@@ -67,8 +67,10 @@ print('''
 }
 
 function getCodepointData(cp) {
-    var cpd = codepointData[cp];
-    return {"name": cpd[0], "block": getBlock(cpd[1]), "category": cpd[2]};
+    let cpd = codepointData[cp]
+    if (!cpd)
+        cpd = ['', 0, '']
+    return {"name": cpd[0], "block": getBlock(cpd[1]), "category": cpd[2]}
 }
 
 ''')
