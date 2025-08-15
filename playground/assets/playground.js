@@ -223,9 +223,7 @@ function setSelectionEx(sel, node, offset, e) {
     e.preventDefault()
     if (e.shiftKey)                         // Extend selection
         sel.setBaseAndExtent(sel.anchorNode, sel.anchorOffset, node, offset)
-    else {
-                                            // Insertion point
-    }
+    else                                    // Insertion point
         sel.setBaseAndExtent(node, offset, node, offset)
     if (testing)
         document.onselectionchange()
@@ -427,8 +425,10 @@ function nextEq() {
 
 function prevEq() {
     iExample -= 2;
-    if (iExample < 0)
+    if (iExample < 0) {
+        let cExamples = x.childNodes.length;
         iExample = cExamples - 1;
+    }
     nextEq();
 }
 
@@ -2774,7 +2774,7 @@ function getArgName(node, prefix) {
             break;
         case 'mfrac':
             if (nodeP.getAttribute('linethickness') == 0)
-                name = node.nextElementSibling ? 'top element' : 'bottom element'
+                name = node.nextElementSibling ? 'upper element' : 'lower element'
             else
                 name = node.nextElementSibling ? '⬒' : '⬓'
             break;
@@ -4296,6 +4296,37 @@ output.addEventListener('keydown', function (e) {
             return
 
         case 'ArrowLeft':
+            if (e.ctrlKey) {                // Ctrl+←
+                if (node.nodeName == '#text')
+                    node = node.parentElement
+                let nodeP = node.parentElement
+                if (!offset && nodeP.nodeName == 'math' && !getChildIndex(node, nodeP))
+                    return                  // Already at start of math
+                while (!isMathMLObject(nodeP) && nodeP.nodeName != 'math') {
+                    node = nodeP
+                    nodeP = node.parentElement
+                }
+                offset = 0
+                if (nodeP.nodeName == 'math') {
+                    if (node.previousElementSibling)
+                        node = node.previousElementSibling
+                    else
+                        offset = node.childElementCount ? node.childElementCount : 1
+                } else {
+                    while (!node.previousElementSibling)
+                        node = node.parentElement
+                    if (node.nodeName == 'math')
+                        break
+                    node = node.previousElementSibling
+                    if (node.nodeName == 'mrow')
+                        node = node.firstElementChild
+                }
+                if (!offset)
+                    speak(speech(node))
+                setSelectionEx(sel, node, offset, e)
+                keydownLast = 'Ctrl'
+                return
+            }
             if (offset)
                 moveLeft(sel, node, offset, e)
             else
@@ -4610,6 +4641,7 @@ output.addEventListener('keydown', function (e) {
             }
         } else {
             setSelection(sel, node, node.childElementCount ? node.childElementCount : 1)
+            speak(key)
             handleKeyboardInput(node, key, sel)
         }
         refreshDisplays('', true)
@@ -5082,15 +5114,15 @@ function addToHistory(symbols) {
 
 function displayHistory() {
     // don't overwhelm the browser
-    let historySize = 50;
+    let historySize = 50
 
     //                  ↙ clone array before reversing
-    let histo = hist.slice().reverse().slice(0,historySize).map(c => {
-        // get tooltip data
+    let histo = hist.slice().reverse().slice(0, historySize).map(c => {
+        // Get control-word tooltip data (more info gets added when hovering)
         let t = getSymbolControlWord(c)
-        return `<button type="button" class="unicode" title="${t}">${c}</button>`;
-    });
-    document.getElementById('history').innerHTML = histo.join('');
+        return `<button type="button" class="unicode" data-tooltip="${t}">${c}</button>`
+    })
+    document.getElementById('history').innerHTML = histo.join('')
 }
 
 function setActiveTab(id) {

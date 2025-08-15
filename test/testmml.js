@@ -1062,8 +1062,8 @@ const rats = [    // Right Arrow Tests
             '𝑛⒞𝑘 𝑎^Ⓐ(1)2 𝑥²/2!', '𝑛⒞𝑘 𝑎²Ⓐ() 𝑥²/2!', '𝑛⒞𝑘 𝑎² Ⓐ() 𝑥²/2!', '𝑛⒞𝑘 𝑎² Ⓐ()𝑥²/2!',
             '𝑛⒞𝑘 𝑎² Ⓐ(1)𝑥²/2!', '𝑛⒞𝑘 𝑎² 𝑥^Ⓐ()2/2!', '𝑛⒞𝑘 𝑎² 𝑥^Ⓐ(1)2/2!', '𝑛⒞𝑘 𝑎² Ⓐ(2) 𝑥²/2!',
             '𝑛⒞𝑘 𝑎² 𝑥²/Ⓐ()2!', '𝑛⒞𝑘 𝑎² 𝑥²/2Ⓐ()!', '𝑛⒞𝑘 𝑎² 𝑥²/2Ⓐ(1)!', '𝑛⒞𝑘 𝑎²Ⓐ(2) 𝑥²/2!',],
-        speechExpect: ['open', 'fraction', 'start of top element , n', 'end of top element',
-            'start of bottom element , k', 'end of bottom element', 'close', 'eigh squared',
+        speechExpect: ['open', 'fraction', 'start of upper element , n', 'end of upper element',
+            'start of lower element , k', 'end of lower element', 'close', 'eigh squared',
             'start of base , eigh', 'end of base', 'start of superscript , 2',
             'end of superscript', 'fraction', 'start of numerator , x squared', 'start of base , x',
             'end of base', 'start of superscript , 2', 'end of superscript', 'end of numerator',
@@ -1178,6 +1178,32 @@ const lats = [      // Left Arrow Tests
     },
 ]                   // End of left-arrow tests
 
+const cats = [      // Ctrl+→/← navigation tests
+    {
+        uMath: '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)',
+        arrow: '→',
+        endExpect: 'Ⓐ() 1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)',
+        ctrlArrowExpect: ['1/2𝜋 Ⓐ() ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)',
+            '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃) Ⓐ()=1/√(𝑎²−𝑏²)',
+            '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=Ⓐ() 1/√(𝑎²−𝑏²)',
+            '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=Ⓐ(2) 1/√(𝑎²−𝑏²)',
+        ],
+        speechExpect: ['', '',]
+    },
+    {
+        uMath: '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)',
+        arrow: '←',
+        endExpect: '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=Ⓐ(2) 1/√(𝑎²−𝑏²)',
+        ctrlArrowExpect: [
+            '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃) Ⓐ()=1/√(𝑎²−𝑏²)',
+            '1/2𝜋 Ⓐ() ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)',
+            'Ⓐ() 1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)',
+            'Ⓐ() 1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)',
+        ],
+        speechExpect: ['', '',]
+    },
+]
+
 const ieqbus = [    // Intra-equation build-up Tests
     {
         uMath: '(𝑎+Ⓐ(1)𝑏)/𝑐=0',
@@ -1201,6 +1227,10 @@ function testOutputHotKey(key, expect) {
     event.key = key
     if (key.length == 1) {
         event.ctrlKey = true
+        if (key == '←')
+            event.key = 'ArrowLeft'
+        else if (key == '→')
+            event.key = 'ArrowRight'
         key = 'Ctrl+' + key
     }
     output.dispatchEvent(event)
@@ -1263,6 +1293,19 @@ function testLeftArrow(uMath, endExpect, leftArrowExpect, speechExpect) {
             console.log(uMath + ' Speech failed. result: ' + speechCurrent + " expect: " + speechExpect[i])
         speechCurrent = ''
         speechSynthesis.cancel()
+    }
+}
+
+function testCtrlArrow(uMath, arrow, endExpect, ctrlArrowExpect, speechExpect) {
+    buildUp(uMath)
+    testOutputHotKey(arrow == '→' ? 'Home' : 'End', endExpect)
+    //speechCurrent = ''
+    for (let i = 0; i < ctrlArrowExpect.length; i++) {
+        testOutputHotKey(arrow, ctrlArrowExpect[i])
+    //    if (speechCurrent != speechExpect[i])
+    //        console.log(uMath + ' Speech failed. result: ' + speechCurrent + " expect: " + speechExpect[i])
+    //    speechCurrent = ''
+    //    speechSynthesis.cancel()
     }
 }
 
@@ -1356,6 +1399,12 @@ function testHotKeys() {
     for (i = 0; i < lats.length; i++) {
         testLeftArrow(lats[i].uMath, lats[i].endExpect,
             lats[i].leftArrowExpect, lats[i].speechExpect)
+    }
+
+    // Ctrl+→/← navigation tests
+    for (i = 0; i < cats.length; i++) {
+        testCtrlArrow(cats[i].uMath, cats[i].arrow, cats[i].endExpect,
+            cats[i].ctrlArrowExpect, cats[i].speechExpect)
     }
 
     // Check intra-equation build up, e.g., build up not at end of math zone
