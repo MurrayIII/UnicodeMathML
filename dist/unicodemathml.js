@@ -1,8 +1,952 @@
-(function(root) {
+var autoBuildUp = false                     // (could be a unicodemathml() arg)
+var ksi = false
+var testing
+var selanchor
+var selfocus
+var useMfenced = 0                          // Generate recommended MathML
+var ummlConfig
+var emitDefaultIntents =
+    typeof ummlConfig === "undefined" ||
+    typeof ummlConfig.defaultIntents === "undefined" ||
+    ummlConfig.defaultIntents;
+
+function convertUnicodeMathToMathML(uMath, config) {
+    const defaultConfig = {                 // Order same as configDescriptions
+        splitInput: true,
+        resolveControlWords: true,
+        displaystyle: true,
+        debug: true,
+        caching: true,
+        tracing: false,
+        forceMathJax: false,
+        defaultIntents: false,
+        speakSelectionEnds: false,
+        doubleStruckMode: "us-tech",
+        transposeChar: "T",
+    }
+    ummlConfig = JSON.parse(JSON.stringify(config ? config : defaultConfig))
+
+    return unicodemathml(uMath, ummlConfig.displaystyle)
+}
+
+function escapeHTMLSpecialChars(str) {
+    const replacements = { '&': '&amp;', '<': '&lt;', '>': '&gt;' }
+
+    return str.replace(/[&<>]/g, tag => {
+        return replacements[tag] || tag;
+    });
+}
+
+const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
+const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
+
+const overBrackets = '\u23B4\u23DC\u23DE\u23E0¯';
+const underBrackets = '\u23B5\u23DD\u23DF\u23E1';
+
+const argCounts = {
+    'msup': 2, 'msub': 2, 'msubsup': 3, 'munder': 2, 'mover': 2, 'munderover': 3,
+    'mfrac': 2, 'msqrt': 1, 'mroot': 2
+}
+
+const unicodeFractions = {
+    "½": [1, 2], "⅓": [1, 3], "⅔": [2, 3], "¼": [1, 4], "¾": [3, 4], "⅕": [1, 5],
+    "⅖": [2, 5], "⅗": [3, 5], "⅘": [4, 5], "⅙": [1, 6], "⅚": [5, 6], "⅐": [1, 7],
+    "⅛": [1, 8], "⅜": [3, 8], "⅝": [5, 8], "⅞": [7, 8], "⅑": [1, 9], "↉": [0, 3],
+    "⅒": [1, 10]
+};
+
+const mappedSingle = { "-": "\u2212", "\'": "\u2032" }
+
+const mappedPair = {
+    "+-": "±", "<=": "≤", ">=": "≥", "~=": "≅", "~~": "≈", "::": "∷",
+    ":=": "≔", "<<": "≪", ">>": "≫", "−>": "→", "−+": "∓", "!!": "‼",
+    "...": "…", '≯=': '≱', '≮=': '≰', '⊀=': '⪱', '⊁=': '⪲', '⊄=': '⊈',
+    '⊅=': '⊉', '+−': '±', '−+': '∓',
+}
+
+//                    0    1    2    3    4    5    6    7    8    9
+const indicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩']
+
+function getSubSupDigits(str, i, delim) {
+    // Return e.g., '²' for '^2 ' (str[i-1] = '^', str[i] = '2', delim = ' ')
+    if (!'+-=/ )]}'.includes(delim))
+        return ''
+    let j
+    for (j = i; j > 0 && isAsciiDigit(str[j]); j--)
+        ;                                   // Find digit span indices
+    if (j == i)
+        return ''                           // No digits
+    let op = str[j]                         // Char preceding digits
+
+    if (!'_^'.includes(op))                 // Digits not preceded by * or _
+        return ''
+
+    let n = ''                              // Gets sub/sup number from digits
+    let k = j + 1
+    for (; k < i + 1; k++)
+        n += (op == '^') ? digitSuperscripts[str[k]] : digitSubscripts[str[k]]
+
+    // If the preceding op is the other subsup op, return '', e.g., for a_0^2
+    // Code doesn't handle subsups (but could...)
+    let opSupSub = (op == '^') ? '_' : '^'
+    k = j - 1
+
+    for (; k >= 0; k--) {
+        if (str[k] == opSupSub)
+            return ''
+        if (str[k] < '\u3017' && !isAsciiAlphanumeric(str[k]) && !isDoubleStruck(str[k]))
+            break                           // Could allow other letters...
+    }
+    if (k == j - 1)
+        return ''                           // No base character(s)
+
+    return n
+}
+
+function getFencedOps(value) {
+    let opClose = value.getAttribute('close')
+    let opOpen = value.getAttribute('open')
+    let opSeparators = value.getAttribute('separators')
+
+    if (!opClose)
+        opClose = ')'
+    if (!opOpen)
+        opOpen = '('
+    if (!opSeparators)
+        opSeparators = ','
+    return [opClose, opOpen, opSeparators]
+}
+
+function getNonBlankChar(tex, i) {
+    while (tex[i] == ' ')
+        i++
+    return getCh(tex, i)
+}
+
+function getUnicodeFraction(chNum, chDenom) {
+    if (chNum.length == 1) {
+        if (chDenom == '10' && chNum == '1')
+            return "⅒";
+
+        if (chDenom.length <= 2) {
+            for (const [key, val] of Object.entries(unicodeFractions)) {
+                if (chNum == val[0] && chDenom == val[1])
+                    return key;             // Unicode fraction char like ½
+            }
+        }
+    }
+    let n;
+    let result = '';
+
+    for (let i = 0; i < chNum.length; i++, result += digitSuperscripts[n]) {
+        n = chNum.codePointAt(i) - 0x30;
+        if (n < 0 || n > 9)
+            return '';
+    }
+    result += '\u2044';                     // Fraction slash
+    for (let i = 0; i < chDenom.length; i++, result += digitSubscripts[n]) {
+        n = chDenom.codePointAt(i) - 0x30;
+        if (n < 0 || n > 9)
+            return '';
+    }
+    return result;                          // Unicode fraction string like ¹²/₃₄₅
+}
+
+// determine space width attribute values: x/18em
+//                    0         1                       2                   3                  4                   5               6                       7                 8       9      10    11    12   13    14     15    16   17     18
+const uniSpaces = ['\u200B', '\u200A',            '\u200A\u200A',       '\u2009',          '\u205F',          '\u2005',         '\u2004',              '\u2004\u200A',       '', '\u2002',  '',   '',   '',   '',  '',    '',   '',  '', '\u2003'];
+const spaceWidths = ['0', 'veryverythinmathspace', 'verythinmathspace', 'thinmathspace', 'mediummathspace', 'thickmathspace', 'verythickmathspace', 'veryverythickmathspace', null, '0.5em', null, null, null, null, null, null, null, null, '1em'];
+
+const mathStyles = [
+    'mup', 'mbfit', 'mscr', 'mbfscr', 'mfrak', 'Bbb', 'mbffrak', 'mitBbb',
+    'mbfsans', 'mitsans', 'mbfitsans', 'mbf', 'mit', 'msans', 'mtt', 'misol',
+    'minit', 'mtail', 'mloop', 'mstrc', 'mrhnd', 'mchan']
+
+const anCodesEng = [
+    // 0      1       2       3        4        5       6        7
+    'mbf', 'mit', 'mbfit', 'mscr', 'mbfscr', 'mfrak', 'Bbb', 'mbffrak',
+    // 8         9          10          11        12
+    'msans', 'mbfsans', 'mitsans', 'mbfitsans', 'mtt'];
+const anCodesGr = [
+    'mbf', 'mit', 'mbfit', 'mbfsans', 'mbfitsans'];
+const anCodesDg = [
+    'mbf', 'Bbb', 'msans', 'mbfsans', 'mtt'];
+const letterLikeSymbols = {
+    'ℂ': [6, 'C'], 'ℊ': [3, 'g'], 'ℋ': [3, 'H'], 'ℌ': [5, 'H'], 'ℍ': [6, 'H'], 'ℎ': [1, 'h'],
+    'ℐ': [3, 'I'], 'ℑ': [5, 'I'], 'ℒ': [3, 'L'], 'ℕ': [6, 'N'], 'ℙ': [6, 'P'], 'ℚ': [6, 'Q'],
+    'ℛ': [3, 'R'], 'ℜ': [5, 'R'], 'ℝ': [6, 'R'], 'ℤ': [6, 'Z'], 'ℨ': [5, 'Z'], 'ℬ': [3, 'B'],
+    'ℭ': [5, 'C'], 'ℯ': [3, 'e'], 'ℰ': [3, 'E'], 'ℱ': [3, 'F'], 'ℳ': [3, 'M'], 'ℴ': [3, 'o']
+};
+
+const mathvariants = {
+    // MathML mathvariant values to TeX unicode-math names in unimath-symbols.pdf
+    // along with proposed 'TeX' names for the Arabic math styles (isolated, ...).
+    'normal': 'mup',
+    'bold': 'mbf',
+    'italic': 'mit',
+    'bold-italic': 'mbfit',
+    'double-struck': 'Bbb',
+    'bold-fraktur': 'mbffrak',
+    'script': 'mscr',
+    'bold-script': 'mbfscr',
+    'fraktur': 'mfrak',
+    'sans-serif': 'msans',
+    'bold-sans-serif': 'mbfsans',
+    'sans-serif-italic': 'mitsans',
+    'sans-serif-bold-italic': 'mbfitsans',
+    'monospace': 'mtt',
+    'isolated': 'misol',
+    'initial': 'minit',
+    'tailed': 'mtail',
+    'looped': 'mloop',
+    'stretched': 'mstrc',
+    'roundhand': 'mrhnd',
+    'chancery': 'mchan'
+};
+
+const matrixIntents = {
+    '⒨': ':parenthesized-matrix',
+    '⒱': ':determinant',
+    '⒩': ':normed-matrix',
+    'ⓢ': ':bracketed-matrix',
+    'Ⓢ': ':curly-braced-matrix',
+}
+
+// Enclosure notation attributes options based on a bit mask or symbol
+const symbolClasses = {
+    '▭': 'box',
+    '̄': 'top',
+    '▁': 'bottom',
+    '▢': 'roundedbox',
+    '◯': 'circle',
+    '⟌': 'longdiv',
+    "⃧": 'actuarial',
+    '⬭': 'circle',
+    '╱': 'cancel',
+    '╲': 'bcancel',
+    '╳': 'xcancel'
+};
+
+const maskClasses = {
+    1: 'top',
+    2: 'bottom',
+    4: 'left',
+    8: 'right',
+    16: 'horizontalstrike',
+    32: 'verticalstrike',
+    64: 'downdiagonalstrike',
+    128: 'updiagonalstrike'
+};
+
+function inRange(ch0, ch, ch1) {
+    return ch >= ch0 && ch <= ch1 && ch.length == ch0.length;
+}
+
+function isAccent(ch) {
+    return inRange('\u0300', ch, '\u034F') || inRange('\u20D0', ch, '\u20F0')
+}
+
+function isAlphanumeric(ch) {
+    return /[\w]/.test(ch) && ch != '_' || ch >= '\u3018' || isGreek(ch) || inRange('ℂ', ch, 'ⅉ')
+}
+
+function isMathAlphabetic(str, i) {
+    let ch = str[i]
+    let code = str.codePointAt(i)
+    if (isTrailSurrogate(code)) {
+        code = str.codePointAt(i - 1)
+        ch = str.substring(i - 1, i + 1)
+    }
+    let [font, chFolded] = foldMathAlphanumeric(code, ch);
+    return isAsciiAlphabetic(chFolded) || isGreek(chFolded)
+}
+
+function isArabic(ch) { return inRange('\u0627', ch, '\u06BA') }
+
+function isAsciiAlphabetic(ch) { return /[A-Za-z]/.test(ch); }
+
+function isAsciiAlphanumeric(ch) { return /[\w]/.test(ch); }
+
+function isAsciiDigit(ch) {
+    return inRange('0', ch, '9');
+}
+
+function isBraille(ch) {
+    return inRange('\u2800', ch, '\u28FF');
+}
+
+function isCloseDelimiter(op) {
+    return ')]}⟩〗⌉⌋❳⟧⟩⟫⟭⟯⦄⦆⦈⦊⦌⦎⦐⦒⦔⦖⦘⧙⧛⧽'.includes(op)
+}
+
+function isDoubleStruck(ch) {
+    return inRange('\u2145', ch, '\u2149');
+}
+
+function isGreek(ch) {
+    return inRange('\u0391', ch, '\u03F5');
+}
+
+function isIntegral(op) {
+    return inRange('∫', op, '∳') || op == '⨌';  // 222B..2233, 2A0C
+}
+
+function isLcAscii(ch) { return /[a-z]/.test(ch); }
+
+function isLcGreek(ch) {
+    return inRange('\u03B1', ch, '\u03F5');
+}
+
+function isLeadSurrogate(code) { return code >= 0xD800 && code <= 0xDBFF; }
+
+function isMathColor(val) { return val == '☁(' || val == '✎(' }
+
+function isMathML(unicodemath) {
+    return unicodemath.startsWith("<math") ||
+           unicodemath.startsWith("<mml:math") ||
+           unicodemath.startsWith("<m:math");
+}
+
+function isMrowLike(node) {
+    return ['math', 'menclose', 'merror', 'mpadded', 'mphantom', 'mrow',
+        'mscarry', 'msqrt', 'mstyle', 'mtd'].includes(node.localName)
+}
+
+function isNary(op) {
+    return '∑⅀⨊∏∐⨋∫∬∭⨌∮∯∰∱⨑∲∳⨍⨎⨏⨕⨖⨗⨘⨙⨚⨛⨜⨒⨓⨔⋀⋁⋂⋃⨃⨄⨅⨆⨀⨁⨂⨉⫿'.includes(op);
+}
+
+function isOpenDelimiter(op) {
+    return '([{⟨〖⌈⌊❲⟦⟨⟪⟬⟮⦃⦅⦇⦉⦋⦍⦏⦑⦓⦕⦗⧘⧚⧼'.includes(op)
+}
+
+function isTeX(unicodemath) {
+    return unicodemath[0] == '$' || unicodemath.startsWith('\\(') ||
+        unicodemath.startsWith('\\[')
+}
+
+function isTrailSurrogate(code) { return code >= 0xDC00 && code <= 0xDFFF; }
+
+function isTranspose(value) {
+    return Array.isArray(value) &&
+        value[0].hasOwnProperty('atoms') &&
+        Array.isArray(value[0].atoms) &&
+        value[0].atoms[0].hasOwnProperty("chars") &&
+        value[0].atoms[0].chars == '⊺';
+}
+
+function isUcAscii(ch) { return /[A-Z]/.test(ch); }
+
+function removeOuterParens(ret) {
+    if (ret[0] == '(') {
+        // Remove outermost parens if they match one another. Needed
+        // to remove parentheses enclosing, e.g., 𝑎+𝑏 in ▭(2&𝑎+𝑏)
+        let cParen = 1
+        for (let i = 1; i < ret.length - 1; i++) {
+            if (ret[i] == '(')
+                cParen++
+            else if (ret[i] == ')')
+                cParen--
+            if (!cParen)
+                break                   // Balanced before final char
+        }
+        if (cParen == 1 && ret[ret.length - 1] == ')')
+            ret = ret.substring(1, ret.length - 1)
+    }
+    return ret
+}
+
+function hasEqLabel(node) {
+    if (node.nodeName != 'mtable')
+        return false
+    node = node.firstElementChild           // <mtr> or <mlabeledtr>
+
+    return node.nodeName == 'mlabeledtr' ||
+        node.firstElementChild.getAttribute('intent') == ':equation-label'
+}
+
+function getMacro(s, i) {
+    if (s[i] == 'ⓜ' && s[i + 1] == '\\') {
+        // Define macro. No nesting for now...
+        let cw = ''                         // Get control word
+        let j
+        for (j = i + 2; isAsciiAlphabetic(s[j]) && j < s.length; j++)
+            cw += s[j]
+
+        while (s[j] == ' ')
+            j++
+
+        // j is index of start of body
+        let k = s.indexOf('{', j)           // Bypass arg list
+        k = findClosingBrace(s, k + 1)      // Find end of body
+        if (k != -1) {
+            let body
+            if (s[j] == '#' || s[j] == '[') // Has args: needs execution
+                body = 'ⓜ' + s.substring(j, k + 1)
+            else
+                body = s.substring(j + 1, k)
+            return [cw, body, k + 1]
+        }
+        console.log('cw: ' + cw + ', body: ' + body + ', k: ' + k)
+    }
+    return ['']
+}
+
+function applyMacro(tex, i) {
+    // Apply macro with body starting at tex[i]
+    let k, j
+    let cArg = 0
+
+    // Get count of macro arguments
+    if (tex[i] == '[') {                    // \newcommand
+        cArg = tex[i + 1]
+        if (tex[i + 2] != ']')
+            return ''
+        k = i + 3                           // Bypass count field
+    } else {                                // \def
+        for (k = i; k < tex.length && tex[k] != '{'; k++) {
+            if (tex[k] == '#') {
+                if (cArg < 9)
+                    cArg++
+                k++                         // Bypass digit
+            }
+        }
+    }
+    if (tex[k] != '{')
+        return ''
+    j = findClosingBrace(tex, k + 1)
+    if (j == -1)
+        return ''
+
+    let macro = tex.substring(k + 1, j)     // Macro body
+    i = j + 1
+
+    // Collect cArg args that follow macro
+    let args = []
+
+    for (j = 0; j < cArg && i < tex.length; j++) {
+        let arg = ''
+        while (tex[i] == ' ')               // Skip leading spaces
+            i++
+        if (tex[i] == '{') {
+            k = findClosingBrace(tex, i + 1)
+            if (k == -1)
+                return ['', 0]              // Error
+            arg = tex.substring(i + 1, k)   // Don't include {}
+            i = k + 1
+        } else if (tex[i] == 'ⓝ') {        // \relax → ''
+            i++
+        } else {
+            arg = getCh(tex, i)
+            i += arg.length                 // Set up to bypass char
+        }
+        args[j] = arg
+    }
+    for (j = args.length; j < cArg; j++)
+        args[j] = ''                        // Null strings for missing args
+
+    //if (!testing)
+    //    console.log('args: ' + args)
+
+    // Substitute args for the corresponding #n's
+    let val = ''
+    for (k = 0; k < macro.length; k++) {
+        if (macro[k] == '#') {
+            k++                             // Advance to digit
+            val += args[macro[k] - 1]
+        } else {
+            val += macro[k]
+        }
+    }
+    //if (!testing)
+    //    console.log('macro → ' + val)
+    return [val, i]
+}
+
+function checkCardinalityIntent(intent, miContent) {
+    if (intent) {
+        if (intent[0] == 'ⓒ')
+            intent = 'cardinality' + intent.substring(1)
+        if (miContent && intent.startsWith('cardinality'))
+            intent = 'cardinality(' + miContent + ')'
+    }
+    return intent
+}
+
+function checkBrackets(node) {
+    // Return count of open brackets - count of close brackets. The value 0
+    // implies equal counts, but the code doesn't check for correct balance
+    // order. Also return the node index of the final child that shouldn't be
+    // included in partial build up. Partial build up of trailing children
+    // may occur for a nonzero bracket count difference, e.g., √(𝑎²-𝑏². Also
+    // return opBuildUp: 1 means possible build up; 2 means possible build up
+    // and that an nary op is present.
+    let cNode = node.childElementCount
+    let cBracket = 0
+    let ket = false
+    let opBuildUp = 0
+    let vbar = false
+    let k = -1                              // Index of final child not in
+                                            //  partial build up
+    if (!isMrowLike(node) || !cNode)
+        return 0
+
+    for (let i = cNode - 1; i >= 0; i--) {
+        let nodeC = node.children[i]
+        let text = nodeC.textContent
+
+        if (nodeC.childElementCount) {
+            // Most built-up objects currently aren't included in partial
+            // build up but just in case base of msup, etc. is a function
+            // name or nary operator...
+            const scripts = ['msub', 'msup', 'msubsup', 'mover', 'munder', 'munderover']
+
+            if (scripts.includes(nodeC.nodeName)) {
+                opBuildUp = isNary(nodeC.firstElementChild.textContent) ? 2 : 1
+            } else if (k == -1) {
+                k = i
+            }
+        } else if (nodeC.localName == 'mo') { // Sometimes nodeName is capitalized...
+            if (isOpenDelimiter(text)) {
+                if (k == -1)
+                    k = i
+                cBracket++
+                if (cBracket > 0)
+                    break
+            } else if (isCloseDelimiter(text)) {
+                if (text == '⟩')            // Set up |𝜓⟩
+                    ket = true
+                cBracket--
+                if (k == -1)
+                    k = i
+                opBuildUp = 1
+            } else if (text == '|') {
+                if (k == -1)
+                    k = i
+                if (vbar) {
+                    vbar = false
+                    opBuildUp = 1
+                    break
+                } else if (ket) {           // Handle |𝜓⟩
+                    cBracket++
+                    continue
+                }
+                vbar = true
+            } else if ('_^/√⒞\u2061▒'.includes(text)) {
+                opBuildUp = 1
+            } else if (isNary(text)) {
+                opBuildUp = 2
+            }
+        }
+    }
+    if (vbar)
+        cBracket = 1
+    if (k == cNode - 1)
+        k = -1
+    return [cBracket, k, opBuildUp]
+}
+
+function checkSpace(i, node, ret) {
+    // Return ' ' if node is an <mrow> containing an ASCII-alphabetic first
+    // child and preceded by an alphanumeric character. Else return ''. E.g.,
+    // need a ' ' between '𝑏' and 'sin' in '𝑎+𝑏 sin 𝜃'
+    if (i && node.nodeName == 'mrow' && node.firstElementChild &&
+        node.firstElementChild.nodeName == 'mi' &&
+        isAsciiAlphabetic(node.firstElementChild.textContent[0]) &&
+        isAlphanumeric(ret[ret.length - 1])) {
+        return ' '
+    }
+    return ''
+}
+
+function getMathMLDOM(mathML) {
+    // Get DOM for converting MathML to UnicodeMath
+    if (mathML.startsWith('<mml:math') || mathML.startsWith('<m:math'))
+        mathML = removeMmlPrefixes(mathML);
+
+    const parser = new DOMParser();
+    return parser.parseFromString(mathML, "application/xml");
+}
+
+function foldSupDigit(char) {   // Fold Unicode superscript digit to ASCII
+    switch (char) {
+        case '¹':
+            return '1';
+        case '²':
+            return '2';
+        case '³':
+            return '3';
+    }
+    if (inRange('⁰', char, '⁹') && !inRange('\u2071', char, '\u2073'))
+        return String.fromCodePoint(char.codePointAt(0) - 0x2040);
+    return '';
+}
+
+function foldMathAlphanumeric(code, ch) {   // Generalization of foldMathItalic()
+    if (code < 0x1D400) {
+        if (code >= 0x2102) {
+            let letterLikeSymbol = letterLikeSymbols[ch];
+            if (letterLikeSymbol)
+                return [anCodesEng[letterLikeSymbol[0]], letterLikeSymbol[1]]
+        }
+        return (isAsciiAlphabetic(ch) || isGreek(ch)) ? ['mup', ch] : ['', ch]
+    }
+    if (code > 0x1D7FF)
+        return ['', ch];                    // Not math alphanumeric
+
+    let anCode = '';
+    code -= 0x1D400;
+
+    if (code < 13 * 52) {                   // 13 English math alphabets
+        anCode = anCodesEng[Math.floor(code / 52)];
+        code %= 52;
+        if (code >= 26) { code += 6; }        // 'a' - 'Z' - 1
+        return [anCode, String.fromCodePoint(code + 65)];
+    }
+    code -= 13 * 52;                        // Bypass English math alphabets
+    if (code < 4) {
+        if (code > 2)
+            return ['', ' '];
+        return ['mit', code ? 'ȷ' : 'ı'];
+    }
+    code -= 4;                              // Advance to Greek math alphabets
+    if (code < 5 * 58) {
+        anCode = anCodesGr[Math.floor(code / 58)];
+        code = (code % 58) + 0x0391;
+        if (code <= 0x03AA) {               // Upper-case Greek
+            if (code == 0x03A2)
+                code = 0x03F4;			    // Upper-case ϴ variant
+            if (code == 0x03AA)
+                code = 0x2207;              // ∇
+        } else {                            // Lower-case Greek
+            code += 6;                      // Advance to α
+            if (code >= 0x03CA && code <= 0x03D1) {
+                return [anCode, '∂ϵϑϰϕϱϖ'[code - 0x03CA]];
+            }
+        }
+        return [anCode, String.fromCodePoint(code)];
+    }
+    code -= 5 * 58;						    // Bypass Greek math alphabets
+    if (code < 4) {
+        if (code > 1)
+            return ['', ' '];			    // Not defined (yet)
+        return ['mbf', code ? 'ϝ' : 'Ϝ'];   // Digammas
+    }
+    code -= 4;                              // Convert to offset of 5 digit sets
+    anCode = anCodesDg[Math.floor(code / 10)];
+    code = 0x30 + (code % 10);
+    return [anCode, String.fromCodePoint(code)];
+}
+
+function needParens(ret) {
+    // Return true if ret is a compound expression that needs to be parenthesized
+    let cch = ret.length;
+    let ch1;
+
+    for (let i = 0; i < cch; i++) {
+        if (ret[i] == '(' && i < cch - 1) {
+            // Handle nested brackets?
+            let j = ret.indexOf(')', i + 1);
+            if (j > 0) {
+                i = j;                      // Include parenthesized expression
+                continue;
+            }
+            return true;
+        }
+        if (ret.codePointAt(i) > 0xFFFF) {
+            i++;
+            continue;
+        }
+        if (ret[i] == ' ' && (ch1 == '^' || ch1 == '_') || isAlphanumeric(ret[i]) ||
+            ret[i] == '∑') {
+            continue;                       // Space is removed in build up
+        }
+        if (!digitSuperscripts.includes(ret[i]) &&
+            !isPrime(ret[i]) && !digitSubscripts.includes(ret[i]) &&
+            !'\u2061∞⬌!^_ⒶⒻ'.includes(ret[i]) && (i || ret[i] != '−')) {
+            return true;
+        }
+        ch1 = ret[i];
+    }
+    return false;
+}
+
+function removeMmlPrefixes(mathML) {
+    let prefix;
+    if (mathML.startsWith('<m:'))
+        prefix = 'm:';
+    else if (mathML.startsWith('<mml:'))
+        prefix = 'mml:';
+    else
+        return;                             // No mml: or m: prefix
+
+    // Remove 'mml:' or 'm:' prefixes (renderers don't understand them and
+    // the conversion code is simplified)
+    let j = 0;
+    let mathML1 = '<math';
+
+    for (let i = 5 + prefix.length; i < mathML.length; i = j + prefix.length) {
+        j = mathML.indexOf(prefix, i);
+        if (j < 0)
+            j = mathML.length;
+        mathML1 += mathML.substring(i, j);
+    }
+    return mathML1;
+}
+
+function isPrime(ch) {
+    return '′″‴⁗	'.includes(ch);
+}
+
+// generate prime symbol(s) based on a number of desired primes
+function processPrimes(primes) {
+    switch (primes) {
+        case 4:
+            return "⁗";
+        case 3:
+            return "‴";
+        case 2:
+            return "″";
+        default:
+            return "′".repeat(primes);
+    }
+}
+
+function isMathMLObject(value, ignoreIntent) {
+    // Return true iff objs includes value.nodeName
+    const objs = ['mfrac', 'msqrt', 'mroot', 'menclose', 'msup', 'msub',
+        'munderover', 'msubsup', 'mover', 'munder', 'mpadded', 'mphantom',
+        'multiscripts']
+
+    if (value && value.nodeName == 'mrow') {
+        if (!ignoreIntent && value.hasAttribute('intent')) {
+            // Conversions to speech, braille, and UnicodeMath ignore
+            // parenthesizing due to <mrow> intent values
+            let intent = value.getAttribute('intent')
+            if (intent == ':function' || intent == ':fenced' ||
+                intent.indexOf('integral') != -1 ||
+                intent.startsWith(':n-ary') || intent.startsWith('binomial-coefficient'))
+                return true
+        }
+        if (value.childElementCount == 1)
+            value = value.parentElement
+    }
+    return value ? objs.includes(value.nodeName) : false
+}
+
+function hasSingleMrow(value) {
+    return Array.isArray(value) && value.length == 1 &&
+        value[0].hasOwnProperty('mrow');
+}
+
+function codeAt(chars, i) {
+    // Get UTF-32 code of character at position i, where i can be at a
+    // trail surrogate
+    let code = chars.codePointAt(i);
+    if (code >= 0xDC00 && code <= 0xDFFF)
+        code = chars.codePointAt(i - 1);
+    return code;
+}
+function getCch(chars, i) {
+    return codeAt(chars, i) > 0xFFFF ? 2 : 1
+}
+
+function getCh(str, i) {
+    // Get BMP character or surrogate pair at offset i
+    let ch = str[i]
+    if (ch < '\uD800' || ch > '\uDFFF')
+        return ch
+    if (ch < '\uDC00') {                    // Lead surrogate
+        let ch1 = str[i + 1]                // Check for trail surrogate
+        return ch1 && ch1 >= '\uDC00' && ch1 <= '\uDFFF' ? ch + ch1 : ch
+    }
+    let ch1 = str[i - 1]                    // Check for lead surrogate
+    return ch1 && ch1 >= '\uD800' && ch1 <= '\uBFFF' ? ch1 + ch : ch
+}
+
+function getChars(value) {
+    let chars = '';                         // Collects chars & primes
+    let n = 1;                              // 1 in case value isn't an array
+    let primes;                             // No primes yet
+    let val = value;                        // Moves down AST to chars
+
+    if (Array.isArray(value)) {
+        n = value.length;
+        val = val[0];
+        if (Array.isArray(val))
+            val = val[0];
+    }
+    for (let i = 0; i < n; val = value[++i]) {
+        if (val.hasOwnProperty('script')) {
+            val = val.script.base;
+        }
+        if (val.hasOwnProperty('primed')) {
+            primes = val.primed.primes;
+            val = val.primed.base;
+        }
+        if (val.hasOwnProperty('atoms')) {
+            val = val.atoms;
+            if (Array.isArray(val))
+                val = val[0];
+            chars += primes ? val.chars + processPrimes(primes) : val.chars;
+        } else if (val.hasOwnProperty('number'))
+            chars = val.number;
+        if (n == 1)
+            break;                          // No array or value.length = 1
+    }
+    return chars ? chars : '';
+}
+
+function getChD(value) {
+    // Get differential d. Return '' if not found
+    let chars = getChars(value);
+    if(!chars)
+        return ''
+
+    let chD = getCh(chars, 0);    // Get leading char
+
+    return 'dⅆ∂𝑑𝜕'.includes(chD) ? chD : '';
+}
+
+const abjad = [0, 1, -1, 21, 22, 2, 7, 23, 3, 24, 19, 6, 14, 20, 17, 25, 8,
+    26, 15, 27, -1, -1, -1, -1, -1, -1, 16, 18, 10, 11, 12, 13, 4, 5, -1, 9]
+const dottedChars = '\u066E\u06BA\u06A1\u066F'
+const letterlikeDoubleStruck = { 'C': 'ℂ', 'H': 'ℍ', 'N': 'ℕ', 'P': 'ℙ', 'Q': 'ℚ', 'R': 'ℝ', 'Z': 'ℤ' }
+const letterlikeFraktur = { 'C': 'ℭ', 'H': 'ℌ', 'I': 'ℑ', 'R': 'ℜ', 'Z': 'ℨ' }
+const letterlikeScript = { 'B': 'ℬ', 'E': 'ℰ', 'F': 'ℱ', 'H': 'ℋ', 'I': 'ℐ', 'L': 'ℒ', 'M': 'ℳ', 'R': 'ℛ', 'e': 'ℯ', 'g': 'ℊ', 'o': 'ℴ' }
+//                          minit       mtail       mstrc       mloop        Bbb
+const missingCharMask = [0xF5080169, 0x5569157B, 0xA1080869, 0xF0000000, 0xF0000000]
+const offsetsGr = { '∂': 51, '∇': 25, 'ϴ': 17, 'ϵ': 52, 'ϑ': 53, 'ϰ': 54, 'ϕ': 55, 'ϱ': 56, 'ϖ': 57 }
+const setsAr = ['misol', 'minit', 'mtail', 'mstrc', 'mloop', 'Bbb']
+const setsDigit = ['mbf', 'Bbb', 'msans', 'mbfsans', 'mtt']
+const setsEn = ['mbf', 'mit', 'mbfit', 'mscr', 'mbfscr', 'mfrak', 'Bbb', 'mbffrak', 'msans', 'mbfsans', 'mitsans', 'mbfitsans', 'mtt']
+const setsGr = ['mbf', 'mit', 'mbfit', 'mbfsans', 'mbfitsans']
+
+function getMathAlphanumeric(ch, mathStyle) {
+    // Return the Unicode math alphanumeric character corresponding to the
+    // unstyled character ch and the mathStyle. If no such math alphanumeric
+    // exists, return ch. The Unicode math alphanumerics are divided into four
+    // categories (ASCII digits, ASCII letters, Greek letters, and Arabic
+    // letters) each of which contains math-style character sets with specific
+    // character counts, e.g., 10 for the digit sets. This leads to a simple
+    // encoding scheme (see the ASCII digits category) that's a bit complicated
+    // by exceptions in the letter categories.
+    if (!mathStyle || mathStyle == 'mup')
+        return ch                           // No change for upright
+
+    let code = ch.charCodeAt(0)
+    let n                                   // Set index
+
+    // ASCII digits
+    if (ch >= '0' && ch <= '9') {
+        code += 0x1D7CE - 0x30              // Get math-digit codepoint
+        n = setsDigit.indexOf(mathStyle)
+        return n != -1 ? String.fromCodePoint(code + n * 10) : ch
+    }
+
+    // ASCII letters
+    if (/[A-Za-z]/.test(ch)) {
+        // Set up roundhand and chancery script styles
+        let varsel = ''
+        if (mathStyle == 'mchan' || mathStyle == 'mrhnd') {
+            varsel = mathStyle == 'mchan' ? '\uFE00' : '\uFE01'
+            mathStyle = 'mscr'
+        }
+        // Handle legacy Unicode Letterlike characters first
+        let chT = ''
+        switch (mathStyle) {
+            case 'mit':                     // Math italic
+                if (ch == 'h')
+                    return 'ℎ'			    // Letterlike italic h
+                break
+            case 'mfrak':                   // Math fraktur
+                chT = letterlikeFraktur[ch]
+                break
+            case 'mscr':                    // Math script
+                chT = letterlikeScript[ch]
+                break
+            case 'Bbb':                     // Math blackboard bold (double-struck)
+                chT = letterlikeDoubleStruck[ch]
+                break
+        }
+        if (chT)
+            return chT + varsel
+
+        n = setsEn.indexOf(mathStyle)       // Get set index
+        if (n == -1)                        // mathStyle isn't in setsEn
+            return ch
+
+        code -= 0x41                        // Compute char offset in set
+        if (code > 26)
+            code -= 6						// No punct between lower & uppercase
+
+        return String.fromCodePoint(code + 52 * n + 0x1D400) + varsel
+    }
+
+    // Greek letters
+    if (ch >= '\u0391' && ch <= '\u03F5' || ch == '∂' || ch == '∇') {
+        if (mathStyle == 'mbf') {           // Math bold Greek special cases
+            if (ch == 'Ϝ')
+                return '𝟊'                  // Digamma
+            if (ch == 'ϝ')
+                return '𝟋'                  // digamma
+        }
+        n = setsGr.indexOf(mathStyle)
+        if (n == -1)
+            return ch
+        let code0 = offsetsGr[ch]           // Offset if noncontiguous char
+        if (code0) {
+            code = code0
+        } else {
+            code -= 0x391                   // Map \Alpha to 0
+            if (code > 25)
+                code -= 6                   // Map 𝛼 down to end of UC Greek
+        }
+        return String.fromCodePoint(code + 58 * n + 0x1D6A8)
+    }
+    if (code < 0x627)                       // Unhandled codes preceding Arabic
+        return ch == 'ı'                    // Dotless i and j
+            ? '𝚤' : ch == 'ȷ'
+                ? '𝚥' : ch
+
+    if (code > 0x6BA)                       // No unhandled chars above U+06BA
+        return ch
+
+    // Arabic letters
+    n = setsAr.indexOf(mathStyle)
+    if (n == -1)
+        return ch
+
+    if (code <= 0x64A) {
+        // Translate code from the dictionary order followed approximately
+        // in the Unicode Arabic block to the abjad order used by Arabic math
+        // alphabetics. Both orders start with alef, e.g., U+0627
+        code = abjad[code - 0x0627]
+        if (code == -1)
+            return ch
+    } else {
+        code = dottedChars.indexOf(ch)     // Get dotted-char offset
+        if (code == -1)
+            return ch
+        code += 28
+    }
+    // Handle missing Arabic math characters
+    if (mathStyle == 'misol') {
+        if (code == 4)
+            n = 1                           // Use initial style's heh
+    } else if ((1 << code) & missingCharMask[n - 1])
+        return ch                           // Math-styled char not defined
+
+    return String.fromCodePoint(32 * n + code + 0x1EE00)
+}
+
+(function (root) {
 'use strict';
 
 // if in debug mode, opens (or closes if the argument is null) a console.group
 function debugGroup(s) {
+    if (testing)
+        return
     if (typeof ummlConfig !== "undefined" && typeof ummlConfig.debug !== "undefined" && ummlConfig.debug) {
         if (s != null) {
             console.group(s);
@@ -14,6 +958,8 @@ function debugGroup(s) {
 
 // if in debug mode, console.log the given value
 function debugLog(x) {
+    if (testing)
+        return
     if (typeof ummlConfig !== "undefined" && typeof ummlConfig.debug !== "undefined" && ummlConfig.debug) {
         console.log(x);
     }
@@ -23,310 +969,710 @@ function debugLog(x) {
 // PARSE //
 ///////////
 
-// control words, to be replaced before parsing proper commences
-// should match controlWords variable in playground.js
-var controlWords = {
-
-    // from tech note: Appendix B. Character Keywords and Properties
-    'above': '2534',
-    'acute': '0301',
-    'aleph': '2135',
-    'alpha': '03B1',
-    'amalg': '2210',
-    'angle': '2220',
-    'aoint': '2233',
-    'approx': '2248',
-    'asmash': '2B06',
-    'ast': '2217',
-    'asymp': '224D',
-    'atop': '00A6',
-    'Bar': '033F',
-    'bar': '0305',
-    'because': '2235',
-    'begin': '3016',
-    'below': '252C',
-    'beta': '03B2',
-    'beth': '2136',
-    'bot': '22A5',
-    'bigcap': '22C2',
-    'bigcup': '22C2',
-    'bigodot': '2A00',
-    'bigoplus': '2A01',
-    'bigotimes': '2A02',
-    'bigsqcup': '2A06',
-    'biguplus': '2A04',
-    'bigvee': '22C1',
-    'bigwedge': '22C0',
-    'bowtie': '22C8',
-    'bot': '22A5',
-    'box': '25A1',
-    'bra': '27E8',
-    'breve': '0306',
-    'bullet': '2219',
-    'cap': '2229',
-    'cbrt': '221B',
-    'cdot': '22C5',
-    'cdots': '22EF',
-    'check': '030C',
-    'chi': '03C7',
-    'circ': '2218',
-    'close': '2524',
-    'clubsuit': '2663',
-    'coint': '2232',
-    'cong': '2245',
-    'cup': '222A',
-    'daleth': '2138',
-    'dashv': '22A3',
-    'Dd': '2145',
-    'dd': '2146',
-    'ddddot': '20DC',
-    'dddot': '20DB',
-    'ddot': '0308',
-    'ddots': '22F1',
-    'degree': '00B0',
-    'Delta': '0394',
-    'delta': '03B4',
-    'diamond': '22C4',
-    'diamondsuit': '2662',
-    'div': '00F7',
-    'dot': '0307',
-    'doteq': '2250',
-    'dots': '2026',
-    'Downarrow': '21D3',
-    'downarrow': '2193',
-    'dsmash': '2B07',
-    'ee': '2147',
-    'ell': '2113',
-    'emptyset': '2205',
-    'emsp': '2003',
-    'end': '3017',
-    'ensp': '2002',
-    'epsilon': '03F5',
-    'eqarray': '2588',
-    'eqno': '0023',
-    'equiv': '2261',
-    'eta': '03B7',
-    'exists': '2203',
-    'forall': '2200',
-    'funcapply': '2061',
-    'Gamma': '0393',
-    'gamma': '03B3',
-    'ge': '2265',
-    'geq': '2265',
-    'gets': '2190',
-    'gg': '226B',
-    'gimel': '2137',
-    'grave': '0300',
-    'hairsp': '200A',
-    'hat': '0302',
-    'hbar': '210F',
-    'heartsuit': '2661',
-    'hookleftarrow': '21A9',
-    'hookrightarrow': '21AA',
-    'hphantom': '2B04',
-    'hsmash': '2B0C',
-    'hvec': '20D1',
-    'ii': '2148',
-    'iiiint': '2A0C',
-    'iiint': '222D',
-    'iint': '222C',
-    'Im': '2111',
-    'imath': '0131',
-    'in': '2208',
-    'inc': '2206',
-    'infty': '221E',
-    'int': '222B',
-    'iota': '03B9',
-    'jj': '2149',
-    'jmath': '0237',
-    'kappa': '03BA',
-    'ket': '27E9',
-    'Lambda': '039B',
-    'lambda': '03BB',
-    'langle': '27E8',
-    'lbrace': '007B',
-    'lbrack': '005B',
-    'lceil': '2308',
-    'ldiv': '2215',
-    'ldots': '2026',
-    'le': '2264',
-    'Leftarrow': '21D0',
-    'leftarrow': '2190',
-    'leftharpoondown': '21BD',
-    'leftharpoonup': '21BC',
-    'Leftrightarrow': '21D4',
-    'leftrightarrow': '2194',
-    'leq': '2264',
-    'lfloor': '230A',
-    'll': '226A',
-    'Longleftarrow': '27F8',
-    'longleftarrow': '27F5',
-    'Longleftrightarrow': '27FA',
-    'longleftrightarrow': '27F7',
-    'Longrightarrow': '27F9',
-    'longrightarrow': '27F6',
-    'mapsto': '21A6',
-    'matrix': '25A0',
-    'medsp': '205F',
-    'mid': '2223',
-    'models': '22A8',
-    'mp': '2213',
-    'mu': '03BC',
-    'nabla': '2207',
-    'naryand': '2592',
-    'nbsp': '00A0',
-    'ndiv': '2298',
-    'ne': '2260',
-    'nearrow': '2197',
-    'neg': '00AC',
-    'neq': '2260',
-    'ni': '220B',
-    'norm': '2016',
-    'nu': '03BD',
-    'nwarrow': '2196',
-    'odot': '2299',
-    'of': '2592',
-    'oiiint': '2230',
-    'oiint': '222F',
-    'oint': '222E',
-    'Omega': '03A9',
-    'omega': '03C9',
-    'ominus': '2296',
-    'open': '251C',
-    'oplus': '2295',
-    'oslash': '2298',
-    'otimes': '2297',
-    'over': '002F',
-    'overbar': '00AF',
-    'overbrace': '23DE',
-    'overparen': '23DC',
-    'parallel': '2225',
-    'partial': '2202',
-    'phantom': '27E1',
-    'Phi': '03A6',
-    'phi': '03D5',
-    'Pi': '03A0',
-    'pi': '03C0',
-    'pm': '00B1',
-    'pppprime': '2057',
-    'ppprime': '2034',
-    'pprime': '2033',
-    'prcue': '227C',
-    'prec': '227A',
-    'preceq': '2AAF',
-    'preccurlyeq': '227C',
-    'prime': '2032',
-    'prod': '220F',
-    'propto': '221D',
-    'Psi': '03A8',
-    'psi': '03C8',
-    'qdrt': '221C',
-    'rangle': '27E9',
-    'ratio': '2236',
-    'rbrace': '007D',
-    'rbrack': '005D',
-    'rceil': '2309',
-    'rddots': '22F0',
-    'Re': '211C',
-    'rect': '25AD',
-    'rfloor': '230B',
-    'rho': '03C1',
-    'Rightarrow': '21D2',
-    'rightarrow': '2192',
-    'rightharpoondown': '21C1',
-    'rightharpoonup': '21C0',
-    'rrect': '25A2',
-    'sdiv': '2044',
-    'searrow': '2198',
-    'setminus': '2216',
-    'Sigma': '03A3',
-    'sigma': '03C3',
-    'sim': '223C',
-    'simeq': '2243',
-    'smash': '2B0D',
-    'spadesuit': '2660',
-    'sqcap': '2293',
-    'sqcup': '2294',
-    'sqrt': '221A',
-    'sqsubseteq': '2291',
-    'sqsuperseteq': '2292',
-    'star': '22C6',
-    'subset': '2282',
-    'subseteq': '2286',
-    'succ': '227B',
-    'succeq': '227D',
-    'sum': '2211',
-    'superset': '2283',
-    'superseteq': '2287',
-    'swarrow': '2199',
-    'tau': '03C4',
-    'therefore': '2234',
-    'Theta': '0398',
-    'theta': '03B8',
-    'thicksp': '2005',
-    'thinsp': '2006',
-    'tilde': '0303',
-    'times': '00D7',
-    'to': '2192',
-    'top': '22A4',
-    'tvec': '20E1',
-    'underbar': '2581',
-    'underbrace': '23DF',
-    'underparen': '23DD',
-    'Uparrow': '21D1',
-    'uparrow': '2191',
-    'Updownarrow': '21D5',
-    'updownarrow': '2195',
-    'uplus': '228E',
-    'Upsilon': '03A5',
-    'upsilon': '03C5',
-    'varepsilon': '03B5',
-    'varphi': '03C6',
-    'varpi': '03D6',
-    'varrho': '03F1',
-    'varsigma': '03C2',
-    'vartheta': '03D1',
-    'vbar': '2502',
-    'vdash': '22A2',
-    'vdots': '22EE',
-    'vec': '20D7',
-    'vee': '2228',
-    'Vert': '2016',
-    'vert': '007C',
-    'vphantom': '21F3',
-    'vthicksp': '2004',
-    'wedge': '2227',
-    'wp': '2118',
-    'wr': '2240',
-    'Xi': '039E',
-    'xi': '03BE',
-    'zeta': '03B6',
-    'zwnj': '200C',
-    'zwsp': '200B',
-
-    // based on section 3.6, "Square Roots and Radicals" of tech note
-    'root': '221A',
-
-    // based on https://www.cs.bgu.ac.il/~khitron/Equation%20Editor.pdf
-    'boxdot': '22A1',
-    'boxminus': '229F',
-    'boxplus': '229E',
-    'degc': '2103',
-    'degf': '2109',
-    'Deltaeq': '225C',
-    'frown': '2311',
-    'inc': '2206',
-    'left': '251C',
-    'lmoust': '23B0',
-    'contain': '220B',
-    'perp': '22A5',
-    'right': '2524',
-    'rmoust': '23B1',
-    'smile': '2323',
-    'overbracket': '23B4',
-    'underbracket': '23B5',
-    'overshell': '23E0',
-    'undershell': '23E1'
+// Control words, to be replaced before parsing proper commences
+const controlWords = {
+    // From tech-note Appendix B. Character Keywords and Properties updated
+    // with the Microsoft math autocorrect list and other sources. For a more
+    // complete list, see https://ctan.math.utah.edu/ctan/tex-archive/macros/unicodetex/latex/unicode-math/unimath-symbols.pdf
+    // Circled and parenthesized symbols index the Examples in the Playground.
+    // E.g., \Faraday gives ⑭, which is the fourteenth Example: 𝛁⨯𝐄=−𝜕𝐁/𝜕𝑡.
+    //                             Unicode code point
+    '2root':            '√',    // 221A
+    '3root':            '∛',    // 221B
+    '4root':            '∜',    // 221C
+    'Angstrom':         'Å',   // 212B
+    'Bar':              '̿',	// 033F
+    'Biconditional':    '⇔',	// 21D4
+    'Bigl':             '',
+    'Bigr':             '',
+    'Bmatrix':          'Ⓢ',	// 24C8
+    'Bumpeq':           '≎',    	// 224E
+    'Cap':              '⋒',    	// 22D2
+    'Colon':            '∷',    	// 2237
+    'Cup':              '⋓',    	// 22D3
+    'Dd':               'ⅅ',	// 2145
+    'Delta':            'Δ',	// 0394
+    'Deltaeq':          '≜',    	// 225C
+    'Doteq':            '≑',    	// 2251
+    'Downarrow':        '⇓',    	// 21D3
+    'Faraday':          '⑭',   // 2470
+    'Fourier':          '⑤',   // 2464
+    'Gamma':            'Γ',	// 0393
+    'Im':               'ℑ',    	// 2111
+    'Implication':      '⇒',	// 21D2
+    'Implies':          '⇒',	// 21D2
+    'Intersection':     '⋂',    	// 22C2
+    'InverseFT':        '⒁',   // 2481
+    'Join':             '⨝',   // 2A1D
+    'Lambda':           'Λ',	// 039B
+    'Langle':           '⟪',    	// 27EA
+    'Lbrack':           '⟦',    	// 27E6
+    'Leftarrow':        '⇐',    	// 21D0
+    'Leftrightarrow':   '⇔',	// 21D4
+    'Lleftarrow':       '⇚',	    // 21DA
+    'Longleftarrow':    '⟸',	// 27F8
+    'Longleftrightarrow':'⟺',	// 27FA
+    'Longrightarrow':   '⟹',	// 27F9
+    'Lsh':              '↰',    	// 21B0
+    'Omega':            'Ω',	// 03A9
+    'Phi':              'Φ',	// 03A6
+    'Pi':               'Π',	// 03A0
+    'Psi':              'Ψ',	// 03A8
+    'Rangle':           '⟫',	    // 27EB
+    'Rbrack':           '⟧',	    // 27E7
+    'Re':               'ℜ',	    // 211C
+    'Rightarrow':       '⇒',	// 21D2
+    'Rrightarrow':      '⇛',	    // 21DB
+    'Rsh':              '↱',    	// 21B1
+    'SHO':              '⑽',   // 247D simple harmonic oscillator
+    'Sigma':            'Σ',	// 03A3
+    'Subset':           '⋐',    	// 22D0
+    'Supset':           '⋑',    	// 22D1
+    'Theta':            'Θ',	// 0398
+    'Ubar':             '̳',	// 0333
+    'Union':            '⋃',    	// 22C3
+    'Uparrow':          '⇑',    	// 21D1
+    'Updownarrow':      '⇕',	    // 21D5
+    'Upsilon':          'Υ',	// 03A5
+    'VDash':            '⊫',	    // 22AB
+    'Vdash':            '⊩',	    // 22A9
+    'Vert':             '‖',	    // 2016
+    'Vmatrix':          '⒩',	// 24A9
+    'Vvdash':           '⊪',	    // 22AA
+    'Xi':               'Ξ',	// 039E
+    'above':            '┴',	// 2534
+    'abs':              '⒜',	// 249C
+    'absvalue':         '⑨',   // 2468
+    'acute':            '́',	    // 0301
+    'adjoint':          '†',	// 2020
+    'ain':		        'ع',    // u0639
+    'alef':		        'ا',    // u0627
+    'aleph':            'ℵ',    	// 2135
+    'alpha':            'α',	// 03B1
+    'amalg':            '∐',	    // 2210
+    'and':              '∧',	// 2227
+    'angle':            '∠',	// 2220
+    'angmsd':           '∡',	    // 2221
+    'angrtvb':          '⊾',	    // 22BE
+    'angsph':           '∢',	    // 2222
+    'aoint':            '∳',	    // 2233
+    'approx':           '≈',	// 2248
+    'approxeq':         '≊',    	// 224A
+    'arc':              '⏜',	    // 23DC
+    'arg':              'ⓐ',   // 24D0
+    'asmash':           '⬆',    	// 2B06
+    'ast':              '∗',    	// 2217
+    'asymp':            '≍',    	// 224D
+    'atop':             '¦',	// 00A6
+    'backcolor':        '☁',	// 2601
+    'backepsilon':      '϶',	// 03F6
+    'backsim':          '∽',	// 223D
+    'backsimeq':        '⋍',	    // 22CD
+    'bar':              '̅',	// 0305
+    'bcancel':          '╲',	// 2572
+    'because':          '∵',	// 2235
+    'beh':              'ب',    // 0628
+    'begin':            '〖',	// 3016
+    'belongs':          '∈',	// 2208
+    'below':            '┬',	// 252C
+    'beta':             'β',	// 03B2
+    'beth':             'ℶ',    	// 2136
+    'between':          '≬',    	// 226C
+    'biconditional':    '↔',	// 2194
+    'bigcap':           '⋂',    	// 22C2
+    'bigcup':           '⋃',    	// 22C3
+    'bigintersection':  '⋂',    	// 22C2
+    'bigodot':          '⨀',	// 2A00
+    'bigoplus':         '⨁',	// 2A01
+    'bigotimes':        '⨂',	// 2A02
+    'bigsqcap':         '⨅',	// 2A05
+    'bigsqcup':         '⨆',	// 2A06
+    'bigudot':          '⨃',	// 2A03
+    'biguplus':         '⨄',	// 2A04
+    'bigunion':         '⋃',    	// 22C3
+    'bigvee':           '⋁',    	// 22C1
+    'bigwedge':         '⋀',	    // 22C0
+    'binom':            '⒝',    // 249D
+    'binomial':         '⑧',    // 2467 Binomial expansion
+    'bmatrix':          'ⓢ',	// 24E2
+    'bot':              '⊥',	// 22A5
+    'bowtie':           '⋈',	    // 22C8
+    'box':              '□',	// 25A1
+    'boxdot':           '⊡',    	// 22A1
+    'boxed':            '▭',	// 25AD
+    'boxminus':         '⊟',    	// 229F
+    'boxplus':          '⊞',    	// 229E
+    'boxtimes':         '⊠',    	// 22A0
+    'bra':              '⟨',	    // 27E8
+    'breve':            '̆',	    // 0306
+    'bullet':           '∙',	// 2219
+    'bumpeq':           '≏',	    // 224F
+    'by':               '×',	// 00D7
+    'cancel':           '╱',	// 2571
+    'cap':              '∩',	// 2229
+    'card':             'ⓒ',   // 24D2
+    'cases':            'Ⓒ',	// 24B8
+    'cbrt':             '∛',	    // 221B
+    'ccwint':           '⨑',    // 2A11
+    'cdot':             '⋅',	    // 22C5
+    'cdots':            '⋯',	    // 22EF
+    'cents':            '¢',    // 00A2
+    'check':            '̌',	    // 030C
+    'chi':              'χ',	// 03C7
+    'choose':           '⒞',	// 249E
+    'circ':             '∘',	    // 2218
+    'circeq':           '≗',    	// 2257
+    'circle':           '◯',	// 25EF
+    'circlearrowleft':  '↺',    	// 21BA
+    'circlearrowright': '↻',	    // 21BB
+    'circledast':       '⊛',    // 229B
+    'circledcirc':      '⊚',    // 229A
+    'circleddash':      '⊝',    // 229D
+    'circledequal':     '⊜',    // 229C
+    'close':            '┤',	// 2524
+    'clubsuit':         '♣',	// 2663
+    'coint':            '∲',	    // 2232
+    'colon':            '∶',	// 2236
+    'color':            '✎',	// 270E
+    'comp':             '∘',    // 2218
+    'complement':       '∁',	    // 2201
+    'cong':             '≅',    	// 2245
+    'contains':         '∋',	// 220B
+    'contradiction':    '⊥',	// 22A5
+    'coprod':           '∐',	    // 2210
+    'corr':             'ρ',	// 03C1
+    'cross':            '⨯',	// 2A2F
+    'cup':              '∪',	// 222A
+    'curlyeqprec':      '⋞',    	// 22DE
+    'curlyeqsucc':      '⋟',    	// 22DF
+    'curlyvee':         '⋎',    	// 22CE
+    'curlywedge':       '⋏',    	// 22CF
+    'curvearrowleft':   '↶',    	// 21B6
+    'curvearrowright':  '↷',    	// 21B7
+    'cwint':            '∱',    	// 2231
+    'dad':		        'ض',    // u0636
+    'dag':              '†',	// 2020
+    'dagger':           '†',	// 2020
+    'dal':		        'د',    // u062F
+    'daleth':           'ℸ',	    // 2138
+    'dashleftarrow':    '⇠',	    // 21E0
+    'dashrightarrow':   '⇢',	    // 21E2
+    'dashv':            '⊣',	    // 22A3
+    'dd':               'ⅆ',	// 2146
+    'ddag':             '‡',	// 2021
+    'ddagger':          '‡',	// 2021
+    'ddddot':           '⃜',	// 20DC
+    'dddot':            '⃛',	// 20DB
+    'ddot':             '̈',	    // 0308
+    'ddots':            '⋱',	    // 22F1
+    'def':              'ⓜ',   // 24DC
+    'defeq':            '≝',	    // 225D
+    'deg':              '°',	// 00B0
+    'degc':             '℃',	// 2103
+    'degf':             '℉',	    // 2109
+    'degree':           '°',	// 00B0
+    'delta':            'δ',	// 03B4
+    'det':              '⒱',	// 24B1
+    'diamond':          '⋄',	    // 22C4
+    'diamondsuit':      '♢',	    // 2662
+    'directsum':        '⊕',	    // 2295
+    'displaystyle':     'ⓓ',   // 24D3
+    'div':              '÷',	// 00F7
+    'divide':           '∣',	    // 2223
+    'divideontimes':    '⋇',	    // 22C7
+    'dot':              '̇',	    // 0307
+    'doteq':            '≐',	    // 2250
+    'dotminus':         '∸',	    // 2238
+    'dotplus':          '∔',	    // 2214
+    'dots':             '…',	// 2026
+    'doubleH':          'ℍ',    // 210D
+    'doubleint':        '∬',	// 222C
+    'doubleprime':      '″',	// 2033
+    'downarrow':        '↓',	// 2193
+    'downdownarrows':   '⇊',    	// 21CA
+    'downharpoonleft':  '⇃',    	// 21C3
+    'downharpoonright': '⇂',    	// 21C2
+    'dprime':           '″',	// 2033
+    'dsmash':           '⬇',    	// 2B07
+    'ee':               'ⅇ',	// 2147
+    'eight':            '8',    // 0038
+    'element':          '∈',	// 2208
+    'ell':              'ℓ',	// 2113
+    'ellipse':          '⬭',    // 2B2D
+    'emptyset':         '∅',	    // 2205
+    'emsp':             ' ',	// 2003
+    'end':              '〗',	// 3017
+    'endproof':         '∎',	    // 220E
+    'ensp':             ' ',	    // 2002
+    'entailment':       '⊨',	    // 22A8
+    'epar':             '⋕',    	// 22D5
+    'epsilon':          'ϵ',	// 03F5
+    'eqalign':          '█',	// 2588
+    'eqarray':          '█',	// 2588
+    'eqcirc':           '≖',	    // 2256
+    'eqgtr':            '⋝',	    // 22DD
+    'eqless':           '⋜',	    // 22DC
+    'eqno':             '#',	// 0023
+    'equalparallel':    '⋕',    // 22D5
+    'equiv':            '≡',	// 2261
+    'eta':              'η',	// 03B7
+    'exists':           '∃',	// 2203
+    'expect':           '𝔼',	// 1D53C
+    'fallingdotseq':    '≒',	// 2252
+    'false':            '⊥',	// 22A5
+    'feh':		        'ف',    // u0641
+    'five':             '5',    // 0035
+    'forall':           '∀',	// 2200
+    'forces':           '⊩',	    // 22A9
+    'foreach':          '∀',	// 2200
+    'forsome':          '∃',	// 2203
+    'four':             '4',    // 0034
+    'frac':             '⍁',    // 2134
+    'frakturH':         'ℌ',    // 210C
+    'frown':            '⌢',	    // 2322
+    'fullouterjoin':    '⟗',   // 27D7
+    'funcapply':        '⁡',	    // 2061
+    'ghain':	        'غ',    // u063A
+    'gamma':            'γ',	// 03B3
+    'ge':               '≥',	// 2265
+    'geq':              '≥',	// 2265
+    'geqq':             '≧',	// 2267
+    'gets':             '←',	// 2190
+    'gg':               '≫',	// 226B
+    'ggg':              '⋙',    	// 22D9
+    'gimel':            'ℷ',    	// 2137
+    'gneqq':            '≩',    	// 2269
+    'gnsim':            '⋧',    	// 22E7
+    'grad':             '∇',	// 2207
+    'grave':            '̀',	    // 0300
+    'gtrdot':           '⋗',    	// 22D7
+    'gtreqless':        '⋛',    	// 22DB
+    'gtrless':          '≷',    	// 2277
+    'gtrsim':           '≳',    	// 2273
+    'hadamard':         '⊙',	    // 2299
+    'hah':		        'ح',    // u062D
+    'hairsp':           ' ',	    // 200A
+    'half':             '½',    // 00BD
+    'hat':              '̂',	    // 0302
+    'hbar':             'ℏ',    	// 210F
+    'heartsuit':        '♡',    	// 2661
+    'heh':		        'ه',    // u0647
+    'hookleftarrow':    '↩',    	// 21A9
+    'hookrightarrow':   '↪',    	// 21AA
+    'hourglass':        '⏳',   // 23F3
+    'hphantom':         '⬄',	// 2B04
+    'hsmash':           '⬌',	// 2B0C
+    'hvec':             '⃑',	// 20D1
+    'identity':         '𝐈',    // 1D408
+    'iff':              '⟺',	// 27FA
+    'ii':               'ⅈ',    	// 2148
+    'iiiint':           '⨌',	// 2A0C
+    'iiint':            '∭',	    // 222D
+    'iint':             '∬',	// 222C
+    'imath':            'ı',	// 0131
+    'implication':      '→',	// 2192
+    'implies':          '→',	// 2192
+    'in':               '∈',	// 2208
+    'inc':              '∆',	// 2206
+    'infinity':         '∞',	// 221E
+    'infty':            '∞',	// 221E
+    'int':              '∫',	// 222B
+    'integral':         '⑦',   // 2466 Mode locking eq
+    'integralG':        '⑪',   // 246A Integral over Gaussian
+    'intent':           'ⓘ',   // 24D8
+    'intercal':         '⊺',	    // 22BA
+    'intersection':     '∩',	// 2229
+    'iota':             'ι',	// 03B9
+    'iplus':            '⁤',	    // 2064
+    'isep':             '⁣',	    // 2063
+    'itimes':           '⁢',	    // 2062
+    'intercal':         '⊺',    // 22BA
+    'jeem':		        'ج',    // u062C
+    'jj':               'ⅉ',    	// 2149
+    'jmath':            'ȷ',	// 0237
+    'join':             '⋈',	    // 22C8
+    'kaf':		        'ك',    // u0643
+    'kappa':            'κ',	// 03BA
+    'ket':              '⟩',	    // 27E9
+    'khah':		        'خ',    // u062E
+    'kron':             '⊗',	    // 2297
+    'labove':           '└',	// 2514
+    'lam':		        'ل',    // u0644
+    'lambda':           'λ',	// 03BB
+    'land':             '∧',	// 2227
+    'langle':           '⟨',	    // 27E8
+    'laplace':          '∆',	// 2206
+    'lbbrack':          '⟦',	    // 27E6
+    'lbelow':           '┌',	// 250C
+    'lbrace':           '{',	// 007B
+    'lbrack':           '[',	// 005B
+    'lceil':            '⌈',	    // 2308
+    'ldiv':             '∕',	// 2215
+    'ldivide':          '∕',	// 2215
+    'ldots':            '…',	// 2026
+    'ldsh':             '↲',	// 21B2
+    'le':               '≤',	// 2264
+    'left':             '├',	// 251C
+    'leftarrow':        '←',	// 2190
+    'leftarrowtail':    '↢',	    // 21A2
+    'leftharpoondown':  '↽',	    // 21BD
+    'leftharpoonup':    '↼',	    // 21BC
+    'leftleftarrows':   '⇇',	    // 21C7
+    'leftouterjoin':    '⟕',    // 27D5
+    'leftrightarrow':   '↔',	// 2194
+    'leftrightarrows':  '⇆',	    // 21C6
+    'leftrightharpoons':'⇋',	    // 21CB
+    'leftrightwavearrow':'↭',	// 21AD
+    'leftsquigarrow':   '⇜',    	// 21DC
+    'leftthreetimes':   '⋋',    	// 22CB
+    'leftwavearrow':    '↜',    	// 219C
+    'leq':              '≤',	// 2264
+    'leqq':             '≦',	// 2266
+    'lessdot':          '⋖',	    // 22D6
+    'lesseqgtr':        '⋚',	    // 22DA
+    'lessgtr':          '≶',	    // 2276
+    'lesssim':          '≲',	    // 2272
+    'lfloor':           '⌊',	    // 230A
+    'lhvec':            '⃐',	// 20D0
+    'limit':            '⑫',    // 246B Definition of e
+    'll':               '≪',	// 226A
+    'lll':              '⋘',	    // 22D8
+    'lmoust':           '⎰',	    // 23B0
+    'lneqq':            '≨',	    // 2268
+    'lnot':             '¬',	// 00AC
+    'lnsim':            '⋦',	    // 22E6
+    'longdiv':          '⟌',    // 27CC
+    'longleftarrow':    '⟵',	// 27F5
+    'longleftrightarrow':'⟷',	// 27F7
+    'longmapsto':       '⟼',	// 27FC
+    'longmapstoleft':   '⟻',	// 27FB
+    'longrightarrow':   '⟶',	// 27F6
+    'looparrowleft':    '↫',	    // 21AB
+    'looparrowright':   '↬',	    // 21AC
+    'lor':              '∨',	// 2228
+    'lparen':           '(',    // 0028
+    'lrhar':            '⇋',	    // 21CB
+    'ltimes':           '⋉',    	// 22C9
+    'lvec':             '⃖',	// 20D6
+    'lvert':            '|',
+    'mapsto':           '↦',	    // 21A6
+    'mapstoleft':       '↤',	    // 21A4
+    'mathparagraph':    '¶',    // 00B6
+    'matrix':           '■',	// 25A0
+    'mean':             'μ',	// 03BC
+    'measangle':        '∡',	    // 2221
+    'medsp':            ' ',	    // 205F
+    'meem':		        'م',    // u0645
+    'meq':              '≞',	    // 225E
+    'mid':              '∣',	    // 2223
+    'models':           '⊨',	    // 22A8
+    'mp':               '∓',	    // 2213
+    'mu':               'μ',	// 03BC
+    'multimap':         '⊸',    	// 22B8
+    'owns':             '∋',	// 220B
+    'nLeftarrow':       '⇍',    	// 21CD
+    'nLeftrightarrow':  '⇎',    	// 21CE
+    'nRightarrow':      '⇏',    	// 21CF
+    'nVDash':           '⊯',    	// 22AF
+    'nVdash':           '⊮',    	// 22AE
+    'nabla':            '∇',	// 2207
+    'nand':             '⊼',    // 22BC
+    'napprox':          '≉',    	// 2249
+    'naryand':          '▒',	// 2592
+    'nasymp':           '≭',	    // 226D
+    'nbsp':            '\u00A0',// 00A0
+    'ncong':            '≇',    	// 2247
+    'ndiv':             '⊘',	    // 2298
+    'ne':               '≠',	// 2260
+    'nearrow':          '↗',	    // 2197
+    'neg':              '¬',	// 00AC
+    'neq':              '≠',	// 2260
+    'nequiv':           '≢',	// 2262
+    'nexists':          '∄',	    // 2204
+    'newcommand':       'ⓜ',   // 24DC
+    'ngeq':             '≱',	    // 2271
+    'ngt':              '≯',	    // 226F
+    'ni':               '∋',	// 220B
+    'nine':             '9',    // 0039
+    'nleftarrow':       '↚',	    // 219A
+    'nleftrightarrow':  '↮',	    // 21AE
+    'nleq':             '≰',	    // 2270
+    'nless':            '≮',	    // 226E
+    'nlt':              '≮',	    // 226E
+    'nmid':             '∤',	    // 2224
+    'nodotbeh':	        'ٮ',    // u066E
+    'nodotqaf':	        'ٯ',    // u066F
+    'nodotfeh':	        'ڡ',    // u06A1
+    'nodotnoon':        'ں',    // u06BA
+    'noon':		        'ن',    // u0646
+    'nor':              '⊽',	    // 22BD
+    'norm':             '‖',	    // 2016
+    'not':              '/',	// 002F
+    'notapprox':        '≉',    	// 2249
+    'notcong':          '≇',    	// 2247
+    'notdivide':        '∤',	    // 2224
+    'notgeq':           '≱',	    // 2271
+    'notgt':            '≯',	    // 226F
+    'notin':            '∉',    	// 2209
+    'notleq':           '≰',	    // 2270
+    'notlt':            '≮',	    // 226E
+    'notni':            '∌',    	// 220C
+    'notsubset':        '⊄',    	// 2284
+    'notsubseteq':      '⊈',    	// 2288
+    'notsuperset':      '⊅',    	// 2285
+    'notsuperseteq':    '⊉',    	// 2289
+    'nparallel':        '∦',    	// 2226
+    'nprec':            '⊀',    	// 2280
+    'npreccurlyeq':     '⋠',    	// 22E0
+    'nrightarrow':      '↛',    	// 219B
+    'nsim':             '≁',    	// 2241
+    'nsimeq':           '≄',    	// 2244
+    'nsqsubseteq':      '⋢',    	// 22E2
+    'nsqsupseteq':      '⋣',    	// 22E3
+    'nsub':             '⊄',    	// 2284
+    'nsubseteq':        '⊈',    	// 2288
+    'nsucc':            '⊁',    	// 2281
+    'nsucccurlyeq':     '⋡',    	// 22E1
+    'nsup':             '⊅',    	// 2285
+    'nsupseteq':        '⊉',    	// 2289
+    'ntriangleleft':    '⋪',    	// 22EA
+    'ntrianglelefteq':  '⋬',    	// 22EC
+    'ntriangleright':   '⋫',    	// 22EB
+    'ntrianglerighteq': '⋭',    	// 22ED
+    'nu':               'ν',	// 03BD
+    'numsp':            ' ',    	// 2007
+    'nvDash':           '⊭',	    // 22AD
+    'nvdash':           '⊬',	    // 22AC
+    'nwarrow':          '↖',	    // 2196
+    'oast':             '⊛',	    // 229B
+    'ocirc':            '⊚',	    // 229A
+    'odash':            '⊝',	    // 229D
+    'odot':             '⊙',	    // 2299
+    'oeq':              '⊜',	    // 229C
+    'of':               '▒',	// 2592
+    'oiiint':           '∰',	    // 2230
+    'oiint':            '∯',    	// 222F
+    'oint':             '∮',	// 222E
+    'omega':            'ω',	// 03C9
+    'ominus':           '⊖',	    // 2296
+    'one':              '1',    // 0031
+    'oo':               '∞',	// 221E
+    'open':             '├',	// 251C
+    'oplus':            '⊕',	    // 2295
+    'or':               '∨',	// 2228
+    'oslash':           '⊘',	    // 2298
+    'otimes':           '⊗',	    // 2297
+    'over':             '/',	// 002F
+    'overbar':          '¯',	// 00AF
+    'overbrace':        '⏞',	    // 23DE
+    'overbracket':      '⎴',	// 23B4
+    'overline':         '¯',	// 00AF
+    'overparen':        '⏜',	    // 23DC
+    'overshell':        '⏠',	    // 23E0
+    'parallel':         '∥',	// 2225
+    'parallelogram':    '▱',    // 25B1
+    'partial':          '∂',	// 2202
+    'perp':             '⊥',	// 22A5
+    'phantom':          '⟡',	// 27E1
+    'phi':              'ϕ',	// 03D5
+    'pi':               'π',	// 03C0
+    'pitchfork':        '⋔',	    // 22D4
+    'plasma':           '⑿',   // 247F
+    'pm':               '±',	// 00B1
+    'pmatrix':          '⒨',	// 24A8
+    'powerset':         '℘',	    // 2118
+    'pppprime':         '⁗',	    // 2057
+    'ppprime':          '‴',	// 2034
+    'pprime':           '″',	// 2033
+    'prcue':            '≼',	    // 227C
+    'prec':             '≺',	    // 227A
+    'preccurlyeq':      '≼',	    // 227C
+    'preceq':           '⪯',	// 2AAF
+    'precneq':          '⪱',	// 2AB1
+    'precnsim':         '⋨',	    // 22E8
+    'precsim':          '≾',    	// 227E
+    'prime':            '′',	// 2032
+    'prob':             'ℙ',    // 2119
+    'prod':             '∏',	// 220F
+    'propto':           '∝',	// 221D
+    'proves':           '⊢',    	// 22A2
+    'psi':              'ψ',	// 03C8
+    'qaf':		        'ق',    // u0642
+    'qdrt':             '∜',	    // 221C
+    'qed':              '∎',	    // 220E
+    'qprime':           '⁗',	    // 2057
+    'quad':             ' ',	// 2003
+    'quadprime':        '⁗',	    // 2057
+    'quadratic':        '⑩',    // 24d9 Quadratic eq
+    'quarter':          '¼',    // 00BC
+    'rad':              '㎭',   // 33AD
+    'rangle':           '⟩',	    // 27E9
+    'ratio':            '∶',	// 2236
+    'ray':              '⃗',	// 20D7
+    'rbbrack':          '⟧',	    // 27E7
+    'rbelow':           '┐',	// 2510
+    'rbrace':           '}',	// 007D
+    'rbrack':           ']',	// 005D
+    'rceil':            '⌉',    	// 2309
+    'rddots':           '⋰',	    // 22F0
+    'rect':             '▭',	// 25AD
+    'reh':		        'ر',    // u0631
+    'relax':            'ⓝ',   // TeX ignore
+    'repeat':           '¯',	// 00AF
+    'repeating':        '¯',	// 00AF
+    'revpilcrow':       '⁋',    // 204B
+    'rfloor':           '⌋',	    // 230B
+    'rho':              'ρ',	// 03C1
+    'rhvec':            '⃑',	// 20D1
+    'right':            '┤',	// 2524
+    'rightangle':       '∟',	// 221F
+    'rightarrow':       '→',	// 2192
+    'rightarrowtail':   '↣',	    // 21A3
+    'rightharpoondown': '⇁',	    // 21C1
+    'rightharpoonup':   '⇀',	    // 21C0
+    'rightleftarrows':  '⇄',	    // 21C4
+    'rightleftharpoons':'⇌',    	// 21CC
+    'rightouterjoin':   '⟖',    // 27D6
+    'rightrightarrows': '⇉',    	// 21C9
+    'rightthreetimes':  '⋌',	    // 22CC
+    'righttriangle':    '⊿',	// 22BF
+    'rightwavearrow':   '↝',	    // 219D
+    'risingdotseq':     '≓',	    // 2253
+    'rlhar':            '⇌',	    // 21CC
+    'rmoust':           '⎱',	    // 23B1
+    'root':             '⒭',	// 24AD
+    'rparen':           ')',    // 0029
+    'rrect':            '▢',	// 25A2
+    'rtimes':           '⋊',    	// 22CA
+    'rvert':            '|',
+    'sad':		        'ص',    // u0635
+    'sdiv':             '⁄',	// 2044
+    'sdivide':          '⁄',	// 2044
+    'searrow':          '↘',	    // 2198
+    'seen':		        'س',    // u0633
+    'setminus':         '∖',	    // 2216
+    'seven':            '7',    // 0037
+    'sheen':	        'ش',    // u0634
+    'sigma':            'σ',	// 03C3
+    'sim':              '∼',	    // 223C
+    'simeq':            '≃',	    // 2243
+    'six':              '6',    // 0036
+    'smash':            '⬍',	    // 2B0D
+    'smile':            '⌣',	    // 2323
+    'spadesuit':        '♠',	// 2660
+    'sqcap':            '⊓',	    // 2293
+    'sqcup':            '⊔',	    // 2294
+    'sqrt':             '√',	// 221A
+    'sqsubset':         '⊏',    	// 228F
+    'sqsubseteq':       '⊑',    	// 2291
+    'sqsupset':         '⊐',    	// 2290
+    'sqsupseteq':       '⊒',    	// 2292
+    'star':             '⋆',    	// 22C6
+    'stddev':           'σ',	// 03C3
+    'subset':           '⊂',	// 2282
+    'subseteq':         '⊆',	// 2286
+    'subsetneq':        '⊊',    	// 228A
+    'subsetnoteq':      '⊊',    	// 228A
+    'subsub':           '⫕',	// 2AD5
+    'subsup':           '⫓',	// 2AD3
+    'succ':             '≻',	    // 227B
+    'succcurlyeq':      '≽',	    // 227D
+    'succeq':           '≽',	    // 227D
+    'succnsim':         '⋩',	    // 22E9
+    'succsim':          '≿',	    // 227F
+    'sum':              '∑',	// 2211
+    'supset':           '⊃',	// 2283
+    'supseteq':         '⊇',	// 2287
+    'supsetneq':        '⊋',    	// 228B
+    'supsetnoteq':      '⊋',    	// 228B
+    'supsub':           '⫔',	// 2AD4
+    'supsup':           '⫖',	// 2AD6
+    'surd':             '√',	// 221A
+    'swarrow':          '↙',    	// 2199
+    'tah':		        'ط',    // u0637
+    'tau':              'τ',	// 03C4
+    'tautology':        '⊤',	    // 22A4
+    'thal':		        'ذ',    // u0630
+    'teh':		        'ت',    // u062A
+    'text':             'ⓣ',   // 24E3
+    'textrm':           'ⓣ',   // 24E3
+    'theh':		        'ث',    // u062B
+    'theta':            'θ',	// 03B8
+    'thicksp':         '\u2005',// 2005
+    'thinsp':           ' ',	    // 2009
+    'third':            '⅓',    // 2153
+    'three':            '3',    // 0033
+    'tilde':            '̃',	    // 0303
+    'times':            '×',	// 00D7
+    'to':               '→',	// 2192
+    'top':              '⊤',	    // 22A4
+    'tprime':           '‴',	// 2034
+    'triangle':         '△',	// 25B3
+    'triangleleft':     '◁',    // 25C1
+    'trianglelefteq':   '⊴',	    // 22B4
+    'triangleright':    '▷',    // 25B7
+    'trianglerighteq':  '⊵',	    // 22B5
+    'tripleint':        '∭',	    // 222D
+    'tripleprime':      '‴',	// 2034
+    'true':             '⊨',	    // 22A8
+    'tvec':             '⃡',	// 20E1
+    'two':              '2',    // 0032
+    'twoheadleftarrow': '↞',	    // 219E
+    'twoheadrightarrow':'↠',	    // 21A0
+    'ubar':             '̲',	    // 0332
+    'underbar':         '▁',	// 2581
+    'underbrace':       '⏟',	    // 23DF
+    'underbracket':     '⎵',	// 23B5
+    'underline':        '▁',	// 2581
+    'underparen':       '⏝',	    // 23DD
+    'undershell':       '⏡',	    // 23E1
+    'union':           '∪',	    // 222A
+    'uparrow':          '↑',	// 2191
+    'updownarrow':      '↕',	// 2195
+    'updownarrows':     '⇅',    	// 21C5
+    'upharpoonleft':    '↿',    	// 21BF
+    'upharpoonright':   '↾',    	// 21BE
+    'uplus':            '⊎',    	// 228E
+    'upsilon':          'υ',	// 03C5
+    'upuparrows':       '⇈',	    // 21C8
+    'varepsilon':       'ε',	// 03B5
+    'varkappa':         'ϰ',	// 03F0
+    'varphi':           'φ',	// 03C6
+    'varpi':            'ϖ',	// 03D6
+    'varrho':           'ϱ',	// 03F1
+    'varsigma':         'ς',	// 03C2
+    'vartheta':         'ϑ',	// 03D1
+    'vartriangleleft':  '⊲',	    // 22B2
+    'vartriangleright': '⊳',	    // 22B3
+    'vbar':             '│',	// 2502
+    'vdash':            '⊢',    	// 22A2
+    'vdots':            '⋮',	    // 22EE
+    'vec':              '⃗',	// 20D7
+    'vectimes':         '⨯',    // 2A2F
+    'vee':              '∨',	// 2228
+    'vert':             '|',	// 007C
+    'vinculum':         '¯',	// 00AF
+    'vmatrix':          '⒱',	// 24B1
+    'vphantom':         '⇳',	// 21F3
+    'vthicksp':         ' ',    	// 2004
+    'waveeq':           '⑳',   // 2473 Schrödinger wave equation
+    'waw':		        'و',    // u0648
+    'wedge':            '∧',	// 2227
+    'widehat':          '̂',	    // 0302
+    'widetilde':        '̃',	    // 0303
+    'wp':               '℘',	    // 2118
+    'wr':               '≀',	    // 2240
+    'xcancel':          '╳',	// 2573
+    'xi':               'ξ',	// 03BE
+    'xnor':             '⊙',	    // 2299
+    'xor':              '⊕',	    // 2295
+    'yeh':		        'ي',    // u064A
+    'zah':		        'ظ',    // u0638
+    'zain':		        'ز',    // u0632
+    'zero':             '0',    // 0030
+    'zeta':             'ζ',	// 03B6
+    'zwnj':             '‌',
+    'zwsp':             '​',
 };
 
 // replace control words with the specific characters. note that a control word
@@ -334,187 +1680,483 @@ var controlWords = {
 // in order to be properly terminated.
 // this control word replacement would fly in the face of the UnicodeMath
 // "literal" operator if there were single-character control words
-function resolveCW(unicodemath) {
-    var res = unicodemath.replace(/\\([A-Za-z0-9]+) ?/g, (match, cw) => {
+function resolveCW(unicodemath, noCustomCW) {
+    let cwPrev = ''
+    let customCWEnabled = !noCustomCW && ummlConfig && ummlConfig.customControlWords
 
-        // check custom control words first (i.e. custom ones shadow built-in ones)
-        if (typeof ummlConfig !== "undefined" && typeof ummlConfig.customControlWords !== "undefined" && cw in ummlConfig.customControlWords) {
-            return ummlConfig.customControlWords[cw];
+    let res = unicodemath.replace(/\\([A-Za-z0-9]+) ?/g, (match, cw) => {
+        if (cwPrev == 'def' || cwPrev == 'newcommand') {
+            // Leave cw for defining in mapToPrivate() (search for 'ⓜ')
+            cwPrev = ''
+            if (customCWEnabled)            // Don't use previous def
+                ummlConfig.customControlWords[cw] = ''
+            return match
         }
+        cwPrev = cw
+        // check custom control words first, i.e. custom control words shadow
+        // built-in ones. noCustomCW is true for TeX input
+        if (customCWEnabled) {
+            let symbol = ummlConfig.customControlWords[cw]
+            if (symbol)
+                return symbol
+        }
+        if (isFunctionName(cw))
+            return ' ' + cw                 // E.g., TeX \sin
 
-        // if the control word begins with "u", try parsing the rest of it as a Unicode code point
-        if (cw.startsWith("u")) {
+        // if the control word begins with "u", try parsing the rest of it as
+        // a Unicode code point
+        if (cw.startsWith("u") && cw.length >= 5) {
             try {
-                var symbol = String.fromCodePoint("0x" + cw.substr(1));
+                let symbol = String.fromCodePoint("0x" + cw.substring(1));
                 return symbol;
             } catch(error) {
-
-                // do nothing – it could be a regular control word starting with "u"
+                // do nothing – could be a regular control word starting with "u"
             }
         }
 
-        // check built-in control words (we can use try..except here since
-        // String.fromCodePoint throws up when it eats an undefined)
-        try {
-            var symbol = String.fromCodePoint("0x" + controlWords[cw]);
-            return symbol;
-        } catch(error) {
-
-            // turns out this wasn't actually a control word, so let's slowly
-            // back out of the room
-            return match;
+        // Check for math alphanumeric control words like \mscrH for ℋ defined in
+        // unimath-symbols.pdf (link below)
+        let cch = cw.length;
+        if (cch > 3) {
+            let mathStyle = '';
+            let c = '';
+            if (cw.startsWith('Bbb') || cw.startsWith('double')) {
+                // Blackboard bold (double-struck)
+                mathStyle = 'Bbb';
+                cw = mathStyle + cw[cw.length - 1]
+            } else if (cw.startsWith('script')) {
+                // Script
+                mathStyle = 'mscr'
+                cw = mathStyle + cw[cw.length - 1]
+            } else if (cw.startsWith('bold')) {
+                // Script
+                mathStyle = 'mbf'
+                cw = mathStyle + cw.substring(4)
+            } else if (cw[0] == 'm') {
+                // Check for the other math styles
+                for (let i = 0; i < mathStyles.length; i++) {
+                    if (cw.startsWith(mathStyles[i])) {
+                        mathStyle = mathStyles[i];
+                        break;
+                    }
+                }
+            }
+            if (mathStyle) {
+                c = cw.substring(mathStyle.length);
+                if (c != undefined && c.length) {
+                    if (c.length > 1) {     // Might be Greek
+                        c = controlWords[c];
+                    }
+                    if (c != undefined) {
+                        if (mathStyle == 'mup') { // Upright
+                            return '"' + c + '"';
+                        }
+                        if (mathStyle == 'mitBbb') {
+                            // Short control words are, e.g., \\d for 'ⅆ'.
+                            // The only \mitBbb characters are:
+                            const mitBbb = {'D': 'ⅅ', 'd': 'ⅆ', 'e': 'ⅇ', 'i': 'ⅈ', 'j': 'ⅉ'};
+                            return mitBbb[c];
+                        }
+                        return getMathAlphanumeric(c, mathStyle)
+                    }
+                }
+            }
         }
+
+        // Check built-in control words
+        let symbol = controlWords[cw]
+        if (symbol != undefined) {
+            if (!inRange('①', symbol, '⒇'))
+                return symbol
+
+            let x = document.getElementById('Examples')
+            if (x && x.childNodes[0]) {
+                // Examples defined as in UnicodeMathML's index.html
+                let iEx = symbol.codePointAt(0) - 0x2460
+                x = x.childNodes[0]
+                symbol = x.childNodes[iEx].innerText
+                return symbol
+            }
+        }
+        // Not a control word: display it in upright type
+        return '"' + match + '"';
     });
     return res;
-
 }
 
-// math font conversion
-// should match mathFonts variable in playground.js
-var mathFonts = {
+const keys = Object.keys(controlWords);
 
-    // courtesy of
-    // https://en.wikipedia.org/wiki/Mathematical_Alphanumeric_Symbols
-    // and sublime text's multiple cursors
-    'A': {'serif-bold': '𝐀', 'serif-italic': '𝐴', 'serif-bolditalic': '𝑨', 'sans-normal': '𝖠', 'sans-bold': '𝗔', 'sans-italic': '𝘈', 'sans-bolditalic': '𝘼', 'script-normal': '𝒜', 'script-bold': '𝓐', 'fraktur-normal': '𝔄', 'fraktur-bold': '𝕬', 'monospace-normal': '𝙰', 'doublestruck-normal': '𝔸'},
-    'B': {'serif-bold': '𝐁', 'serif-italic': '𝐵', 'serif-bolditalic': '𝑩', 'sans-normal': '𝖡', 'sans-bold': '𝗕', 'sans-italic': '𝘉', 'sans-bolditalic': '𝘽', 'script-normal': 'ℬ', 'script-bold': '𝓑', 'fraktur-normal': '𝔅', 'fraktur-bold': '𝕭', 'monospace-normal': '𝙱', 'doublestruck-normal': '𝔹'},
-    'C': {'serif-bold': '𝐂', 'serif-italic': '𝐶', 'serif-bolditalic': '𝑪', 'sans-normal': '𝖢', 'sans-bold': '𝗖', 'sans-italic': '𝘊', 'sans-bolditalic': '𝘾', 'script-normal': '𝒞', 'script-bold': '𝓒', 'fraktur-normal': 'ℭ', 'fraktur-bold': '𝕮', 'monospace-normal': '𝙲', 'doublestruck-normal': 'ℂ'},
-    'D': {'serif-bold': '𝐃', 'serif-italic': '𝐷', 'serif-bolditalic': '𝑫', 'sans-normal': '𝖣', 'sans-bold': '𝗗', 'sans-italic': '𝘋', 'sans-bolditalic': '𝘿', 'script-normal': '𝒟', 'script-bold': '𝓓', 'fraktur-normal': '𝔇', 'fraktur-bold': '𝕯', 'monospace-normal': '𝙳', 'doublestruck-normal': '𝔻'},
-    'E': {'serif-bold': '𝐄', 'serif-italic': '𝐸', 'serif-bolditalic': '𝑬', 'sans-normal': '𝖤', 'sans-bold': '𝗘', 'sans-italic': '𝘌', 'sans-bolditalic': '𝙀', 'script-normal': 'ℰ', 'script-bold': '𝓔', 'fraktur-normal': '𝔈', 'fraktur-bold': '𝕰', 'monospace-normal': '𝙴', 'doublestruck-normal': '𝔼'},
-    'F': {'serif-bold': '𝐅', 'serif-italic': '𝐹', 'serif-bolditalic': '𝑭', 'sans-normal': '𝖥', 'sans-bold': '𝗙', 'sans-italic': '𝘍', 'sans-bolditalic': '𝙁', 'script-normal': 'ℱ', 'script-bold': '𝓕', 'fraktur-normal': '𝔉', 'fraktur-bold': '𝕱', 'monospace-normal': '𝙵', 'doublestruck-normal': '𝔽'},
-    'G': {'serif-bold': '𝐆', 'serif-italic': '𝐺', 'serif-bolditalic': '𝑮', 'sans-normal': '𝖦', 'sans-bold': '𝗚', 'sans-italic': '𝘎', 'sans-bolditalic': '𝙂', 'script-normal': '𝒢', 'script-bold': '𝓖', 'fraktur-normal': '𝔊', 'fraktur-bold': '𝕲', 'monospace-normal': '𝙶', 'doublestruck-normal': '𝔾'},
-    'H': {'serif-bold': '𝐇', 'serif-italic': '𝐻', 'serif-bolditalic': '𝑯', 'sans-normal': '𝖧', 'sans-bold': '𝗛', 'sans-italic': '𝘏', 'sans-bolditalic': '𝙃', 'script-normal': 'ℋ', 'script-bold': '𝓗', 'fraktur-normal': 'ℌ', 'fraktur-bold': '𝕳', 'monospace-normal': '𝙷', 'doublestruck-normal': 'ℍ'},
-    'I': {'serif-bold': '𝐈', 'serif-italic': '𝐼', 'serif-bolditalic': '𝑰', 'sans-normal': '𝖨', 'sans-bold': '𝗜', 'sans-italic': '𝘐', 'sans-bolditalic': '𝙄', 'script-normal': 'ℐ', 'script-bold': '𝓘', 'fraktur-normal': 'ℑ', 'fraktur-bold': '𝕴', 'monospace-normal': '𝙸', 'doublestruck-normal': '𝕀'},
-    'J': {'serif-bold': '𝐉', 'serif-italic': '𝐽', 'serif-bolditalic': '𝑱', 'sans-normal': '𝖩', 'sans-bold': '𝗝', 'sans-italic': '𝘑', 'sans-bolditalic': '𝙅', 'script-normal': '𝒥', 'script-bold': '𝓙', 'fraktur-normal': '𝔍', 'fraktur-bold': '𝕵', 'monospace-normal': '𝙹', 'doublestruck-normal': '𝕁'},
-    'K': {'serif-bold': '𝐊', 'serif-italic': '𝐾', 'serif-bolditalic': '𝑲', 'sans-normal': '𝖪', 'sans-bold': '𝗞', 'sans-italic': '𝘒', 'sans-bolditalic': '𝙆', 'script-normal': '𝒦', 'script-bold': '𝓚', 'fraktur-normal': '𝔎', 'fraktur-bold': '𝕶', 'monospace-normal': '𝙺', 'doublestruck-normal': '𝕂'},
-    'L': {'serif-bold': '𝐋', 'serif-italic': '𝐿', 'serif-bolditalic': '𝑳', 'sans-normal': '𝖫', 'sans-bold': '𝗟', 'sans-italic': '𝘓', 'sans-bolditalic': '𝙇', 'script-normal': 'ℒ', 'script-bold': '𝓛', 'fraktur-normal': '𝔏', 'fraktur-bold': '𝕷', 'monospace-normal': '𝙻', 'doublestruck-normal': '𝕃'},
-    'M': {'serif-bold': '𝐌', 'serif-italic': '𝑀', 'serif-bolditalic': '𝑴', 'sans-normal': '𝖬', 'sans-bold': '𝗠', 'sans-italic': '𝘔', 'sans-bolditalic': '𝙈', 'script-normal': 'ℳ', 'script-bold': '𝓜', 'fraktur-normal': '𝔐', 'fraktur-bold': '𝕸', 'monospace-normal': '𝙼', 'doublestruck-normal': '𝕄'},
-    'N': {'serif-bold': '𝐍', 'serif-italic': '𝑁', 'serif-bolditalic': '𝑵', 'sans-normal': '𝖭', 'sans-bold': '𝗡', 'sans-italic': '𝘕', 'sans-bolditalic': '𝙉', 'script-normal': '𝒩', 'script-bold': '𝓝', 'fraktur-normal': '𝔑', 'fraktur-bold': '𝕹', 'monospace-normal': '𝙽', 'doublestruck-normal': 'ℕ'},
-    'O': {'serif-bold': '𝐎', 'serif-italic': '𝑂', 'serif-bolditalic': '𝑶', 'sans-normal': '𝖮', 'sans-bold': '𝗢', 'sans-italic': '𝘖', 'sans-bolditalic': '𝙊', 'script-normal': '𝒪', 'script-bold': '𝓞', 'fraktur-normal': '𝔒', 'fraktur-bold': '𝕺', 'monospace-normal': '𝙾', 'doublestruck-normal': '𝕆'},
-    'P': {'serif-bold': '𝐏', 'serif-italic': '𝑃', 'serif-bolditalic': '𝑷', 'sans-normal': '𝖯', 'sans-bold': '𝗣', 'sans-italic': '𝘗', 'sans-bolditalic': '𝙋', 'script-normal': '𝒫', 'script-bold': '𝓟', 'fraktur-normal': '𝔓', 'fraktur-bold': '𝕻', 'monospace-normal': '𝙿', 'doublestruck-normal': 'ℙ'},
-    'Q': {'serif-bold': '𝐐', 'serif-italic': '𝑄', 'serif-bolditalic': '𝑸', 'sans-normal': '𝖰', 'sans-bold': '𝗤', 'sans-italic': '𝘘', 'sans-bolditalic': '𝙌', 'script-normal': '𝒬', 'script-bold': '𝓠', 'fraktur-normal': '𝔔', 'fraktur-bold': '𝕼', 'monospace-normal': '𝚀', 'doublestruck-normal': 'ℚ'},
-    'R': {'serif-bold': '𝐑', 'serif-italic': '𝑅', 'serif-bolditalic': '𝑹', 'sans-normal': '𝖱', 'sans-bold': '𝗥', 'sans-italic': '𝘙', 'sans-bolditalic': '𝙍', 'script-normal': 'ℛ', 'script-bold': '𝓡', 'fraktur-normal': 'ℜ', 'fraktur-bold': '𝕽', 'monospace-normal': '𝚁', 'doublestruck-normal': 'ℝ'},
-    'S': {'serif-bold': '𝐒', 'serif-italic': '𝑆', 'serif-bolditalic': '𝑺', 'sans-normal': '𝖲', 'sans-bold': '𝗦', 'sans-italic': '𝘚', 'sans-bolditalic': '𝙎', 'script-normal': '𝒮', 'script-bold': '𝓢', 'fraktur-normal': '𝔖', 'fraktur-bold': '𝕾', 'monospace-normal': '𝚂', 'doublestruck-normal': '𝕊'},
-    'T': {'serif-bold': '𝐓', 'serif-italic': '𝑇', 'serif-bolditalic': '𝑻', 'sans-normal': '𝖳', 'sans-bold': '𝗧', 'sans-italic': '𝘛', 'sans-bolditalic': '𝙏', 'script-normal': '𝒯', 'script-bold': '𝓣', 'fraktur-normal': '𝔗', 'fraktur-bold': '𝕿', 'monospace-normal': '𝚃', 'doublestruck-normal': '𝕋'},
-    'U': {'serif-bold': '𝐔', 'serif-italic': '𝑈', 'serif-bolditalic': '𝑼', 'sans-normal': '𝖴', 'sans-bold': '𝗨', 'sans-italic': '𝘜', 'sans-bolditalic': '𝙐', 'script-normal': '𝒰', 'script-bold': '𝓤', 'fraktur-normal': '𝔘', 'fraktur-bold': '𝖀', 'monospace-normal': '𝚄', 'doublestruck-normal': '𝕌'},
-    'V': {'serif-bold': '𝐕', 'serif-italic': '𝑉', 'serif-bolditalic': '𝑽', 'sans-normal': '𝖵', 'sans-bold': '𝗩', 'sans-italic': '𝘝', 'sans-bolditalic': '𝙑', 'script-normal': '𝒱', 'script-bold': '𝓥', 'fraktur-normal': '𝔙', 'fraktur-bold': '𝖁', 'monospace-normal': '𝚅', 'doublestruck-normal': '𝕍'},
-    'W': {'serif-bold': '𝐖', 'serif-italic': '𝑊', 'serif-bolditalic': '𝑾', 'sans-normal': '𝖶', 'sans-bold': '𝗪', 'sans-italic': '𝘞', 'sans-bolditalic': '𝙒', 'script-normal': '𝒲', 'script-bold': '𝓦', 'fraktur-normal': '𝔚', 'fraktur-bold': '𝖂', 'monospace-normal': '𝚆', 'doublestruck-normal': '𝕎'},
-    'X': {'serif-bold': '𝐗', 'serif-italic': '𝑋', 'serif-bolditalic': '𝑿', 'sans-normal': '𝖷', 'sans-bold': '𝗫', 'sans-italic': '𝘟', 'sans-bolditalic': '𝙓', 'script-normal': '𝒳', 'script-bold': '𝓧', 'fraktur-normal': '𝔛', 'fraktur-bold': '𝖃', 'monospace-normal': '𝚇', 'doublestruck-normal': '𝕏'},
-    'Y': {'serif-bold': '𝐘', 'serif-italic': '𝑌', 'serif-bolditalic': '𝒀', 'sans-normal': '𝖸', 'sans-bold': '𝗬', 'sans-italic': '𝘠', 'sans-bolditalic': '𝙔', 'script-normal': '𝒴', 'script-bold': '𝓨', 'fraktur-normal': '𝔜', 'fraktur-bold': '𝖄', 'monospace-normal': '𝚈', 'doublestruck-normal': '𝕐'},
-    'Z': {'serif-bold': '𝐙', 'serif-italic': '𝑍', 'serif-bolditalic': '𝒁', 'sans-normal': '𝖹', 'sans-bold': '𝗭', 'sans-italic': '𝘡', 'sans-bolditalic': '𝙕', 'script-normal': '𝒵', 'script-bold': '𝓩', 'fraktur-normal': 'ℨ', 'fraktur-bold': '𝖅', 'monospace-normal': '𝚉', 'doublestruck-normal': 'ℤ'},
-    'a': {'serif-bold': '𝐚', 'serif-italic': '𝑎', 'serif-bolditalic': '𝒂', 'sans-normal': '𝖺', 'sans-bold': '𝗮', 'sans-italic': '𝘢', 'sans-bolditalic': '𝙖', 'script-normal': '𝒶', 'script-bold': '𝓪', 'fraktur-normal': '𝔞', 'fraktur-bold': '𝖆', 'monospace-normal': '𝚊', 'doublestruck-normal': '𝕒'},
-    'b': {'serif-bold': '𝐛', 'serif-italic': '𝑏', 'serif-bolditalic': '𝒃', 'sans-normal': '𝖻', 'sans-bold': '𝗯', 'sans-italic': '𝘣', 'sans-bolditalic': '𝙗', 'script-normal': '𝒷', 'script-bold': '𝓫', 'fraktur-normal': '𝔟', 'fraktur-bold': '𝖇', 'monospace-normal': '𝚋', 'doublestruck-normal': '𝕓'},
-    'c': {'serif-bold': '𝐜', 'serif-italic': '𝑐', 'serif-bolditalic': '𝒄', 'sans-normal': '𝖼', 'sans-bold': '𝗰', 'sans-italic': '𝘤', 'sans-bolditalic': '𝙘', 'script-normal': '𝒸', 'script-bold': '𝓬', 'fraktur-normal': '𝔠', 'fraktur-bold': '𝖈', 'monospace-normal': '𝚌', 'doublestruck-normal': '𝕔'},
-    'd': {'serif-bold': '𝐝', 'serif-italic': '𝑑', 'serif-bolditalic': '𝒅', 'sans-normal': '𝖽', 'sans-bold': '𝗱', 'sans-italic': '𝘥', 'sans-bolditalic': '𝙙', 'script-normal': '𝒹', 'script-bold': '𝓭', 'fraktur-normal': '𝔡', 'fraktur-bold': '𝖉', 'monospace-normal': '𝚍', 'doublestruck-normal': '𝕕'},
-    'e': {'serif-bold': '𝐞', 'serif-italic': '𝑒', 'serif-bolditalic': '𝒆', 'sans-normal': '𝖾', 'sans-bold': '𝗲', 'sans-italic': '𝘦', 'sans-bolditalic': '𝙚', 'script-normal': 'ℯ', 'script-bold': '𝓮', 'fraktur-normal': '𝔢', 'fraktur-bold': '𝖊', 'monospace-normal': '𝚎', 'doublestruck-normal': '𝕖'},
-    'f': {'serif-bold': '𝐟', 'serif-italic': '𝑓', 'serif-bolditalic': '𝒇', 'sans-normal': '𝖿', 'sans-bold': '𝗳', 'sans-italic': '𝘧', 'sans-bolditalic': '𝙛', 'script-normal': '𝒻', 'script-bold': '𝓯', 'fraktur-normal': '𝔣', 'fraktur-bold': '𝖋', 'monospace-normal': '𝚏', 'doublestruck-normal': '𝕗'},
-    'g': {'serif-bold': '𝐠', 'serif-italic': '𝑔', 'serif-bolditalic': '𝒈', 'sans-normal': '𝗀', 'sans-bold': '𝗴', 'sans-italic': '𝘨', 'sans-bolditalic': '𝙜', 'script-normal': 'ℊ', 'script-bold': '𝓰', 'fraktur-normal': '𝔤', 'fraktur-bold': '𝖌', 'monospace-normal': '𝚐', 'doublestruck-normal': '𝕘'},
-    'h': {'serif-bold': '𝐡', 'serif-italic': 'ℎ', 'serif-bolditalic': '𝒉', 'sans-normal': '𝗁', 'sans-bold': '𝗵', 'sans-italic': '𝘩', 'sans-bolditalic': '𝙝', 'script-normal': '𝒽', 'script-bold': '𝓱', 'fraktur-normal': '𝔥', 'fraktur-bold': '𝖍', 'monospace-normal': '𝚑', 'doublestruck-normal': '𝕙'},
-    'i': {'serif-bold': '𝐢', 'serif-italic': '𝑖', 'serif-bolditalic': '𝒊', 'sans-normal': '𝗂', 'sans-bold': '𝗶', 'sans-italic': '𝘪', 'sans-bolditalic': '𝙞', 'script-normal': '𝒾', 'script-bold': '𝓲', 'fraktur-normal': '𝔦', 'fraktur-bold': '𝖎', 'monospace-normal': '𝚒', 'doublestruck-normal': '𝕚'},
-    'j': {'serif-bold': '𝐣', 'serif-italic': '𝑗', 'serif-bolditalic': '𝒋', 'sans-normal': '𝗃', 'sans-bold': '𝗷', 'sans-italic': '𝘫', 'sans-bolditalic': '𝙟', 'script-normal': '𝒿', 'script-bold': '𝓳', 'fraktur-normal': '𝔧', 'fraktur-bold': '𝖏', 'monospace-normal': '𝚓', 'doublestruck-normal': '𝕛'},
-    'k': {'serif-bold': '𝐤', 'serif-italic': '𝑘', 'serif-bolditalic': '𝒌', 'sans-normal': '𝗄', 'sans-bold': '𝗸', 'sans-italic': '𝘬', 'sans-bolditalic': '𝙠', 'script-normal': '𝓀', 'script-bold': '𝓴', 'fraktur-normal': '𝔨', 'fraktur-bold': '𝖐', 'monospace-normal': '𝚔', 'doublestruck-normal': '𝕜'},
-    'l': {'serif-bold': '𝐥', 'serif-italic': '𝑙', 'serif-bolditalic': '𝒍', 'sans-normal': '𝗅', 'sans-bold': '𝗹', 'sans-italic': '𝘭', 'sans-bolditalic': '𝙡', 'script-normal': '𝓁', 'script-bold': '𝓵', 'fraktur-normal': '𝔩', 'fraktur-bold': '𝖑', 'monospace-normal': '𝚕', 'doublestruck-normal': '𝕝'},
-    'm': {'serif-bold': '𝐦', 'serif-italic': '𝑚', 'serif-bolditalic': '𝒎', 'sans-normal': '𝗆', 'sans-bold': '𝗺', 'sans-italic': '𝘮', 'sans-bolditalic': '𝙢', 'script-normal': '𝓂', 'script-bold': '𝓶', 'fraktur-normal': '𝔪', 'fraktur-bold': '𝖒', 'monospace-normal': '𝚖', 'doublestruck-normal': '𝕞'},
-    'n': {'serif-bold': '𝐧', 'serif-italic': '𝑛', 'serif-bolditalic': '𝒏', 'sans-normal': '𝗇', 'sans-bold': '𝗻', 'sans-italic': '𝘯', 'sans-bolditalic': '𝙣', 'script-normal': '𝓃', 'script-bold': '𝓷', 'fraktur-normal': '𝔫', 'fraktur-bold': '𝖓', 'monospace-normal': '𝚗', 'doublestruck-normal': '𝕟'},
-    'o': {'serif-bold': '𝐨', 'serif-italic': '𝑜', 'serif-bolditalic': '𝒐', 'sans-normal': '𝗈', 'sans-bold': '𝗼', 'sans-italic': '𝘰', 'sans-bolditalic': '𝙤', 'script-normal': 'ℴ', 'script-bold': '𝓸', 'fraktur-normal': '𝔬', 'fraktur-bold': '𝖔', 'monospace-normal': '𝚘', 'doublestruck-normal': '𝕠'},
-    'p': {'serif-bold': '𝐩', 'serif-italic': '𝑝', 'serif-bolditalic': '𝒑', 'sans-normal': '𝗉', 'sans-bold': '𝗽', 'sans-italic': '𝘱', 'sans-bolditalic': '𝙥', 'script-normal': '𝓅', 'script-bold': '𝓹', 'fraktur-normal': '𝔭', 'fraktur-bold': '𝖕', 'monospace-normal': '𝚙', 'doublestruck-normal': '𝕡'},
-    'q': {'serif-bold': '𝐪', 'serif-italic': '𝑞', 'serif-bolditalic': '𝒒', 'sans-normal': '𝗊', 'sans-bold': '𝗾', 'sans-italic': '𝘲', 'sans-bolditalic': '𝙦', 'script-normal': '𝓆', 'script-bold': '𝓺', 'fraktur-normal': '𝔮', 'fraktur-bold': '𝖖', 'monospace-normal': '𝚚', 'doublestruck-normal': '𝕢'},
-    'r': {'serif-bold': '𝐫', 'serif-italic': '𝑟', 'serif-bolditalic': '𝒓', 'sans-normal': '𝗋', 'sans-bold': '𝗿', 'sans-italic': '𝘳', 'sans-bolditalic': '𝙧', 'script-normal': '𝓇', 'script-bold': '𝓻', 'fraktur-normal': '𝔯', 'fraktur-bold': '𝖗', 'monospace-normal': '𝚛', 'doublestruck-normal': '𝕣'},
-    's': {'serif-bold': '𝐬', 'serif-italic': '𝑠', 'serif-bolditalic': '𝒔', 'sans-normal': '𝗌', 'sans-bold': '𝘀', 'sans-italic': '𝘴', 'sans-bolditalic': '𝙨', 'script-normal': '𝓈', 'script-bold': '𝓼', 'fraktur-normal': '𝔰', 'fraktur-bold': '𝖘', 'monospace-normal': '𝚜', 'doublestruck-normal': '𝕤'},
-    't': {'serif-bold': '𝐭', 'serif-italic': '𝑡', 'serif-bolditalic': '𝒕', 'sans-normal': '𝗍', 'sans-bold': '𝘁', 'sans-italic': '𝘵', 'sans-bolditalic': '𝙩', 'script-normal': '𝓉', 'script-bold': '𝓽', 'fraktur-normal': '𝔱', 'fraktur-bold': '𝖙', 'monospace-normal': '𝚝', 'doublestruck-normal': '𝕥'},
-    'u': {'serif-bold': '𝐮', 'serif-italic': '𝑢', 'serif-bolditalic': '𝒖', 'sans-normal': '𝗎', 'sans-bold': '𝘂', 'sans-italic': '𝘶', 'sans-bolditalic': '𝙪', 'script-normal': '𝓊', 'script-bold': '𝓾', 'fraktur-normal': '𝔲', 'fraktur-bold': '𝖚', 'monospace-normal': '𝚞', 'doublestruck-normal': '𝕦'},
-    'v': {'serif-bold': '𝐯', 'serif-italic': '𝑣', 'serif-bolditalic': '𝒗', 'sans-normal': '𝗏', 'sans-bold': '𝘃', 'sans-italic': '𝘷', 'sans-bolditalic': '𝙫', 'script-normal': '𝓋', 'script-bold': '𝓿', 'fraktur-normal': '𝔳', 'fraktur-bold': '𝖛', 'monospace-normal': '𝚟', 'doublestruck-normal': '𝕧'},
-    'w': {'serif-bold': '𝐰', 'serif-italic': '𝑤', 'serif-bolditalic': '𝒘', 'sans-normal': '𝗐', 'sans-bold': '𝘄', 'sans-italic': '𝘸', 'sans-bolditalic': '𝙬', 'script-normal': '𝓌', 'script-bold': '𝔀', 'fraktur-normal': '𝔴', 'fraktur-bold': '𝖜', 'monospace-normal': '𝚠', 'doublestruck-normal': '𝕨'},
-    'x': {'serif-bold': '𝐱', 'serif-italic': '𝑥', 'serif-bolditalic': '𝒙', 'sans-normal': '𝗑', 'sans-bold': '𝘅', 'sans-italic': '𝘹', 'sans-bolditalic': '𝙭', 'script-normal': '𝓍', 'script-bold': '𝔁', 'fraktur-normal': '𝔵', 'fraktur-bold': '𝖝', 'monospace-normal': '𝚡', 'doublestruck-normal': '𝕩'},
-    'y': {'serif-bold': '𝐲', 'serif-italic': '𝑦', 'serif-bolditalic': '𝒚', 'sans-normal': '𝗒', 'sans-bold': '𝘆', 'sans-italic': '𝘺', 'sans-bolditalic': '𝙮', 'script-normal': '𝓎', 'script-bold': '𝔂', 'fraktur-normal': '𝔶', 'fraktur-bold': '𝖞', 'monospace-normal': '𝚢', 'doublestruck-normal': '𝕪'},
-    'z': {'serif-bold': '𝐳', 'serif-italic': '𝑧', 'serif-bolditalic': '𝒛', 'sans-normal': '𝗓', 'sans-bold': '𝘇', 'sans-italic': '𝘻', 'sans-bolditalic': '𝙯', 'script-normal': '𝓏', 'script-bold': '𝔃', 'fraktur-normal': '𝔷', 'fraktur-bold': '𝖟', 'monospace-normal': '𝚣', 'doublestruck-normal': '𝕫'},
-    'ı': {'serif-italic': '𝚤'},
-    'ȷ': {'serif-italic': '𝚥'},
-    'Α': {'serif-bold': '𝚨', 'serif-italic': '𝛢', 'serif-bolditalic': '𝜜', 'sans-bold': '𝝖', 'sans-bolditalic': '𝞐'},
-    'Β': {'serif-bold': '𝚩', 'serif-italic': '𝛣', 'serif-bolditalic': '𝜝', 'sans-bold': '𝝗', 'sans-bolditalic': '𝞑'},
-    'Γ': {'serif-bold': '𝚪', 'serif-italic': '𝛤', 'serif-bolditalic': '𝜞', 'sans-bold': '𝝘', 'sans-bolditalic': '𝞒'},
-    'Δ': {'serif-bold': '𝚫', 'serif-italic': '𝛥', 'serif-bolditalic': '𝜟', 'sans-bold': '𝝙', 'sans-bolditalic': '𝞓'},
-    'Ε': {'serif-bold': '𝚬', 'serif-italic': '𝛦', 'serif-bolditalic': '𝜠', 'sans-bold': '𝝚', 'sans-bolditalic': '𝞔'},
-    'Ζ': {'serif-bold': '𝚭', 'serif-italic': '𝛧', 'serif-bolditalic': '𝜡', 'sans-bold': '𝝛', 'sans-bolditalic': '𝞕'},
-    'Η': {'serif-bold': '𝚮', 'serif-italic': '𝛨', 'serif-bolditalic': '𝜢', 'sans-bold': '𝝜', 'sans-bolditalic': '𝞖'},
-    'Θ': {'serif-bold': '𝚯', 'serif-italic': '𝛩', 'serif-bolditalic': '𝜣', 'sans-bold': '𝝝', 'sans-bolditalic': '𝞗'},
-    'Ι': {'serif-bold': '𝚰', 'serif-italic': '𝛪', 'serif-bolditalic': '𝜤', 'sans-bold': '𝝞', 'sans-bolditalic': '𝞘'},
-    'Κ': {'serif-bold': '𝚱', 'serif-italic': '𝛫', 'serif-bolditalic': '𝜥', 'sans-bold': '𝝟', 'sans-bolditalic': '𝞙'},
-    'Λ': {'serif-bold': '𝚲', 'serif-italic': '𝛬', 'serif-bolditalic': '𝜦', 'sans-bold': '𝝠', 'sans-bolditalic': '𝞚'},
-    'Μ': {'serif-bold': '𝚳', 'serif-italic': '𝛭', 'serif-bolditalic': '𝜧', 'sans-bold': '𝝡', 'sans-bolditalic': '𝞛'},
-    'Ν': {'serif-bold': '𝚴', 'serif-italic': '𝛮', 'serif-bolditalic': '𝜨', 'sans-bold': '𝝢', 'sans-bolditalic': '𝞜'},
-    'Ξ': {'serif-bold': '𝚵', 'serif-italic': '𝛯', 'serif-bolditalic': '𝜩', 'sans-bold': '𝝣', 'sans-bolditalic': '𝞝'},
-    'Ο': {'serif-bold': '𝚶', 'serif-italic': '𝛰', 'serif-bolditalic': '𝜪', 'sans-bold': '𝝤', 'sans-bolditalic': '𝞞'},
-    'Π': {'serif-bold': '𝚷', 'serif-italic': '𝛱', 'serif-bolditalic': '𝜫', 'sans-bold': '𝝥', 'sans-bolditalic': '𝞟'},
-    'Ρ': {'serif-bold': '𝚸', 'serif-italic': '𝛲', 'serif-bolditalic': '𝜬', 'sans-bold': '𝝦', 'sans-bolditalic': '𝞠'},
-    'ϴ': {'serif-bold': '𝚹', 'serif-italic': '𝛳', 'serif-bolditalic': '𝜭', 'sans-bold': '𝝧', 'sans-bolditalic': '𝞡'},
-    'Σ': {'serif-bold': '𝚺', 'serif-italic': '𝛴', 'serif-bolditalic': '𝜮', 'sans-bold': '𝝨', 'sans-bolditalic': '𝞢'},
-    'Τ': {'serif-bold': '𝚻', 'serif-italic': '𝛵', 'serif-bolditalic': '𝜯', 'sans-bold': '𝝩', 'sans-bolditalic': '𝞣'},
-    'Υ': {'serif-bold': '𝚼', 'serif-italic': '𝛶', 'serif-bolditalic': '𝜰', 'sans-bold': '𝝪', 'sans-bolditalic': '𝞤'},
-    'Φ': {'serif-bold': '𝚽', 'serif-italic': '𝛷', 'serif-bolditalic': '𝜱', 'sans-bold': '𝝫', 'sans-bolditalic': '𝞥'},
-    'Χ': {'serif-bold': '𝚾', 'serif-italic': '𝛸', 'serif-bolditalic': '𝜲', 'sans-bold': '𝝬', 'sans-bolditalic': '𝞦'},
-    'Ψ': {'serif-bold': '𝚿', 'serif-italic': '𝛹', 'serif-bolditalic': '𝜳', 'sans-bold': '𝝭', 'sans-bolditalic': '𝞧'},
-    'Ω': {'serif-bold': '𝛀', 'serif-italic': '𝛺', 'serif-bolditalic': '𝜴', 'sans-bold': '𝝮', 'sans-bolditalic': '𝞨'},
-    '∇': {'serif-bold': '𝛁', 'serif-italic': '𝛻', 'serif-bolditalic': '𝜵', 'sans-bold': '𝝯', 'sans-bolditalic': '𝞩'},
-    'α': {'serif-bold': '𝛂', 'serif-italic': '𝛼', 'serif-bolditalic': '𝜶', 'sans-bold': '𝝰', 'sans-bolditalic': '𝞪'},
-    'β': {'serif-bold': '𝛃', 'serif-italic': '𝛽', 'serif-bolditalic': '𝜷', 'sans-bold': '𝝱', 'sans-bolditalic': '𝞫'},
-    'γ': {'serif-bold': '𝛄', 'serif-italic': '𝛾', 'serif-bolditalic': '𝜸', 'sans-bold': '𝝲', 'sans-bolditalic': '𝞬'},
-    'δ': {'serif-bold': '𝛅', 'serif-italic': '𝛿', 'serif-bolditalic': '𝜹', 'sans-bold': '𝝳', 'sans-bolditalic': '𝞭'},
-    'ε': {'serif-bold': '𝛆', 'serif-italic': '𝜀', 'serif-bolditalic': '𝜺', 'sans-bold': '𝝴', 'sans-bolditalic': '𝞮'},
-    'ζ': {'serif-bold': '𝛇', 'serif-italic': '𝜁', 'serif-bolditalic': '𝜻', 'sans-bold': '𝝵', 'sans-bolditalic': '𝞯'},
-    'η': {'serif-bold': '𝛈', 'serif-italic': '𝜂', 'serif-bolditalic': '𝜼', 'sans-bold': '𝝶', 'sans-bolditalic': '𝞰'},
-    'θ': {'serif-bold': '𝛉', 'serif-italic': '𝜃', 'serif-bolditalic': '𝜽', 'sans-bold': '𝝷', 'sans-bolditalic': '𝞱'},
-    'ι': {'serif-bold': '𝛊', 'serif-italic': '𝜄', 'serif-bolditalic': '𝜾', 'sans-bold': '𝝸', 'sans-bolditalic': '𝞲'},
-    'κ': {'serif-bold': '𝛋', 'serif-italic': '𝜅', 'serif-bolditalic': '𝜿', 'sans-bold': '𝝹', 'sans-bolditalic': '𝞳'},
-    'λ': {'serif-bold': '𝛌', 'serif-italic': '𝜆', 'serif-bolditalic': '𝝀', 'sans-bold': '𝝺', 'sans-bolditalic': '𝞴'},
-    'μ': {'serif-bold': '𝛍', 'serif-italic': '𝜇', 'serif-bolditalic': '𝝁', 'sans-bold': '𝝻', 'sans-bolditalic': '𝞵'},
-    'ν': {'serif-bold': '𝛎', 'serif-italic': '𝜈', 'serif-bolditalic': '𝝂', 'sans-bold': '𝝼', 'sans-bolditalic': '𝞶'},
-    'ξ': {'serif-bold': '𝛏', 'serif-italic': '𝜉', 'serif-bolditalic': '𝝃', 'sans-bold': '𝝽', 'sans-bolditalic': '𝞷'},
-    'ο': {'serif-bold': '𝛐', 'serif-italic': '𝜊', 'serif-bolditalic': '𝝄', 'sans-bold': '𝝾', 'sans-bolditalic': '𝞸'},
-    'π': {'serif-bold': '𝛑', 'serif-italic': '𝜋', 'serif-bolditalic': '𝝅', 'sans-bold': '𝝿', 'sans-bolditalic': '𝞹'},
-    'ρ': {'serif-bold': '𝛒', 'serif-italic': '𝜌', 'serif-bolditalic': '𝝆', 'sans-bold': '𝞀', 'sans-bolditalic': '𝞺'},
-    'ς': {'serif-bold': '𝛓', 'serif-italic': '𝜍', 'serif-bolditalic': '𝝇', 'sans-bold': '𝞁', 'sans-bolditalic': '𝞻'},
-    'σ': {'serif-bold': '𝛔', 'serif-italic': '𝜎', 'serif-bolditalic': '𝝈', 'sans-bold': '𝞂', 'sans-bolditalic': '𝞼'},
-    'τ': {'serif-bold': '𝛕', 'serif-italic': '𝜏', 'serif-bolditalic': '𝝉', 'sans-bold': '𝞃', 'sans-bolditalic': '𝞽'},
-    'υ': {'serif-bold': '𝛖', 'serif-italic': '𝜐', 'serif-bolditalic': '𝝊', 'sans-bold': '𝞄', 'sans-bolditalic': '𝞾'},
-    'φ': {'serif-bold': '𝛗', 'serif-italic': '𝜑', 'serif-bolditalic': '𝝋', 'sans-bold': '𝞅', 'sans-bolditalic': '𝞿'},
-    'χ': {'serif-bold': '𝛘', 'serif-italic': '𝜒', 'serif-bolditalic': '𝝌', 'sans-bold': '𝞆', 'sans-bolditalic': '𝟀'},
-    'ψ': {'serif-bold': '𝛙', 'serif-italic': '𝜓', 'serif-bolditalic': '𝝍', 'sans-bold': '𝞇', 'sans-bolditalic': '𝟁'},
-    'ω': {'serif-bold': '𝛚', 'serif-italic': '𝜔', 'serif-bolditalic': '𝝎', 'sans-bold': '𝞈', 'sans-bolditalic': '𝟂'},
-    '∂': {'serif-bold': '𝛛', 'serif-italic': '𝜕', 'serif-bolditalic': '𝝏', 'sans-bold': '𝞉', 'sans-bolditalic': '𝟃'},
-    'ϵ': {'serif-bold': '𝛜', 'serif-italic': '𝜖', 'serif-bolditalic': '𝝐', 'sans-bold': '𝞊', 'sans-bolditalic': '𝟄'},
-    'ϑ': {'serif-bold': '𝛝', 'serif-italic': '𝜗', 'serif-bolditalic': '𝝑', 'sans-bold': '𝞋', 'sans-bolditalic': '𝟅'},
-    'ϰ': {'serif-bold': '𝛞', 'serif-italic': '𝜘', 'serif-bolditalic': '𝝒', 'sans-bold': '𝞌', 'sans-bolditalic': '𝟆'},
-    'ϕ': {'serif-bold': '𝛟', 'serif-italic': '𝜙', 'serif-bolditalic': '𝝓', 'sans-bold': '𝞍', 'sans-bolditalic': '𝟇'},
-    'ϱ': {'serif-bold': '𝛠', 'serif-italic': '𝜚', 'serif-bolditalic': '𝝔', 'sans-bold': '𝞎', 'sans-bolditalic': '𝟈'},
-    'ϖ': {'serif-bold': '𝛡', 'serif-italic': '𝜛', 'serif-bolditalic': '𝝕', 'sans-bold': '𝞏', 'sans-bolditalic': '𝟉'},
-    'Ϝ': {'serif-bold': '𝟊'},
-    'ϝ': {'serif-bold': '𝟋'},
-    '0': {'serif-bold': '𝟎', 'doublestruck-normal': '𝟘', 'sans-normal': '𝟢', 'sans-bold': '𝟬', 'monospace-normal': '𝟶'},
-    '1': {'serif-bold': '𝟏', 'doublestruck-normal': '𝟙', 'sans-normal': '𝟣', 'sans-bold': '𝟭', 'monospace-normal': '𝟷'},
-    '2': {'serif-bold': '𝟐', 'doublestruck-normal': '𝟚', 'sans-normal': '𝟤', 'sans-bold': '𝟮', 'monospace-normal': '𝟸'},
-    '3': {'serif-bold': '𝟑', 'doublestruck-normal': '𝟛', 'sans-normal': '𝟥', 'sans-bold': '𝟯', 'monospace-normal': '𝟹'},
-    '4': {'serif-bold': '𝟒', 'doublestruck-normal': '𝟜', 'sans-normal': '𝟦', 'sans-bold': '𝟰', 'monospace-normal': '𝟺'},
-    '5': {'serif-bold': '𝟓', 'doublestruck-normal': '𝟝', 'sans-normal': '𝟧', 'sans-bold': '𝟱', 'monospace-normal': '𝟻'},
-    '6': {'serif-bold': '𝟔', 'doublestruck-normal': '𝟞', 'sans-normal': '𝟨', 'sans-bold': '𝟲', 'monospace-normal': '𝟼'},
-    '7': {'serif-bold': '𝟕', 'doublestruck-normal': '𝟟', 'sans-normal': '𝟩', 'sans-bold': '𝟳', 'monospace-normal': '𝟽'},
-    '8': {'serif-bold': '𝟖', 'doublestruck-normal': '𝟠', 'sans-normal': '𝟪', 'sans-bold': '𝟴', 'monospace-normal': '𝟾'},
-    '9': {'serif-bold': '𝟗', 'doublestruck-normal': '𝟡', 'sans-normal': '𝟫', 'sans-bold': '𝟵', 'monospace-normal': '𝟿'},
+function getPartialMatches(cw) {
+    // Get array of control-word partial matches for autocomplete drop down
+    let cKeys = keys.length;
+    let iMax = cKeys - 1;
+    let iMid;
+    let iMin = 0;
+    let key
+    let matches = [];
+
+    do {                                // Binary search for a partial match
+        iMid = Math.floor((iMin + iMax) / 2);
+        key = keys[iMid];
+        if (key.startsWith(cw)) {
+            matches.push(key + ' ' + controlWords[key]);
+            break;
+        }
+        if (cw < key)
+            iMax = iMid - 1;
+        else
+            iMin = iMid + 1;
+    } while (iMin <= iMax);
+
+    if (matches.length) {
+        // Check for partial matches preceding iMid
+        for (let j = iMid - 1; j >= 0; j--) {
+            key = keys[j];
+            if (!key.startsWith(cw))
+                break;
+            // Matched: insert at start of matches[]
+            matches.unshift(key + ' ' + controlWords[key]);
+        }
+        // Check for partial matches following iMid
+        for (let j = iMid + 1; j < cKeys; j++) {
+            key = keys[j];
+            if (!key.startsWith(cw))
+                break;
+            matches.push(key + ' ' + controlWords[key]);
+        }
+    }
+    return matches;
+}
+
+const negs = {
+    '<': '≮',   // /<
+    '=': '≠',   // /=
+    '>': '≯',   // />
+    '~': '≁',   // /\sim
+    '∃': '∄',  // /\exists
+    '∈': '∉',  // /\in
+    '∋': '∌',  // /\ni
+    '∼': '≁',   // /\sim
+    '≃': '≄',   // /\simeq
+    '≅': '≇',   // /\cong
+    '≈': '≉',   // /\approx
+    '≍': '≭',   // /\asymp
+    '≡': '≢',   // /\equiv
+    '≤': '≰',   // /\le
+    '≥': '≱',   // /\ge
+    '≶': '≸',   // /\lessgtr
+    '≷': '≹',   // /\gtrless
+    '≺': '⊀',   // /\prec
+    '≻': '⊁',   // /\succ
+    '∥': '∦',  // /\nparallel
+    '⪯': '⪱',  // /\preceq
+    '⪰': '⪲',  // /\succeq
+    '⊂': '⊄',  // /\subset
+    '⊃': '⊅',  // /\supset
+    '⊆': '⊈',  // /\subseteq
+    '⊇': '⊉',  // /\supseteq
+    '⊑': '⋢',   // /\sqsubseteq
+    '⊒': '⋣'    // /\sqsupseteq
 };
+
+function isFunctionName(fn) {
+    if (!fn.length)
+        return false
+
+    if (fn.length >= 4 && fn[0] == 'a') {
+        // Remove 'a' or 'arc' trigonmetric prefix
+        let i = (fn.substring(1, 3) == 'rc') ? 3 : 1
+        fn = fn.substring(i)
+    }
+    if (fn.length == 4 && fn[3] == 'h')     // Possibly hyperbolic
+        fn = fn.substring(0, 3)             // Remove h suffix
+
+    return ["Im", "Pr", "Re", "arg", "cos", "cot", "csc", "ctg", "deg",
+        "det", "dim", "erf", "exp", "gcd", "hom", "inf", "ker", "lim", "log",
+        "ln", "max", "min", "mod", "sec", "sin", "sup", "tan", "tg"].includes(fn)
+}
+
+function foldMathItalic(code) {
+    if (code == 0x210E) return 'h';                     // ℎ (Letterlike symbol)
+    if (code < 0x1D434 || code > 0x1D467) return '';    // Not math italic
+    code += 0x0041 - 0x1D434;                           // Convert to upper-case ASCII
+    if (code > 0x005A) code += 0x0061 - 0x005A - 1;     // Adjust for lower case
+    return String.fromCodePoint(code);                  // ASCII letter corresponding to math italic code
+}
+
+function foldMathItalics(chars) {
+    let fn = ""
+    let code
+
+    for (let i = 0; i < chars.length; i += code > 0xFFFF ? 2 : 1) {
+        let ch = chars[i]
+        code = chars.codePointAt(i);
+        if (code >= 0x2102) {
+            ch = foldMathItalic(code);
+        }
+        fn += ch;
+    }
+    return fn;
+}
+
+function italicizeCharacter(c) {
+    // The 'Α' is an upper-case Greek alpha. Don't italicize Greek upper-case
+    return c < 'Α' || c > 'Ω' && c != '∇'
+        ? getMathAlphanumeric(c, 'mit') : c
+}
 
 function italicizeCharacters(chars) {
     return Array.from(chars).map(c => {
-        if (c in mathFonts && 'serif-italic' in mathFonts[c]) {
-            return mathFonts[c]['serif-italic'];
-        } else {
-            return c;
-        }
+        return c < 'Α' || c > 'Ω' && c != '∇'
+            ? getMathAlphanumeric(c, 'mit') : c
     }).join("");
 }
 
-// mapping betwen codepoint ranges in astral planes and the bmp's private use
-// area
-var astralPrivateMap = [
+function getAbsArg(content) {
+    if (Array.isArray(content) && content[0].hasOwnProperty("atoms") &&
+        content[0].atoms.length == 1 && content[0].atoms[0].hasOwnProperty("chars")) {
+        let arg = content[0].atoms[0].chars;
+        let ch = getCh(arg, 0);
+        if (ch.length == arg.length)
+            return ch;
+    }
+    return '$a';
+}
+
+function getIntervalArg(content, n) {
+    if (!Array.isArray(content) || n != 0 && n !=2)
+        return '';                          // Invalid content
+    let arg = content[n];
+    if (Array.isArray(arg))
+        arg = arg.flat().join('');
+    let ch = getCh(arg, 0);
+    if (arg.length > ch.length && !isAsciiDigit(arg[0]) && !'-−+∞'.includes(arg[0]))
+        arg = '$' + (n ? 'b' : 'a');
+    return arg;
+}
+
+function getIntervalEndPoint(arg, content) {
+    if (arg[0] == '$') {
+        let ret = {atoms: [{chars: content.flat().join('')}]};
+        ret.atoms.arg = arg.substring(1);
+        return ret;
+    }
+    return (isAsciiDigit(arg[0])) ? {number: arg} : {atoms: [{chars: arg}]};
+}
+
+ function getOrder(high) {
+    if (high.hasOwnProperty('expr'))
+        return high.expr[0][0].number;
+
+    if (high.hasOwnProperty('atoms'))
+        return high.atoms[0].chars;
+
+    if (Array.isArray(high)) {
+        if (high[0].hasOwnProperty('number'))
+            return high[0].number;
+        if (high[0].hasOwnProperty('operator'))
+            return '';
+        if (high[0].hasOwnProperty('atoms'))
+            return high[0].atoms[0].chars;
+    }
+    return '$n';                            // Order n
+}
+
+function getScriptArg(dsty, value) {
+    // Include arg property for script high/low given by value
+    let arg = value.arg;
+    let intent = value.intent;
+
+    if (!arg && Array.isArray(value) && value[0].hasOwnProperty("bracketed"))
+        arg = value[0].bracketed.arg;
+
+    if (!arg && !intent)
+        return mtransform(dsty, dropOutermostParens(value));
+
+    value = dropOutermostParens(value);
+    if (Array.isArray(value) && value[0].hasOwnProperty('expr')) {
+        if(arg)
+            value[0].expr.arg = arg;
+        if (intent)
+            value[0].expr.intent = intent;
+    } else {
+        if(arg)
+            value.arg = arg;
+        if (intent)
+            value.intent = intent;
+    }
+    return mtransform(dsty, value);
+}
+
+function getScript(limit, ref) {
+    if (limit == undefined)
+        return '';
+    if (!Array.isArray(limit)) {
+        if (!limit.hasOwnProperty('expr') || !Array.isArray(limit.expr))
+            return '';
+        limit = limit.expr[0];
+    }
+    if (limit.length > 1)
+        return ref;
+    limit = limit[0];
+
+    if (limit.hasOwnProperty('atoms')) {
+        if (limit.atoms.hasOwnProperty('chars'))
+            return limit.atoms.chars;
+        if (Array.isArray(limit.atoms) && limit.atoms[0].hasOwnProperty('chars'))
+            return limit.atoms[0].chars;
+    }
+    if (limit.hasOwnProperty('number')) {
+        return limit.number;
+    }
+    return ref;
+}
+
+function getVariable(arg) {
+    // Return atomic variables as is; return '$' if an arg reference
+    // is needed.
+    if (!Array.isArray(arg) || !arg[0].hasOwnProperty('atoms') ||
+        arg[0].atoms.length > 1 || !arg[0].atoms[0].hasOwnProperty('chars')) {
+        return '$';
+    }
+    let ch = getCh(arg[0].atoms[0].chars, 0);
+    return ch.length == arg[0].atoms[0].chars.length ? ch : '$';
+}
+
+function getDifferentialInfo(of, n) {
+    // Get [differential-d, order, of/wrt] for a derivative of the form dy/dx.
+    // n = 0 is for numerator and 'of' (argument, e.g, y). n = 1 for denominator
+    // and wrt (e.g., x).
+    let arg = of[n];
+    let darg = '';                          // Differential argument/variable
+    let order = '1';                        // Derivative order
+    let script = false;
+    let arg1;
+
+    if (n != 0 && n != 1 || !Array.isArray(arg))
+        return [0, 0, 0];                   // Can't be differential
+
+    arg = arg[0];
+    if (arg == undefined)
+        return [0, 0, 0];                   // Can't be differential
+
+    if (arg.hasOwnProperty('expr')) {       // Happens if argument was bracketed
+        arg = arg.expr;
+        if (Array.isArray(arg))
+            arg = arg[0];
+        if (Array.isArray(arg)) {
+            if (arg.length > 1)
+                arg1 = arg[1];
+            arg = arg[0];
+        }
+    }
+
+    if (arg.hasOwnProperty('function')) {
+        arg = arg.function.f;
+        if (n == 1 && arg.hasOwnProperty('atoms') &&
+            arg.atoms.hasOwnProperty('chars')) {
+            // Function in denominator, For, e.g., ⅆ/ⅆ𝑧⁡arcsin⁡𝑧.
+            // Get diffentiation variable, here 𝑧
+            let chars = arg.atoms.chars;
+            let chD = getCh(chars, 0);
+            let iOff = chD.length;
+
+            if (!'dⅆ∂𝑑𝜕'.includes(chD))
+                return [0, 0, 0];           // Not a differential
+            if (chars[iOff] == ',')
+                iOff++;
+            return [chD, order, chars.substring(iOff)];
+        }
+    }
+    let chD = getChD(arg);
+    if (!chD)
+        return [0, 0, 0];                   // Not a differential
+    let cchChD = chD.length;
+
+    if (arg.hasOwnProperty('script')) {     // For, e.g., 𝑑𝑥², 𝑑²𝑓(𝑥), ⅆ²𝛾^∗, ⅆ𝛾^∗
+        if (arg.script.hasOwnProperty('high')) {
+            order = getOrder(arg.script.high);
+            if (!arg1 && !order) {          // For, e.g., ⅆ𝛾^∗
+                order = '1';
+                darg = '$f';
+            }
+        }
+        arg = arg.script.base;
+        script = true;
+    }
+
+    if (n == 1) {                           // Denominator
+        if (script) {                       // Non-script handled further down
+            let chars = getChars(arg);
+            darg = chars.substring(cchChD); // wrt, e.g., 𝑥 in 𝑑𝑥² or 𝑥′ in 𝑑𝑥′²
+        }  else {
+            // Get differentiation variable(s) in denominator with no superscript
+            // e.g., 𝑥, 𝑡 in 𝜕²𝜓(𝑥,𝑡)/𝜕𝑥𝜕𝑡, 𝑥 in 𝑑𝑦/𝑑𝑥, 𝑥, 𝑥′ in 𝜕²𝑓(𝑥,𝑥′)/𝜕𝑥𝜕𝑥′
+            let primes = 0;
+            if (arg.hasOwnProperty('primed')) {
+                primes = arg.primed.primes; // For, e.g., 𝜕²𝑓(𝑥,𝑥′)/𝜕𝑥𝜕𝑥′
+                arg = arg.primed.base;
+            }
+            let cch = arg.atoms[0].chars.length;
+            let chD1 = chD;
+            let k = 1;                      // Numeric differentiation order
+            darg = [];                      // Gets differentiation (wrt) variable(s)
+
+            for (let i = cchChD; cch > i && chD1 == chD; k++) {
+                let chWrt = getCh(arg.atoms[0].chars, i); // Get wrt char
+                if (primes && i + chWrt.length >= cch)
+                    chWrt += processPrimes(primes);
+                darg.push(chWrt);
+                i += chWrt.length;          // Advance char offset
+                if (cch <= i)
+                    break;                  // Done
+                chD1 = getCh(arg.atoms[0].chars, i);
+                i += cchChD;
+            }
+            order = k.toString();
+        }
+    } else {                                // Numerator (n = 0)
+        if (script) {                       // For, e.g., 𝑑²𝑓(𝑥)
+            if (!arg1 && of[0].length > 1)
+                arg1 = of[0][1];
+            if (arg1) {
+                if (arg1.hasOwnProperty('script') || arg1.hasOwnProperty('primed') ||
+                    arg1.hasOwnProperty('function') || of[0].length > 2) {
+                    darg = '$f';
+                } else if (arg1.hasOwnProperty('atoms')) {
+                    darg = getCh(arg1.atoms[0].chars, 0); // Derivative argument
+                }
+            }
+        } else if (of[0].length > 0 && arg.hasOwnProperty('atoms')) {
+            // For, e.g., 𝑑𝑓(𝑥)
+            arg = arg.atoms;
+            if (Array.isArray(arg))
+                arg = arg[0];
+            if (arg.chars.length == cchChD) {
+                // No char preceding '('. Handle cases like ⅆ(tan x)/ⅆx
+                if (of[0].length > 1 && of[0][1].hasOwnProperty('bracketed')) {
+                    of[0][1].bracketed.arg = 'f';
+                    darg = '$f';
+                }
+            } else if (arg.hasOwnProperty('funct')) {
+                darg = '$f';                     // 𝑑𝑓⁡(𝑥)/𝑑𝑥 (\u2061 follows 𝑓)
+            } else {                             // Get function name char
+                if (arg.chars[cchChD] == ',')
+                    cchChD++;
+                darg = getCh(arg.chars, cchChD); // Derivative function
+                if (of[0].length > 1) {
+                    darg = '$f';                 // Ref for derivative function
+                }
+            }
+        } else if (arg.hasOwnProperty('primed')) {
+            darg = '$f';
+        }
+    }
+    return [chD, order, darg];
+}
+
+// mapping betwen codepoint ranges in astral planes and bmp's private use area
+const astralPrivateMap = [
 
     // dummy entry
     {astral: {begin: 0, end: 0}, private: {begin: 0, end: 0}},
@@ -570,38 +2212,114 @@ var astralPrivateMap = [
     {astral: {begin: 0x1FA70, end: 0x1FA73}, private: {begin: 0xE7F9, end: 0xE7FC}},
     {astral: {begin: 0x1FA78, end: 0x1FA7A}, private: {begin: 0xE7FD, end: 0xE7FF}},
     {astral: {begin: 0x1FA80, end: 0x1FA82}, private: {begin: 0xE800, end: 0xE802}},
-    {astral: {begin: 0x1FA90, end: 0x1FA95}, private: {begin: 0xE803, end: 0xE808}}
+    {astral: {begin: 0x1FA90, end: 0x1FA95}, private: {begin: 0xE803, end: 0xE808}},
+
+    // Arabic math alphabetics
+    {astral: {begin: 0x1EE00, end: 0x1EEFF}, private: {begin: 0xE900, end: 0xE9FF}},
 ];
 
 // carries out all codepoint range sustitutions listed in astralPrivateMap on
 // the passed string
 function mapToPrivate(s) {
-    return Array.from(s).map(c => {
-        var cp = c.codePointAt(0);
+    let u = '';                             // Collects mapped string
 
-        // do nothing if character is in BMP
+    for (let i = 0; i < s.length; i++) {
+        let cp = s.codePointAt(i);
         if (cp <= 0xFFFF) {
-            return c;
+            // Convert numeric fractions like ¹²/₃₄₅ to UnicodeMath small
+            // numeric fractions, e.g., 12⊘345. This is tricky to do with
+            // the peg grammar since it handles Unicode subsup digits as
+            // operators (see opScript). Require numerator and denominator
+            // each to have at least one digit.
+            if (cp >= 0x2080 && cp <= 0x2089 && i >= 2 &&
+                (s[i - 1] == '/' || s[i - 1] == '\u2044')) {
+                let j = i - 2;
+                let numerator = '';
+
+                while (j >= 0) {
+                    let digit = foldSupDigit(s[j]);
+                    if (!digit)
+                        break;
+                    numerator = digit + numerator;
+                    j--;
+                }
+                j++;
+                let k = i;
+                let denominator = '';
+
+                if (i - j >= 2) {
+                    while (k < s.length) {
+                        if (!inRange('₀', s[k], '₉'))
+                            break;
+                        denominator += String.fromCharCode(s[k].codePointAt(0) - 0x2050);
+                        k++;
+                    }
+                    if (k - i >= 1) {
+                        // Convert valid Unicode numeric fraction to
+                        // UnicodeMath small numeric fraction
+                        u = u.substring(0, u.length - (i - j)) + ' ' +
+                            numerator + '⊘' + denominator + ' ';
+                        i = k - 1;
+                        continue;
+                    }
+                }
+            } else if (s[i] == 'ⓜ') {
+                if (s[i + 1] == '{') {       // For \newcommand
+                    let k = s.indexOf('}', i + 2)
+                    if (k == -1) {
+                        i++
+                        continue
+                    }
+                    // Remove \newcommand {} around control word
+                    s = s.substring(0, i + 1) + s.substring(i + 2, k) + s.substring(k + 1)
+                }
+                if (s[i + 1] == '\\') {
+                    let cw, body
+                    [cw, body, i] = getMacro(s, i)
+                    if (cw) {
+                        if (!ummlConfig.customControlWords)
+                            ummlConfig.customControlWords = {}
+                        ummlConfig.customControlWords[cw] = body
+                        if (!testing)
+                            console.log('cw: ' + cw + ', body: ' + body)
+                            i--             // Cancel upcoming i++
+                        continue
+                    }
+                } else {
+                    // Apply macro with arguments
+                    let val
+                    [val, i] = applyMacro(s, i + 1)
+                    u += val
+                    continue
+                }
+            }
+            u += s[i]
+            continue;
         }
 
-        // go over all entries of the substitution map and and subsitute if a
-        // match is found. this could be more efficient, but it's not even close
-        // to being a bottleneck
+        // go over all entries of the substitution map substituting if a match
+        // is found. this could be more efficient, but it's not even close to
+        // being a bottleneck
+        let found = false;
         for (let m of astralPrivateMap) {
             if (m.astral.begin <= cp && cp <= m.astral.end) {
-                c = String.fromCodePoint(m.private.begin + (cp - m.astral.begin));
+                u += String.fromCodePoint(m.private.begin + (cp - m.astral.begin));
+                found = true;
                 break;
             }
         }
-        return c;
-    }).join('');
+        if (!found)                         // E.g., 🕷 (1F577)
+            u += s[i] + s[i + 1];           // Copy surrogate pair
+        i++;                                // Bypass lead surrogate
+    }
+    return u;
 }
 
 // inverts all codepoint range sustitutions listed in astralPrivateMap on the
 // passed string
 function mapFromPrivate(s) {
     return Array.from(s).map(c => {
-        var cp = c.codePointAt(0);
+        let cp = c.codePointAt(0);
 
         // do nothing if character is not in Private Use Area
         if (cp < 0xE000 || 0xF8FF < cp) {
@@ -683,14 +2401,37 @@ function SimpleTracer() {
     };
 }
 
-// parse a string containing a UnicodeMath term to a UnicodeMath AST
-function parse(unicodemath) {
-    if (typeof ummlConfig !== "undefined" && typeof ummlConfig.resolveControlWords !== "undefined" && ummlConfig.resolveControlWords) {
-        unicodemath = resolveCW(unicodemath);
+function matrixRows(n, m) {
+    // Generate matrix rows for identity and null matrices
+    const b = [];
+
+    let fIdentity = false;
+    if (!m) {
+        m = n;
+        fIdentity = true;
     }
+
+    for (let i = 0; i < n; i++) {
+        const a = [];
+
+        for (let j = 0; j < m; j++) {
+            let x = '\u2B1A';
+            if (fIdentity)
+                x = i == j ? 1 : 0;
+            a.push({expr: [[{number: x}]]});
+        }
+        b.push({mrow: a});
+    }
+    return {mrows: b};
+}
+
+function parse(unicodemath) {
+    // parse a string containing a UnicodeMath term to a UnicodeMath AST
+    if (ummlConfig && ummlConfig.resolveControlWords)
+        unicodemath = resolveCW(unicodemath);
     unicodemath = mapToPrivate(unicodemath);
 
-    var uast;
+    let uast;
     if (typeof ummlConfig === "undefined" || typeof ummlConfig.tracing === "undefined" || !ummlConfig.tracing) {
 
         // no tracing
@@ -698,7 +2439,7 @@ function parse(unicodemath) {
     } else {
 
         // tracing
-        var tracer = new SimpleTracer();
+        let tracer = new SimpleTracer();
         try {
             uast = ummlParser.parse(unicodemath, {tracer: tracer});
         } finally {
@@ -709,13 +2450,11 @@ function parse(unicodemath) {
             if (output_trace) {
                 output_trace.innerHTML = tracer.traceLogHTML().join('\n');
             }
-            debugLog(tracer.traceLog);
+            //debugLog(tracer.traceLog);
             tracer.reset();
         }
     }
-
     uast = astMapFromPrivate(uast);
-
     return uast;
 }
 
@@ -765,7 +2504,6 @@ function clone(object) {
     Reflect.ownKeys(object).forEach(key =>
         defineProp(_object, key, { value: clone(object[key]) }, object)
     )
-
     return _object
 
     function defineProp(object, key, descriptor = {}, copyFrom = {}) {
@@ -801,12 +2539,10 @@ function clone(object) {
 
 // compute a list of nary options based on a bit mask
 function naryOptions(mask) {
-
-    if (mask < 0 || mask > 159) {
+    if (mask < 0 || mask > 159)
         throw "nary mask is not between 0 and 159";
-    }
 
-    var options = [];
+    let options = [];
 
     // first block
     switch (mask % 4) {
@@ -864,79 +2600,28 @@ function naryOptions(mask) {
     } else if (mask == 128) {
         options.push("fGrowWithContent");
     }
-
     return options;
 }
 
-// compute a list of phantom options based on a bit mask
-function phantomOptions(mask) {
-    if (mask < 0 || mask > 31) {
-        throw "phantom mask is not between 0 and 31";
-    }
-
-    var maskOptions = {
-        1: 'fPhantomShow',
-        2: 'fPhantomZeroWidth',
-        4: 'fPhantomZeroAscent',
-        8: 'fPhantomZeroDescent',
-        16: 'fPhantomTransparent',
-    };
-
-    // accumulate options corresponding to mask
-    var binMask = mask.toString(2).split('').reverse().join('');
-    var options = [];
-    for (var i = binMask.length - 1; i >= 0; i--) {
-        if (binMask[i] == '1') {
-            options.push(maskOptions[Math.pow(2, i)]);
-        }
-    }
-
-    return options;
-}
-
-// compute a list of enclosure notation attributes options based on a bit mask
-// or symbol
 function enclosureAttrs(mask, symbol) {
-    if (mask < 0 || mask > 255) {
+    if (mask < 0 || mask > 255)
         throw "enclosure mask is not between 0 and 255";
-    }
-
-    var symbolClasses = {
-        '▭': 'box',
-        '̄': 'top',
-        '▁': 'bottom',
-        '▢': 'roundedbox',
-        '○': 'circle',
-        '⟌': 'longdiv',
-        "⃧"  : 'actuarial',
-        '⬭': 'circle'
-    };
-    var maskClasses = {
-        1: 'top',
-        2: 'bottom',
-        4: 'left',
-        8: 'right',
-        16: 'horizontalstrike',
-        32: 'verticalstrike',
-        64: 'downdiagonalstrike',
-        128: 'updiagonalstrike'
-    };
 
     // get classes corresponding to mask
-    var ret = "";
+    let ret = "";
     if (mask != null) {
-        var binMask = mask.toString(2).split('').reverse().join('');
-        var classes = [];
-        for (var i = binMask.length - 1; i >= 0; i--) {
-            if (binMask[i] == '1') {
+        mask ^= 15;                         // spec inverts low 4 bits
+        let binMask = mask.toString(2).split('').reverse().join('');
+        let classes = []
+
+        for (let i = binMask.length - 1; i >= 0; i--) {
+            if (binMask[i] == '1')
                 classes.push(maskClasses[Math.pow(2, i)]);
-            }
         }
         ret = classes.join(' ');
     } else if (symbol != null) {
-        ret += ' ' + symbolClasses[symbol];
+        ret += symbolClasses[symbol];
     }
-
     return ret;
 }
 
@@ -962,7 +2647,7 @@ function abstractBoxOptions(mask) {
     // fXPositioning 256
     // fXSpacing 512
 
-    var options = [];
+    let options = []
 
     // align
     switch (mask % 2) {
@@ -1030,22 +2715,7 @@ function abstractBoxOptions(mask) {
             options.push("fXSpacing");
         }
     }
-
     return options;
-}
-
-// generate prime symbol(s) based on a number of desired primes
-function processPrimes(primes) {
-    switch (primes) {
-        case 4:
-            return "⁗";
-        case 3:
-            return "‴";
-        case 2:
-            return "″";
-        default:
-            return "′".repeat(primes);
-    }
 }
 
 // should a diacritic be placed above (1), on top of (0), or under (-1) a
@@ -1054,23 +2724,15 @@ function processPrimes(primes) {
 // and running
 // document.querySelectorAll('.table td:nth-child(3)').forEach(n => console.log("a" + n.innerHTML + "  " + n.innerHTML));
 // in the console)
+const overlays = ['\u0334','\u0335','\u0336','\u0337','\u0338','\u20D2','\u20D3','\u20D8','\u20D9','\u20DA','\u20DD','\u20DE','\u20DF','\u20E0','\u20E2','\u20E3','\u20E4','\u20E5','\u20E6','\u20EA','\u20EB'];
+const belows = ['\u0316','\u0317','\u0318','\u0319','\u031C','\u031D','\u031E','\u031F','\u0320','\u0321','\u0322','\u0323','\u0324','\u0325','\u0326','\u0327','\u0328','\u0329','\u032A','\u032B','\u032C','\u032D','\u032E','\u032F','\u0330','\u0331','\u0332','\u0333','\u0339','\u033A','\u033B','\u033C','\u0345','\u0347','\u0348','\u0349','\u034D','\u034E','\u0353','\u0354','\u0355','\u0356','\u0359','\u035A','\u035C','\u035F','\u0362','\u20E8','\u20EC','\u20ED','\u20EE','\u20EF'];
+
 function diacriticPosition(d) {
-    var overlays = ['\u0334','\u0335','\u0336','\u0337','\u0338','\u20D2','\u20D3','\u20D8','\u20D9','\u20DA','\u20DD','\u20DE','\u20DF','\u20E0','\u20E2','\u20E3','\u20E4','\u20E5','\u20E6','\u20EA','\u20EB'];
-    var belows = ['\u0316','\u0317','\u0318','\u0319','\u031C','\u031D','\u031E','\u031F','\u0320','\u0321','\u0322','\u0323','\u0324','\u0325','\u0326','\u0327','\u0328','\u0329','\u032A','\u032B','\u032C','\u032D','\u032E','\u032F','\u0330','\u0331','\u0332','\u0333','\u0339','\u033A','\u033B','\u033C','\u0345','\u0347','\u0348','\u0349','\u034D','\u034E','\u0353','\u0354','\u0355','\u0356','\u0359','\u035A','\u035C','\u035F','\u0362','\u20E8','\u20EC','\u20ED','\u20EE','\u20EF'];
-
-    if (overlays.includes(d)) {
+    if (overlays.includes(d))
         return 0;
-    }
-    if (belows.includes(d)) {
+    if (belows.includes(d))
         return -1;
-    }
     return 1;
-}
-
-// determine space width attribute values: x/18em
-function spaceWidth(x) {
-    var spaceWidths = ['0', 'veryverythinmathspace','verythinmathspace','thinmathspace','mediummathspace','thickmathspace','verythickmathspace','veryverythickmathspace', null, '0.5em', null, null, null, null, null, null, null, null, '1em'];
-    return spaceWidths[x];
 }
 
 // determine sizes: negative numbers => smaller sizes, positive numbers =>
@@ -1082,54 +2744,45 @@ function fontSize(n) {
 
 // determine char to emit based on config: "us-tech" (ⅆ ↦ 𝑑), "us-patent"
 // (ⅆ ↦ ⅆ), or "euro-tech" (ⅆ ↦ d), see section 3.11 of the tech note
-function doublestruckChar(value) {
-    var variants = {
-        "us-tech": {
-            "ⅅ": {mi: noAttr("𝐷")},
-            "ⅆ": {mi: noAttr("𝑑")},
-            "ⅇ": {mi: noAttr("𝑒")},
-            "ⅈ": {mi: noAttr("𝑖")},
-            "ⅉ": {mi: noAttr("𝑗")}
-        },
-        "us-patent": {
-            "ⅅ": {mi: noAttr("ⅅ")},
-            "ⅆ": {mi: noAttr("ⅆ")},
-            "ⅇ": {mi: noAttr("ⅇ")},
-            "ⅈ": {mi: noAttr("ⅈ")},
-            "ⅉ": {mi: noAttr("ⅉ")}
-        },
-        "euro-tech": {
-            "ⅅ": {mi: withAttrs({"mathvariant": "normal"}, "D")},
-            "ⅆ": {mi: withAttrs({"mathvariant": "normal"}, "d")},
-            "ⅇ": {mi: withAttrs({"mathvariant": "normal"}, "e")},
-            "ⅈ": {mi: withAttrs({"mathvariant": "normal"}, "i")},
-            "ⅉ": {mi: withAttrs({"mathvariant": "normal"}, "j")}
-        }
-    }
-
-    if (typeof ummlConfig !== "undefined" && typeof ummlConfig.doubleStruckMode !== "undefined" && ummlConfig.doubleStruckMode in variants) {
-        return variants[ummlConfig.doubleStruckMode][value];
-    } else {
-        return variants["us-tech"][value];
-    }
+const variants = {
+    "us-tech":   {"ⅅ": "𝐷", "ⅆ": "𝑑", "ⅇ": "𝑒", "ⅈ": "𝑖", "ⅉ": "𝑗"},
+    "us-patent": {"ⅅ": "ⅅ", "ⅆ": "ⅆ", "ⅇ": "ⅇ", "ⅈ": "ⅈ", "ⅉ": "ⅉ"},
+    "euro-tech": {"ⅅ": "D", "ⅆ": "d", "ⅇ": "e", "ⅈ": "i", "ⅉ": "j"}
 }
 
-// if the outer-most node of an AST describes a parenthesized expression, remove
-// the parentheses. used for fractions, exponentiation etc.
+function doublestruckChar(value) {
+    if (typeof ummlConfig !== "undefined" && typeof ummlConfig.doubleStruckMode !== "undefined" &&
+        ummlConfig.doubleStruckMode in variants) {
+        return variants[ummlConfig.doubleStruckMode][value];
+    }
+    return variants["us-tech"][value];
+}
+
+function transposeChar() {
+    if (typeof ummlConfig !== "undefined" && ummlConfig.transposeChar != undefined)
+        return ummlConfig.transposeChar
+    return "T"
+}
+
+// if the outermost node of an AST describes a parenthesized expression, remove
+// the parentheses. used for fractions, exponentiation, etc.
 function dropOutermostParens(uast) {
-    if (uast.hasOwnProperty("expr")) {
+    if (uast.hasOwnProperty("expr"))
         return {expr: dropOutermostParens(uast.expr)};
-    }
 
-    if (Array.isArray(uast) && uast.length == 1) {
-        return [dropOutermostParens(uast[0])];
+    if (Array.isArray(uast)) {
+        if (uast.length == 1)
+            return [dropOutermostParens(uast[0])];
+        if (uast.length == 2 && uast[0].hasOwnProperty("bracketed") &&
+            uast[1].hasOwnProperty("intend")) {
+            return [dropOutermostParens(uast[0]), uast[1]]
+        }
     }
-
-    if (!uast.hasOwnProperty("bracketed")) {
+    if (!uast.hasOwnProperty("bracketed"))
         return uast;
-    }
 
-    if (v(uast).open == "(" && v(uast).close == ")" && !v(uast).content.hasOwnProperty("separated")) {
+    if (v(uast).open == "(" && v(uast).close == ")" &&
+        !v(uast).content.hasOwnProperty("separated")) {
         return v(uast).content;
     }
     return uast;
@@ -1138,12 +2791,17 @@ function dropOutermostParens(uast) {
 // return the given AST, which may be wrapped in a stack of singleton lists,
 // sans those lists
 function dropSingletonLists(uast) {
-    if (Array.isArray(uast) && uast.length == 1) {
+    if (Array.isArray(uast) && uast.length == 1)
         return dropSingletonLists(uast[0]);
-    }
     return uast;
 }
 
+const brackets = {'⒨': '()', '⒩': '‖‖', 'ⓢ': '[]', 'Ⓢ': '{}', '⒱': '||'};
+
+function isCharsButNotFunction(value) {
+    return value.hasOwnProperty("chars") && value.chars[0] != 'Ⅎ' &&
+        !isFunctionName(value.chars);
+}
 
 ////////////////
 // PREPROCESS //
@@ -1151,96 +2809,79 @@ function dropSingletonLists(uast) {
 
 // certain desugarings, transformations and normalizations that must be
 // performed no matter the output format
-function preprocess(dsty, uast) {
+function preprocess(dsty, uast, index, arr) {
 
     // map preprocessing over lists
     if (Array.isArray(uast)) {
-        return uast.map(e => preprocess(dsty, e));
+        for (let i = 0; i < uast.length; i++) {
+            uast[i] = preprocess(dsty, uast[i], i, uast);
+        }
     }
 
-    var key = k(uast);
-    var value = v(uast);
+    let base
+    let i
+    let key = k(uast);
+    let value = v(uast);
+    let opClose, opOpen
+    let ret
+    let type
+    let val
+
+    var intent = dsty.intent;               // Currently intent and arg need
+    var arg = dsty.arg;                     //  to be global to pass down to
+    if (!arg)                               //  lower preprocess() calls
+        arg = uast.arg;
+    if (!intent)
+        intent = uast.intent;
+    dsty.intent = dsty.arg = '';
 
     switch (key) {
         case "unicodemath":
             return {unicodemath: {content: preprocess(dsty, value.content), eqnumber: value.eqnumber}};
-        case "newline":
-            return uast;
 
         case "expr":
             return {expr: preprocess(dsty, value)};
-
-        case "operator":
-            return uast;
-        case "negatedoperator":
-            var negs = {
-                '<': '≮',
-                '=': '≠',
-                '>': '≯',
-                '∃': '∄',
-                '∈': '∉',
-                '∋': '∌',
-                '∼': '≁',
-                '≃': '≄',
-                '≅': '≇',
-                '≈': '≉',
-                '≍': '≭',
-                '≡': '≢',
-                '≤': '≰',
-                '≥': '≱',
-                '≶': '≸',
-                '≷': '≹',
-                '≽': '⋡',
-                '≺': '⊀',
-                '≻': '⊁',
-                '≼': '⋠',
-                '⊂': '⊄',
-                '⊃': '⊅',
-                '⊆': '⊈',
-                '⊇': '⊉',
-                '⊑': '⋢',
-                '⊒': '⋣'
-            };
-            if (value in negs) {
-                return {operator: negs[value]};
-            } else {
-                return {negatedoperator: value};
-            }
 
         case "element":
             return {element: preprocess(dsty, value)};
 
         case "array":
-            // TODO pad columns (also for matrices), required/helpful for latex output
+            // TODO pad columns (also for matrices)
             return {array: preprocess(dsty, value)};
         case "arows":
             return {arows: preprocess(dsty, value)};
         case "arow":
-
             // divide "&" into alignment marks and stretchy gaps
-            var ret = []
-            var i = 0;
-            var currAcol = [];
-            if (value[0] == null) {  // align mark immediately at the start of
-                                     // the row
-                i = 1;
-            }
-            for (; i < value.length; i++) {
-                if (i % 2 == 0) {
-                    currAcol = [preprocess(dsty, value[i])];
-                } else if (i % 2 == 1) {
-                    currAcol.push({aalign: null});  // alignment mark
-                    currAcol.push(preprocess(dsty, value[i]));
-                    ret.push({acol: currAcol});  // stretchy gap may add space
-                                                 // after this
-                    currAcol = [];
-                }
-            }
-            if (currAcol.length > 0) {
-                ret.push({acol: currAcol});
-            }
-            return {arow: ret};
+            let currAcol = []
+            ret = []
+            i = 0
 
+            if (value[0] == null)           // align mark at start of row
+                i = 1
+
+            for (; i < value.length; i++) {
+                currAcol.push(!(i % 2) ? {aaligngroup: null} : {aalignmark: null})
+                currAcol.push(preprocess(dsty, value[i]))
+            }
+            if (currAcol.length > 0)
+                ret.push({acol: currAcol})
+            return {arow: ret}
+
+        case "specialMatrix":               // n×m or identity matrix
+            type = value[2];
+            value = matrixRows(value[0], value[1]);
+
+            if (emitDefaultIntents) {
+                let val = matrixIntents[type];
+                if (val)
+                    intent = val;
+            }
+            if (type != "■") {
+                opOpen = brackets[type][0];
+                opClose = brackets[type][1];
+                return {bracketed: {open: opOpen, close: opClose, intent: intent, arg: arg, content: {matrix: preprocess(dsty, value)}}};
+            }
+            // Fall through to "matrix"
         case "matrix":
             return {matrix: preprocess(dsty, value)};
         case "mrows":
@@ -1250,9 +2891,9 @@ function preprocess(dsty, uast) {
             return {mrow: value.map(c => ({mcol: preprocess(dsty, c)}))};
 
         case "nary":
-            var options = naryOptions(value.mask);
-            var value = clone(value);  // must be cloned since it's going to be
-                                       // modified
+            let options = naryOptions(value.mask);
+            value = clone(value);           // must be cloned since it's going
+                                            // to be modified
 
             if (options.includes("nLimitsOpposite")) {
 
@@ -1260,7 +2901,7 @@ function preprocess(dsty, uast) {
                 // note contains no details and word doesn't appear to implement
                 // this feature)
                 if ("low" in value.limits.script && "high" in value.limits.script) {
-                    var tmp = value.limits.script.high;
+                    let tmp = value.limits.script.high;
                     value.limits.script.high = value.limits.script.low;
                     value.limits.script.low = tmp;
                 } else if ("low" in value.limits.script) {
@@ -1270,19 +2911,16 @@ function preprocess(dsty, uast) {
                     value.limits.script.low = value.limits.script.high;
                     delete value.limits.script.high;
                 } else {
-
                     // can only occur in a nary without sub or sup set
                 }
             }
             if (options.includes("nShowLowLimitPlaceHolder")) {
-                if (!("low" in value.limits.script)) {
+                if (!("low" in value.limits.script))
                     value.limits.script.low = {operator: "⬚"};
-                }
             }
             if (options.includes("nShowUpLimitPlaceHolder")) {
-                if (!("high" in value.limits.script)) {
+                if (!("high" in value.limits.script))
                     value.limits.script.high = {operator: "⬚"};
-                }
             }
 
             if (options.includes("fDontGrowWithContent")) {
@@ -1290,6 +2928,9 @@ function preprocess(dsty, uast) {
             } else if (options.includes("fGrowWithContent")) {
                 // default
             }
+
+            let op = v(value.limits.script.base);
+            let isInt = isIntegral(op);
 
             if (options.includes("nLimitsUnderOver")) {
                 value.limits.script.type = "abovebelow";
@@ -1300,83 +2941,246 @@ function preprocess(dsty, uast) {
                 // display low as abovebelow, high as subsup => generate two
                 // nested scripts
                 if (value.limits.script.type != "subsup" && "high" in value.limits.script) {
-                    var high = value.limits.script.high;
+                    let high = value.limits.script.high;
                     delete value.limits.script.high;
                     value.limits.script.base = {script: {type: "subsup", base: value.limits.script.base, high: high}};
                 }
+            } else if (dsty.display && !isInt) {
+                // In display mode if not an integral, display limits abovebelow
+                value.limits.script.type = "abovebelow";
             }
+            if (value.naryand.hasOwnProperty("binom") && arr != undefined &&
+                index < arr.length - 1 && Array.isArray(arr[index + 1])) {
+                // Include array following binomial coefficient in naryand.
+                // Binomial coefficients like 𝑛⒞𝑘 should be part of operands
+                // as are other bracketed expressions, but peg doesn't seem
+                // to offer a way to match it that way.
+                let naryand = arr[index + 1];
+                naryand.unshift(value.naryand);
+                value.naryand = naryand;
+                arr.splice(index + 1, 1);
+            } else if (isInt && arr != undefined && index < arr.length &&
+                Array.isArray(arr[index + 1])) {
+                // For integrals, if arr[index + 1] has atoms that start with ⅆ,
+                // move that element into value.naryand. E.g., in ∫_1^2 1/𝑥 ⅆ𝑥=ln 2,
+                // ⅆ𝑥 is moved into the integrand.
+                let next = arr[index + 1][0];
+                if (next.hasOwnProperty('primed'))
+                    next = next.primed.base;
+                if (next.hasOwnProperty('atoms') && Array.isArray(next.atoms) &&
+                    next.atoms[0].hasOwnProperty('chars') &&
+                    next.atoms[0].chars[0] == 'ⅆ') {    // Differential d
+                    if (Array.isArray(value.naryand))
+                        value.naryand.push(arr[index + 1][0]);
+                    else
+                        value.naryand = [value.naryand, arr[index + 1][0]];
+                    arr.splice(index + 1, 1);
+                }
+            }
+            value.naryand = preprocess(dsty, value.naryand);
+            value.limits = preprocess(dsty, value.limits);
 
-            return {nary: {mask: value.mask, limits: preprocess(dsty, value.limits), naryand: preprocess(dsty, value.naryand)}};
-        case "opnary":
-            return uast;
+            if (useMfenced && !Array.isArray(value.naryand)) {
+                // Word MML2OMML.XSL wants naryand to be an <mrow>
+                value.naryand = [value.naryand]
+            }
+            if (!intent && emitDefaultIntents) {
+                let arg0 = getScript(value.limits.script.low, '$l')
+                let arg1 = getScript(value.limits.script.high, '$h')
+                intent = ':nary(' + arg0 + ',' + arg1 + ',$naryand)'
+                value.naryand.arg = 'naryand';
+                if (arg0 == '$l')
+                    value.limits.script.low.arg = arg0.substring(1);
+                if (arg1 == '$h')
+                    value.limits.script.high.arg = arg1.substring(1);
+            }
+            return {nary: {mask: value.mask, limits: value.limits, intent: intent,
+                           arg: arg, naryand: value.naryand}};
+
+        case "negatedoperator":
+            return (value in negs) ? {operator: negs[value]} : {negatedoperator: value};
 
         case "phantom":
-            return {phantom: {mask: value.mask, symbol: value.symbol, of: preprocess(dsty, value.of)}};
+            return {phantom: {mask: value.mask, symbol: value.symbol, intent: intent, arg: arg, of: preprocess(dsty, value.of)}};
         case "smash":
-            return {smash: {symbol: value.symbol, of: preprocess(dsty, value.of)}};
+            return {smash: {symbol: value.symbol, intent: intent, arg: arg, of: preprocess(dsty, value.of)}};
 
         case "fraction":
-            return {fraction: {symbol: value.symbol, of: preprocess(dsty, value.of)}};
+            if (value.symbol == '/' && !intent && !arg && emitDefaultIntents) {
+                // Check for Leibniz derivatives
+                let [chDifferential0, order0, arg0] = getDifferentialInfo(value.of, 0); // Numerator
+
+                if (chDifferential0) {      // Might be a derivative
+                    let [chDifferential1, order1, wrt] = getDifferentialInfo(value.of, 1); // Denominator
+
+                    if (chDifferential0 == chDifferential1 && order0 == order1) {
+                        // It's a derivative
+                        if (!arg0) {        // Assign intent arg as for 𝜕²/𝜕𝑥² 𝜓(𝑥,𝑡)
+                            if (Array.isArray(value.of[1])) { // Denominator
+                                // Reorder tree for, e.g., ⅆ/ⅆ𝑧⁡arcsin⁡𝑧
+                                let val = value.of[1][0];
+                                if (val.hasOwnProperty('function') &&
+                                    val.function.f.hasOwnProperty('atoms') &&
+                                    val.function.f.atoms.hasOwnProperty('chars')) {
+                                    let arg = val.function.of;
+                                    value.of[1][0] = {atoms: {chars:
+                                        value.of[1][0].function.f.atoms.chars.split(',').join('')}};
+                                    arr.splice(index + 1, 0, arg);
+                                }
+                            }
+                            if (Array.isArray(value.of[0]) && order0 == 1 &&
+                                value.of[0][0].hasOwnProperty('script')) { // Handle ⅆ𝑓₁/ⅆ𝑧
+                                arg0 = '$f';
+                            }
+                            if (index + 1 < arr.length) {
+                                let ele = arr[index + 1];
+                                if (ele.hasOwnProperty('operator') && ele.operator == '\u2061')
+                                    ele = arr[index + 2];
+                                if (Array.isArray(ele)) {
+                                    if (ele.length == 1 && ele[0].hasOwnProperty("atoms"))
+                                        ele[0].atoms.arg = '$f'; // Target <mi>
+                                    else
+                                        ele.unshift({arg: 'f'}); // Target <mrow>
+                                    arg0 = '$f';
+                                }
+                            }
+                        }
+                        if (arg0.startsWith('$') || order0.startsWith('$')) {
+                            // Handle intent argument reference(s)
+                            let ofDiff = value.of;
+                            let s = ofDiff[0][0];
+                            if (s.hasOwnProperty('script')) {
+                                // For, e.g., 𝑑^(n-1) 𝑓(𝑥)/𝑑𝑥^(𝑛-1), 𝑑^(𝑛-1) y/𝑑𝑥^(𝑛-1), ⅆ²𝛾′/ⅆ𝑧²
+                                if (Array.isArray(s.script.high)) {
+                                    if (order0.startsWith('$')) {
+                                        if (s.script.high[0].hasOwnProperty('bracketed'))
+                                            s.script.high[0].bracketed.arg = order0.substring(1);
+                                        else if (s.script.high[0].hasOwnProperty('atoms'))
+                                            s.script.high[0].atoms.arg = order0.substring(1);
+                                    } else if (arg0.startsWith('$')) {
+                                        if (ofDiff[0].length == 1) {
+                                            s.script.arg = arg0.substring(1);
+                                        } else if (ofDiff[0][1].hasOwnProperty('primed')) {
+                                            ofDiff[0][1].primed.arg = arg0.substring(1); // ⅆ^2 𝛾′/ⅆ𝑧²
+                                        }
+                                    }
+                                } else if (ofDiff[0].length == 2) {
+                                    if (ofDiff[0][1].hasOwnProperty('script')) { // For, e.g., ⅆ²𝛾^∗/ⅆ𝑧²
+                                        ofDiff[0][1].script.arg = arg0.substring(1);
+                                    } else if (ofDiff[0][1].hasOwnProperty('primed')) {
+                                        ofDiff[0][1].primed.arg = arg0.substring(1); // ⅆ²𝛾′/ⅆ𝑧²
+                                    } else if (ofDiff[0][1].hasOwnProperty('function')) { // 𝜕²𝑓⁡(𝑥)/𝜕𝑥² (incl \u2061)
+                                        ofDiff[0][1].arg = arg0.substring(1);
+                                    }
+                                } else if (s.script.low) {
+                                    s.script.arg = arg0.substring(1);
+                                }
+                                // For, e.g., 𝑑²𝑓(𝑥)/𝑑𝑥² or 𝑑^(n-1) 𝑓(𝑥)/𝑑𝑥^(n-1)
+                                if (ofDiff[0].length == 3 &&
+                                    ofDiff[0][1].hasOwnProperty('atoms') &&
+                                    ofDiff[0][2].hasOwnProperty('bracketed')) {
+                                    value.of[0] = [s, [{arg: arg0.substring(1)},
+                                        ofDiff[0][1], ofDiff[0][2]]];
+                                } else if (ofDiff[0].length == 2) {
+                                    // For, e.g., 𝑑^(n-1) y/𝑑𝑥^(n-1)
+                                    value.of[0] = [s, ofDiff[0][1]];
+                                }
+                            } else if (s.hasOwnProperty('primed')) {
+                                s.primed.arg = arg0.substring(1);
+                            } else if (s.hasOwnProperty('function')) {
+                                s.arg = arg0.substring(1);  // 𝜕𝑓⁡(𝑥,𝑥′)/𝜕𝑥′
+                            } else if (ofDiff[0].length == 2 && // 𝑑𝑓(𝑥)/𝑑𝑥
+                                s.hasOwnProperty('atoms') &&
+                                ofDiff[0][1].hasOwnProperty('bracketed')) {
+                                let ch = getCh(s.atoms[0].chars, 0);
+
+                                if (s.atoms[0].chars.length > ch.length) {
+                                    value.of[0] = [{atoms: [{chars: ch}]}, [{arg: arg0.substring(1)},
+                                    {atoms: [{chars: getCh(s.atoms[0].chars, ch.length)}]},
+                                        ofDiff[0][1]]];
+                                }
+                            }
+                        }
+                        intent = '∂𝜕'.includes(chDifferential0)
+                            ? 'partial-derivative' : 'derivative';
+                        intent += '(' + order0 + ',' + arg0 + ',' + wrt + ')';
+                        return {fraction: {symbol: value.symbol, intent: intent, of: preprocess(dsty, value.of)}};
+                   }
+                }
+            }
+            return {fraction: {symbol: value.symbol, intent: intent, arg: arg, of: preprocess(dsty, value.of)}};
+
         case "unicodefraction":
-            var frac = (numerator, denominator) => {
-                return {fraction: {symbol: "/", of: [{number: numerator}, {number: denominator}]}};
-            }
-            switch(value) {
-                case "↉":
-                    return frac(0, 3);
-                case "½":
-                    return frac(1, 2);
-                case "⅓":
-                    return frac(1, 3);
-                case "⅔":
-                    return frac(2, 3);
-                case "¼":
-                    return frac(1, 4);
-                case "¾":
-                    return frac(3, 4);
-                case "⅕":
-                    return frac(1, 5);
-                case "⅖":
-                    return frac(2, 5);
-                case "⅗":
-                    return frac(3, 5);
-                case "⅘":
-                    return frac(4, 5);
-                case "⅙":
-                    return frac(1, 6);
-                case "⅚":
-                    return frac(5, 6);
-                case "⅐":
-                    return frac(1, 7);
-                case "⅛":
-                    return frac(1, 8);
-                case "⅜":
-                    return frac(3, 8);
-                case "⅝":
-                    return frac(5, 8);
-                case "⅞":
-                    return frac(7, 8);
-                case "⅑":
-                    return frac(1, 9);
-            }
+            let uFrac = unicodeFractions[value];
+            return (uFrac == undefined) ? value
+                : {fraction: {symbol: "⊘", of: [{number: uFrac[0]}, {number: uFrac[1]}]}};
 
         case "atop":
-            return {atop: preprocess(dsty, value)};
+            value = preprocess(dsty, value);
+            if (intent)
+                value.intent = intent;
+            if (arg)
+                value.arg = arg;
+
+            return {atop: value};
         case "binom":
-            return {binom: {top: preprocess(dsty, value.top), bottom: preprocess(dsty, value.bottom)}};
+            value.top = preprocess(dsty, value.top);
+            value.bottom = preprocess(dsty, value.bottom);
+
+            if (!intent && emitDefaultIntents) {
+                let top = getVariable(value.top);
+                let bottom = getVariable(value.bottom);
+                intent = "binomial-coefficient(";
+                if (top[0] == '$') {
+                    intent += '$t,';
+                    value.top.arg = 't';
+                } else {
+                    intent += top + ',';
+                }
+                if (bottom[0] == '$') {
+                    intent += '$b)';
+                    value.bottom.arg = 'b';
+                } else {
+                    intent += bottom + ')';
+                }
+            }
+            return {bracketed: {intent: intent, arg: arg, open: "(", close: ")",
+                                content: {atop: [value.top, value.bottom]}}};
 
         case "script":
+            value.base.inscript = true;     // Need for case "primed":
             ret = {type: value.type, base: preprocess(dsty, value.base)};
+            if (intent)
+                ret.intent = intent;
+            if (arg)
+                ret.arg = arg;
+            if (value.arg)
+                ret.arg = value.arg;
 
             switch (value.type) {
                 case "subsup":
-
-                    // if the subsup contains a primed expression, pull the
-                    // prime up into the superscript and make the prime's base
-                    // the subsup's base
-                    var base = dropSingletonLists(value.base);
-                    if (base.hasOwnProperty("primed")) {
-                        var primes = {operator: processPrimes(base.primed.primes)};  // TODO not ideal for latex output
+                    base = dropSingletonLists(value.base)
+                    if (index > 0) {
+                        let intend = arr[index - 1].intend
+                        if (intend && intend.symbol == 'Ⓐ') {
+                            base.selanchor = intend.value
+                            ret.base = base
+                        }
+                    }
+                    if (base.hasOwnProperty('intend') && base.intend.op == 'Ⓐ') {
+                        // If the selanchor is applied to the base, make the
+                        // selanchor apply to the sub/superscript object to
+                        // make it parsable
+                        val = base.intend.intent.text
+                        ret.base = arr[index - 1]
+                        ret.high = value.high
+                        ret.low = value.low
+                        arr[index - 1] = {intend: {anchor: val}}
+                    } else if (base.hasOwnProperty("primed")) {
+                        // if the subsup contains a primed expression, pull the
+                        // prime up into the superscript and make the prime's
+                        // base the subsup's base
+                        let primes = {operator: processPrimes(base.primed.primes)};  // TODO not ideal for latex output
                         if ("low" in value) {
                             ret.low = preprocess(dsty, value.low);
                         }
@@ -1385,14 +3189,105 @@ function preprocess(dsty, uast) {
                         } else {
                             ret.high = primes;
                         }
-                        ret.base = base.primed.base;
+                        base = ret.base = base.primed.base;
                     } else {
                         if ("low" in value) {
                             ret.low = preprocess(dsty, value.low);
                         }
                         if ("high" in value) {
                             ret.high = preprocess(dsty, value.high);
+                            if (isTranspose(ret.high))
+                                ret.high[0].atoms.intent = 'transpose';
                         }
+                    }
+                    if (k(base) != "atoms" || base.atoms.funct != undefined)
+                        break;
+                    // If base contains more than one char and isn't a function
+                    // name, make the subsup base be the end char. E.g., for
+                    // 𝐸 = 𝑚𝑐², make 𝑐 be the base, not 𝑚𝑐.
+                    let n = base.atoms.length;
+                    if (n == undefined)
+                        break;
+                    let str = base.atoms[n - 1].chars;
+                    if (str == undefined)
+                        break;
+                    let cch = str.length;
+                    let fn = foldMathItalics(str);
+                    if (isFunctionName(fn)) {
+                        if (fn.length < cch)
+                            ret.base.atoms[0].chars = fn;
+                        break;
+                    }
+                    let cchCh = (str[cch - 1] >= '\uDC00') ? 2 : 1
+
+                    if (cch > cchCh) {
+                        // Return leading chars followed by scripted end char
+                        ret.base.atoms[0].chars = str.substring(cch - cchCh);
+                        delete ret.base.selanchor
+                        return [{atoms: {chars: str.substring(0, cch - cchCh)}},
+                                {script: ret}];
+                    }
+                    if (ret.intent || str[0] != 'ⅅ' && !str.startsWith('𝜕') ||
+                        !emitDefaultIntents) {
+                            break;
+                    }
+
+                    // Check for Euler derivative like ⅅ_𝑥 𝑓(𝑥) or 𝜕_𝑥𝑦 𝑓(𝑥,𝑦).
+                    // First get potential derivative order and variables.
+                    let order = '';
+                    if (ret.high) {
+                        if (str[0] != 'ⅅ') { // str == '𝜕' (a surrogate pair)
+                            // Euler partial derivative can't have superscript
+                            break;
+                        }
+                        if (Array.isArray(ret.high) || ret.high.hasOwnProperty('expr'))
+                            order = getOrder(ret.high);
+                    }
+                    n = 1;                  // Count of subscript letters
+                    let chars1 = ''
+                    if (ret.low) {
+                        let chars = getChars(ret.low[0]);
+                        let cch = chars.length;
+
+                        // Split chars treating surrogate chars as single chars
+                        for (let i = 0; i < cch; ) {
+                            let ch = getCh(chars, i);
+                            chars1 += ch;
+                            i += ch.length;
+                            if (i < chars.length && !isPrime(chars[i])) {
+                                chars1 += ',';
+                                n++;
+                            }
+                        }
+                    }
+                    if (str[0] != 'ⅅ' && !n)
+                        break;              // Euler partial derivative needs subscript
+
+                    if (!order)
+                        order = n;
+                    let darg = '';
+                    if (arr.length - 1 > index) {
+                        if (arr.length - 2 == index ||
+                            !arr[index + 2].hasOwnProperty('bracketed')) {
+                            arr[index + 1].arg = 'f';
+                            darg = '$f';
+                        } else {
+                            // Move function name and argument list into mrow
+                            arr[index + 1] = [{arg: 'f'}, arr[index + 1], arr[index + 2]];
+                            darg = '$f';
+                            arr.splice(index + 2, 1);
+                            if (!chars1) {
+                                let val = arr[index + 1][2].bracketed.content;
+                                if (val.hasOwnProperty('expr'))
+                                    val = val.expr[0];
+                                chars1 = getChars(val);
+                            }
+                        }
+                    }
+                    if (darg) {
+                        ret.intent = str[0] == 'ⅅ'
+                            ? 'derivative' : 'partial-derivative';
+                        ret.intent += '(' + order + ',' + darg + ',' + chars1 + ')';
                     }
                     break;
 
@@ -1402,12 +3297,14 @@ function preprocess(dsty, uast) {
                     }
                     if ("prehigh" in value) {
                         ret.prehigh = preprocess(dsty, value.prehigh);
+                        if (isTranspose(ret.prehigh))
+                            ret.prehigh[0].atoms.intent = 'transpose';
                     }
 
                     // if a prescript contains a subsup, pull its base and
                     // scripts up into the prescript, which will then have all
                     // four kinds of scripts set
-                    var base = dropSingletonLists(ret.base);
+                    base = dropSingletonLists(ret.base);
                     if (base.hasOwnProperty("script") && base.script.type == "subsup") {
                         if ("low" in base.script) {
                             ret.low = preprocess(dsty, base.script.low);
@@ -1420,6 +3317,13 @@ function preprocess(dsty, uast) {
                     break;
 
                 case "abovebelow":
+                    if (index > 0) {
+                        let intend = arr[index - 1].intend
+                        if (intend && intend.symbol == 'Ⓐ') {
+                            console.log("intend.value = " + intend.value)
+                            ret.base.selanchor = intend.value
+                        }
+                    }
                     if ("low" in value) {
                         ret.low = preprocess(dsty, value.low);
                     }
@@ -1431,96 +3335,343 @@ function preprocess(dsty, uast) {
                 default:
                     throw "invalid or missing script type";
             }
-
             return {script: ret};
 
         case "enclosed":
-            return {enclosed: {mask: value.mask, symbol: value.symbol, of: preprocess(dsty, value.of)}};
+            if (Array.isArray(value.of) && value.of[0].colored &&
+                value.of[0].colored.color == '#F01') {
+                // Unclosed parentheses: downgrade symbol to operator
+                value.of.unshift({operator: value.symbol})
+                return value.of
+            }
+            if (value.symbol == 'Ⓐ' || value.symbol == 'Ⓕ') {
+                // Prepare selection attributes
+                val = '0'
+                if (value.of && value.of.expr) {
+                    let i = value.of.expr.length - 1
+                    val = value.of.expr[i][0].number
+                    if (i > 0)
+                        val = '-' + val
+                }
+                // For example, for '𝑎Ⓐ()^', value.mask = '^'
+                return {intend: {symbol: value.symbol, value: val, op: value.mask}}
+            }
+            if (value.symbol >= "╱" && value.symbol <= "╳") {
+                // Set mask for \cancel, \bcancel, \xcancel
+                value.mask = (value.symbol == "╱") ? 79 : (value.symbol == "╲") ? 143 : 207;
+            }
+            return {enclosed: {mask: value.mask, symbol: value.symbol, intent: intent, arg: arg, of: preprocess(dsty, value.of)}};
 
         case "abstractbox":
             return {abstractbox: {mask: value.mask, of: preprocess(dsty, value.of)}};
 
         case "hbrack":
-            return {hbrack: {bracket: value.bracket, of: preprocess(dsty, value.of)}};
+            return {hbrack: {intent: intent, arg: arg, bracket: value.bracket, of: preprocess(dsty, value.of)}};
+
+        case "intend":
+            if (value.content.hasOwnProperty("expr") && value.content.expr.length > 1) {
+                // Set up to put attribute(s) on an <mrow>
+                let c = preprocess(dsty, v(value.content));
+                if (value.op == 'ⓘ') {
+                    c.intent = value.intent.text;
+                    if (c.intent == 'cardinality')
+                        c.intent += '($a)'
+                    if (arg)
+                        c.arg = arg;
+                } else {
+                    c.arg = value.intent.text
+                    if (intent)
+                        c.intent = intent;
+                }
+                return c;
+            }
+            val = value.intent.text
+
+            switch (value.op) {
+                case 'ⓘ':
+                    dsty.intent = val;
+                    if (dsty.intent == 'cardinality')
+                        dsty.intent += '($a)'
+                    if (arg)
+                        dsty.arg = arg;
+                    break
+
+                case 'ⓐ':
+                    dsty.arg = val;
+                    if (intent)
+                        dsty.intent = intent;
+            }
+            return preprocess(dsty, v(value.content));
 
         case "root":
-            return {root: {degree: value.degree, of: preprocess(dsty, value.of)}};
+            return {root: {intent: intent, arg: arg, degree: value.degree, of: preprocess(dsty, value.of)}};
         case "sqrt":
-            return {sqrt: preprocess(dsty, value)};
+            value = preprocess(dsty, value);
+            if (Array.isArray(value) &&
+                (value[0].colored && value[0].colored.color == '#F01' ||
+                 value[0].intend && value.length == 1)) {
+                // Unclosed parentheses or solo intend: downgrade √ to operator
+                value.unshift({operator: '√'})
+                return value
+            }
+            if (intent)
+                value.intent = intent;
+            if (arg)
+                value.arg = arg;
+            return {sqrt: value};
 
         case "function":
-
             // clone this since it's going to be modified
-            var valuef = clone(value.f);
+            let valuef = clone(value.f);
 
             // tech note, section 3.3: if display mode is active, convert
             // subscripts after certain function names into belowscripts. the
             // <mo> movablelimits attribute could in theory also be used here,
             // but it's not supported everywhere (e.g. safari)
             if (value.f.hasOwnProperty("script")) {
-                var s = valuef.script;
-                var f = s.base.atoms.chars;
-                if (dsty && s.type == "subsup" && s.low && ["det", "gcd", "inf", "lim", "lim inf", "lim sup", "max", "min", "Pr", "sup"].includes(f)) {
-                    if (!s.high) {  // just convert the script to abovebelow
+                let s = valuef.script;
+                let f = s.base.atoms.chars;
+                if (dsty.display && s.type == "subsup" && s.low &&
+                    ["det", "gcd", "inf", "lim", "lim inf", "lim sup", "max", "min", "Pr", "sup"].includes(f)) {
+                    if (!s.high) {
+                        // just convert the script to abovebelow
                         s.type = "abovebelow";
-                    } else {  // create a new belowscript around the base and
-                              // superscript
+                    } else {
+                        // create a new belowscript around the base and superscript
                         s = {base: {script: {base: s.base, type: s.type, high: s.high}}, type: "abovebelow", low: s.low};
                     }
                 }
                 valuef.script = s;
             }
+            // Handle ⒡ "parenthesize argument" dictation option
+            let ofFunc = preprocess(dsty, value.of);
+            if (Array.isArray(ofFunc)) {
+                let x = ofFunc[0];
+                if (Array.isArray(x))
+                    x = x[0];                  // '⒡' as separate array element
+                if (x != undefined && x.hasOwnProperty('atoms')) {
+                    let ch = x.atoms[0].chars;
+                    if (ch[0] == '⒡') {
+                        // Remove '⒡' and enclose function arg in parens
+                        if (ch.length == 1)
+                            ofFunc[0].shift();
+                        else
+                            ofFunc[0].atoms[0].chars = ch.substring(1);
+                        ofFunc = {bracketed: {open: '(', close: ')', content: ofFunc}}
+                    }
+                }
+            }
+            let extra = [];
+            if (valuef.hasOwnProperty('atoms') && valuef.atoms.hasOwnProperty('chars')) {
+                let chars = valuef.atoms.chars.split(",");
+                valuef.atoms.chars = chars.pop();
+                if (chars.length) {
+                    // Separate out character(s) preceding function name,
+                    // e.g., the 𝑑 in 𝑑𝜓⁡(𝑥,𝑡)/𝑑𝑡
+                    extra.push({atoms: {chars: chars.join('')}});
+                }
+            }
+            ret = {function: {f: preprocess(dsty, valuef), intent: intent, arg: arg, of: ofFunc}}
+            if (extra.length) {
+                extra.push(ret)
+                return extra;
+            }
+            return ret;
 
-            return {function: {f: preprocess(dsty, valuef), of: preprocess(dsty, value.of)}};
-
-        case "text":
-            return uast;
+        case "negatedoperator":
+            return (value in negs) ? {operator: negs[value]} : {negatedoperator: value};
 
         case "sizeoverride":
             return {sizeoverride: {size: value.size, of: preprocess(dsty, value.of)}};
 
         case "colored":
-            return {colored: {color: value.color, of: preprocess(dsty, value.of)}};
+            return {colored: {color: foldMathItalics(value.color), of: preprocess(dsty, value.of)}};
         case "bgcolored":
-            return {bgcolored: {color: value.color, of: preprocess(dsty, value.of)}};
-        case "comment":
-            return uast;
-        case "tt":
-            return uast;
+            return {bgcolored: {color: foldMathItalics(value.color), of: preprocess(dsty, value.of)}};
 
         case "primed":
-            // cannot do anything here since the script transform rule relies on
-            // this
-            return {primed: {base: preprocess(dsty, value.base), primes: value.primes}};
+            // Cannot do anything here if in script, since the script transform
+            // rule relies on this
+            if (value.arg)
+                arg = value.arg;
+            base = preprocess(dsty, value.base);
+            if (!uast.hasOwnProperty('inscript') && base.hasOwnProperty('atoms') &&
+                Array.isArray(base.atoms) && base.atoms[0].hasOwnProperty('chars')) {
+                let chars = base.atoms[0].chars;
+                let cch = chars.length;
+                let cchCh = (chars[cch - 1] >= '\DC00') ? 2 : 1;
+
+                if (cch > cchCh) {
+                    // Return leading chars followed by primed end char
+                    base.atoms[0].chars = chars.substring(cch - cchCh);
+                    return [{atoms: {chars: chars.substring(0, cch - cchCh)}},
+                            {primed: {base: base, intent: intent, arg: arg, primes: value.primes}}];
+                }
+                if (intent == 'derivative') {
+                    // Handle, e.g., ⓘ(":derivative"𝑓′(𝑥))
+                    intent = 'derivative(' + String.fromCodePoint(value.primes + 0x30) + ',' + chars;
+
+                    if (index < arr.length - 1 && arr[index + 1].hasOwnProperty('bracketed')) {
+                        let val = arr[index + 1].bracketed.content;
+                        let wrt = '';
+
+                        if (val.hasOwnProperty('expr') && Array.isArray(val.expr))
+                            val = val.expr[0];
+                        if (Array.isArray(val))
+                            val = val[0];
+                        if (val.hasOwnProperty('primed')) {
+                            // Handle, e.g., ⓘ("derivative"𝑓′(𝑥′))
+                            wrt = processPrimes(val.primed.primes);
+                            val = val.primed.base;
+                        }
+                        if (val.hasOwnProperty('atoms') && Array.isArray(val.atoms)) {
+                            wrt = val.atoms[0].chars + wrt;
+                            intent += '(' + wrt + '),' + wrt + ')';
+                        }
+                    } else {
+                        intent += ',)';
+                    }
+                }
+            }
+            return {primed: {base: base, intent: intent, arg: arg, primes: value.primes}};
 
         case "factorial":
-            return [preprocess(dsty, value), {operator: "!"}];
+            value = preprocess(dsty, value);
+            if (intent)
+                value.intent = intent;
+            if (arg)
+                value.arg = arg;
+            return {factorial: value};
 
         case "atoms":
-            return {atoms: preprocess(dsty, value)};
-        case "chars":
-            return uast;
+            if (!value.hasOwnProperty("funct")) {
+                let chars;
+                let darg = '';
+
+                if (Array.isArray(value) && isCharsButNotFunction(value[0])) {
+                    chars = value[0].chars = italicizeCharacters(value[0].chars);
+                }
+                else if (isCharsButNotFunction(value)) {
+                    chars = value.chars = italicizeCharacters(value.chars);
+                }
+                if (chars && chars[0] == 'ⅅ' && chars.length > 1 && !intent &&
+                    emitDefaultIntents) {
+                    // Get default intent for, e.g., ⅅ𝑓(𝑥)
+                    if (arr.length - 1 > index && arr[index + 1].hasOwnProperty('bracketed')) {
+                        // Get derivative variable
+                        let val = arr[index + 1].bracketed.content.expr;
+                        if (val && Array.isArray(val))
+                            val = val[0];
+                        darg = getChars(val);
+                        if (darg == 'undefined') {
+                            darg = '$x';
+                            if (Array.isArray(val))
+                                val = val[0];
+                           val.arg = 'x';
+                        }
+                    }
+                    intent = 'derivative(1,' + chars.substring(1) + ',' + darg + ')';
+                }
+            }
+            if (!arg && value.arg)
+                arg = value.arg;            // Happens for intervals
+            value = preprocess(dsty, value);
+            if(intent)
+                value.intent = intent;
+            if(arg)
+                value.arg = arg;
+            return {atoms: value};
+
         case "diacriticized":
             return {diacriticized: {base: preprocess(dsty, value.base), diacritics: value.diacritics}};
         case "spaces":
             return {spaces: preprocess(dsty, value)};
-        case "space":
-            return uast;
 
-        case "number":
-            return uast;
+        case "bracketedMatrix":
+            type = value.type;
+            opOpen = brackets[type][0];
+            opClose = brackets[type][1];
 
-        case "doublestruck":
-            return uast;
+            if (!value.intent && emitDefaultIntents) {
+                val = matrixIntents[type];
+                if (val)
+                    value.intent = val;
+            }
+            return {bracketed: {
+                    open: opOpen, close: opClose, intent: value.intent,
+                    arg: arg, content: preprocess(dsty, value.content)}}
 
         case "bracketed":
-            var content;
             if (value.content.hasOwnProperty("separated")) {
-                content = {separated: {separator: value.content.separated.separator, of: preprocess(dsty, value.content.separated.of)}};
+                let sep = value.content.separated.separator
+                if (value.open == '⟨' && sep == '│' && value.close == '⟩')  // U+2502
+                    sep = '|'
+                value.content = {separated: {separator: sep, of: preprocess(dsty, value.content.separated.of)}};
             } else {
-                content = preprocess(dsty, value.content);
+                if (value.intent && value.intent.endsWith("interval") &&
+                    Array.isArray(value.content) && value.content.length == 3) {
+                    // Arrange interval endpoint arguments and content
+                    let arg0 = getIntervalArg(value.content, 0);
+                    let arg1 = getIntervalArg(value.content, 2);
+                    if (emitDefaultIntents) {
+                        value.intent += '(' + arg0 + ',' + arg1 + ')';
+                        if (!intent)
+                            intent = value.intent;
+                    } else {
+                        intent = value.intent = ''
+                    }
+                    value.content = {expr:
+                            [getIntervalEndPoint(arg0, value.content[0]),
+                             {operator: ','},
+                             getIntervalEndPoint(arg1, value.content[2])]
+                    };
+                    value.content = preprocess(dsty, value.content);
+                } else {
+                    value.content = preprocess(dsty, value.content);
+                    if (!value.intent && value.open == '\u007B' && !value.close &&
+                        value.content.hasOwnProperty('expr') &&
+                        Array.isArray(value.content.expr) &&
+                        value.content.expr[0].hasOwnProperty('array')) {
+                        value.intent = ':cases';
+                    }
+                    if (!arg && value.arg)
+                        arg = value.arg;        // Happens for derivative w bracketed order
+                    if (!intent && value.intent) {
+                        intent = value.intent;  // Happens for cases & absolute-value
+                        if (intent == 'ⓒ') {
+                            let arg0 = getAbsArg(value.content);
+                            intent += '(' + arg0 + ')';
+                            if (arg0 == "$a")
+                                value.content.expr.arg = 'a';
+                        }
+                    }
+               }
             }
-            return {bracketed: {open: value.open, close: value.close, content: content}};
+            return {bracketed: {open: value.open, close: value.close, arg: arg,
+                                intent: intent, content: value.content}};
+
+        case "operator":
+            if (value.length > 1 && value[0] == '\\') {
+                value = value[1]
+                intent = ':text'
+            }
+            if (value == '<')
+                value = '&lt;'
+            else if (value == '…' && index > 0) {
+                let o = arr[index - 1].operator
+                if (o && o.content == '+')
+                    value = '⋯'
+            }
+            return {[key]: {intent: intent, arg: arg, content: value}};
+
+        case "chars":
+        case "comment":
+        case "newline":
+        case "number":
+        case "opnary":
+        case "space":
+        case "text":
+        case "tt":
 
         default:
             return uast;
@@ -1534,6 +3685,45 @@ function preprocess(dsty, uast) {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+
+function getAttrs(value, deflt) {
+    let attrs = {};
+
+    if (selanchor) {
+        attrs.selanchor = selanchor
+        selanchor = null
+    }
+    if (value.selanchor)
+        attrs.selanchor = value.selanchor
+
+    if (selfocus) {
+        attrs.selfocus = selfocus
+        selfocus = null
+    }
+    if (value.selfocus)
+        attrs.selfocus = value.selfocus
+
+    if (value.arg)
+        attrs.arg = value.arg;
+    if (value.intent)
+        attrs.intent = value.intent;
+    else if (deflt && emitDefaultIntents)
+        attrs.intent = deflt;
+    return attrs;
+}
+
+function getAttrsDoublestruck(ch, str) {
+    let attrsDoublestruck = {};
+
+    if (ch != str && emitDefaultIntents)
+        attrsDoublestruck.intent = str;
+
+    if (ch <= 'z')
+        attrsDoublestruck.mathvariant = "normal";
+
+    return attrsDoublestruck;
+}
+
 ///////////////
 // TRANSFORM //
 ///////////////
@@ -1543,73 +3733,158 @@ function preprocess(dsty, uast) {
 // if multiple mathml nodes should be returned, they must be wrapped in an mrow
 function mtransform(dsty, puast) {
 
-    // map transformation over lists, wrap the result in an mrow
-    if (Array.isArray(puast)) {
-        return {mrow: noAttr(puast.map(e => mtransform(dsty, e)))};
+    // map transformation over lists, wrap the result in an mrow. Note: here dsty
+    // is a boolean; it doesn't include an intent property
+
+    if (Array.isArray(puast) && puast.length) {
+        let val;
+        if (puast[0].hasOwnProperty('script'))
+            val = puast[0].script;
+        else if (puast[0].hasOwnProperty('primed'))
+            val = puast[0].primed;
+
+        if (val && val.intent && val.intent.indexOf('derivative') != -1) {
+            // Move intent from script/primed to mrow containing script/primed,
+            // e.g., for 𝜕_𝑥𝑥′ 𝑓(𝑥, 𝑥′) or ⓘ("derivative"𝑓′(𝑥))
+            let attrs = getAttrs(val);
+            val.intent = '';
+            return {mrow: withAttrs(attrs, puast.map(e => mtransform(dsty, e)))};
+        }
+        let arg = {};
+        if (puast.hasOwnProperty("arg"))
+            arg = {arg: puast.arg};
+        else if (puast[0].hasOwnProperty("arg"))
+            arg = puast.shift();
+        let ret = []
+        for (let i = 0; i < puast.length; i++) {
+            val = mtransform(dsty, puast[i])
+            // Don't include null results returned by entries, e.g., by
+            // selection 'intend' objects
+            if (val)
+                ret.push(val)
+        }
+        if (!ret.length)
+            return ''
+
+        return ret.length == 1 && puast.length > 1 // Check for attributes?
+            ? ret[0] : {mrow: withAttrs(arg, ret)}
     }
 
-    var key = k(puast);
-    var value = v(puast);
+    let attrs
+    let key = k(puast);
+    let mask
+    let ret = ''
+    let selanchor1
+    let str
+    let value = v(puast)
+    let val
+    if (value && !value.arg && puast.hasOwnProperty("arg"))
+        value.arg = puast.arg;
 
     switch (key) {
         case "unicodemath":
-            var attrs = {class: "unicodemath", xmlns: "http://www.w3.org/1998/Math/MathML", display: dsty? "block" : "inline"}
-            if (value.eqnumber == null) {
+            if (autoBuildUp)                // Used for WYSIWYG editing
+                return mtransform(dsty, value.content);
+            attrs = getAttrs(value, '')
+            attrs.display = dsty & 1 ? "block" : "inline"
+            if (dsty & 2)
+                attrs.dir = 'rtl'
+            if (value.eqnumber == null)
                 return {math: withAttrs(attrs, mtransform(dsty, value.content))};
-            } else {
 
-                // generate id, via https://stackoverflow.com/a/55008188 (this
-                // can be used, in conjunction with some javascript, for
-                // referencing a specific equation)
-                var id = value.eqnumber.replace(/(^-\d-|^\d|^-\d|^--)/,'$1').replace(/[\W]/g, '-');
+            // generate id, via https://stackoverflow.com/a/55008188. Together
+            // with some javascript, this can be used to reference a specific
+            // equation.
+            let id = value.eqnumber.replace(/(^-\d-|^\d|^-\d|^--)/,'$1').replace(/[\W]/g, '-')
 
-                // equation numbers can only be assigned by wrapping
-                // everything in an mtable with an mlabeledtr containing
-                // eqnumber and content in separate mtds
-                return {math:
-                    withAttrs(
-                        attrs,
-                        {mtable: noAttr(
-                            {mlabeledtr: withAttrs({id: id}, [
-                                {mtd: noAttr({mtext: noAttr(value.eqnumber)})},
-                                {mtd: noAttr(mtransform(dsty, value.content))}
-                            ])}
-                        )}
-                    )
-                };
+            // Assign equation numbers by wrapping everything in an mtable.
+            // For MathJax, the table contains an <mlabeledtr> containing the
+            // eqnumber and content in individual mtd's.
+            if (ummlConfig.forceMathJax || testing) {
+                return {math: withAttrs(attrs,
+                    {mtable: withAttrs({displaystyle: true}, {mlabeledtr: withAttrs({id: id}, [
+                        {mtd: noAttr({mtext: noAttr(value.eqnumber)})},
+                        {mtd: noAttr(mtransform(dsty, value.content))} ])})})}
             }
+            // For native rendering an <mtr> is used for which the labeling
+            // (first) mtd has attributes that flush the equation number to
+            // the right margin. Unfortunately this second method messes up
+            // the vertical alignment of equations higher than 1em but native
+            // renderers don't support <mlabeledtr>. MathJax doesn't support
+            // this second method.
+            let attrsEqNo = {intent: ':equation-label', style: 'margin-right:1em;position:absolute;right:0em' }
+            return {math: withAttrs(attrs,
+                {mtable: withAttrs({displaystyle: true}, {
+                    mtr: withAttrs({id: id}, [
+                        {mtd: withAttrs(attrsEqNo, {mtext: noAttr(value.eqnumber)})},
+                        {mtd: noAttr(mtransform(dsty, value.content))}])})})}
+
         case "newline":
             return {mspace: withAttrs({linebreak: "newline"}, null)};
 
         case "expr":
+            if (Array.isArray(value) && Array.isArray(value[0])) {
+                if (value[0][0].hasOwnProperty("intent") || value[0][0].hasOwnProperty("arg")) {
+                    let c = mtransform(dsty, value[0][0]);
+                    c.mrow.attributes = getAttrs(value[0][0], '');
+                    return c;
+                }
+                if (value[0] && Array.isArray(value[0]) && value[0][0].intend &&
+                    value[0][0].intend.symbol == 'Ⓐ') {
+                    let n = value[0].length
+                    if (n == 1 || n == 2 && value[0][1].intend &&
+                        value[0][1].intend.symbol == 'Ⓕ') {
+                        let selarr = value.shift()
+                        let c = mtransform(dsty, value)
+                        if (c && c.mrow) {
+                            c.mrow.attributes.selanchor = selarr[0].intend.value
+                            if (n == 2)
+                                c.mrow.attributes.selfocus = value.length //c.mrow.selarr[1].intend.value
+                            return c
+                        }
+                    }
+                }
+            }
             return mtransform(dsty, value);
 
         case "operator":
-            if ('←→↔⇐⇒⇔↩↪↼⇀↽⇁⊢⊣⟵⟶⟷⟸⟹⟺↦⊨'.split('').includes(value)) {
-                return {mo: withAttrs({stretchy: true}, value)};
-            } else {
-                return {mo: noAttr(value)};
+            attrs = (value.content) ? getAttrs(value, '') : {};
+            val = value.content ? value.content : value;
+            if (attrs.intent == ':text' && val == '/') {
+                attrs.lspace = '0pt'
+                attrs.rspace = '0pt'
             }
+            if ('←→↔⇐⇒⇔↩↪↼⇀↽⇁⊢⊣⟵⟶⟷⟸⟹⟺↦⊨'.split('').includes(val))
+                attrs.stretchy = true;
+            return {mo: withAttrs(attrs, val)};
+
         case "negatedoperator":
             return {mo: noAttr(value + "̸")};  // U+0338 COMBINING LONG SOLIDUS
-                                              // OVERLAY
-
+                                               //  OVERLAY
         case "element":
             return mtransform(dsty, value);
 
-        case "array":
-            return {mtable: noAttr(mtransform(dsty, value))};
+        case "array":                       // Equation array
+            value = mtransform(dsty, value);
+            attrs = getAttrs(value, ':equations');
+            attrs.columnspacing = '0pt'     // MathJax needs this
+            return {mtable: withAttrs(attrs, value)};
         case "arows":
             return value.map(r => ({mtr: noAttr(mtransform(dsty, r))}));
         case "arow":
             return value.map(c => ({mtd: noAttr(mtransform(dsty, c))}));
         case "acol":
             return value.map(c => (mtransform(dsty, c)));
-        case "aalign":
-            return {malignmark: withAttrs({edge: "left"}, null)};
+        case "aalignmark":
+            return {malignmark: noAttr(null)};
+        case "aaligngroup":
+            return {maligngroup: noAttr(null)};
 
         case "matrix":
-            return {mtable: noAttr(mtransform(dsty, value))};
+            value = mtransform(dsty, value);
+            str = ':array(' + value.length + ',' + value[0].mtr.content.length + ')';
+            attrs = getAttrs(value, str);
+            return {mtable: withAttrs(attrs, value)};
         case "mrows":
             return value.map(r => ({mtr: noAttr(mtransform(dsty, r))}));
         case "mrow":
@@ -1619,103 +3894,132 @@ function mtransform(dsty, puast) {
             return mtransform(dsty, value);
 
         case "nary":
-            return {mrow: noAttr([mtransform(dsty, value.limits), mtransform(dsty, value.naryand)])};
+            attrs = getAttrs(value, 'n-ary')
+            let attrsn = getAttrs(value.naryand)
+            value.limits = mtransform(dsty, value.limits)
+            value.naryand = mtransform(dsty, value.naryand)
+            if (attrsn != {})
+                value.naryand.attributes = attrsn
+            return {mrow: withAttrs(attrs, [value.limits, value.naryand])}
+
         case "opnary":
-            return {mo: noAttr(value)};
+            attrs = getAttrs(value, '');
+            return {mo: withAttrs(attrs, value)};
 
         case "phantom":
-            var mask = value.mask;
-            if (mask != null) {
-                var options = phantomOptions(mask);
+            attrs = getAttrs(value, '');
+            mask = value.mask;
 
-                // if empty, then just emit a phantom. also ignore fPhantomShow
-                // (supposedly this would turn the phantom into a smash, but MS
-                // Word keeps it a phantom, and who am i to question it?)
-                var attrs = {};
-                if (options.indexOf('fPhantomZeroWidth') !== -1) {
+            if (mask) {
+                if (mask & 2)               // fPhantomZeroWidth
                     attrs.width = 0;
-                }
-                if (options.indexOf('fPhantomZeroAscent') !== -1) {
-                    attrs.height = "1em";
-                }
-                if (options.indexOf('fPhantomZeroDescent') !== -1) {
+                if (mask & 4)               // fPhantomZeroAscent
+                    attrs.height = 0;
+                if (mask & 8)               // fPhantomZeroDescent
                     attrs.depth = 0;
-                }
-
-                if (Object.keys(attrs).length === 0) {
-                    return {mphantom: noAttr(mtransform(dsty, value.of))};
-                } else {
-                    return {mpadded: withAttrs(attrs, {mphantom: noAttr(mtransform(dsty, value.of))})};
-                }
+                if (mask & 1)               // fPhantomShow
+                    return {mpadded: withAttrs(attrs, mtransform(dsty, value.of))};
+                return {mpadded: withAttrs(attrs, {mphantom: noAttr(mtransform(dsty, value.of))})};
             }
-
-            switch (value.symbol) {
-                case "⟡":
-                    return {mphantom: noAttr(mtransform(dsty, value.of))};
-                case "⬄":
-                    return {mpadded: withAttrs({height: 0, depth: 0}, {mphantom: noAttr(mtransform(dsty, value.of))})};
-                case "⇳":
-                    return {mpadded: withAttrs({width: 0}, {mphantom: noAttr(mtransform(dsty, value.of))})};
-                default:
-                    throw "invalid phantom symbol";
+            if (value.symbol == '⬄' || value.symbol == '⇳') {
+                if (value.symbol == '⬄')
+                    attrs.height = attrs.depth = 0;
+                else
+                    attrs.width = 0;
+                return {mpadded: withAttrs(attrs, {mphantom: noAttr(mtransform(dsty, value.of))})};
             }
+            // No dimensions were zeroed so no need for mpadded
+            return {mphantom: withAttrs(attrs, mtransform(dsty, value.of))};
+
         case "smash":
+            attrs = getAttrs(value, '');
+
             switch (value.symbol) {
                 case "⬍":
-                    return {mpadded: withAttrs({height: 0, depth: 0}, mtransform(dsty, value.of))};
+                    attrs.depth = attrs.height = 0;
+                    break;
                 case "⬆":
-                    return {mpadded: withAttrs({height: "1em"}, mtransform(dsty, value.of))};
+                    attrs.height= 0;
+                    break;
                 case "⬇":
-                    return {mpadded: withAttrs({depth: 0}, mtransform(dsty, value.of))};
+                    attrs.depth = 0;
+                    break;
                 case "⬌":
-                    return {mpadded: withAttrs({width: 0}, mtransform(dsty, value.of))};
+                    attrs.width = 0;
+                    break;
                 default:
                     throw "invalid smash symbol";
             }
+            return {mpadded: withAttrs(attrs, mtransform(dsty, value.of))};
 
         case "fraction":
-            var of = value.of;
+            attrs = getAttrs(value, '');
+            let ofFrac = value.of.map(e => (mtransform(dsty, dropOutermostParens(e))));
+
             switch (value.symbol) {
-                case "/":       // normal fraction ¹-₂
-                    return {mfrac: noAttr(of.map(e => (mtransform(dsty, dropOutermostParens(e)))))};
-                case "\u2044":  // skewed fraction ¹/₂
-                    return {mfrac: withAttrs({bevelled: true}, of.map(e => (mtransform(dsty, dropOutermostParens(e)))))};
-                case "\u2215":  // linear fraction 1/2
-                    var tmp = of.map(e => (mtransform(dsty, dropOutermostParens(e))));
-                    return {mrow: noAttr([tmp[0], {mo: noAttr('/')}, tmp[1]])};
-                case "\u2298":  // small fraction
-                    return {mstyle: withAttrs({fontsize: fontSize(-1)}, {mfrac: noAttr(of.map(e => (mtransform(dsty, dropOutermostParens(e)))))})};
+                case "\u2298":              // small fraction
+                    attrs.displaystyle = 'false'; // Fall through
+                case "/":                   // normal fraction ¹-₂
+                    return {mfrac: withAttrs(attrs, ofFrac)};
+                case "\u2044":              // skewed fraction ¹/₂
+                    return {mfrac: withAttrs({ bevelled: true }, ofFrac)};
+                case "\u2215":              // linear fraction 1/2
+                    return {mrow: noAttr([ofFrac[0], { mo: noAttr('/') }, ofFrac[1]])};
             }
 
         case "atop":
-            return {mfrac: withAttrs({linethickness: 0}, value.map(e => (mtransform(dsty, dropOutermostParens(e)))))};
-        case "binom":
+            attrs = getAttrs(value, '');
+            attrs.linethickness = 0;
+            let arg0 = value[0].arg;
+            let arg1 = value[1].arg;
+            let top = mtransform(dsty, dropOutermostParens(value[0]));
+            let bottom = mtransform(dsty, dropOutermostParens(value[1]));
+            if (arg0) {
+                top.mrow.attributes.arg = arg0;
+                if (hasSingleMrow(top.mrow.content))
+                    top.mrow.content = top.mrow.content[0].mrow.content;
+            }
+            if (arg1) {
+                bottom.mrow.attributes.arg = arg1;
+                if (hasSingleMrow(bottom.mrow.content))
+                    bottom.mrow.content = bottom.mrow.content[0].mrow.content;
+            }
+            return {mfrac: withAttrs(attrs, [top, bottom])};
 
-            // desugar (not done in preprocessing step because LaTeX requires
-            // this sugar)
-            return mtransform(dsty, {bracketed: {open: "(", close: ")", content: {atop: [value.top, value.bottom]}}});
+        case "binom":
+            // desugar (not done in preprocessing step since LaTeX requires this sugar)
+            return mtransform(dsty, {bracketed: {intent: value.intent, arg: value.arg, open: "(", close: ")", content: {atop: [value.top, value.bottom]}}});
 
         case "script":
+            attrs = getAttrs(value, '');
+
             switch (value.type) {
                 case "subsup":
-                    if ("low" in value && "high" in value) {
-                        return {msubsup: noAttr([mtransform(dsty, value.base),
-                                                 mtransform(dsty, dropOutermostParens(value.low)),
-                                                 mtransform(dsty, dropOutermostParens(value.high))
-                                                ])};
-                    } else if ("low" in value) {
-                        return {msub: noAttr([mtransform(dsty, value.base),
-                                              mtransform(dsty, dropOutermostParens(value.low))
-                                             ])};
-                    } else if ("high" in value) {
-                        return {msup: noAttr([mtransform(dsty, value.base),
-                                              mtransform(dsty, dropOutermostParens(value.high))
-                                             ])};
-                    } else {  // can only occur in a nary without sub or sup set
-                        return mtransform(dsty, value.base);
+                    selanchor1 = value.base.selanchor
+                    value.base = mtransform(dsty, value.base);
+                    if (selanchor1) {
+                        // Move selanchor to base. TODO: handle other bases too
+                        // along with selfocus for all bases
+                        value.base.mi.attributes.selanchor = selanchor1
+                        delete attrs.selanchor
                     }
+                    if ("low" in value) {
+                        value.low = getScriptArg(dsty, value.low);
+                    }
+                    if ("high" in value) {
+                        value.high = getScriptArg(dsty, value.high);
+                        if ("low" in value) {
+                            return {msubsup: withAttrs(attrs,
+                                            [value.base, value.low, value.high])};
+                        }
+                        return {msup: withAttrs(attrs, [value.base, value.high])};
+                    }
+                    if ("low" in value) {
+                       return {msub: withAttrs(attrs, [value.base, value.low])};
+                    }
+                    return value.base;      // No subscript/superscript
                 case "pre":
-                    var ret = [mtransform(dsty, value.base)];
+                    ret = [mtransform(dsty, value.base)];
                     if ("low" in value && "high" in value) {
                         ret.push(mtransform(dsty, dropOutermostParens(value.low)));
                         ret.push(mtransform(dsty, dropOutermostParens(value.high)));
@@ -1744,35 +4048,51 @@ function mtransform(dsty, puast) {
 
                     return {mmultiscripts: noAttr(ret)};
                 case "abovebelow":
-                    if ("low" in value && "high" in value) {
-                        return {munderover: noAttr([mtransform(dsty, value.base),
-                                                    mtransform(dsty, dropOutermostParens(value.low)),
-                                                    mtransform(dsty, dropOutermostParens(value.high))
-                                                   ])};
-                    } else if ("high" in value) {
-                        return {mover: noAttr([mtransform(dsty, value.base),
-                                               mtransform(dsty, dropOutermostParens(value.high))
-                                              ])};
-                    } else if ("low" in value) {
-                        return {munder: noAttr([mtransform(dsty, value.base),
-                                                mtransform(dsty, dropOutermostParens(value.low))
-                                               ])};
-                    } else {  // can only occur in a nary without sub or sup set
-                        return mtransform(dsty, value.base);
+                    selanchor1 = value.base.selanchor
+                    value.base = mtransform(dsty, dropOutermostParens(value.base));
+                    if (selanchor1) {
+                        // Move selanchor to base. TODO: handle other bases too
+                        // along with selfocus for all bases
+                        value.base.mi.attributes.selanchor = selanchor1
+                        delete attrs.selanchor
                     }
+                    if ("low" in value) {
+                        value.low = getScriptArg(dsty, value.low);
+                    }
+                    if ("high" in value) {
+                        value.high = getScriptArg(dsty, value.high);
+
+                        if ("low" in value) {
+                            return {munderover: withAttrs(attrs,
+                                            [value.base, value.low, value.high])};
+                        }
+                        return {mover: withAttrs(attrs, [value.base, value.high])};
+                    }
+                    if ("low" in value)
+                        return {munder: withAttrs(attrs, [value.base, value.low])};
+
+                    return value.base;      // No limits
 
                 default:
                     throw "invalid or missing script type";
             }
 
         case "enclosed":
-            var mask = value.mask;
-            var symbol = value.symbol;
-            return {menclose: withAttrs({notation: enclosureAttrs(mask, symbol)},
-                                        mtransform(dsty, dropOutermostParens(value.of)))};
+            let symbol = value.symbol;
+            attrs = getAttrs(value, '');
+            if (symbol == 'ⓓ') {
+                attrs.displaystyle = true
+                return {mstyle: withAttrs(attrs, mtransform(dsty,
+                        dropOutermostParens(value.of)))}
+            }
+            mask = value.mask;
+            attrs.notation = enclosureAttrs(mask, symbol);
+
+            return {menclose: withAttrs(attrs, mtransform(dsty,
+                                            dropOutermostParens(value.of)))};
 
         case "abstractbox":
-            var options = abstractBoxOptions(value.mask);
+            let options = abstractBoxOptions(value.mask);
 
             // abstract boxes aren't clearly defined in the tech note, testing
             // of word's implementation didn't yield many insights either – so I
@@ -1780,7 +4100,7 @@ function mtransform(dsty, puast) {
             // but potentially helpful class attribute
 
             // TODO remove this class once all options are properly implemented
-            var attrs = {class: options.join(" ")};
+            attrs = {class: options.join(" "), intent: intent};
 
             // nAlignBaseline, nSpaceDefault, nSizeDefault: do nothing, these
             // are the defaults
@@ -1808,25 +4128,26 @@ function mtransform(dsty, puast) {
             return {mrow: withAttrs(attrs, mtransform(dsty, value.of))}
 
         case "hbrack":
-
-            // TODO can probably do most of the work in a preprocessing step
-
-            // determine if the bracket should be above or below contents
-            var mtag = ["⏜", "⏞", "⏠", "⎴", "¯"].includes(value.bracket) ? "mover" : "munder";
-
-            // if the bracket precedes a script, put the bracket below or above
+            // TODO can probably do most of the work in a preprocessing step.
+            // If the bracket precedes a script, put the bracket below or above
             // the script's base and the script's sub or sup text below or above
             // the bracket
-            var base = dropSingletonLists(value.of);
-            var expLow;
-            var expHigh;
-            if (base.hasOwnProperty("script") && (base.script.type == "subsup" || base.script.type == "abovebelow")) {
-                var expLow = base.script.low;
-                var expHigh = base.script.high;
-                var type = base.script.type;
+            let base = dropSingletonLists(value.of);
+            let expLow, expHigh;
+            attrs = getAttrs(value, '');
+            let mtag = overBrackets.includes(value.bracket) ? 'mover' : 'munder';
+
+            if (value.intent)
+                attrs.intent = value.intent;
+
+            if (base.hasOwnProperty("script") &&
+                (base.script.type == "subsup" || base.script.type == "abovebelow")) {
+                expLow = base.script.low;
+                expHigh = base.script.high;
+                let type = base.script.type;
                 base = dropOutermostParens(base.script.base);
 
-                var exp;
+                let exp;
                 if (mtag == "mover") {
                     exp = expHigh;
                     if (expLow != undefined) {
@@ -1842,35 +4163,51 @@ function mtransform(dsty, puast) {
                     throw "hbrack bracket type doesn't match script type";
                 }
 
-                return {[mtag]: withAttrs({"accentunder": true, "accent": true}, [
-                    {[mtag]: withAttrs({"accentunder": true, "accent": true}, [
-                        mtransform(dsty, base),
-                        {mo: withAttrs({stretchy: true}, value.bracket)}
-                    ])},
-                    mtransform(dsty, dropOutermostParens(exp))
-                ])};
+                return {[mtag]: withAttrs({},
+                        [{[mtag]: withAttrs(attrs,
+                            [mtransform(dsty, base),
+                             {mo: withAttrs({stretchy: true}, value.bracket)}])},
+                         mtransform(dsty, dropOutermostParens(exp))])};
             } else {
-                return {[mtag]: withAttrs({"accentunder": true, "accent": true}, [
-                    mtransform(dsty, dropOutermostParens(value.of)),
-                    {mo: withAttrs({stretchy: true}, value.bracket)}
-                ])};
+                return {[mtag]: withAttrs(attrs,
+                        [mtransform(dsty, dropOutermostParens(value.of)),
+                         {mo: withAttrs({stretchy: true}, value.bracket)}])};
             }
 
         case "root":
-            return {mroot: noAttr([mtransform(dsty, dropOutermostParens(value.of)),
-                                   mtransform(dsty, value.degree)
-                                  ])};
+            return {mroot: withAttrs(getAttrs(value, ''),
+                        [mtransform(dsty, dropOutermostParens(value.of)),
+                         mtransform(dsty, value.degree)])};
         case "sqrt":
-            return {msqrt: noAttr(mtransform(dsty, dropOutermostParens(value)))};
+            val = mtransform(dsty, dropOutermostParens(value))
+            attrs = getAttrs(value, '')
+
+            return {msqrt: withAttrs(attrs, val)};
 
         case "function":
-            return {mrow: noAttr([mtransform(dsty, value.f), {mo: noAttr("&ApplyFunction;")}, mtransform(dsty, value.of)])};
-
+            let selanchorSave = selanchor
+            let selfocusSave = selfocus
+            attrs = getAttrs(value, ':function')
+            if (selfocusSave && selfocusSave[0] == '-') {
+                // Selection is in function name: move it there
+                delete attrs.selanchor
+                delete attrs.selfocus
+                selanchor = selanchorSave
+                selfocus = selfocusSave
+            }
+            val = mtransform(dsty, value.f)
+            return {mrow: withAttrs(attrs,
+                        [val, {mo: noAttr('\u2061')},
+                         mtransform(dsty, value.of)])};
         case "text":
-
-            // replace spaces with non-breaking spaces (leading and trailing
-            // spaces are otherwise hidden)
-            return {mtext: noAttr(value.split(" ").join("\xa0"))};
+            // replace spaces with non-breaking spaces (else leading and
+            // trailing spaces are hidden)
+            attrs = getAttrs(value, '');
+            if (value.length == 1 && (isAsciiAlphabetic(value) || isLcGreek(value))) {
+                attrs.mathvariant = 'normal'
+                return {mi: withAttrs(attrs, value)}
+            }
+            return {mtext: withAttrs(attrs, value.split(" ").join("\xa0"))};
 
         case "sizeoverride":
             /*
@@ -1901,125 +4238,249 @@ function mtransform(dsty, puast) {
             }
 
         case "colored":
-            return {mstyle: withAttrs({mathcolor: value.color}, mtransform(dsty, value.of))};
+            attrs = getAttrs(value.of, '')
+            attrs.mathcolor = value.color
+            value.of = mtransform(dsty, value.of);
+            if (value.of.hasOwnProperty('mo'))
+                return {mo: withAttrs(attrs, value.of.mo.content)};
+            return {mstyle: withAttrs(attrs, value.of)}
+
         case "bgcolored":
-            return {mstyle: withAttrs({mathbackground: value.color}, mtransform(dsty, value.of))};
+            attrs = getAttrs(value.of, '')
+            attrs.mathbackground = value.color
+            return {mstyle: withAttrs(attrs, mtransform(dsty, value.of))}
+
         case "comment":
             return {"␢": noAttr()};
         case "tt":
             return {mstyle: withAttrs({fontfamily: "monospace"}, {mtext: noAttr(value.split(" ").join("\xa0"))})};
 
         case "primed":
-            return {msup: noAttr([mtransform(dsty, value.base),
-                                  {mo: noAttr(processPrimes(value.primes))}
-                                 ])};
+            attrs = getAttrs(value, '');
+            return {msup: withAttrs(attrs, [mtransform(dsty, value.base),
+                                      {mo: noAttr(processPrimes(value.primes))}
+                                     ])};
 
         case "factorial":
-            return {mrow: noAttr([mtransform(dsty, value), {mo: noAttr("!")}])};
+            attrs = getAttrs(value, '');
+            return {mrow: withAttrs(attrs, [mtransform(dsty, value), {mo: noAttr("!")}])};
 
         case "atoms":
-            return mtransform(dsty, value);
-        case "chars":
+            attrs = getAttrs(value, '')
 
+            if (value.funct != undefined)
+                return {mi: withAttrs(attrs, value.chars)}
+
+            // n > 1 for atoms with embedded spaces and/or diacritics, e.g., 𝑐𝑎̂𝑏𝑛
+            let n = value.length;
+            let mis = [];                   // MathML elements to return
+
+            if (n == undefined) {           // value isn't an array
+                str = value.chars;          // Maybe value is a chars
+                n = 1;
+            } else {
+                str = value[0].chars;
+            }
+
+            for (let i = 0; i < n; ) {
+                if (str == undefined || str[0] == 'Ⅎ' || isFunctionName(str)) {
+                    let val = mtransform(dsty, Array.isArray(value) ? value[i] : value);
+                    if (attrs.intent || attrs.arg)
+                        mis.push({mrow: withAttrs(attrs, val)});
+                    else
+                        mis.push(val);
+                } else {
+                    if (n == 3 && value[1].hasOwnProperty('spaces') && str[0] == 'ⅆ' &&
+                        value[0].hasOwnProperty('chars')) {
+                        // Need a more general fix for cases like 𝑥 ⅆ𝑥
+                        str = value[0].chars + '\u2009' + str;
+                    }
+                    let cch = str.length;
+
+                    if (cch > 2 || cch == 2 && str.codePointAt(0) < 0xFFFF) {
+                        let cchCh = 1;
+
+                        for (let j = 0; j < cch; j += cchCh) {
+                            cchCh = (cch >= 2 && str.codePointAt(j) > 0xFFFF) ? 2 : 1;
+
+                            if (isDoubleStruck(str[j])) {
+                                if (j && str[j] == 'ⅆ' && str[j - 1] != '\u2009') {
+                                    mis.push({mi: noAttr('\u2009')});
+                                }
+                                let ch = doublestruckChar(str[j]);
+                                let attrsDoublestruck = getAttrsDoublestruck(ch, str[j]);
+                                let intentD = attrsDoublestruck.intent
+                                attrsDoublestruck = {...attrsDoublestruck, ...attrs}
+                                if (str[j] == 'ⅅ')
+                                    attrsDoublestruck.intent = intentD
+                                mis.push({mi: withAttrs(attrsDoublestruck, ch)});
+                            } else if ("-−,+".includes(str[j])) {
+                                if (isAsciiDigit(str[j + 1])) {
+                                    mis.push({mn: noAttr(str.substring(j))});
+                                    break;
+                                }
+                                mis.push({mo: noAttr(str[j])});
+                            } else {
+                                if (inRange('\uFE00', str[j + cchCh], '\uFE0F'))
+                                    cchCh++; // Include variation selector
+                                mis.push({mi: noAttr(str.substring(j, j + cchCh))});
+                            }
+                        }
+                    } else {                // str contains 1 char
+                        if (str >= 'ⅅ' && str <= 'ⅉ') {
+                            let ch = doublestruckChar(str);
+                            let attrsDoublestruck = getAttrsDoublestruck(ch, str);
+                            attrsDoublestruck = {...attrsDoublestruck, ...attrs}
+                            mis.push({mi: withAttrs(attrsDoublestruck, ch)});
+                        } else if (str == '⊺' && value.intent == "transpose") {
+                            let ch = transposeChar();
+                            if (ch == '⊤' || ch == '⊺') {
+                                mis.push({mo: withAttrs(attrs, ch)});
+                            } else {
+                                if (ch == 'T' || ch == 't')
+                                    attrs.mathvariant = "normal";
+                                mis.push({mi: withAttrs(attrs, ch)});
+                            }
+                        } else {
+                            let val = mtransform(dsty, Array.isArray(value) ? value[i] : value);
+                            if (attrs.selanchor)
+                                val.mi.attributes.selanchor = attrs.selanchor;
+                            if (attrs.selfocus)
+                                val.mi.attributes.selfocus = attrs.selfocus;
+                            if (attrs.arg)
+                                val.mi.attributes.arg = attrs.arg;
+                            if (attrs.intent)
+                                val.mi.attributes.intent = attrs.intent;
+                            mis.push(val);
+                        }
+                    }
+                }
+                i++;
+                if (i >= n)
+                    break;
+                str = value[i].chars;
+            }
+            if (mis.length > 1)
+                return {mrow: withAttrs(attrs, mis)};
+            return mis[0];
+
+        case "chars":
             // tech note, section 4.1: "Similarly it is easier to type ASCII
             // letters than italic letters, but when used as mathematical
             // variables, such letters are traditionally italicized in print
             // [...] translate letters deemed to be standalone to the
-            // appropriate math alphabetic characters"
-            if (value.length == 1) {
-                return {mi: noAttr(italicizeCharacters(value))};
-            } else {
+            // appropriate math alphabetic characters". But upper-case Greek
+            // letters are not italicized by default.
+            if (value.length > 1)           // Usually math function name
                 return {mi: noAttr(value)};
-            }
+
+            if (value[0] >= "Α" && value[0] <= "Ω") // Upper-case Greek
+                return {mi: withAttrs({mathvariant: "normal"}, value)};
+
+            return {mi: noAttr(italicizeCharacters(value))};
+
         case "diacriticized":
+            // TODO some of the work could be done in preprocessing step? but
+            // need the loop both in preprocessing as well as actual compilation,
+            // so doubtful if that would actually be better
+            let notation = '';
+            ret = mtransform(dsty, value.base);
 
-            // TODO some of the work could be done in preprocessing step? but need the loop both in preprocessing as well as actual compilation, so doubtful if that would actually be better
-            var ret = mtransform(dsty, value.base);
             for (let d of value.diacritics) {
-
-                // special cases for overscoring and underscoring (described in
-                // tech note)
-                if (d == "\u0305") {  // U+0305 COMBINING OVERLINE
-                    ret = {menclose: withAttrs({notation: "top"}, ret)};
-                } else if (d == "\u0332") {  // U+0332 COMBINING LOW LINE
-                    ret = {menclose: withAttrs({notation: "bottom"}, ret)};
-
-                // special cases for other diacritics that can be represented by
-                // an enclosure
-                } else if (d == "\u20DD") {  // U+20DD COMBINING ENCLOSING CIRCLE
-                    ret = {menclose: withAttrs({notation: "circle"}, ret)};
-                } else if (d == "\u20DE") {  // U+20DE COMBINING ENCLOSING SQUARE
-                    ret = {menclose: withAttrs({notation: "box"}, ret)};
-                } else if (d == "\u20E0") {  // U+20E0 COMBINING ENCLOSING CIRCLE BACKSLASH
-                    ret = {menclose: withAttrs({notation: "circle"}, {menclose: withAttrs({notation: "downdiagonalstrike"}, ret)})};
-
-                // standard case: place diacritic above or below. there is no
-                // good way for dealing with overlays, so just place them above
-                } else {
-                    var tag = "mover"
-                    if (diacriticPosition(d) == -1) {
-                        tag = "munder"
-                    }
-
-                    // represent diacritic using an entity to improve
-                    // readability of generated mathml code
-                    d = "&#" + d.charCodeAt(0) + ";";
-
-                    ret = {[tag]: withAttrs({accent: "true"}, [ret, {mo: noAttr(d)}])}
+                // Handle diacritics that can be represented by an enclosure
+                switch (d) {
+                    case "\u0305":          // U+0305 COMBINING OVERLINE
+                        notation = 'top';
+                        break;
+                    case "\u0332":          // U+0332 COMBINING LOW LINE
+                        notation = 'bottom';
+                        break;
+                    case "\u20E0":          // U+20E0 COMBINING ENCLOSING CIRCLE BACKSLASH
+                        ret = {menclose: withAttrs({notation: "downdiagonalstrike"}, ret)};
+                                            // Fall through to enclosing circle
+                    case "\u20DD":          // U+20DD COMBINING ENCLOSING CIRCLE
+                        notation = 'circle';
+                        break;
+                    case "\u20DE":          // U+20DE COMBINING ENCLOSING SQUARE
+                        notation = 'box';
+                        break;
+                    default:
+                        let tag = (diacriticPosition(d) == -1) ? "munder" : "mover";
+                        d = "&#x" + d.codePointAt(0).toString(16) + ";";
+                        ret = {[tag]: withAttrs({accent: true}, [ret, {mo: noAttr(d)}])};
+                        continue;
                 }
+                ret = {menclose: withAttrs({notation: notation}, ret)};
             }
             return ret;
         case "spaces":
             return mtransform(dsty, value);
         case "space":
             if (typeof value == 'number') {
-                return {mspace: withAttrs({width: spaceWidth(value)}, null)};
+                return {mspace: withAttrs({width: spaceWidths[value]}, null)};
             } else if (value == 'digit') {
-                // mathml provides no way of getting the width of a number and
+                // mathml provides no way of getting the width of a digit and
                 // using that as a space, so let's use a phantomized 0 here
-                return {mphantom: noAttr({mtext: noAttr(0)})};
+                // return {mphantom: noAttr({mtext: noAttr(0)})};
+                // Let the display engine figure out the spacing
+                return {mo: noAttr('\u2007')};
             } else if (value == 'space') {
                 // same deal: phantomized non-breaking space
-                return {mphantom: noAttr({mtext: noAttr('\xa0')})};
-            } else {
+                //return {mphantom: noAttr({mtext: noAttr('\xa0')})};
+                return {mo: noAttr('\u00A0')};
+           } else {
                 throw "incorrect space"
             }
 
         case "number":
-            return {mn: noAttr(value)};
-
-        case "doublestruck":
-
-            var char = doublestruckChar(value);
-
-            // tech note, section 3.11: "in regular US technical publications,
-            // these quantities can be rendered as math italic". also: "Notice
-            // that the ⅆ character automatically introduces a small space
-            // between the 𝑥 and the 𝑑𝑥"
-            switch (value) {
-                case "ⅅ":
-                    return {mrow: noAttr([{mspace: withAttrs({width: "thinmathspace"}, null)}, char])};
-                case "ⅆ":
-                    return {mrow: noAttr([{mspace: withAttrs({width: "thinmathspace"}, null)}, char])};
-                case "ⅇ":
-                case "ⅈ":
-                case "ⅉ":
-                    return char;
-            }
+            // If dir is 'rtl' & value is ASCII digit, convert to indic digit
+            // May want to handle multidigit numbers...
+            if (dsty & 2 && isAsciiDigit(value))
+                value = indicDigits[value]
+            return {mn: withAttrs(getAttrs(value, ''), value)};
 
         case "bracketed":
+            let content
+            let defaultIntent = ':fenced'
+            let miContent
+            let separator = ""
 
-            // handle potential sepator
-            var separator = "";
+            // handle potential separator
             if (value.content.hasOwnProperty("separated")) {
                 separator = value.content.separated.separator;
                 value.content = value.content.separated.of;
             }
 
-            var content;
-            if (typeof value.open === 'string' && typeof value.close === 'string' && value.open == "|" && value.close == "|") {
-                content = mtransform(dsty, dropOutermostParens(value.content));
+            if (value.open == '|' && value.close == '|') {
+                content = mtransform(dsty, dropOutermostParens(value.content))
+                defaultIntent = 'absolute-value($a)'
+                if (content.mrow && Array.isArray(content.mrow.content)) {
+                    let c = content.mrow
+                    if (c.content.length == 1) {
+                        c = c.content[0]
+                        if (c.mtable) {
+                            defaultIntent = 'determinant($a)'
+                            c = c.mtable
+                        } else if (c.mfrac) {
+                            c = c.mfrac
+                        } else if (c.mrow) {
+                            c = c.mrow
+                            if (c.content.length == 1) {
+                                if (c.content[0].mi) {
+                                    miContent = c.content[0].mi.content
+                                    defaultIntent = 'absolute-value(' + miContent + ')'
+                                } else if (c.content[0].mtext) {
+                                    c = c.content[0].mtext
+                                }
+                            }
+                        }
+                    }
+                    if (!miContent)
+                        c.attributes = {arg: 'a'}
+                }
             } else if (separator == "") {
+                if (value.open == '{' && !value.close)
+                    value.close = '\u200B'  // Need non0 char for inline editing
                 content = mtransform(dsty, value.content);
             } else {
 
@@ -2030,37 +4491,58 @@ function mtransform(dsty, puast) {
                 content = {mrow: noAttr(content)};
             }
 
-            // handle brackets: first inner mrow (content and brackets if they
-            // are just strings, i.e. if they should grow with their contents).
-            // note that if all-invisible brackets 〖a〗 are used, this simply
-            // wraps content in an mrow as desired
-            var ret = [];
+            // handle brackets: first inner mrow (content and brackets). if
+            // they are strings, they should grow with their contents. note
+            // that if the brackets are invisible, that is,〖content〗, this
+            // wraps content in an mrow as desired.
+            //if (!value.open && !value.close)
+            //    return {mrow: withAttrs(getAttrs(value, ''), content)};
+
+            if (useMfenced == 1) {          // Word needs mfenced
+                // (Can test using Ctrl+C in output window)
+                attrs = getAttrs(value, defaultIntent);
+                if (attrs.intent)
+                    attrs.intent = checkCardinalityIntent(attrs.intent, miContent)
+                if (typeof value.open === 'string' && value.open != '(')
+                    attrs.open = value.open
+                if (typeof value.close === 'string' && value.close != ')')
+                    attrs.close = value.close
+                return [{mfenced: withAttrs(attrs, content)}]
+            }
+
+            ret = []
+            if (dsty & 2) {                 // dir = 'rtl'
+                let val = value.open
+                value.open = value.close
+                value.close = val
+            }
             if (typeof value.open === 'string') {
                 ret.push({mo: noAttr(value.open)});
+            } else {
+                let openSize = fontSize(value.open.size);
+                ret.push({mo: withAttrs({minsize: openSize, maxsize: openSize}, value.open.bracket)});
             }
             ret.push(content);
+
             if (typeof value.close === 'string') {
                 ret.push({mo: noAttr(value.close)});
+            } else {
+                let closeSize = fontSize(value.close.size);
+                ret.push({mo: withAttrs({minsize: closeSize, maxsize: closeSize}, value.close.bracket)});
             }
-            ret = [{mrow: noAttr(ret)}];
+            attrs = getAttrs(value, defaultIntent)
+            if (attrs.intent)
+                attrs.intent = checkCardinalityIntent(attrs.intent, miContent)
 
-            // now handle potential manually resized brackets. note that
-            // value.open.size and value.close.size should be at most 4
-            // according to the tech note, but there is no strict need for this
-            // limitation – so i'm not imposing one
-            if (typeof value.open !== 'string') {
-                var openSize = fontSize(value.open.size);
+            return [{mrow: withAttrs(attrs, ret)}]
 
-                var br = {mo: withAttrs({minsize: openSize, maxsize: openSize}, value.open.bracket)};
-                ret = [br].concat(ret);
-            }
-            if (typeof value.close !== 'string') {
-                var closeSize = fontSize(value.close.size);
-
-                var br = {mo: withAttrs({minsize: closeSize, maxsize: closeSize}, value.close.bracket)};
-                ret = ret.concat([br]);
-            }
-            return ret;
+        case "intend":
+            // Set up for next element to get selanchor via getAttrs()
+            if (value.symbol == 'Ⓐ')
+                selanchor = value.value
+            else if (value.symbol == 'Ⓕ')
+                selfocus = value.value
+            return value.op ? {mo: withAttrs(getAttrs(value, ''), value.op)} : ''
 
         default:
             return value;
@@ -2080,84 +4562,169 @@ function c(ast) {
 }
 
 function tag(tagname, attribs, ...vals) {
-    var attributes = "";
+    let attributes = "";
     if (Object.keys(attribs).length) {
         attributes = " " + Object.keys(attribs).map(key => {
-            var value = attribs[key];
+            let value = attribs[key];
             return `${key}="${value}"`;
         }).join(' ');
     }
     if (vals.length == 1 && vals[0] == null) {
         return `<${tagname}${attributes} />`;
     }
-    var values = vals.reduce((a,b) => `${a} ${b}`);
+    let values = vals.reduce((a,b) => `${a} ${b}`);
     return `<${tagname}${attributes}>${values}</${tagname}>`;
+}
+
+function promoteAttributelessMrowChildren(value) {
+    // Move children of attributeless-mrow children up into this mrow-like
+    // element after removing the parents.
+    for (let j = 0; j < value.length; j++) {
+        let node = value[j]
+        if (node.mrow) {
+            let attrs = a(node)
+            if (!Object.keys(attrs).length) {
+                // No attributes: replace mrow by its children
+                let c = node.mrow.content.length // Count of grandchildren
+                let arr = value.splice(j, 1)     // Grandchildren
+                let jT = -2
+                for (let i = 0; i < c; i++) {
+                    let nodeG = arr[0].mrow.content[i]
+                    value.splice(j++, 0, nodeG)  // Insert next grandchild
+                    if (jT == -2 && nodeG.mrow) {
+                        attrs = a(nodeG)         // Attributeless mrow?
+                        if (!Object.keys(attrs).length)
+                            jT = j - 1           // Index of mrow to check
+                    }
+                }
+                j--                 // Added c children after deleting 1 mrow
+                if (jT != -2)       // At least 1 mrow grandchild moved up
+                    j = jT - 1      // Continue with first one
+            }
+        }
+    }
 }
 
 // pretty-print MathML AST
 function pretty(mast) {
-
-    // unwrap singleton lists
-    //if (Array.isArray(mast) && mast.length == 1) {
-    //    return pretty(mast[0]);
-    //}
-
     // map over lists and concat results
     if (Array.isArray(mast)) {
-        return mast.map(e => pretty(e)).join("");
+        let ret = ''
+
+        for (let i = 0; i < mast.length; i++)
+            ret += pretty(mast[i])
+        return ret
     }
 
     if (typeof mast !== 'object') {
         return mast;
     }
 
-    var key = k(mast);
-    var attributes = a(mast);
-    var value = c(mast);
+    let key = k(mast)
+    let attributes = a(mast)
+    let value = c(mast)
+    let arg, i
 
     switch (key) {
-        case "math":
-            return tag(key, attributes, pretty(value));
         case "mrow":
-
             // mrow elimination: ignore superfluous mrows, i.e. ones that
             // contain only a single child and have no attributes
-            if (Array.isArray(value) && value.length == 1) {
-                return pretty({mrow: {attributes: {}, content: value[0]}});  // insert a dummy mrow around the singleton array value to fix bug occurring if this singleton array value is again an array, which the pretty() function would then simply be mapped over, which would be problematic in certain contexts such as scripts where a set number of nodes on one level is required
-            } else if (!(Array.isArray(value)) && Object.keys(attributes).length == 0) {
-                return pretty(value);
-            } else {
-                return tag(key, attributes, pretty(value));
+            if (Array.isArray(value) && value.length == 1 && !attributes.arg) {
+                // insert a dummy mrow around the singleton array value to fix
+                // bug occurring if this singleton array value is again an array,
+                // which the pretty() function would then simply map over,
+                // which is problematic in certain contexts such as scripts
+                // where a set number of nodes on one level is required
+                return pretty({mrow: {attributes: attributes, content: value[0]}});
             }
-        case "msubsup":
-        case "msub":
-        case "msup":
-        case "munderover":
-        case "munder":
-        case "mover":
-        case "mfrac":
-        case "msqrt":
-        case "mroot":
+            if (Array.isArray(value) && (!attributes.intent ||
+                    attributes.intent != ':fenced')) {
+                // Unless this mrow has the ':fenced' attribute, move the
+                // children of attributeless-mrow children up into this mrow
+                // after removing the parents.
+                promoteAttributelessMrowChildren(value)
+            } else if (!Object.keys(attributes).length) {
+                return pretty(value);
+            }
+            return tag(key, attributes, pretty(value));
+
+        case "math":
         case "menclose":
+        case "merror":
+        case "mphantom":
+        case "mpadded":
+        case "msqrt":
+        case "mscarry":
+        case "mstyle":
         case "mtd":
+            if (Array.isArray(value)) {
+                promoteAttributelessMrowChildren(value)
+                return tag(key, attributes, pretty(value))
+            }
+            arg = pretty(value)
+            i = 0
+            if (arg && arg.startsWith('<mrow') && arg.endsWith('</mrow>')) {
+                if (arg.startsWith('<mrow selanchor="0"')) {
+                    i = 20
+                } else if (arg[5] == '>') {
+                    i = 6
+                }
+            }
+            if (i) {
+                arg = arg.substring(i, arg.length - 7)
+                if (i == 20) {
+                    i = arg.indexOf('>')
+                    arg = arg.substring(0, i) + ' selanchor="0"' + arg.substring(i)
+                }
+            }
+            return tag(key, attributes, arg)
+
+        case "mover":
+        case "msub":
+        case "msubsup":
+        case "msup":
+        case "munder":
+        case "munderover":
+
+        case "mfenced":
+        case "mfrac":
+        case "mroot":
         case "mtr":
         case "mlabeledtr":
         case "mtable":
-        case "mphantom":
-        case "mpadded":
-        case "mstyle":
         case "mmultiscripts":
         case "mprescripts":
         case "none":
             return tag(key, attributes, pretty(value));
         case "mi":
+            if (value[0] == '\uD83B') {
+                // Arabic math alphabetic: XITS Math has the glyphs
+                attributes.style = 'font-family:XITS Math'
+            } else {
+                let cp = value.codePointAt(0)
+                if (cp >= 0x1D49C && cp <= 0x1D503 && value[2] ||
+                    letterLikeSymbols[value[0]] && letterLikeSymbols[value[0]][0] == 3) {
+                    // Script
+                    let vs = value[value.length - 1]
+                    if (vs == '\uFE00' || vs == '\uFE01') {
+                        // Roundhand or chancery script: use STIX Two Math ss01 or ss00
+                        attributes.style = "font-family:STIX Two Math; font-feature-settings: " +
+                            (vs == '\uFE01' ? "'ss01'" : "'ss00'") + " 1"
+                    }
+                }
+            }
         case "mn":
         case "mo":
         case "mtext":
-            return tag(key, attributes, value);
-        case "malignmark":
         case "mspace":
-            return tag(key, attributes, null);
+            return tag(key, attributes, value);
+        case "maligngroup":
+        case "malignmark":
+            if (useMfenced == 1)            // Word needs malignmark, maligngroup
+                return tag(key, attributes, value);
+            return key == 'maligngroup'
+                ? `</mtd><mtd style='padding-left:0;text-align:right;float:right;display:math'>`
+                : `</mtd><mtd style='padding-left:0;text-align:left;vertical-align:middle'>`
         case "␢":
             return "";
         default:
@@ -2165,42 +4732,769 @@ function pretty(mast) {
     }
 }
 
+///////////////////////////
+// MathML to UnicodeMath //
+///////////////////////////
+
+function unary(node, op) {
+    // Unary elements have the implied-mrow property
+    let cNode = node.childElementCount
+    let ret = nary(node, '', cNode)
+
+    if (!op) {
+        ret = removeOuterParens(ret)
+    } else if (cNode > 1 || cNode == 1 && node.firstElementChild.nodeName == 'mfrac') {
+        ret = '(' + ret + ')'
+    }
+    return op + ret
+}
+
+function binary(node, op) {
+    let ret = dump(node.firstElementChild);
+    let retd = dump(node.lastElementChild);
+
+    if (op == '^' && node.lastElementChild.nodeName == 'msub' ||
+        op == '_' && node.lastElementChild.nodeName == 'msup') {
+        return ret + op + '(' + retd + ')'
+    }
+    if (isMathMLObject(node) && node.childElementCount) {
+        // Add enclosing parens for parenthesized arguments that lose their
+        // outermost parens when built up.
+        let attr = node.lastElementChild.getAttribute('intent')
+        if (attr == ':fenced' && retd[0] == '(' && retd[retd.length - 1] == ')')
+            retd = '(' + retd + ')'
+        if (node.nodeName == 'mfrac') {
+            attr = node.firstElementChild.getAttribute('intent')
+            if (attr == ':fenced' && ret[0] == '(' && ret[ret.length - 1] == ')')
+                ret = '(' + ret + ')'
+        }
+    }
+
+    if (op == '⊘') {
+        let ch = getUnicodeFraction(ret, retd);
+        if (ch)
+            return ch;
+    }
+    if (op == '/' && (ret.endsWith('^∗ )') || ret.endsWith('^† )'))) {
+        // Remove superfluous build-up space & parens
+        ret = ret.substring(1, ret.length - 2);
+    }
+    ret += op + retd;
+    if (op)
+        ret += ' ';
+    return ret;
+}
+
+function ternary(node, op1, op2) {
+    let ret = [dump(node.children[1]), dump(node.children[2])]
+
+    if (node.nodeName == 'msubsup' || node.nodeName == 'munderover') {
+        // Add enclosing parens for parenthesized arguments that lose their
+        // outermost parens when built up, here for munderover/msubsup
+        // second and third children
+        for (let i = 0; i < 2; i++) {
+            let attr = node.children[i + 1].getAttribute('intent')
+
+            if (attr == ':fenced' && ret[i][0] == '(' && ret[i][ret[i].length - 1] == ')')
+                ret[i] = '(' + ret[i] + ')'
+        }
+    }
+    return dump(node.firstElementChild) + op1 + ret[0] + op2 + ret[1] + ' '
+}
+
+function nary(node, op, cNode) {
+    let ret = '';
+
+    for (let i = 0; i < cNode; i++) {
+        ret += dump(node.children[i]);
+        if (i < cNode - 1)
+            ret += op;
+    }
+    return ret;
+}
+
+function checkSelAttr(value, op) {
+    let attr = op == 'Ⓐ' ? 'selanchor' : 'selfocus'
+    let selattr = value.getAttribute(attr)
+    if (!selattr)
+        return ''
+    if (selattr == '0')
+        selattr = ''
+    return op + '(' + selattr + ')'
+}
+
+function getSelectionCodes(value) {
+    return ksi ? checkSelAttr(value, 'Ⓐ') + checkSelAttr(value, 'Ⓕ') : ''
+}
+
+function isDigitArg(node) {
+    if (!node || !node.lastElementChild)
+        return false
+
+    return node.lastElementChild.nodeName == 'mn' && node.children[1] &&
+        isAsciiDigit(node.children[1].textContent)
+}
+
+function dump(value, noAddParens) {
+	// Function called recursively to convert MathML to UnicodeMath
+    if (!value)
+        return ''
+
+    let cNode = value.childElementCount ? value.childElementCount : 1
+    let intent
+    let nodeLEC                             // node.lastElementChild
+    let op
+    let ret = ''
+    let symbol
+    let val
+
+    switch (value.localName) {
+        case 'mtable':
+            symbol = '■';
+            intent = value.getAttribute('intent')
+            if (intent == ':equations') {
+                symbol = '█';
+            } else if (value.parentElement.hasAttribute('intent')) {
+                intent = value.parentElement.getAttribute('intent');
+
+                for (const [key, val] of Object.entries(matrixIntents)) {
+                    if (val == intent) {
+                        symbol = key;
+                        break;
+                    }
+                }
+            } else if (intent == ':math-paragraph') {
+                for (let i = 0; i < cNode; i++) {
+                    let node = value.children[i] // <mtr> or <mlabeledtr>
+                    if (node.nodeName == 'mlabeledtr' ||
+                        node.firstElementChild.getAttribute('intent')
+                            == ':equation-label') {
+                        let text = node.firstElementChild.textContent
+                        if (node.childElementCount == 3)
+                            ret += dump(node.children[1]) + '&'
+                        ret += dump(node.lastElementChild) + '#' + text
+                    } else {
+                        ret += dump(node)
+                    }
+                    if (i < cNode - 1)
+                        ret += '\n'             // Separate eqs by \n
+                }
+                break
+            } else if (cNode == 1 && hasEqLabel(value)) {
+                // Numbered equation: convert to UnicodeMath like 𝐸=𝑚𝑐²#(20)
+                let eqno = value.firstElementChild.firstElementChild.firstElementChild.textContent
+                return dump(value.firstElementChild.lastElementChild) + '#' + eqno
+            }
+            ret = symbol + '(' + nary(value, '@', cNode) + ')';
+            break;
+
+        case 'mtr':
+            ret = nary(value, '&', cNode)
+            if (ret[0] == '&')
+                ret = ret.substring(1)
+            break;
+
+        case 'mtd':
+            intent = value.getAttribute('intent')
+            if (intent == ':no-equation-label')
+                return ''
+            ret = nary(value, '', cNode)
+            if (ret[0] == '&')
+                ret = ret.substring(1)
+            break;
+
+        case 'maligngroup':
+        case 'malignmark':
+            ret = '&';
+            break;
+
+        case 'menclose':
+            let notation = value.getAttribute('notation')
+            if (notation) {
+                for (const [key, val] of Object.entries(symbolClasses)) {
+                    if (val == notation) {
+                        ret = unary(value, key);
+                        break;
+                    }
+                }
+                if (ret)
+                    break;
+                let mask = 0;
+
+                while (notation) {
+                    let attr = notation.match(/[a-z]+/)[0];
+                    notation = notation.substring(attr.length + 1);
+                    for (const [key, val] of Object.entries(maskClasses)) {
+                        if (val == attr)
+                            mask += Number(key);
+                    }
+                }
+                if (mask) {
+                    ret = unary(value, '')
+                    ret = '▭(' + (mask ^ 15) + '&' + ret + ')';
+                    break;
+                }
+            }
+            ret = unary(value, '▭');
+            break;
+
+        case 'mphantom':
+            ret = unary(value, '⟡');       // Full size, no display
+            break;
+
+        case 'mpadded':
+            op = '';
+            let mask = 0;                   // Compute phantom mask
+
+            if (value.getAttribute('width') === '0')
+                mask = 2;                   // fPhantomZeroWidth
+            if (value.getAttribute('height') === '0')
+                mask |= 4;                  // fPhantomZeroAscent
+            if (value.getAttribute('depth') === '0')
+                mask |= 8;                  // fPhantomZeroDescent
+
+            if (value.firstElementChild &&
+                value.firstElementChild.nodeName == 'mphantom') { // No display
+                if (mask == 2)
+                    op = '⇳';               // fPhantomZeroWidth
+                else if (mask == 12)
+                    op = '⬄';              // fPhantomZeroAscent | fPhantomZeroDescent
+                ret = dump(value.firstElementChild).substring(1)
+                ret = op ? op + ret
+                    : '⟡(' + mask + '&' + removeOuterParens(ret) + ')'
+                break
+            }
+            const opsShow = {2: '⬌', 4: '⬆', 8: '⬇', 12: '⬍'};
+            op = opsShow[mask];
+            mask |= 1;                      // fPhantomShow
+
+            if (op) {
+                ret = unary(value, op)
+            } else {
+                ret = removeOuterParens(nary(value, '', cNode))
+                ret = '⟡(' + mask + '&' + ret + ')'
+            }
+            break
+
+        case 'mstyle':
+            ret = nary(value, '', cNode)
+            val = value.getAttribute('mathcolor')
+            if(val)
+                ret = '✎(' + val + '&' + ret + ')';
+            val = value.getAttribute('mathbackground')
+            if (val)
+                ret = '☁(' + val + '&' + ret + ')';
+            break;
+
+        case 'msqrt':
+            ret = unary(value, '√');
+            break;
+
+        case 'mroot':
+            ret = '√(' + dump(value.lastElementChild, true) + '&' +
+                         dump(value.firstElementChild, true) + ')';
+            break;
+
+        case 'mfrac':
+            op = '/';
+            val = value.getAttribute('displaystyle')
+            if (val === 'false')
+                op = '⊘';
+            val = value.getAttribute('linethickness')
+            if (val == '0' || val == '0.0pt') {
+                op = '¦';
+                if (value.parentElement.hasAttribute('intent') &&
+                    value.parentElement.getAttribute('intent').startsWith('binomial-coefficient') ||
+                    value.parentElement.firstElementChild.hasAttribute('title') &&
+                    value.parentElement.firstElementChild.getAttribute('title') == 'binomial coefficient')
+                    op = '⒞';
+            }
+            ret = binary(value, op);
+            if (value.parentElement.getAttribute('intent') == ':function') {
+                ret = '〖' + ret + '〗'      // Keep denominator in function argument
+            } else if (value.previousElementSibling && value.previousElementSibling.nodeName != 'mo') {
+                // TODO: also add space for mi mrow mfrac
+                ret = ' ' + ret;            // Separate variable and numerator
+            }
+            break;
+
+        case 'msup':
+            nodeLEC = value.lastElementChild
+            if (isDigitArg(value) && !getSelectionCodes(nodeLEC)) {
+                ret = dump(value.firstElementChild) +
+                    digitSuperscripts[nodeLEC.textContent]
+                break
+            }
+            op = '^';
+            if (nodeLEC && isPrime(nodeLEC.textContent))
+                op = '';
+            ret = binary(value, op);
+
+            // Check for intent='transpose'
+            if (nodeLEC && nodeLEC.getAttribute('intent') == 'transpose') {
+                let cRet = ret.length;
+                let code = codeAt(ret, cRet - 2);
+                if (code != 0x22BA) {       // '⊺'
+                    if (code > 0xDC00)
+                        cRet--;             // To remove whole surrogate pair
+                    ret = ret.substring(0, cRet - 2) + '⊺';
+                }
+            }
+            break;
+
+        case 'mover':
+            if (overBrackets.includes(value.lastElementChild.textContent)) {
+                ret = dump(value.lastElementChild) + dump(value.firstElementChild);
+                break;
+            }
+            op = value.hasAttribute('accent') ? '' : '┴';
+            ret = binary(value, op);
+            break;
+
+        case 'munder':
+            if (underBrackets.includes(value.lastElementChild.textContent)) {
+                ret = dump(value.lastElementChild) + dump(value.firstElementChild);
+                break;
+            }
+
+            op = value.hasAttribute('accentunder') ? '' : '┬';
+            if (value.firstElementChild.innerHTML == 'lim')
+                op = '_';
+            ret = binary(value, op);
+            break;
+
+        case 'msub':
+            nodeLEC = value.lastElementChild
+            if (isDigitArg(value) && !getSelectionCodes(nodeLEC)) {
+                ret = dump(value.firstElementChild) +
+                    digitSubscripts[nodeLEC.textContent];
+                break
+            }
+            ret = binary(value, '_');
+            break;
+
+        case 'munderover':
+            intent = value.parentElement.getAttribute('intent')
+            if (!intent || !intent.startsWith(':nary')) {
+                ret = ternary(value, '┬', '┴');
+                break;
+            }
+                                            // Fall through to msubsup
+        case 'msubsup':
+            nodeLEC = value.lastElementChild
+            if (nodeLEC && !getSelectionCodes(value.children[1]) &&
+                !getSelectionCodes(nodeLEC)) {
+                if (isDigitArg(value)) {
+                    ret = dump(value.firstElementChild) +
+                        digitSubscripts[value.children[1].textContent];
+                    if (isAsciiDigit(nodeLEC.textContent)) {
+                        ret += digitSuperscripts[nodeLEC.textContent]
+                        break;
+                    }
+                    ret += '^' + dump(nodeLEC);
+                    break;
+                }
+                if (isPrime(nodeLEC.textContent) && value.children[1].childElementCount < 2) {
+                    ret = dump(value.firstElementChild) + nodeLEC.textContent
+                    if (isAsciiDigit(value.children[1].textContent))
+                        ret += digitSubscripts[value.children[1].textContent]
+                    else
+                        ret += '_' + dump(value.children[1])
+                    break
+                }
+            }
+            ret = ternary(value, '_', '^');
+            break;
+
+        case 'mmultiscripts':
+            ret = '';
+            if (value.children[3].nodeName == 'mprescripts') {
+                if (value.children[4].nodeName != 'none')
+                    ret = '_' + dump(value.children[4]);
+                if (value.children[5].nodeName != 'none')
+                    ret += '^' + dump(value.children[5]);
+                if (ret)
+                    ret += ' ';
+            }
+            ret += dump(value.children[0]);
+            if (value.children[1].nodeName != 'none')
+                ret += '_' + dump(value.children[1]);
+            if (value.children[2].nodeName != 'none')
+                ret += '^' + dump(value.children[2]);
+            break;
+
+        case 'mfenced':
+            let [opClose, opOpen, opSeparators] = getFencedOps(value)
+            let cSep = opSeparators.length;
+
+            ret = opOpen;
+            for (let i = 0; i < cNode; i++) {
+                ret += dump(value.children[i]);
+                if (i < cNode - 1)
+                    ret += i < cSep - 1 ? opSeparators[i] : opSeparators[cSep - 1];
+            }
+            ret += opClose;
+            break;
+
+        case 'mo':
+            val = value.innerHTML;
+            if (val == '\u200B' && value.parentElement.getAttribute('intent') == ':cases')
+                return ''                   // Discard ZWSP (used for in-line editing)
+            if (!intent)
+                intent = value.getAttribute('intent')
+            if (intent == ':text') {
+                ret = '\\' + val
+                break
+            }
+            if (val == '&fa;') {
+                ret = '\u2061';
+                break;
+            }
+            if (val == '&nbsp;') {
+                ret = '\u00A0'
+                break
+            }
+            if (val == '&lt;') {
+                ret = '<';
+                break;
+            }
+            if (val == '&gt;') {
+                ret = '>';
+                break;
+            }
+            if (val == '&amp;') {
+                ret = '&';
+                break;
+            }
+            if (val == '/' && !autoBuildUp) { // Quote other ops...
+                ret = '\\/';
+                break;
+            }
+            if (val == '\u202F' && autoBuildUp) {
+                ret = ' '
+                break;
+            }
+            if (val == '|') {
+                ret = val
+                let node = value.parentElement.parentElement
+                if (node.getAttribute('intent') == ':fenced' &&
+                    node.firstElementChild.textContent == '⟨' &&
+                    node.lastElementChild.textContent == '⟩') {
+                    ret = '│'               // U+2502
+                }
+                break
+            }
+            if (val.startsWith('&#') && val.endsWith(';')) {
+                ret = value.innerHTML.substring(2, val.length - 1);
+                if (ret[0] == 'x')
+                    ret = '0' + ret;
+                ret = String.fromCodePoint(ret);
+                break;
+            }
+            if (value.hasAttribute('title')) {
+                // The DLMF title attribute implies the following intents
+                // (see also for 'mi')
+                switch (value.getAttribute('title')) {
+                    case 'differential':
+                    case 'derivative':
+                        ret = 'ⅆ';
+                        break;
+                    case 'binomial coefficient':
+                        val = '';
+                }
+            }
+            if (!ret)
+                ret = val
+            break;
+
+        case 'mi':
+            intent = value.getAttribute('intent')
+            if (isDoubleStruck(intent)) {
+                ret = intent;
+                break;
+            }
+            if (value.innerHTML.length == 1) {
+                let c = value.innerHTML;
+                if (!value.hasAttribute('mathvariant')) {
+                    ret = italicizeCharacter(c);
+                    break;
+                }
+                let mathstyle = mathvariants[value.getAttribute('mathvariant')];
+                if (mathstyle == 'mup') {
+                    if (value.hasAttribute('title')) {
+                        // Differential d (ⅆ) appears in 'mo'
+                        switch (value.getAttribute('title')) {
+                            case 'base of natural logarithm':
+                                ret = 'ⅇ';
+                                break;
+                            case 'imaginary unit':
+                                ret = 'ⅈ';
+                                break;
+                        }
+                        if (ret)
+                            break;
+                    }
+                    if (c != '∞' && c != '⋯' && !inRange('\u0391', c, '\u03A9')) {
+                        ret = '"' + c + '"';
+                        break;
+                    }
+                } else if (mathstyle) {
+                    ret = getMathAlphanumeric(c, mathstyle)
+                    break
+                }
+            }                               // else fall through
+        case 'mn':
+            ret = value.textContent;
+            break;
+
+        case 'mtext':
+            ret = value.textContent.replace(/\"/g, '\\\"')
+            ret = '"' + ret + '"';
+            break;
+
+        case 'mspace':
+            let width = value.getAttribute('width')
+            if (width) {
+                for (let i = 0; i < spaceWidths.length; i++) {
+                    if (width == spaceWidths[i]) {
+                        ret = uniSpaces[i];
+                        break;
+                    }
+                }
+            }
+            break;
+    }
+
+    let selcode = getSelectionCodes(value)
+    if (ret) {
+        if (!selcode)
+            return ret
+
+        const needPreSpace = ['mfrac', 'mover', 'msub', 'msubsup', 'msup',
+            'munder', 'munderover']
+
+        if (needPreSpace.includes(value.nodeName)) {
+            // Insert ' ' between the selection code(s) and certain MathML
+            // elements so that the code(s) apply to the element and not to
+            // its first child
+            selcode += ' '
+        }
+        return selcode + ret
+    }
+
+    // Dump <mrow> children
+    for (let i = 0; i < cNode; i++) {
+        let node = value.children[i];
+        ret += checkSpace(i, node, ret)
+        ret += dump(node, false, i);
+    }
+
+    if (selcode) {
+        if (value.localName == 'math' && selcode.length == 4 &&
+            selcode[2] == value.childElementCount) {
+            ret = ret + ' Ⓐ()'             // Insertion point at math-zone end
+        } else {
+            if (cNode > 1)
+                selcode += ' '
+            ret = selcode + ret
+        }
+    }
+
+    let mrowIntent = value.nodeName == 'mrow' && value.hasAttribute('intent')
+        ? value.getAttribute('intent') : '';
+
+    if (mrowIntent) {
+        if (mrowIntent == ':cases')
+            return 'Ⓒ' + ret.substring(2);
+
+        if (mrowIntent == ':fenced' && value.childElementCount &&
+            !value.lastElementChild.textContent) {
+            return !value.firstElementChild.textContent ? '〖' + ret + '〗' : ret + '┤';
+        }
+        if (mrowIntent.startsWith('cardinality')) {
+            ret = ret.substring(1, ret.length - 1) // Remove '|'s
+            return needParens(ret) ? 'ⓒ(' + ret + ')' : 'ⓒ' + ret + ' '
+        }
+        if (mrowIntent.startsWith('binomial-coefficient') ||
+            mrowIntent.endsWith('matrix') || mrowIntent.endsWith('determinant')) {
+            // Remove enclosing parens for 𝑛⒞𝑘 and bracketed matrices
+            let i = ret.length - 1
+            if (ret[0] == '|')              // Determinant
+                return ret.substring(1, i)
+            if (ret[0] == '(' && ret[i] == ')')
+                return ret.substring(1, i)
+
+            // ret doesn't start with '(' and end with ')'. Scan ret matching
+            // parens. If a ')' follows a '⒞' and matches the a '(', remove
+            // the parens. This allows selection anchor and focus to be present
+            // with binomial coefficients
+            let binomial
+            let cParen = 0
+            let iOpen = -1
+            for (i = 0; i < ret.length; i++) {
+                switch (ret[i]) {
+                    case '(':
+                        cParen++
+                        iOpen = i
+                        break;
+                    case ')':
+                        cParen--
+                        if (!cParen && binomial && iOpen >= 0)
+                            return ret.substring(0, iOpen) +
+                                ret.substring(iOpen + 1, i) + ret.substring(i + 1)
+                        iOpen = -1
+                        break;
+                    case '⒞':
+                        binomial = true
+                        break;
+                }
+            }
+            return ret
+        }
+        if (mrowIntent == ':function' && value.previousElementSibling &&
+            value.firstElementChild &&      // (in case empty)
+            value.firstElementChild.nodeName == 'mi' &&
+            value.firstElementChild.textContent < '\u2100' &&
+            value.previousElementSibling.nodeName == 'mi') {
+            return ' ' + ret;               // Separate variable & function name
+        }
+    }
+    if (value.firstElementChild && value.firstElementChild.nodeName == 'mo' &&
+        !autoBuildUp && isOpenDelimiter(value.firstElementChild.textContent)) {
+        if (value.lastElementChild.nodeName != 'mo' || !value.lastElementChild.textContent)
+            ret += '┤';                     // Happens for some DLMF pmml
+    }
+
+    if (cNode > 1 && value.nodeName != 'math' && !noAddParens &&
+        (!mrowIntent || mrowIntent != ':fenced') &&
+        isMathMLObject(value.parentElement, true) && needParens(ret)) {
+        ret = '(' + ret + ')';
+    }
+    return ret;
+}
+
+function MathMLtoUnicodeMath(mathML, keepSelInfo) {
+    const doc = getMathMLDOM(mathML);
+    return getUnicodeMath(doc.firstElementChild, keepSelInfo)
+}
+
+function getUnicodeMath(doc, keepSelInfo, noAddParens) {
+    ksi = keepSelInfo                        // Keep selection info for undo
+    let unicodeMath = dump(doc, noAddParens) // Get UnicodeMath from DOM doc
+
+    // Remove some unnecessary spaces
+    for (let i = 0; ; i++) {
+        i = unicodeMath.indexOf(' ', i);
+        if (i < 0)
+            break;                          // No more spaces
+        if (i == unicodeMath.length - 1) {
+            unicodeMath = unicodeMath.substring(0, i);
+            break;
+        }
+        if ('=+−/ )]}〗'.includes(unicodeMath[i + 1])) {
+            let j = 1;                      // Delete 1 space
+            if (unicodeMath[i + 1] == ' ' && i < unicodeMath.length - 2 &&
+                '=+−/)]}'.includes(unicodeMath[i + 2])) {
+                j = 2;                      // Delete 2 spaces
+            }
+            unicodeMath = unicodeMath.substring(0, i) + unicodeMath.substring(i + j);
+        }
+    }
+    return unicodeMath
+}
+
 //////////////
 // PLUMBING //
 //////////////
 
-function escapeHTMLSpecialChars(str) {
-    var replacements = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;'
-    };
-    return str.replace(/[&<>]/g, tag => {
-        return replacements[tag] || tag;
-    });
-};
-
-function unicodemathml(unicodemath, displaystyle = false) {
+function unicodemathml(unicodemath, displaystyle) {
     debugGroup(unicodemath);
+    selanchor = selfocus = null
+    let k = unicodemath.length
+    if (unicodemath[0] == ' ' || unicodemath[k - 1] == ' ') {
+        unicodemath = unicodemath.trim()
+        k = unicodemath.length
+    }
+    if (isMathML(unicodemath)) {
+        if (unicodemath.startsWith('<mml:math') || unicodemath.startsWith('<m:math'))
+            unicodemath = removeMmlPrefixes(unicodemath);
+        return {mathml: unicodemath, details: {}};
+    } else if (unicodemath[0] == '$' || unicodemath.startsWith('\\[') ||
+        unicodemath.startsWith('\\(')) {
+        // Handle [La]TeX. Remove math-zone delimiters and define display style
+        let j = 2                           // For start delims '$$', '\[', '\)'
+        displaystyle = 1                    // display="block"
+
+        if (unicodemath[0] == '$') {
+            if (unicodemath[1] != '$') {
+                j = 1
+                displaystyle = 0            // display="inline"
+            }
+            if (unicodemath[k - 1] == '$')
+                k--                         // Set up to trim off '$'
+            if (unicodemath[k - 1] == '$')
+                k--
+        } else {
+            if (unicodemath[1] == '(')
+                displaystyle = 0            // display="inline"
+            if (unicodemath.endsWith('\\]') || unicodemath.endsWith('\\)'))
+                k -= 2                      // Set up to trim off end delims
+        }
+        unicodemath = TeX2UnicodeMath(unicodemath.substring(j, k))
+        if (unicodemath[0] == 'ⓓ' &&
+            getNonBlankChar(unicodemath, 1) != '{') {
+            // KaTeX may start with \displaystyle
+            displaystyle = 1
+            unicodemath = unicodemath.substring(1)
+        }
+        if (!testing)
+            console.log('unicodemath = ' + unicodemath)
+    }
+
+    let uast;
+    let t1s = performance.now();
     try {
-        var t1s = performance.now();
-        var uast = parse(unicodemath);
-        var t1e = performance.now();
+        uast = parse(unicodemath);
+    } catch (error) {
+        // Display unparsable string in red
+        uast = {unicodemath: {content: [{expr: [{colored: {color: '#F00', of: {text: unicodemath}}}]}], eqnumber: null}}
+        autoBuildUp = false                 // If called for autobuildup, return failure
+        if(!testing)
+            console.log(unicodemath + ' parse error: ' + error.name)
+    }
+    let jsonParse;                          // Initially undefined
+    let puast;
+    let mast;
+    try {
+        jsonParse = JSON.stringify(uast, undefined);
+        let t1e = performance.now();
         debugLog(uast);
 
-        var t2s = performance.now();
-        var puast = preprocess(displaystyle, uast);
-        var t2e = performance.now();
+        let dsty = {display: displaystyle, intent: ''};
+        let t2s = performance.now();
+        puast = preprocess(dsty, uast);
+        let t2e = performance.now();
         debugLog(puast);
 
-        var t3s = performance.now();
-        var mast = mtransform(displaystyle, puast);
-        var t3e = performance.now();
+        let t3s = performance.now();
+        dsty = displaystyle ? 1 : 0
+        // If unicodemath contains Arabic math char(s), signal RTL math zone.
+        // (there are a couple of nonmath obscure scripts that also have D83B)
+        if (unicodemath.indexOf('\uD83B') != -1)
+            dsty |= 2
+        mast = mtransform(dsty, puast);
+        if (selanchor && mast.math) {
+            mast.math.attributes.selanchor = '1'
+            selanchor = ''
+        }
+        let t3e = performance.now();
         debugLog(mast);
 
-        var t4s = performance.now();
-        var mathml = pretty(mast);
-        var t4e = performance.now();
+        let t4s = performance.now();
+        let mathml = pretty(mast);
+        let t4e = performance.now();
+        useMfenced = 0
+        mathml = mathml.replace(/<mtd><\/mtd>/g, '')
 
         debugGroup();
         return {
@@ -2215,7 +5509,8 @@ function unicodemathml(unicodemath, displaystyle = false) {
                 intermediates: {
                     parse:      uast,
                     preprocess: puast,
-                    transform:  mast
+                    transform:  mast,
+                    json:       jsonParse
                 }
             }
         };
@@ -2223,416 +5518,50 @@ function unicodemathml(unicodemath, displaystyle = false) {
         debugLog(error);
 
         // convert error to string and invert any private use area mappings
-        var strError = mapFromPrivate("" + error);
+        let strError = ''; // mapFromPrivate("" + error);
 
         // add variant of input with resolved control words, if any
-        if (typeof ummlConfig !== "undefined" && typeof ummlConfig.resolveControlWords !== "undefined" && ummlConfig.resolveControlWords && resolveCW(unicodemath) != unicodemath) {
-            strError = "(Resolved to \"" + resolveCW(unicodemath) + "\".) " + error;
-        }
+        //if (typeof ummlConfig !== "undefined" && typeof ummlConfig.resolveControlWords !== "undefined" && ummlConfig.resolveControlWords && resolveCW(unicodemath) != unicodemath) {
+        //    strError = "(Resolved to \"" + resolveCW(unicodemath) + "\".) " + error;
+        //}
 
+        autoBuildUp = false                 // If called for autobuildup, return failure
+        useMfenced = 0
         debugGroup();
         return {
             //mathml: `<math class="unicodemath" xmlns="http://www.w3.org/1998/Math/MathML"><merror><mrow><mtext>⚠ [${escapeHTMLSpecialChars(unicodemath)}] ${escapeHTMLSpecialChars(strError)}</mtext></mrow></merror></math>`,
             mathml: `<span class="unicodemathml-error"><span class="unicodemathml-error-unicodemath">${escapeHTMLSpecialChars(unicodemath)}</span> <span class="unicodemathml-error-message">${escapeHTMLSpecialChars(strError)}</span></span>`,
             details: {
-                error: error
+                intermediates: {            // Show what got defined
+                    parse: uast,            // At least uast is defined
+                    preprocess: puast,
+                    transform: mast,
+                    json: jsonParse
+                }
             }
         };
     }
 }
 
-
-
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////// LATEX /////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-// determine space width attribute values: x/18em, based on the following:
-// \quad = space equal to the current font size (= 18 mu)
-// \,    = 3/18 of \quad (= 3 mu)
-// \:    = 4/18 of \quad (= 4 mu)
-// \;    = 5/18 of \quad (= 5 mu)
-// \!    = -3/18 of \quad (= -3 mu)
-function spaceWidthL(x) {
-    var spaceWidths = ['', '\\:\\!','\\;\\!','\\,','\\:','\\;','\\,\\,','\\,\\:', null, '\\:\\;', null, null, null, null, null, null, null, null, '\\quad'];
-    return spaceWidths[x];
-}
-
-// TODO implement and use equivalent of fontSize() function
-
-var latexEscapes = {
-      "α": "\\alpha"
-    , "TODO": "TODO"
-/*
-<
-=
->
-∃
-∈
-∋
-∼
-≃
-≅
-≈
-≍
-≡
-≤
-≥
-≶
-≷
-≽
-≺
-≻
-≼
-⊂
-⊃
-⊆
-⊇
-⊑
-⊒
-≮
-≠
-≯
-∄
-∉
-∌
-≁
-≄
-≇
-≉
-≭
-≢
-≰
-≱
-≸
-≹
-⋡
-⊀
-⊁
-⋠
-⊄
-⊅
-⊈
-⊉
-⋢
-⋣
-etc.
-*/
-};
-// TODO use mathFonts variable, compute reverse mapping (either dynamically or statically, doesn't matter)
-
-// TODO actually call this function: operator, chars, doublestruck, opnary, eqnumber, ...?
-function latexEscape(chars) {
-    return Array.from(chars).map(c => {
-        if (c in latexEscapes) {
-            return latexEscapes[c];  // TODO wrap in {}?
-        } else {
-            return c;
-        }
-    }).join("");
-}
-
-//////////////////////////////
-// TRANSFORM & PRETTY-PRINT //
-//////////////////////////////
-
-// since LaTeX code generation is EXPERIMENTAL, there's no point building up an
-// ast yet – instead, this function does a whole bunch of nasty string
-// concatenation. note that this generates LaTeX as understood by MathJax,
-// see: https://math.meta.stackexchange.com/questions/5020/mathjax-basic-tutorial-and-quick-reference/
-
-// TODO generally wrap more stuff in {}
-// TODO map chars, numbers, operators, opnarys and maybe something else to latex escapes
-function ltransform(dsty, puast) {
-
-    // map transformation over lists, concatenate the results
-    if (Array.isArray(puast)) {
-        return puast.map(e => ltransform(dsty, e)).join("");
-    }
-
-    var key = k(puast);
-    var value = v(puast);
-
-    switch (key) {
-        case "unicodemath":
-
-            // use \(...\) and \[...\] instead of $...$ and $$...$$ since MathJax doesn't recognize $...$ (see http://docs.mathjax.org/en/latest/input/tex/delimiters.html)
-            var openDelimiter = dsty? "\\[" : "\\(";
-            var closeDelimiter = dsty? "\\]" : "\\)";
-            var requires = "\\require{cancel}"
-            if (value.eqnumber == null) {
-                return `${openDelimiter}${requires} ${ltransform(dsty, value.content)} ${closeDelimiter}`
-            } else {
-                var label = value.eqnumber.replace(/(^-\d-|^\d|^-\d|^--)/,'$1').replace(/[\W]/g, '-');
-                return `${openDelimiter} ${requires} ${ltransform(dsty, value.content)}\\tag{${value.eqnumber}}\\label{${label}} ${closeDelimiter}`;
-            }
-        case "newline":
-            return "\\\\\n";
-
-        case "expr":
-            return ltransform(dsty, value);
-
-        case "operator":
-            return value; // TODO map to latex escapes
-        case "negatedoperator":
-            return `\\cancel{${value}}`;
-
-        case "element":
-            return ltransform(dsty, value);
-
-        // TODO array
-
-        case "matrix":
-            return `\\begin{matrix}${ltransform(dsty, value)}\\end{matrix}`;
-        case "mrows":
-            return value.map(r => `${ltransform(dsty, r)} \\\\`).join("");
-        case "mrow":
-            // note that this is a matrix row, not a mathml <mrow>
-            return value.map(r => ltransform(dsty, r)).join(" & ");
-        case "mcol":
-            return ltransform(dsty, value);
-
-        case "nary":
-            return `${ltransform(dsty, value.limits)} ${ltransform(dsty, value.naryand)}`;
-        case "opnary":
-            return value;
-
-        case "phantom":
-            return "";  // TODO
-        case "smash":
-            return "";  // TODO
-
-        case "fraction":
-            var sym = value.symbol;
-            var of = value.of;
-            switch (sym) {
-                case "/":       // normal fraction ¹-₂
-                    return `\\frac{${ltransform(dsty, dropOutermostParens(of[0]))}}{${ltransform(dsty, dropOutermostParens(of[1]))}}`;
-                case "\u2044":  // skewed fraction ¹/₂
-                    return `{^{${ltransform(dsty, dropOutermostParens(of[0]))}}}/{_{${ltransform(dsty, dropOutermostParens(of[1]))}}}`;  // TODO improve
-                case "\u2215":  // linear fraction 1/2
-                    return `${ltransform(dsty, dropOutermostParens(of[0]))}/${ltransform(dsty, dropOutermostParens(of[1]))}`;
-                case "\u2298":  // small fraction
-                    return `{\\small \\frac{${ltransform(dsty, dropOutermostParens(of[0]))}}{${ltransform(dsty, dropOutermostParens(of[1]))}}}`;
-            }
-
-        case "atop":
-            return `\\substack{${ltransform(dsty, dropOutermostParens(value[0]))}\\\\ ${ltransform(dsty, dropOutermostParens(value[1]))}}`;  // TODO could be improved
-        case "binom":
-            return `{{${ltransform(dsty, dropOutermostParens(value.top))}} \\choose {${ltransform(dsty, dropOutermostParens(value.bottom))}}}`;
-
-        case "script":
-            switch (value.type) {
-                case "subsup":  // TODO don't pull primes up into superscript in preprocessing step
-                    var ret = `{${ltransform(dsty, value.base)}}`;
-                    if ("low" in value) {
-                        ret += `_{${ltransform(dsty, dropOutermostParens(value.low))}}`;
-                    }
-                    if ("high" in value) {
-                        ret += `^{${ltransform(dsty, dropOutermostParens(value.high))}}`;
-                    }
-                    return `{${ret}}`;
-                case "pre":
-                    var ret = "{}";
-                    if ("prelow" in value) {
-                        ret += `_{${ltransform(dsty, dropOutermostParens(value.prelow))}}`;
-                    } else if ("prehigh" in value) {
-                        ret += `_{${ltransform(dsty, dropOutermostParens(value.prehigh))}}`;
-                    } else {
-                        throw "neither presubscript nor presuperscript present in prescript";
-                    }
-
-                    ret = `{${ret}}`;
-                    ret += "\\!";
-
-                    ret += `{${ltransform(dsty, value.base)}}`;
-                    if ("low" in value) {
-                        ret += `_{${ltransform(dsty, value.low)}}`;
-                    }
-                    if ("high" in value) {
-                        ret += `^{${ltransform(dsty, value.high)}}`;
-                    }
-
-                    return `{${ret}}`;
-                case "abovebelow":
-                    var ret = `{${ltransform(dsty, value.base)}}`;
-                    if ("low" in value) {
-                        ret = `\\underset{${ltransform(dsty, dropOutermostParens(value.low))}}{${ret}}`;
-                    }
-                    if ("high" in value) {
-                        ret = `\\overset{${ltransform(dsty, dropOutermostParens(value.high))}}{${ret}}`;
-                    }
-                    return `{${ret}}`;
-                default:
-                    throw "invalid or missing script type";
-            }
-
-        case "enclosed":
-            return ltransform(dsty, value.of);  // TODO
-
-        case "abstractbox":
-            return ltransform(dsty, value.of);  // TODO
-
-        case "hbrack":
-            return ltransform(dsty, value.of);  // TODO
-
-        case "root":
-            return `\\sqrt[${ltransform(dsty, value.degree)}]{${ltransform(dsty, dropOutermostParens(value.of))}}`;
-        case "sqrt":
-            return `\\sqrt{${ltransform(dsty, dropOutermostParens(value))}}`;
-
-        case "function":
-            // TODO un-italicize function names – have some lookup for the usual latex escapes for lim, sin, etc., and emit the others as \text?
-            return `${ltransform(dsty, value.f)}${ltransform(dsty, value.of)}`;
-
-        case "text":
-            //return `\\text{\\detokenize{${value}}}`;  // \detokenize doesn't work in mathjax
-            return `\\text{${value}}`;
-
-        case "sizeoverride":
-            switch (value.size) {  // note that relative sizes are not really a thing afaik, so these are absolute
-                case "A":  // one size larger
-                    return `{\\large ${ltransform(dsty, value.of)}}`;
-                case "B":  // two sizes larger
-                    return `{\\Large ${ltransform(dsty, value.of)}}`;
-                case "C":  // one size smaller
-                    return `{\\small ${ltransform(dsty, value.of)}}`;
-                case "D":  // two sizes smaller
-                    return `{\\scriptsize ${ltransform(dsty, value.of)}}`;  // note that \footnotesize should come here, but doesn't exist in mathjax: https://github.com/mathjax/MathJax/issues/2039
-            }
-
-        case "colored":
-            return "{\\color{green}" + ltransform(dsty, value.of) + "}";  // TODO requires "TeX: { ... extensions: ["color.js"] }" in mathjax config
-        case "bgcolored":
-            return ltransform(dsty, value.of);  // TODO mathjax: \bbox[color]{content}
-        case "comment":
-            return "";
-        case "tt":
-            return `\\mathtt{${value}}`;
-
-        case "primed":
-            return `{${ltransform(dsty, value.base)}}^{${"\\prime".repeat(value.primes)}}`;
-
-        case "factorial":
-            return `${ltransform(dsty, value)}!`;
-
-        case "atoms":
-            return ltransform(dsty, value);
-        case "chars":
-            if (value.length == 1) {
-                return italicizeCharacters(value);
-            } else {
-                return value;
-            }
-
-        case "diacriticized":
-            return ltransform(dsty, value.base);  // TODO
-
-        case "spaces":
-            return ltransform(dsty, value);
-        case "space":
-            if (typeof value == 'number') {
-                return spaceWidthL(value);
-            } else if (value == 'digit') {
-                return "\\phantom{0}"
-            } else if (value == 'space') {
-                return "{\\ }";
-            } else {
-                throw "incorrect space"
-            }
-
-        case "number":
-            return value;
-
-        case "doublestruck":
-            switch (value) {
-                case "ⅅ":
-                    return "𝐷";
-                case "ⅆ":
-                    return "\\,𝑑";
-                case "ⅇ":
-                    return "𝑒";
-                case "ⅈ":
-                    return "𝑖";
-                case "ⅉ":
-                    return "𝑗";
-            }
-
-        case "bracketed":
-            return ltransform(dsty, value.content);  // TODO
-            // TODO | as \lvert/\rvert, || as \lVert/\rVert, others somehow too
-
-        default:
-            return `\\text{${JSON.stringify(puast)}}`;  // just output it as text for now
-    }
-}
 
 //////////////
 // PLUMBING //
 //////////////
 
-function unicodemathtex(unicodemath, displaystyle = false) {
-    debugGroup(unicodemath);
-    try {
-        var t1s = performance.now();
-        var uast = parse(unicodemath);
-        var t1e = performance.now();
-        debugLog(uast);
-
-        var t2s = performance.now();
-        var puast = preprocess(displaystyle, uast);
-        var t2e = performance.now();
-        debugLog(puast);
-
-        var t3s = performance.now();
-        var latex = ltransform(displaystyle, puast);
-        var t3e = performance.now();
-
-        debugGroup();
-        return {
-            latex: latex,
-            details: {
-                measurements: {
-                    parse:      t1e - t1s,
-                    preprocess: t2e - t2s,
-                    transform:  t3e - t3s,
-                    pretty:     t3e - t3s
-                },
-                intermediates: {
-                    parse:      uast,
-                    preprocess: puast
-                }
-            }
-        };
-    } catch(error) {
-        debugLog(error);
-
-        // convert error to string and invert any private use area mappings
-        var strError = mapFromPrivate("" + error);
-
-        // add variant of input with resolved control words, if any
-        if (typeof ummlConfig !== "undefined" && typeof ummlConfig.resolveControlWords !== "undefined" && ummlConfig.resolveControlWords && resolveCW(unicodemath) != unicodemath) {
-            strError = "(Resolved to \"" + resolveCW(unicodemath) + "\".) " + error;
-        }
-
-        debugGroup();
-        return {
-            mathml: `<span class="unicodemathml-error"><span class="unicodemathml-error-unicodemath">${escapeHTMLSpecialChars(unicodemath)}</span> <span class="unicodemathml-error-message">${escapeHTMLSpecialChars(strError)}</span></span>`,
-            details: {
-                error: error
-            }
-        };
-    }
-}
-
+root.doublestruckChar = doublestruckChar
+root.dump = dump
+root.foldMathItalic = foldMathItalic;
+root.foldMathItalics = foldMathItalics;
+root.foldMathAlphanumeric = foldMathAlphanumeric;
+root.getPartialMatches = getPartialMatches;
+root.isFunctionName = isFunctionName;
+root.italicizeCharacter = italicizeCharacter;
+root.italicizeCharacters = italicizeCharacters;
+root.MathMLtoUnicodeMath = MathMLtoUnicodeMath
+root.negs = negs;
+root.resolveCW = resolveCW;
 root.unicodemathml = unicodemathml;
-root.unicodemathtex = unicodemathtex;
+root.getUnicodeMath = getUnicodeMath
+root.controlWords = controlWords
 
 })(this);

@@ -4,10 +4,30 @@ var testing
 var selanchor
 var selfocus
 var useMfenced = 0                          // Generate recommended MathML
+var ummlConfig
 var emitDefaultIntents =
     typeof ummlConfig === "undefined" ||
     typeof ummlConfig.defaultIntents === "undefined" ||
     ummlConfig.defaultIntents;
+
+function convertUnicodeMathToMathML(uMath, config) {
+    const defaultConfig = {                 // Order same as configDescriptions
+        splitInput: true,
+        resolveControlWords: true,
+        displaystyle: true,
+        debug: true,
+        caching: true,
+        tracing: false,
+        forceMathJax: false,
+        defaultIntents: false,
+        speakSelectionEnds: false,
+        doubleStruckMode: "us-tech",
+        transposeChar: "T",
+    }
+    ummlConfig = JSON.parse(JSON.stringify(config ? config : defaultConfig))
+
+    return unicodemathml(uMath, ummlConfig.displaystyle)
+}
 
 function escapeHTMLSpecialChars(str) {
     const replacements = { '&': '&amp;', '<': '&lt;', '>': '&gt;' }
@@ -1700,9 +1720,10 @@ function resolveCW(unicodemath, noCustomCW) {
         if (cch > 3) {
             let mathStyle = '';
             let c = '';
-            if (cw.startsWith('Bbb')) {
+            if (cw.startsWith('Bbb') || cw.startsWith('double')) {
                 // Blackboard bold (double-struck)
                 mathStyle = 'Bbb';
+                cw = mathStyle + cw[cw.length - 1]
             } else if (cw.startsWith('script')) {
                 // Script
                 mathStyle = 'mscr'

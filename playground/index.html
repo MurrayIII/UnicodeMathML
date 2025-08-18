@@ -517,10 +517,11 @@
         client.onreadystatechange = function () {
             if (client.readyState === 4) {
                 try {
-                    ummlParser = peg.generate(client.responseText, { cache: ummlConfig.caching, trace: ummlConfig.tracing });
+                    ummlParser = peg.generate(client.responseText,
+                        {cache: ummlConfig.caching, trace: ummlConfig.tracing})
                 } catch (error) {
-                    document.write("Error during parser generation: " + error + "<br>");
-                    console.log(error);
+                    document.write("Error during parser generation: " + error + "<br>")
+                    console.log(error)
                 }
             }
         }
@@ -530,15 +531,14 @@
 
     <!-- playground stuff -->
     <script src="assets/lib/jquery.min.js"></script>
-    <script src="assets/charinfo.js"></script> <!--No need to avoid caching here: it's massive and the math subset changes rarely-->
+    <script src="assets/charinfo.js"></script> <!--No need to avoid caching charinfo.js: it's massive and the math subset changes rarely-->
     <script>loadUncachedScript("assets/dictation.js")</script>
     <script>loadUncachedScript("assets/speech.js")</script>
     <script>loadUncachedScript("assets/braille.js")</script>
     <script>loadUncachedScript("assets/TeX.js")</script>
     <script>
-        if (ummlConfig.forceMathJax) {
-            document.write(`<script id="MathJax-script" async src="assets/lib/mathjax/3/mml-svg.js"></scr` + 'ipt>');
-        }
+        if (ummlConfig.forceMathJax)
+            document.write(`<script id="MathJax-script" async src="assets/lib/mathjax/3/mml-svg.js"></scr` + 'ipt>')
     </script>
     <script>loadUncachedScript("assets/playground.js")</script>
 </body>

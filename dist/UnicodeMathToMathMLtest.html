@@ -1,0 +1,23 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>UnicodeMath to MathML test</title>
+</head>
+<body>
+    <p>
+        UnicodeMath to MathML test program<br />
+        Convert 1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²) to MathML
+    </p>
+    <div id="output"></div>
+    <script src="unicodemathml.js"></script>
+    <script src="unicodemathml-parser.js"></script>
+    <script>
+        let uMath = '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)'
+        let t = convertUnicodeMathToMathML(uMath)
+        console.log('uMath: ' + uMath + '\n' + 'MathML: ' + t.mathml)
+        let output = document.getElementById("output")
+        output.innerHTML = t.mathml
+    </script>
+</body>
+</html>
