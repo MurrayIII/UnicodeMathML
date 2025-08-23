@@ -226,7 +226,7 @@ Here \cap is the standard [La]TeX control word for entering ∩ but since \inter
 ## Output window editing
 You can enter equations and edit the built-up display in the output window as shown in this video
 
-<video src="help-images/Autobuildup4.mp4" style="display: block; 
+<video src="help-images/Autobuildup5.mp4" style="display: block;
            margin-left: auto; margin-right: auto;
            width: 90%;" controls/>
 

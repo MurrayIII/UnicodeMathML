@@ -282,7 +282,7 @@ You can work around this by running a static web server that's serving the root 
 The contents of `dist/` are generated as follows:
 
 1. Run the bash script `utils/bundle.sh` from the root directory of this repository.
-2. Open `utils/generate-parser.html` in any web browser (the caveats discussed in the "Local development" section above apply) and move the file that will be downloaded into `dist/`.
+2. Open `utils/generate-parser.html` in any web browser (the caveats discussed in the "Local development" section above apply) and move the file that will be downloaded into `dist/`. Note: to disable CORS, run Edge from command line: C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --user-data-dir=C:\msedge-dev-data\ --disable-web-security
 
 
 ## License

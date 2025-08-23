@@ -537,8 +537,10 @@
     <script>loadUncachedScript("assets/braille.js")</script>
     <script>loadUncachedScript("assets/TeX.js")</script>
     <script>
-        if (ummlConfig.forceMathJax)
-            document.write(`<script id="MathJax-script" async src="assets/lib/mathjax/3/mml-svg.js"></scr` + 'ipt>')
+        if (ummlConfig.forceMathJax) {
+            document.write(`<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@4/mml-svg.js"></scr` + 'ipt>')
+            //document.write(`<script id="MathJax-script" async src="assets/lib/mathjax/3/mml-svg.js"></scr` + 'ipt>')
+        }
     </script>
     <script>loadUncachedScript("assets/playground.js")</script>
 </body>
