@@ -4755,14 +4755,38 @@ function getSymbolControlWord(ch) {
     return cw
 }
 
+function getMathClass(cp) {
+    let mathclass = mathclasses[cp]
+    if (mathclass)
+        return mathclass
+    // Check math-class ranges. (Could be faster with binary search but
+    // doesn't seem to impact user experience)
+    let i = 0
+    if (cp[0] == '1') {                     // Plane 1
+        // Skip up to '1D400'
+        while (mathclassranges[i][0][0] != '1D400') {
+            i++
+            if (i >= mathclassranges.length)
+                return 'N'
+        }
+    }
+    for (; i < mathclassranges.length; i++) {
+        let mcr = mathclassranges[i]
+        if (cp <= mcr[0][1])
+            return cp < mcr[0][0] ? 'N' : mcr[1]
+    }
+    return 'N'
+}
+
 function getTooltip(ch) {
     let cp = ch.codePointAt(0).toString(16).padStart(4, '0').toUpperCase()
 
     // Lookup Unicode data for tooltip
     let tooltip = ''
     let cpd = getCodepointData(cp)
+    let name = cpd["name"]
 
-    if (!cpd["name"]) {
+    if (!name) {
         // Define data for some large ranges
         let cp = ch.codePointAt(0)
 
@@ -4770,17 +4794,19 @@ function getTooltip(ch) {
             if (cp < charRanges[i][0])
                 break
             if (cp <= charRanges[i][1]) {
-                cpd["name"] = charRanges[i][2] + '-' + cp.toString(16)
+                name = cpd["name"] = charRanges[i][2] + '-' + cp.toString(16)
                 cpd["block"] = charRanges[i][3]
                 cpd["category"] = charRanges[i][4]
             }
        }
     }
-    if (cpd["name"]) {
-        let name = cpd["name"]
+    if (name) {
+        let mathclass = getMathClass(cp)
+
         if (name[0] == '<')
             name = "&amp;lt;" + name.substring(1, name.length - 1) + "&amp;gt;"
-        tooltip = 'Name: ' + name + '<br>Block: ' + cpd["block"] + '<br>Category: ' + cpd["category"]
+        tooltip = 'Name: ' + name + '<br>Block: ' + cpd["block"] +
+            '<br>Category: ' + cpd["category"] + ',  Math Class: ' + mathclass
     } else {
         tooltip = "no info found"
     }
