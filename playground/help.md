@@ -1,6 +1,6 @@
-﻿[UnicodeMath](https://www.unicode.org/notes/tn28/UTN28-PlainTextMath-v3.2.pdf) is a linear representation of math that often resembles math notation and is easy to enter.
+﻿[UnicodeMath](https://www.unicode.org/notes/tn28/UTN28-PlainTextMath-v3.3.pdf) is a linear representation of math that often resembles math notation and is easy to enter.
 For example, a/b is UnicodeMath for <math><mrow><mfrac><mi>a</mi><mi>b</mi></mfrac><mo>.</mo></mrow></math>
-It works well in Microsoft desktop apps such as Word, PowerPoint, Outlook, and OneNote but it hasn't been generally available elsewhere.
+It works well in Microsoft desktop apps such as Word, PowerPoint, Outlook, and OneNote but it hasn't been widely available elsewhere.
 This open-source applet implements UnicodeMath on the web.
 
 ## Entering equations
@@ -45,7 +45,7 @@ This lets you enter the selected symbol (the one highlighted in blue) quickly by
 
 For example, if you type \al, you see
 
-<img src="help-images/autocl.png" style="display: block; 
+<img src="help-images/autocl.png" style="display: block;
            margin-left: auto; margin-right: auto;
            width: 25em"/>
  
@@ -54,7 +54,7 @@ If you want a different symbol in the dropdown, you can click on it, or you can 
 
 The math autocomplete menu helps you discover a LaTeX control word, and it speeds entry especially for long control words such as those in the dropdown
 
-<img src="help-images/autocllong.png" style="display: block; 
+<img src="help-images/autocllong.png" style="display: block;
            margin-left: auto; margin-right: auto;
            width: 25em"/>
 
@@ -164,7 +164,7 @@ Since most content authors don’t know MathML, we need a way to allow them to e
 To this end, UnicodeMathML has an output-window context-menu option that lets you tag entities with intents.
 For example, right-clicking on the 𝐸 in 𝐸 = 𝑚𝑐², you get the input box
 
-<img src="help-images/intentbox.png" style="display: block; 
+<img src="help-images/intentbox.png" style="display: block;
            margin-left: auto; margin-right: auto;
            width: 15em"/>
 
@@ -191,6 +191,7 @@ As you type into the input window, various conversions occur in the input window
 * Control words are converted to their symbols, e.g., \alpha → 𝛼
 
 These conversions aren't needed in the input window, but they make the input more readable.
+They also help in creating good looking UnicodeMath expressions for use in plain-text scenarios.
 ## Editing hot keys:
 | Hot key | Function    |
 | ------- | ----------- |
@@ -208,21 +209,13 @@ Unicode has [almost all math symbols](https://www.unicode.org/reports/tr25/) in 
 The symbol galleries located below the input and output windows contain the most common math symbols.
 You can enter a symbol in a gallery by clicking on it or by typing its control word as described in the _Entering symbols_ section above.
 
-Most symbols have LaTeX control-word tooltips.
-For example, in the codepoint window, hovering over the integral symbol ∫ displays
+Hovering over a symbol displays information about the symbol, specifically the Unicode code point, name, and block, as well as a LaTeX control word for entering the symbol and the symbol's math class. The symbol's Unicode category is defined in [Table 4-4](https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-4/#G124142) of the Unicode Standard and the symbol's math class is defined in the comments of [MathClass.txt](https://www.unicode.org/Public/math/revision-15/MathClass-15.txt), a file for Unicode Technical Report #25: _Unicode Support for Mathematics_.
+For example, hovering a script K (𝒦) displays
 
-<img src="help-images/CodePointHover.png" style="display: block; 
-           margin-left: auto; margin-right: auto;
-           width: 20em;"/>
- 
-Simlarly, hovering over the ∩ in the Binary operator gallery displays
+<img src="help-images/tooltip.png" style="display: block;
+           margin-left: auto; margin-right: auto; width:20em;"/>
 
-<img src="help-images/cupHover.png" style="display: block; 
-           margin-left: auto; margin-right: auto;
-           width: 20em;"/>
-  
-Here \cap is the standard [La]TeX control word for entering ∩ but since \intersection is easier to guess, it’s included too.
-
+Here the category "Lu" stands for upper-case letter and the math class "A" stands for alphabetic. 
 ## Output window editing
 You can enter equations and edit the built-up display in the output window as shown in this video
 
@@ -236,7 +229,6 @@ The copy hot key, Ctrl+c, copies the MathML for the selected content into the pl
 This enables you to paste built-up math equations into Word and other apps that interpret "plain-text" MathML as MathML rather than as plain text.
 Note: math autobuildup works with native MathML rendering; if MathJax is active, only Ctrl+c works.
 
-Currently arrow-key navigation needs work and there are other glitches.
 The implementation uses JavaScript to manipulate the MathML in the browser DOM.
 
 ## TeX macros
