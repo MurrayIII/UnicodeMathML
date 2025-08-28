@@ -454,7 +454,7 @@ const mathTeXs = [                          // Some cases aren't supported by Te
     '\\cos 𝜃=\\frac{1}{2}𝑒^{𝑖𝜃}+\\textrm{c.c.}',
     '(\\begin{matrix}𝑎&𝑏\\\\𝑐&𝑑\\end{matrix})',
     '|𝑥|=\\begin{cases}\\textrm{if }𝑥≥&0,&𝑥\\\\\\textrm{if }𝑥<&0,&−𝑥\\end{cases}',
-    '\\begin{aligned}10&𝑥+&3&𝑦=2\\\\3&𝑥+&13&𝑦=4\\end{aligned}',
+    '\\begin{align}10&𝑥+&3&𝑦=2\\\\3&𝑥+&13&𝑦=4\\end{align}',
     '\\abs{𝑎+𝑏}',
     '✎(#e01f32&𝛼)',                        // TeX has color?
     '☁(brown&𝑎+𝑏)',                        // TeX has backcolor?

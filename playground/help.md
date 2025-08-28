@@ -113,7 +113,7 @@ The only editing feature in the MathJax mode is Ctrl+c, which copies the MathML 
 A mouse or touchpad provides one way to move between and inside the various facilities. Another way is to use the Tab key. Since the app has myriad default Tab stops, users need a Tab hierarchy. The top of the hierarchy has the menu stops Help, Demo, Speak, Braille, TeX, Dictate, and About, followed by the Input and Output windows, Settings, History, math styles, and the symbol galleries. The galleries appear in alphabetical order, Accents, Arrows, Binary, etc. The Tab key navigates these stops in the forward direction, while Shift+Tab navigates in the backward direction. The Enter key activates the current stop's facility. In an activated facility, the left and right arrow keys move between the facility's options. The Enter key then runs the option. For an active symbol gallery, the Enter key inserts the current symbol. For most settings, the Enter key toggles the current option. For menu stops, the Enter key sends the associated hot key. Each change is accompanied by explanatory speech.
 
 ## UnicodeMath editing
-As you type into the input window, various conversions occur in the input window:
+When you type UnicodeMath into the input window, various conversions occur in the input window:
 * Letters are converted to math italic unless they 1) are part of a function name or of a control word (backslash followed by letters), or 2) follow a quote. For example, a → 𝑎
 * Numeric subscripts/superscripts are converted to Unicode subscript/superscript characters, respectively. For example, a_2 → 𝑎₂ and a^2 → 𝑎².
 * Numeric fractions are converted to Unicode numeric fractions. For example, 1/2 → ½
@@ -121,7 +121,7 @@ As you type into the input window, various conversions occur in the input window
 
 These conversions aren't needed in the input window, but they make the input more readable.
 They also help in creating good looking UnicodeMath expressions for use in plain-text scenarios.
-## Editing hot keys:
+## Editing hot keys
 | Hot key | Function    |
 | ------- | ----------- |
 | Ctrl+b  | Toggle the bold attribute. For example, select 𝑎 (U+1D44E), type Ctrl+b and get 𝒂 (U+1D482) as you can verify in the codepoint window. |
@@ -135,7 +135,7 @@ They also help in creating good looking UnicodeMath expressions for use in plain
 | Ctrl+z  | Undo |
 ## Symbol galleries
 Unicode has [almost all math symbols](https://www.unicode.org/reports/tr25/) in use today.
-The symbol galleries located below the input and output windows contain the most common math symbols.
+The symbol galleries located at the bottom of the web page contain the most common math symbols.
 You can enter a symbol in a gallery by clicking on it or by typing its control word as described in the _Entering symbols_ section above.
 
 Hovering over a symbol displays information about the symbol, specifically the Unicode code point, name, and block, as well as a LaTeX control word for entering the symbol and the symbol's math class. The symbol's Unicode category is defined in [Table 4-4](https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-4/#G124142) of the Unicode Standard and the symbol's math class is defined in the comments of [MathClass.txt](https://www.unicode.org/Public/math/revision-15/MathClass-15.txt), a file for Unicode Technical Report #25: _Unicode Support for Mathematics_.
@@ -152,7 +152,8 @@ You can enter equations and edit the built-up display in the output window as sh
            margin-left: auto; margin-right: auto;
            width: 90%;" controls/>
 
-This "in-place" editing mimics the [math editing experience](https://devblogs.microsoft.com/math-in-office/officemath/) in desktop Microsoft Word, Outlook, PowerPoint, and OneNote.
+This "in-place" editing mimics the [math editing experience](https://devblogs.microsoft.com/math-in-office/officemath/)
+in desktop Microsoft Word, Outlook, PowerPoint, OneNote, and in the Windows Calculator.
 The hot keys listed above work here too, as do the symbol galleries and the math autocomplete menus.
 The copy hot key, Ctrl+c, copies the MathML for the selected content into the plain-text copy slot, rather than copying the underlying plain text.
 This enables you to paste built-up math equations into Word and other apps that interpret "plain-text" MathML as MathML rather than as plain text.

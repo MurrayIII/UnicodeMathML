@@ -1785,6 +1785,10 @@ function resolveCW(unicodemath, noCustomCW) {
                 return symbol
             }
         }
+        if (cw.length == 6 && cw.startsWith('frac') && isAsciiDigit(cw[4]) &&
+            isAsciiDigit(cw[5])) {
+            return getUnicodeFraction(cw[4], cw[5])
+        }
         // Not a control word: display it in upright type
         return '"' + match + '"';
     });
