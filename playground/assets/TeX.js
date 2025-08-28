@@ -124,7 +124,7 @@ function TeX(value, noAddParens) {
             let symbol = 'matrix'
             intent = value.getAttribute('intent')
             if (intent == ':equations')
-                symbol = 'aligned'
+                symbol = 'align'
             if (value.parentElement.firstElementChild.textContent == '{' &&
                 (value.parentElement.childElementCount == 2 ||
                     !value.parentElement.lastElementChild.textContent) &&
@@ -537,7 +537,7 @@ function TeX(value, noAddParens) {
 /////////////////////////////
 
 const environments = {
-    'cases': 'Ⓒ', 'aligned': '█', 'pmatrix': '⒨', 'matrix': '■',
+    'cases': 'Ⓒ', 'align': '█', 'aligned': '█', 'pmatrix': '⒨', 'matrix': '■',
     'vmatrix': '⒱', 'bmatrix': 'ⓢ', 'Vmatrix': '⒩', 'Bmatrix': 'Ⓢ',
 }
 
@@ -697,6 +697,8 @@ function TeX2UMath(tex) {
                         // End of equation array
                         uniTeX += ')'
                         j = tex.indexOf('}', j + 2)
+                        if (j == -1)
+                            return uniTeX
                         i = j + 1
                         break
                     }

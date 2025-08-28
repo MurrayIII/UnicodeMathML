@@ -7,8 +7,14 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@4/mml-svg.js"></script>
     <script src="assets/lib/jquery.min.js"></script>
     <script src="jquery.toc.js"></script>
+    <style>
+        table, td, th {
+            border: 1px solid black;
+            margin: auto
+        }
+    </style>
 </head>
-<body style="max-width:60em">
+<body style="max-width:45em">
     <h1 id="welcome-to-unicodemathml" style="margin-top: 0px !important; margin-right: 0px; margin-bottom: 16px; margin-left: 0px; font-weight: 600; padding-bottom: 0.3em; font-size: 2em; border-bottom: 1px solid rgb(216, 222, 228); line-height: 1.25; color: rgb(36, 41, 47); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Helvetica, Arial, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; letter-spacing: normal; orphans: 2; text-align: start; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial;">Welcome to UnicodeMathML</h1>
     <ul data-toc data-toc-headings="h2,h3"></ul>
     <p>
@@ -26,7 +32,7 @@
         <li>Click on the Dictate button or type Alt+d, wait for the bell, and dictate the equation in English. You need to have Internet access, and you need to enunciate clearly. This option is also a work in progress but if you get it to work it’s the fastest entry method except for:</li>
         <li>Paste MathML into the input or output window.</li>
     </ol>
-    <h2>See and/or hear it in action</h2>
+    <h2>See, hear it in action</h2>
     <p>
         Click on the Demo button or type Alt+p in the input window to see it in action!
         Hit the space bar to pause the demo and hit it again to continue the demo.
@@ -230,6 +236,95 @@
     </p>
     <h2>Navigating the app</h2>
     <p>A mouse or touchpad provides one way to move between and inside the various facilities. Another way is to use the Tab key. Since the app has myriad default Tab stops, users need a Tab hierarchy. The top of the hierarchy has the menu stops Help, Demo, Speak, Braille, TeX, Dictate, and About, followed by the Input and Output windows, Settings, History, math styles, and the symbol galleries. The galleries appear in alphabetical order, Accents, Arrows, Binary, etc. The Tab key navigates these stops in the forward direction, while Shift+Tab navigates in the backward direction. The Enter key activates the current stop's facility. In an activated facility, the left and right arrow keys move between the facility's options. The Enter key then runs the option. For an active symbol gallery, the Enter key inserts the current symbol. For most settings, the Enter key toggles the current option. For menu stops, the Enter key sends the associated hot key. Each change is accompanied by explanatory speech.</p>
+    <h2>UnicodeMath editing</h2>
+    <p>As you type into the input window, various conversions occur in the input window:</p>
+    <ul>
+        <li>Letters are converted to math italic unless they 1) are part of a function name or of a control word (backslash followed by letters), or 2) follow a quote. For example, a → 𝑎</li>
+        <li>Numeric subscripts/superscripts are converted to Unicode subscript/superscript characters, respectively. For example, a_2 → 𝑎₂ and a^2 → 𝑎².</li>
+        <li>Numeric fractions are converted to Unicode numeric fractions. For example, 1/2 → ½</li>
+        <li>Control words are converted to their symbols, e.g., \alpha → 𝛼</li>
+    </ul>
+    <p>
+        These conversions aren't needed in the input window, but they make the input more readable.
+        They also help in creating good looking UnicodeMath expressions for use in plain-text scenarios.
+    </p>
+    <h2>Editing hot keys:</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Hot key</th>
+                <th>Function</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Ctrl+b</td>
+                <td>Toggle the bold attribute. For example, select 𝑎 (U+1D44E), type Ctrl+b and get 𝒂 (U+1D482) as you can verify in the codepoint window.</td>
+            </tr>
+            <tr>
+                <td>Ctrl+c</td>
+                <td>Copy the selected text to the clipboard.</td>
+            </tr>
+            <tr>
+                <td>Alt+h</td>
+                <td>Display the help page.</td>
+            </tr>
+            <tr>
+                <td>Ctrl+i</td>
+                <td>Toggle the italic attribute. If applied to a math italic character, this changes the character to the UnicodeMath way of representing ordinary text, i.e., put it inside quotes as in select 𝑎, Ctrl+i → “a”.</td>
+            </tr>
+            <tr>
+                <td>Alt+m</td>
+                <td>Toggle between displaying 1) UnicodeMath in the input window and MathML below the output window, and 2) MathML in the input window and UnicodeMath below the output window.</td>
+            </tr>
+            <tr>
+                <td>Ctrl+v</td>
+                <td>Paste plain text from the clipboard. If the text starts with &lt;math, &lt;m:math, or &lt;mml:math, the text is treated as MathML and builds up.</td>
+            </tr>
+            <tr>
+                <td>Ctrl+x</td>
+                <td>Copy the selected text to the clipboard, then delete the selected text.</td>
+            </tr>
+            <tr>
+                <td>Ctrl+y</td>
+                <td>Redo</td>
+            </tr>
+            <tr>
+                <td>Ctrl+z</td>
+                <td>Undo</td>
+            </tr>
+        </tbody>
+    </table>
+    <h2>Symbol galleries</h2>
+    <p>
+        Unicode has <a href="https://www.unicode.org/reports/tr25/">almost all math symbols</a> in use today.
+        The symbol galleries located below the input and output windows contain the most common math symbols.
+        You can enter a symbol in a gallery by clicking on it or by typing its control word as described in the <em>Entering symbols</em> section above.
+    </p>
+    <p>
+        Hovering over a symbol displays information about the symbol, specifically the Unicode code point, name, and block, as well as a LaTeX control word for entering the symbol and the symbol's math class. The symbol's Unicode category is defined in <a href="https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-4/#G124142">Table 4-4</a> of the Unicode Standard and the symbol's math class is defined in the comments of <a href="https://www.unicode.org/Public/math/revision-15/MathClass-15.txt">MathClass.txt</a>, a file for Unicode Technical Report #25: <em>Unicode Support for Mathematics</em>.
+        For example, hovering a script K (𝒦) displays
+    </p>
+    <p>
+        <img src="help-images/tooltip.png" style="display: block;
+           margin-left: auto; margin-right: auto; width:20em;" />
+    </p>
+    <p>Here the category &quot;Lu&quot; stands for upper-case letter and the math class &quot;A&quot; stands for alphabetic.</p>
+    <h2>Output window editing</h2>
+    <p>You can enter equations and edit the built-up display in the output window as shown in this video</p>
+    <p>
+        <video src="help-images/Autobuildup5.mp4" style="display: block;
+           margin-left: auto; margin-right: auto;
+           width: 90%;" controls />
+    </p>
+    <p>
+        This &quot;in-place&quot; editing mimics the <a href="https://devblogs.microsoft.com/math-in-office/officemath/">math editing experience</a> in desktop Microsoft Word, Outlook, PowerPoint, and OneNote.
+        The hot keys listed above work here too, as do the symbol galleries and the math autocomplete menus.
+        The copy hot key, Ctrl+c, copies the MathML for the selected content into the plain-text copy slot, rather than copying the underlying plain text.
+        This enables you to paste built-up math equations into Word and other apps that interpret &quot;plain-text&quot; MathML as MathML rather than as plain text.
+        Note: math autobuildup works with native MathML rendering; if MathJax is active, only Ctrl+c works.
+    </p>
+    <p>The implementation uses JavaScript to manipulate the MathML in the browser DOM.</p>
     <h2>Intents</h2>
     <p>
         UnicodeMathML generates <a href="https://w3c.github.io/mathml/">Presentation MathML 4</a>.
@@ -308,92 +403,6 @@
     &lt;mn&gt;2&lt;/mn&gt;&lt;/msup&gt;&lt;/mrow&gt;&lt;/mrow&gt;
 </code></pre>
     <p>Typing Atl+d speaks this as &quot;energy equals m c squared&quot;.</p>
-    <h2>UnicodeMath editing</h2>
-    <p>As you type into the input window, various conversions occur in the input window:</p>
-    <ul>
-        <li>Letters are converted to math italic unless they 1) are part of a function name or of a control word (backslash followed by letters), or 2) follow a quote. For example, a → 𝑎</li>
-        <li>Numeric subscripts/superscripts are converted to Unicode subscript/superscript characters, respectively. For example, a_2 → 𝑎₂ and a^2 → 𝑎².</li>
-        <li>Numeric fractions are converted to Unicode numeric fractions. For example, 1/2 → ½</li>
-        <li>Control words are converted to their symbols, e.g., \alpha → 𝛼</li>
-    </ul>
-    <p>These conversions aren't needed in the input window, but they make the input more readable. They also help in creating good looking UnicodeMath expressions for use in plain-text scenarios.</p>
-    <h2>Editing hot keys:</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Hot key</th>
-                <th>Function</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Ctrl+b</td>
-                <td>Toggle the bold attribute. For example, select 𝑎 (U+1D44E), type Ctrl+b and get 𝒂 (U+1D482) as you can verify in the codepoint window.</td>
-            </tr>
-            <tr>
-                <td>Ctrl+c</td>
-                <td>Copy the selected text to the clipboard.</td>
-            </tr>
-            <tr>
-                <td>Alt+h</td>
-                <td>Display the help page.</td>
-            </tr>
-            <tr>
-                <td>Ctrl+i</td>
-                <td>Toggle the italic attribute. If applied to a math italic character, this changes the character to the UnicodeMath way of representing ordinary text, i.e., put it inside quotes as in select 𝑎, Ctrl+i → “a”.</td>
-            </tr>
-            <tr>
-                <td>Alt+m</td>
-                <td>Toggle between displaying 1) UnicodeMath in the input window and MathML below the output window, and 2) MathML in the input window and UnicodeMath below the output window.</td>
-            </tr>
-            <tr>
-                <td>Ctrl+v</td>
-                <td>Paste plain text from the clipboard. If the text starts with &lt;math, &lt;m:math, or &lt;mml:math, the text is treated as MathML and builds up.</td>
-            </tr>
-            <tr>
-                <td>Ctrl+x</td>
-                <td>Copy the selected text to the clipboard, then delete the selected text.</td>
-            </tr>
-            <tr>
-                <td>Ctrl+y</td>
-                <td>Redo</td>
-            </tr>
-            <tr>
-                <td>Ctrl+z</td>
-                <td>Undo</td>
-            </tr>
-        </tbody>
-    </table>
-    <h2>Symbol galleries</h2>
-    <p>
-        Unicode has <a href="https://www.unicode.org/reports/tr25/">almost all math symbols</a> in use today.
-        The symbol galleries located below the input and output windows contain the most common math symbols.
-        You can enter a symbol in a gallery by clicking on it or by typing its control word as described in the <em>Entering symbols</em> section above.
-    </p>
-    <p>
-        Hovering over a symbol displays information about the symbol, specifically the Unicode code point, name, and block, as well as a LaTeX control word for entering the symbol and the symbol's math class. The symbol's Unicode category is defined in <a href="https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-4/#G124142">Table 4-4</a> of the Unicode Standard and the symbol's math class is defined in the comments of <a href="https://www.unicode.org/Public/math/revision-15/MathClass-15.txt">MathClass.txt</a>, a file for Unicode Technical Report #25: <em>Unicode Support for Mathematics</em>.
-        For example, hovering a script K (𝒦) displays
-    </p>
-    <p>
-        <img src="help-images/tooltip.png" style="display: block;
-           margin-left: auto; margin-right: auto;width:20em;" />
-    </p>
-    <p>Here the category &quot;Lu&quot; stands for upper-case letter and the math class &quot;A&quot; stands for alphabetic.</p>
-    <h2>Output window editing</h2>
-    <p>You can enter equations and edit the built-up display in the output window as shown in this video</p>
-    <p>
-        <video src="help-images/Autobuildup5.mp4" style="display: block;
-           margin-left: auto; margin-right: auto;
-           width: 90%;" controls />
-    </p>
-    <p>
-        This &quot;in-place&quot; editing mimics the <a href="https://devblogs.microsoft.com/math-in-office/officemath/">math editing experience</a> in desktop Microsoft Word, Outlook, PowerPoint, and OneNote.
-        The hot keys listed above work here too, as do the symbol galleries and the math autocomplete menus.
-        The copy hot key, Ctrl+c, copies the MathML for the selected content into the plain-text copy slot, rather than copying the underlying plain text.
-        This enables you to paste built-up math equations into Word and other apps that interpret &quot;plain-text&quot; MathML as MathML rather than as plain text.
-        Note: math autobuildup works with native MathML rendering; if MathJax is active, only Ctrl+c works.
-    </p>
-    <p>The implementation uses JavaScript to manipulate the MathML in the browser DOM.</p>
     <h2>TeX macros</h2>
     <p>You can use [La]TeX macros with [La]TeX input. Simple examples are:</p>
     <table>
@@ -417,7 +426,9 @@
             </tr>
         </tbody>
     </table>
-    <p>The last equation in the Examples gallery is LaTeX that defines a macro and then uses it: \[\def\g#1#2{#1f(#2)}\g\relax{x}=\int_{-\infty}^\infty \g\hat\xi,e^{2 \pi i \xi x} ,d\xi\]. This displays as</p>
+    <p>The last equation in the Examples gallery is LaTeX that defines a macro and then uses it:</p>
+    <p>\[\def\g#1#2{#1f(#2)}\g\relax{x}=\int_{-\infty}^\infty \g\hat\xi,e^{2 \pi i \xi x} ,d\xi\]</p>
+    <p>This displays as</p>
     <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><mi>𝑓</mi><mrow intent=":fenced"><mo>(</mo><mi>𝑥</mi><mo>)</mo></mrow><mo>=</mo><mrow intent=":nary($l,∞,$naryand)"><msubsup><mo>∫</mo><mrow arg="l"><mo>−</mo><mi>∞</mi></mrow><mi>∞</mi></msubsup><mrow arg="naryand"><mover accent="true"><mi>𝑓</mi><mo>̂</mo></mover><mrow intent=":fenced"><mo>(</mo><mi>𝜉</mi><mo>)</mo></mrow><mspace width="thinmathspace"></mspace></mrow></mrow><msup><mi>𝑒</mi><mrow><mn>2</mn><mi>𝜋</mi><mi>𝑖</mi><mi>𝜉</mi><mi>𝑥</mi></mrow></msup><mspace width="thinmathspace"></mspace><mi>𝑑</mi><mi>𝜉</mi></math></p>
     <p>LaTeX \newcommand syntax is also supported.</p>
     <h2>UnicodeMath selection attributes</h2>

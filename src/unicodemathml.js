@@ -993,10 +993,11 @@ const controlWords = {
     'Dd':               'ⅅ',	// 2145
     'Delta':            'Δ',	// 0394
     'Deltaeq':          '≜',    	// 225C
+    'Digamma':          'Ϝ',    // 03DC
     'Doteq':            '≑',    	// 2251
     'Downarrow':        '⇓',    	// 21D3
-    'Faraday':          '⑭',   // 2470
-    'Fourier':          '⑤',   // 2464
+    'Faraday':          '⑭',   // 2470 (𝛁⨯𝐄=−𝜕𝐁/𝜕𝑡)
+    'Fourier':          '⑤',   // 2464 (𝑓̂(𝜉)=∫_-∞^∞ 𝑓(𝑥)ⅇ^-2𝜋ⅈ𝑥𝜉 ⅆ𝑥)
     'Gamma':            'Γ',	// 0393
     'Im':               'ℑ',    	// 2111
     'Implication':      '⇒',	// 21D2
@@ -1092,8 +1093,8 @@ const controlWords = {
     'bigunion':         '⋃',    	// 22C3
     'bigvee':           '⋁',    	// 22C1
     'bigwedge':         '⋀',	    // 22C0
-    'binom':            '⒝',    // 249D
-    'binomial':         '⑧',    // 2467 Binomial expansion
+    'binom':            '⒝',   // 249D
+    'binomial':         '⑧',   // 2467 Binomial expansion
     'bmatrix':          'ⓢ',	// 24E2
     'bot':              '⊥',	// 22A5
     'bowtie':           '⋈',	    // 22C8
@@ -1216,6 +1217,8 @@ const controlWords = {
     'equalparallel':    '⋕',    // 22D5
     'equiv':            '≡',	// 2261
     'eta':              'η',	// 03B7
+    'eth':              'ð',    // 00F0
+    'euler':            'ℇ',    // 2107
     'exists':           '∃',	// 2203
     'expect':           '𝔼',	// 1D53C
     'fallingdotseq':    '≒',	// 2252
@@ -1477,6 +1480,7 @@ const controlWords = {
     'phi':              'ϕ',	// 03D5
     'pi':               'π',	// 03C0
     'pitchfork':        '⋔',	    // 22D4
+    'planck':           'ℏ',    // 210F (alias for hbar)
     'plasma':           '⑿',   // 247F
     'pm':               '±',	// 00B1
     'pmatrix':          '⒨',	// 24A8
@@ -1544,6 +1548,7 @@ const controlWords = {
     'rparen':           ')',    // 0029
     'rrect':            '▢',	// 25A2
     'rtimes':           '⋊',    	// 22CA
+    'rtriangle':        '⊿',	// 22BF
     'rvert':            '|',
     'sad':		        'ص',    // u0635
     'sdiv':             '⁄',	// 2044
@@ -1615,6 +1620,8 @@ const controlWords = {
     'tripleint':        '∭',	    // 222D
     'tripleprime':      '‴',	// 2034
     'true':             '⊨',	    // 22A8
+    'turnedF':          'Ⅎ',    // 2132
+    'turnediota':       '℩',    // 2129
     'tvec':             '⃡',	// 20E1
     'two':              '2',    // 0032
     'twoheadleftarrow': '↞',	    // 219E

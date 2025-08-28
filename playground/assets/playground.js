@@ -1151,13 +1151,15 @@ function autocomplete() {
         if (i < 0 || input.value[i] != '\\' && input.value[0] != '<' &&
             (!i || !isMathColor(input.value.substring(i - 1, i + 1)))) {
             // Not control word; check for italicization & operator autocorrect
-            let ch = italicizeCharacter(delim);
-            if (ch != delim) {
-                // Change ASCII or lower-case Greek letter to math-italic letter
-                input.value = input.value.substring(0, ip - 1) + ch + input.value.substring(ip);
-                if (ch.length > 1) { ip++; } // Bypass trail surrogate
-                input.selectionStart = input.selectionEnd = ip;
-                return false;
+            if (!isTeX(input.value)) {
+                let ch = italicizeCharacter(delim);
+                if (ch != delim) {
+                    // Change ASCII or lower-case Greek letter to math-italic letter
+                    input.value = input.value.substring(0, ip - 1) + ch + input.value.substring(ip);
+                    if (ch.length > 1) { ip++; } // Bypass trail surrogate
+                    input.selectionStart = input.selectionEnd = ip;
+                    return false;
+                }
             }
             return opAutocorrect(ip, delim);
         }
