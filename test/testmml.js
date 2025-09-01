@@ -521,6 +521,8 @@ const mathTeXs = [                          // Some cases aren't supported by Te
     '𝑎_{𝑏^𝑖+1}+1+𝑐^{𝑑_𝑖+2}+1',
 ]
 
+var buildOps = '⒜⒞Ⓒⓒ⒩⒨ⓢⓈ⒱⍁▒■█▭□▁¦├┤┬┴〖〗Ⅎ⁄∕⊘│∣✎☁⫷⫸ￗ'
+
 function testMathMLtoUnicodeMath() {
     let iSuccess = 0;
     let iFail = 0;
@@ -638,6 +640,45 @@ function ctrlZ(key) {
     event.key = key
     event.ctrlKey = true
     output.dispatchEvent(event)
+}
+
+function testInputEntry(text, result) {
+    input.value = ''
+    input.selectionStart = input.selectionEnd = 0
+
+    for (let i = 0; i < text.length; i++) {
+        if (text[i] == '→') {
+            const event = new Event('keydown')
+            event.key = 'ArrowRight'
+            event.ctrlKey = true
+            input.dispatchEvent(event)
+            continue
+        }
+        let ip = input.selectionStart
+        input.value = input.value.substring(0, ip) + text[i] + input.value.substring(ip)
+        ip += text[i].length
+        input.selectionEnd = input.selectionStart = ip
+        const event = new Event('input')
+        event.inputType = 'insertText'
+        input.dispatchEvent(event)
+        if (isMathML(input.value)) {
+            if (text[i] != '>') {
+            //    input.selectionStart += text[i].length
+            //    input.selectionEnd = input.selectionStart
+            }
+        } else {
+            if (text[i] == '{' && isTeX(input.value)) {
+                if (input.value[input.value.length - 1] != '}')
+                    console.log("TeX input { and } wasn't inserted")
+                else
+                    input.value = input.value.substring(0, input.value.length - 1)
+            }
+        }
+    }
+    if (input.value != result)
+        console.log("Result: " + input.value + '\n')
+    else
+        console.log(text + ' succeeded')
 }
 
 function dispatchText(text) {
@@ -1546,6 +1587,10 @@ function testHotKeys() {
         else
             console.log('getTooltip succeeded')
     }
+
+    testInputEntry('$\\frac{\\alpha}{\\beta}', '$\\frac{𝛼}{𝛽}')
+    testInputEntry('<math><mfrac><mi>\\alpha →<mi>\\beta ',
+                   '<math><mfrac><mi>𝛼</mi><mi>𝛽</mi></mfrac></math>')
 }
 
 const mathDictation = [

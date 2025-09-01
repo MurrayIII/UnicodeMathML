@@ -6,6 +6,7 @@ var output = document.getElementById("output");
 
 var activeTab = "source"
 var anchorNode
+var buildOps
 var contextmenuNode
 var dataAttributes = false           // True if data-arg attributes are present
 var focusNode
@@ -42,6 +43,13 @@ const charRanges = [
     [0x31350, 0x323AF, 'CJK Ideograph Extension H', 'CJK Unified Ideographs Extension H', 'Lo'],
     [0xF0000, 0xFFFFD, 'Plane 15 Private Use', 'Supplementary Private Use Area-A', 'Co'],
     [0x100000, 0x10FFFD, 'Plane 16 Private Use', 'Supplementary Private Use Area-B', 'Co']]
+
+const mmlTags = ['math', 'mfenced', 'mfrac', 'menclose', 'merror', 'mi',
+    'mlabeledtr', 'mn', 'mo', 'mover', 'mpadded', 'mphantom', 'mroot',
+    'mrow', 'ms', 'mscarry', 'msqrt', 'msub', 'msubsup', 'msup', 'mstyle',
+    'mspace', 'mtable', 'mtd', 'mtr', 'mtext', 'multiscripts', 'munder',
+    'munderover',
+    ]
 
 function getMathJaxMathMlNode() {
     /* MathJax output-element DOM has the form:
@@ -97,6 +105,18 @@ function removeSelMarkers(uMath) {
         uMath = uMath.substring(0, index1) + uMath.substring(end1, index2) + uMath.substring(end2)
     //console.log('uMathNoSelAttr = ' + uMath)
     return uMath
+}
+
+function isBuildOp(ch) {
+    if (!buildOps) {
+        let build = document.getElementById('Build').firstElementChild
+
+        buildOps = ''
+        for (let i = 3; i < build.childElementCount; i++)
+            buildOps += build.children[i].textContent
+        console.log('buildOps = ' + buildOps)
+    }
+    return buildOps.includes(ch)
 }
 
 function checkSelectionChangeEvent() {
@@ -944,6 +964,16 @@ input.addEventListener("keydown", function (e) {
     }
     if (e.ctrlKey) {
         switch (e.key) {
+            case 'ArrowRight':
+                if (isMathML(input.value) && input.value[input.selectionStart] == '<') {
+                    let j = input.value.indexOf('>', input.selectionStart + 2)
+                    if (j != -1) {
+                        // Bypass tag
+                        e.preventDefault()
+                        input.selectionStart = input.selectionEnd = j + 1
+                    }
+                }
+                return
             case 'b':                       // Ctrl+b
             case 'i':                       // Ctrl+i
                 // Toggle math bold/italic
@@ -1054,6 +1084,15 @@ input.addEventListener("keydown", function (e) {
             insertAtCursorPos(ch)
         }
     }
+    if (isTeX(input.value) && e.key == '}' &&
+        input.value[input.selectionStart] == '}' &&
+        input.selectionStart == input.selectionEnd &&
+        input.value[input.selectionStart - 1] != '\\') {
+        // Typing '}' at '}': move past '}'
+        e.preventDefault()
+        input.selectionStart = ++input.selectionEnd
+        return
+    }
 })
 
 // insert one or multiple characters at the current cursor position of
@@ -1101,6 +1140,12 @@ function autocomplete() {
         closeAutocompleteList();
 
         let delim = input.value[ip - 1];    // Last char entered
+        if (delim == '{' && isTeX(input.value)) {
+            // Insert matching brace
+            input.value = input.value.substring(0, ip) + '}' + input.value.substring(ip)
+            input.selectionStart = input.selectionEnd = ip
+            return
+        }
         let i = ip - 2;
         let oddQuote = delim == '"';
         let iQuote = 0;
@@ -1166,10 +1211,13 @@ function autocomplete() {
         if (ip <= 2)
             return false;                   // Autocorrect needs > 1 letter
 
-        if (!/[a-zA-Z0-9]/.test(delim)) {
+        if (!/[a-zA-Z0-9]/.test(delim) && input.value[i] == '\\') {
             // Delimiter entered: try to autocorrect control word
             let symbol = resolveCW(input.value.substring(i, ip - 1));
             let cch = symbol.length;
+
+            if (isTeX(input.value) && isBuildOp(symbol))
+                return                      // Only convert LaTeX control words
             if (symbol[0] != '\"' || cch == 3) {
                 // Control word found: replace it with its symbol and update
                 // the input selection
@@ -1189,44 +1237,65 @@ function autocomplete() {
             }
             return
         }
-        if (ip - i < 3)
-            return
 
-        let cw = input.value.substring(i + 1, ip);  // Partial control word
-        let autocl = createAutoCompleteMenu(cw, this.id, (e) => {
-            // User clicked matching control word: insert its symbol
-            let val = e.currentTarget.innerText;
-            let k = val.indexOf(' ')
-            let ch = val.substring(k + 1)
-            let desc = ''
-            if (ch.length == 1) {
-                if (inRange('①', ch, '⒇')) {
-                    let x = document.getElementById('Examples').childNodes[0]
-                    let iEx = ch.codePointAt(0) - 0x2460
-                    ch = x.childNodes[iEx].innerText
-                    desc = x.childNodes[iEx].dataset.tooltip
-                } else {
-                    ch = italicizeCharacter(ch)
+        if (input.value[i] == '\\') {
+            if (ip - i < 3)
+                return
+            let cw = input.value.substring(i + 1, ip);  // Partial control word
+            let autocl = createAutoCompleteMenu(cw, this.id, (e) => {
+                // User clicked matching control word: insert its symbol
+                let val = e.currentTarget.innerText;
+                let k = val.indexOf(' ')
+                let ch = val.substring(k + 1)
+                let desc = ''
+                if (ch.length == 1) {
+                    if (inRange('①', ch, '⒇')) {
+                        let x = document.getElementById('Examples').childNodes[0]
+                        let iEx = ch.codePointAt(0) - 0x2460
+                        ch = x.childNodes[iEx].innerText
+                        desc = x.childNodes[iEx].dataset.tooltip
+                    } else {
+                        ch = italicizeCharacter(ch)
+                    }
                 }
+                input.value = input.value.substring(0, i) + ch + input.value.substring(ip);
+                speak(desc ? desc : ch)
+                ip = i + ch.length
+                let code = ch.codePointAt(0)
+                if (code >= 0x2061 && code <= 0x2C00)
+                    opAutocorrect(ip, ch);
+                e.preventDefault()
+                e.stopPropagation()
+                closeAutocompleteList();
+                input.focus()
+                input.selectionStart = input.selectionEnd = ip;
+                draw()
+            })
+            // Append div element as a child of the input autocomplete container
+            if (autocl)
+                this.parentNode.appendChild(autocl)
+            return
+        }
+        if (isMathML(input.value) && delim == '>') {
+            // Insert closing MathML tag
+            let iEnd = ip - 1
+            if (input.value[i] != '<') {
+                // Ignore any attributes, i.e., back up to '<'
+                i = input.value.lastIndexOf('<', iEnd)
+                if (i == -1)
+                    return
+                iEnd = input.value.indexOf(' ', i + 1) // Find end of tag name
+                if (iEnd == -1)
+                    return
             }
-            input.value = input.value.substring(0, i) + ch + input.value.substring(ip);
-            speak(desc ? desc : ch)
-            ip = i + ch.length
-            let code = ch.codePointAt(0)
-            if (code >= 0x2061 && code <= 0x2C00)
-                opAutocorrect(ip, ch);
-            e.preventDefault()
-            e.stopPropagation()
-            closeAutocompleteList();
-            input.focus()
-            input.selectionStart = input.selectionEnd = ip;
-            draw()
-        })
-
-        // Append div element as a child of the input autocomplete container
-        if (autocl)
-            this.parentNode.appendChild(autocl);
-    })
+            let tag = input.value.substring(i + 1, iEnd)
+            if (mmlTags.includes(tag)) {
+                input.value = input.value.substring(0, ip) + '</' + tag +
+                    '>' + input.value.substring(ip)
+                input.selectionStart = input.selectionEnd = ip
+            }
+        }
+    })              // input.addEventListener('input', ...)
 }
 
 

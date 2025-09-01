@@ -153,7 +153,7 @@ You can enter equations and edit the built-up display in the output window as sh
            width: 90%;" controls/>
 
 This "in-place" editing mimics the [math editing experience](https://devblogs.microsoft.com/math-in-office/officemath/)
-in desktop Microsoft Word, Outlook, PowerPoint, OneNote, and in the Windows Calculator.
+in desktop Microsoft Word, Outlook, PowerPoint, and OneNote, and in the Windows Calculator.
 The hot keys listed above work here too, as do the symbol galleries and the math autocomplete menus.
 The copy hot key, Ctrl+c, copies the MathML for the selected content into the plain-text copy slot, rather than copying the underlying plain text.
 This enables you to paste built-up math equations into Word and other apps that interpret "plain-text" MathML as MathML rather than as plain text.
