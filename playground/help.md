@@ -118,9 +118,18 @@ When you type UnicodeMath into the input window, various conversions occur in th
 * Numeric subscripts/superscripts are converted to Unicode subscript/superscript characters, respectively. For example, a_2 → 𝑎₂ and a^2 → 𝑎².
 * Numeric fractions are converted to Unicode numeric fractions. For example, 1/2 → ½
 * Control words are converted to their symbols, e.g., \alpha → 𝛼
+* Some operator combinations are converted to Unicode operators, e.g., '+-' → '±' and '/=' → '≠'.
 
 These conversions aren't needed in the input window, but they make the input more readable.
 They also help in creating good looking UnicodeMath expressions for use in plain-text scenarios.
+
+## LaTeX and MathML editing
+When you type LaTeX or MathML into the input window, control words for Unicode symbols are autocorrected to the symbols,
+and some operator combinations are converted to Unicode operators. For example, '$\alpha/=\beta' → '$𝛼≠𝛽'.
+
+To facilitate entry, for LaTeX typing a \{ also inserts the closing }, and for MathML typing an opening tag also inserts the closing tag.
+Type Ctrl+→ to bypass a tag.
+
 ## Editing hot keys
 | Hot key | Function    |
 | ------- | ----------- |

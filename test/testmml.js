@@ -1588,9 +1588,9 @@ function testHotKeys() {
             console.log('getTooltip succeeded')
     }
 
-    testInputEntry('$\\frac{\\alpha}{\\beta}', '$\\frac{𝛼}{𝛽}')
-    testInputEntry('<math><mfrac><mi>\\alpha →<mi>\\beta ',
-                   '<math><mfrac><mi>𝛼</mi><mi>𝛽</mi></mfrac></math>')
+    testInputEntry('$\\frac{\\alpha}{\\beta}/=0', '$\\frac{𝛼}{𝛽}≠0')
+    testInputEntry('<math><mfrac><mi>\\alpha →<mi>\\beta →<mo>/=→<mn>0',
+                   '<math><mfrac><mi>𝛼</mi><mi>𝛽</mi><mo>≠</mo><mn>0</mn></mfrac></math>')
 }
 
 const mathDictation = [

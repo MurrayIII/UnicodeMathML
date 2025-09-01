@@ -861,6 +861,21 @@ function opAutocorrect(ip, delim) {
         input.selectionStart = input.selectionEnd = ip - 1;
         return false;
     }
+    if (input.value.substring(ip - 2, ip) in mappedPair) {
+        input.value = input.value.substring(0, ip - 2)
+            + mappedPair[input.value.substring(ip - 2, ip)] + input.value.substring(ip);
+        input.selectionStart = input.selectionEnd = ip - 1;
+        return false;
+    }
+    if (delim in mappedSingle) {
+        // Convert ASCII - and ' to Unicode minus (2212) and prime (2032)
+        input.value = input.value.substring(0, ip - 1) + mappedSingle[delim]
+            + input.value.substring(ip);
+        input.selectionStart = input.selectionEnd = ip;
+        return false;
+    }
+    if (isMathML(input.value) || isTeX(input.value))
+        return false
 
     if (ip > 4) {
         // Convert span of math-italic characters to ASCII and check for
@@ -880,13 +895,6 @@ function opAutocorrect(ip, delim) {
             return false;
         }
     }
-    if (input.value.substring(ip - 2, ip) in mappedPair) {
-        input.value = input.value.substring(0, ip - 2)
-            + mappedPair[input.value.substring(ip - 2, ip)] + input.value.substring(ip);
-        input.selectionStart = input.selectionEnd = ip - 1;
-        return false;
-    }
-
     if (ip >= 4) {                          // E.g., replace "𝑎^2+" by "𝑎²+"
         let n = getSubSupDigits(input.value, ip - 2, delim);
         if (n) {
@@ -896,13 +904,6 @@ function opAutocorrect(ip, delim) {
             input.selectionStart = input.selectionEnd = j;
             return false;
         }
-    }
-    if (delim in mappedSingle) {
-        // Convert ASCII - and ' to Unicode minus (2212) and prime (2032)
-        input.value = input.value.substring(0, ip - 1) + mappedSingle[delim]
-            + input.value.substring(ip);
-        input.selectionStart = input.selectionEnd = ip;
-        return false;
     }
     if (ip >= 4 && ' +-='.includes(delim) && input.value[ip - 3] == '/' &&
         (ip == 4 || !isAlphanumeric(input.value[ip - 5]))) {
@@ -1188,20 +1189,42 @@ function autocomplete() {
             return false
         }
         // Move back alphanumeric span
-        while (i > 0 && /[a-zA-Z0-9]/.test(input.value[i])) { i--; }
-
+        while (i > 0 && /[a-zA-Z0-9]/.test(input.value[i]))
+            i--
         if (input.value[i] == 'ⓐ')
             return false;                   // \arg: leave as is
 
-        if (i < 0 || input.value[i] != '\\' && input.value[0] != '<' &&
-            (!i || !isMathColor(input.value.substring(i - 1, i + 1)))) {
+        if (isMathML(input.value) && delim == '>') {
+            // Insert closing MathML tag
+            let iEnd = ip - 1
+            if (input.value[i] != '<') {
+                // Ignore any attributes, i.e., back up to '<'
+                i = input.value.lastIndexOf('<', iEnd)
+                if (i == -1)
+                    return
+                iEnd = input.value.indexOf(' ', i + 1) // Find end of tag name
+                if (iEnd == -1)
+                    return
+            }
+            let tag = input.value.substring(i + 1, iEnd)
+            if (mmlTags.includes(tag)) {
+                input.value = input.value.substring(0, ip) + '</' + tag +
+                    '>' + input.value.substring(ip)
+                input.selectionStart = input.selectionEnd = ip
+            }
+        }
+
+        if (i < 0 || input.value[i] != '\\' && (!i ||
+                !isMathColor(input.value.substring(i - 1, i + 1)))) {
             // Not control word; check for italicization & operator autocorrect
-            if (!isTeX(input.value)) {
+            if (input.value[0] != '<' && !isTeX(input.value)) {
                 let ch = italicizeCharacter(delim);
                 if (ch != delim) {
                     // Change ASCII or lower-case Greek letter to math-italic letter
-                    input.value = input.value.substring(0, ip - 1) + ch + input.value.substring(ip);
-                    if (ch.length > 1) { ip++; } // Bypass trail surrogate
+                    input.value = input.value.substring(0, ip - 1) + ch +
+                        input.value.substring(ip)
+                    if (ch.length > 1)
+                        ip++                    // Bypass trail surrogate
                     input.selectionStart = input.selectionEnd = ip;
                     return false;
                 }
@@ -1275,25 +1298,6 @@ function autocomplete() {
             if (autocl)
                 this.parentNode.appendChild(autocl)
             return
-        }
-        if (isMathML(input.value) && delim == '>') {
-            // Insert closing MathML tag
-            let iEnd = ip - 1
-            if (input.value[i] != '<') {
-                // Ignore any attributes, i.e., back up to '<'
-                i = input.value.lastIndexOf('<', iEnd)
-                if (i == -1)
-                    return
-                iEnd = input.value.indexOf(' ', i + 1) // Find end of tag name
-                if (iEnd == -1)
-                    return
-            }
-            let tag = input.value.substring(i + 1, iEnd)
-            if (mmlTags.includes(tag)) {
-                input.value = input.value.substring(0, ip) + '</' + tag +
-                    '>' + input.value.substring(ip)
-                input.selectionStart = input.selectionEnd = ip
-            }
         }
     })              // input.addEventListener('input', ...)
 }
