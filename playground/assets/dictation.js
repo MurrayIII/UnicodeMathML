@@ -679,9 +679,9 @@ function dictationToUnicodeMath(dictation) {
 						// Negation conversion
 						ch = negs[result[i + 1]]
 						i++
-					} else if (chPrev + ch in mappedPair) {
+					} else if (chPrev + ch in mappedPairs) {
 						// Mapped-pair conversion
-						ch = mappedPair[chPrev + ch]
+						ch = mappedPairs[chPrev + ch]
 						result1 = result1.substring(0, result1.length - 1)
 					}
 				}

@@ -861,9 +861,10 @@ function opAutocorrect(ip, delim) {
         input.selectionStart = input.selectionEnd = ip - 1;
         return false;
     }
-    if (input.value.substring(ip - 2, ip) in mappedPair) {
-        input.value = input.value.substring(0, ip - 2)
-            + mappedPair[input.value.substring(ip - 2, ip)] + input.value.substring(ip);
+    let mappedPairValue = mappedPairs[input.value.substring(ip - 2, ip)]
+    if (mappedPairValue) {
+        input.value = input.value.substring(0, ip - 2) + mappedPairValue +
+            input.value.substring(ip);
         input.selectionStart = input.selectionEnd = ip - 1;
         return false;
     }
@@ -937,7 +938,6 @@ input.addEventListener("focus", () => {
 input.addEventListener("blur", () => {
     selectionStart = input.selectionStart
     selectionEnd = input.selectionEnd
-    closeAutocompleteList()
 })
 
 input.addEventListener("keydown", function (e) {
@@ -1267,6 +1267,7 @@ function autocomplete() {
             let cw = input.value.substring(i + 1, ip);  // Partial control word
             let autocl = createAutoCompleteMenu(cw, this.id, (e) => {
                 // User clicked matching control word: insert its symbol
+                console.log('click input1')
                 let val = e.currentTarget.innerText;
                 let k = val.indexOf(' ')
                 let ch = val.substring(k + 1)
@@ -1307,9 +1308,10 @@ function autocomplete() {
 // AUTOCOMPLETE FUNCTIONS //
 ////////////////////////////
 
-// Symbols whose autocomplete options should be selected by default
-const commonSymbols = "αβδζθλχϕϵ⁡←∂√∞⒨■"; // 03B1 03B2 03B4 03B6 03B8 03BB 03C7 03D5 03F5 2061 2190 2202 221A 221E 24A8 25A0
-let currentFocus = -1;
+// Symbols whose autocomplete options should be selected by default (03B1 03B2
+// 03B4 03B6 03B8 03BB 03C7 03D5 03F5 2061 2190 2192 2202 221A 221E 24A8 25A0)
+const commonSymbols = "αβδζθλχϕϵ⁡←→∂√∞⒨■"
+let currentFocus = -1
 
 function closeAutocompleteList() {
     let x = document.getElementsByClassName("autocomplete-items")
@@ -2171,8 +2173,8 @@ function handleKeyboardInput(node, key, sel) {
             if (node.textContent == '/' && key in negs) {
                 node.textContent = key = negs[key]
                 nodeNewName = ''
-            } else if (node.textContent + key in mappedPair) {
-                node.textContent = key = mappedPair[node.textContent + key]
+            } else if (node.textContent + key in mappedPairs) {
+                node.textContent = key = mappedPairs[node.textContent + key]
                 nodeNewName = ''
             } else if (key in mappedSingle) {
                 key = mappedSingle[key]

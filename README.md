@@ -307,7 +307,7 @@ Lastly, the `docs/` subdirectory contains two PDF files:
 ## Changes in Murray Sargent's forked version
 Murray Sargent's forked version is located at https://github.com/MurrayIII/UnicodeMathML/tree/main.
 
-* All ASCII letters and Greek lower-case letters are converted to math italic unless they comprise a mathematical function name, e.g., a trigonometric function, are quoted, or are in an unrecognized control word.
+* For UnicodeMath input, all ASCII letters and Greek lower-case letters are converted to math italic unless they comprise a mathematical function name, e.g., a trigonometric function, are quoted, or are in an unrecognized control word.
 * The subscript and superscript operators apply to the variable or enclosed expression that immediately precedes them. For example, in “𝐸=𝑚𝑐^2”, the base of the superscript object is “𝑐”, not “𝑚𝑐”.
 * The integrand can be attached to the integral via a space or the “glue” operator ▒.
 * The trigonometric function names are defined by the expression
@@ -318,7 +318,7 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * A thin space is inserted in front of differential d or D only if it is preceded by one or more letters in the same run. Ideally the thin space should be added by the display engine along with the choice of math style (math italic, upright, double-struck italic) instead of by the converter. The MathML would then retain the original semantics.
 * Instead of displaying a large error message for a syntatically incorrect operator, display the operator in red. The user may be entering the whole expression and doesn't want to see an error message, but might like a hint that the syntax is wrong. For example, display “(a^2+” as “<span style="color:red">(</span>𝑎² +” with '(' in red instead of an error message.
 * The operator sequence /" isn't treated as a negated quote. Else "distance"/"time" won't convert into a fraction.
-* Upgrade to MathJax 3, which is noticably faster than MathJax 2.7.5 and doesn't flash an intermediate display.
+* Upgrade to MathJax 4, which is noticably faster than MathJax 2.7.5 and doesn't flash an intermediate display.
 * Replace all var declarations by set or const unless they are currently needed globally
 
 ## New features
@@ -356,9 +356,12 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Shade MathML argument containing the insertion point
 * Eliminate more superfluous mrows and support mrow-like elements, such as math and msqrt, with multiple children without an enclosing mrow
 * Implement a Tab hierarchy for Tab navigation since there are myriad default tab stops
+* Support roundhand and chancery scripts using STIX Two Math with stylistic sets ss01 and ss00.
 * Support simplified OfficeMath math paragraph using an mtable
 * Support Arabic math alphabetics and limited RTL math display
 * Support inputting a subset of [La]TeX including macros with arguments
+* Add mathclass to symbol tooltips
+* Facilitate entry of LaTeX and MathML by autocorrecting non-build-up control words to their Unicode symbols and converting some operator combinations to Unicode operators.
 
 ## MathML intent-attribute support:
 * Derivative and partial-derivative intent attributes are defined for Leipzig and Euler derivative notations.
@@ -371,6 +374,4 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 ## To do:
 * Improve drag-and-drop UI
 * Improve caret placement in output-display editing
-* Left-arrow navigation; Ctrl+arrow navigation. Polish right-arrow navigation
-* Shift+arrow selection
-* Improve Help content
+* Rewrite this README to explain the current UnicodeMathML app including its test facility.

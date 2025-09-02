@@ -57,11 +57,42 @@ const unicodeFractions = {
 
 const mappedSingle = { "-": "\u2212", "\'": "\u2032" }
 
-const mappedPair = {
-    "+-": "±", "<=": "≤", ">=": "≥", "~=": "≅", "~~": "≈", "::": "∷",
-    ":=": "≔", "<<": "≪", ">>": "≫", "−>": "→", "−+": "∓", "!!": "‼",
-    "...": "…", '≯=': '≱', '≮=': '≰', '⊀=': '⪱', '⊁=': '⪲', '⊄=': '⊈',
-    '⊅=': '⊉', '+−': '±', '−+': '∓',
+const mappedPairs = {  // Need ASCII - (U+002D) 𝑎𝑛𝑑 Unicode - (U+2212)
+    "+-": "±", "-+": "∓", "<=": "≤", ">=": "≥", "~=": "≅", "~~": "≈",
+    "::": "∷", ":=": "≔", "<<": "≪", ">>": "≫", '+−': '±', "−+": "∓",
+    "!!": "‼", "...": "…", '≯=': '≱', '≮=': '≰', '⊀=': '⪱', '⊁=': '⪲',
+    '⊄=': '⊈', '⊅=': '⊉', '<-': '←', '<−': '←', '->': '→', '−>': '→',
+}
+
+const negs = {  // Negative operators
+    '<': '≮',   // /<
+    '=': '≠',   // /=
+    '>': '≯',   // />
+    '~': '≁',   // /\sim
+    '∃': '∄',  // /\exists
+    '∈': '∉',  // /\in
+    '∋': '∌',  // /\ni
+    '∼': '≁',   // /\sim
+    '≃': '≄',   // /\simeq
+    '≅': '≇',   // /\cong
+    '≈': '≉',   // /\approx
+    '≍': '≭',   // /\asymp
+    '≡': '≢',   // /\equiv
+    '≤': '≰',   // /\le
+    '≥': '≱',   // /\ge
+    '≶': '≸',   // /\lessgtr
+    '≷': '≹',   // /\gtrless
+    '≺': '⊀',   // /\prec
+    '≻': '⊁',   // /\succ
+    '∥': '∦',  // /\nparallel
+    '⪯': '⪱',  // /\preceq
+    '⪰': '⪲',  // /\succeq
+    '⊂': '⊄',  // /\subset
+    '⊃': '⊅',  // /\supset
+    '⊆': '⊈',  // /\subseteq
+    '⊇': '⊉',  // /\supseteq
+    '⊑': '⋢',   // /\sqsubseteq
+    '⊒': '⋣'    // /\sqsupseteq
 }
 
 //                    0    1    2    3    4    5    6    7    8    9
@@ -973,7 +1004,7 @@ function debugLog(x) {
 const controlWords = {
     // From tech-note Appendix B. Character Keywords and Properties updated
     // with the Microsoft math autocorrect list and other sources. For a more
-    // complete list, see https://ctan.math.utah.edu/ctan/tex-archive/macros/unicodetex/latex/unicode-math/unimath-symbols.pdf
+    // complete list, see https://texdoc.org/serve/unimath-symbols.pdf/0.
     // Circled and parenthesized symbols index the Examples in the Playground.
     // E.g., \Faraday gives ⑭, which is the fourteenth Example: 𝛁⨯𝐄=−𝜕𝐁/𝜕𝑡.
     //                             Unicode code point
@@ -1046,8 +1077,8 @@ const controlWords = {
     'absvalue':         '⑨',   // 2468
     'acute':            '́',	    // 0301
     'adjoint':          '†',	// 2020
-    'ain':		        'ع',    // u0639
-    'alef':		        'ا',    // u0627
+    'ain':		        'ع',    // 0639
+    'alef':		        'ا',    // 0627
     'aleph':            'ℵ',    	// 2135
     'alpha':            'α',	// 03B1
     'amalg':            '∐',	    // 2210
@@ -1151,10 +1182,10 @@ const controlWords = {
     'curvearrowleft':   '↶',    	// 21B6
     'curvearrowright':  '↷',    	// 21B7
     'cwint':            '∱',    	// 2231
-    'dad':		        'ض',    // u0636
+    'dad':		        'ض',    // 0636
     'dag':              '†',	// 2020
     'dagger':           '†',	// 2020
-    'dal':		        'د',    // u062F
+    'dal':		        'د',    // 062F
     'daleth':           'ℸ',	    // 2138
     'dashleftarrow':    '⇠',	    // 21E0
     'dashrightarrow':   '⇢',	    // 21E2
@@ -1223,7 +1254,7 @@ const controlWords = {
     'expect':           '𝔼',	// 1D53C
     'fallingdotseq':    '≒',	// 2252
     'false':            '⊥',	// 22A5
-    'feh':		        'ف',    // u0641
+    'feh':		        'ف',    // 0641
     'five':             '5',    // 0035
     'forall':           '∀',	// 2200
     'forces':           '⊩',	    // 22A9
@@ -1235,7 +1266,7 @@ const controlWords = {
     'frown':            '⌢',	    // 2322
     'fullouterjoin':    '⟗',   // 27D7
     'funcapply':        '⁡',	    // 2061
-    'ghain':	        'غ',    // u063A
+    'ghain':	        'غ',    // 063A
     'gamma':            'γ',	// 03B3
     'ge':               '≥',	// 2265
     'geq':              '≥',	// 2265
@@ -1253,13 +1284,13 @@ const controlWords = {
     'gtrless':          '≷',    	// 2277
     'gtrsim':           '≳',    	// 2273
     'hadamard':         '⊙',	    // 2299
-    'hah':		        'ح',    // u062D
+    'hah':		        'ح',    // 062D
     'hairsp':           ' ',	    // 200A
     'half':             '½',    // 00BD
     'hat':              '̂',	    // 0302
     'hbar':             'ℏ',    	// 210F
     'heartsuit':        '♡',    	// 2661
-    'heh':		        'ه',    // u0647
+    'heh':		        'ه',    // 0647
     'hookleftarrow':    '↩',    	// 21A9
     'hookrightarrow':   '↪',    	// 21AA
     'hourglass':        '⏳',   // 23F3
@@ -1290,17 +1321,17 @@ const controlWords = {
     'isep':             '⁣',	    // 2063
     'itimes':           '⁢',	    // 2062
     'intercal':         '⊺',    // 22BA
-    'jeem':		        'ج',    // u062C
+    'jeem':		        'ج',    // 062C
     'jj':               'ⅉ',    	// 2149
     'jmath':            'ȷ',	// 0237
     'join':             '⋈',	    // 22C8
-    'kaf':		        'ك',    // u0643
+    'kaf':		        'ك',    // 0643
     'kappa':            'κ',	// 03BA
     'ket':              '⟩',	    // 27E9
-    'khah':		        'خ',    // u062E
+    'khah':		        'خ',    // 062E
     'kron':             '⊗',	    // 2297
     'labove':           '└',	// 2514
-    'lam':		        'ل',    // u0644
+    'lam':		        'ل',    // 0644
     'lambda':           'λ',	// 03BB
     'land':             '∧',	// 2227
     'langle':           '⟨',	    // 27E8
@@ -1337,7 +1368,7 @@ const controlWords = {
     'lesssim':          '≲',	    // 2272
     'lfloor':           '⌊',	    // 230A
     'lhvec':            '⃐',	// 20D0
-    'limit':            '⑫',    // 246B Definition of e
+    'limit':            '⑫',   // 246B Definition of e
     'll':               '≪',	// 226A
     'lll':              '⋘',	    // 22D8
     'lmoust':           '⎰',	    // 23B0
@@ -1365,7 +1396,7 @@ const controlWords = {
     'mean':             'μ',	// 03BC
     'measangle':        '∡',	    // 2221
     'medsp':            ' ',	    // 205F
-    'meem':		        'م',    // u0645
+    'meem':		        'م',    // 0645
     'meq':              '≞',	    // 225E
     'mid':              '∣',	    // 2223
     'models':           '⊨',	    // 22A8
@@ -1403,11 +1434,11 @@ const controlWords = {
     'nless':            '≮',	    // 226E
     'nlt':              '≮',	    // 226E
     'nmid':             '∤',	    // 2224
-    'nodotbeh':	        'ٮ',    // u066E
-    'nodotqaf':	        'ٯ',    // u066F
-    'nodotfeh':	        'ڡ',    // u06A1
-    'nodotnoon':        'ں',    // u06BA
-    'noon':		        'ن',    // u0646
+    'nodotbeh':	        'ٮ',    // 066E
+    'nodotqaf':	        'ٯ',    // 066F
+    'nodotfeh':	        'ڡ',    // 06A1
+    'nodotnoon':        'ں',    // 06BA
+    'noon':		        'ن',    // 0646
     'nor':              '⊽',	    // 22BD
     'norm':             '‖',	    // 2016
     'not':              '/',	// 002F
@@ -1501,13 +1532,13 @@ const controlWords = {
     'propto':           '∝',	// 221D
     'proves':           '⊢',    	// 22A2
     'psi':              'ψ',	// 03C8
-    'qaf':		        'ق',    // u0642
+    'qaf':		        'ق',    // 0642
     'qdrt':             '∜',	    // 221C
     'qed':              '∎',	    // 220E
     'qprime':           '⁗',	    // 2057
     'quad':             ' ',	// 2003
     'quadprime':        '⁗',	    // 2057
-    'quadratic':        '⑩',    // 24d9 Quadratic eq
+    'quadratic':        '⑩',   // 24d9 Quadratic eq
     'quarter':          '¼',    // 00BC
     'rad':              '㎭',   // 33AD
     'rangle':           '⟩',	    // 27E9
@@ -1520,7 +1551,7 @@ const controlWords = {
     'rceil':            '⌉',    	// 2309
     'rddots':           '⋰',	    // 22F0
     'rect':             '▭',	// 25AD
-    'reh':		        'ر',    // u0631
+    'reh':		        'ر',    // 0631
     'relax':            'ⓝ',   // TeX ignore
     'repeat':           '¯',	// 00AF
     'repeating':        '¯',	// 00AF
@@ -1536,7 +1567,7 @@ const controlWords = {
     'rightharpoonup':   '⇀',	    // 21C0
     'rightleftarrows':  '⇄',	    // 21C4
     'rightleftharpoons':'⇌',    	// 21CC
-    'rightouterjoin':   '⟖',    // 27D6
+    'rightouterjoin':   '⟖',   // 27D6
     'rightrightarrows': '⇉',    	// 21C9
     'rightthreetimes':  '⋌',	    // 22CC
     'righttriangle':    '⊿',	// 22BF
@@ -1550,14 +1581,14 @@ const controlWords = {
     'rtimes':           '⋊',    	// 22CA
     'rtriangle':        '⊿',	// 22BF
     'rvert':            '|',
-    'sad':		        'ص',    // u0635
+    'sad':		        'ص',    // 0635
     'sdiv':             '⁄',	// 2044
     'sdivide':          '⁄',	// 2044
     'searrow':          '↘',	    // 2198
-    'seen':		        'س',    // u0633
+    'seen':		        'س',    // 0633
     'setminus':         '∖',	    // 2216
     'seven':            '7',    // 0037
-    'sheen':	        'ش',    // u0634
+    'sheen':	        'ش',    // 0634
     'sigma':            'σ',	// 03C3
     'sim':              '∼',	    // 223C
     'simeq':            '≃',	    // 2243
@@ -1594,14 +1625,14 @@ const controlWords = {
     'supsup':           '⫖',	// 2AD6
     'surd':             '√',	// 221A
     'swarrow':          '↙',    	// 2199
-    'tah':		        'ط',    // u0637
+    'tah':		        'ط',    // 0637
     'tau':              'τ',	// 03C4
     'tautology':        '⊤',	    // 22A4
-    'thal':		        'ذ',    // u0630
-    'teh':		        'ت',    // u062A
+    'thal':		        'ذ',    // 0630
+    'teh':		        'ت',    // 062A
     'text':             'ⓣ',   // 24E3
     'textrm':           'ⓣ',   // 24E3
-    'theh':		        'ث',    // u062B
+    'theh':		        'ث',    // 062B
     'theta':            'θ',	// 03B8
     'thicksp':         '\u2005',// 2005
     'thinsp':           ' ',	    // 2009
@@ -1663,7 +1694,7 @@ const controlWords = {
     'vphantom':         '⇳',	// 21F3
     'vthicksp':         ' ',    	// 2004
     'waveeq':           '⑳',   // 2473 Schrödinger wave equation
-    'waw':		        'و',    // u0648
+    'waw':		        'و',    // 0648
     'wedge':            '∧',	// 2227
     'widehat':          '̂',	    // 0302
     'widetilde':        '̃',	    // 0303
@@ -1673,9 +1704,9 @@ const controlWords = {
     'xi':               'ξ',	// 03BE
     'xnor':             '⊙',	    // 2299
     'xor':              '⊕',	    // 2295
-    'yeh':		        'ي',    // u064A
-    'zah':		        'ظ',    // u0638
-    'zain':		        'ز',    // u0632
+    'yeh':		        'ي',    // 064A
+    'zah':		        'ظ',    // 0638
+    'zain':		        'ز',    // 0632
     'zero':             '0',    // 0030
     'zeta':             'ζ',	// 03B6
     'zwnj':             '‌',
@@ -1838,37 +1869,6 @@ function getPartialMatches(cw) {
     }
     return matches;
 }
-
-const negs = {
-    '<': '≮',   // /<
-    '=': '≠',   // /=
-    '>': '≯',   // />
-    '~': '≁',   // /\sim
-    '∃': '∄',  // /\exists
-    '∈': '∉',  // /\in
-    '∋': '∌',  // /\ni
-    '∼': '≁',   // /\sim
-    '≃': '≄',   // /\simeq
-    '≅': '≇',   // /\cong
-    '≈': '≉',   // /\approx
-    '≍': '≭',   // /\asymp
-    '≡': '≢',   // /\equiv
-    '≤': '≰',   // /\le
-    '≥': '≱',   // /\ge
-    '≶': '≸',   // /\lessgtr
-    '≷': '≹',   // /\gtrless
-    '≺': '⊀',   // /\prec
-    '≻': '⊁',   // /\succ
-    '∥': '∦',  // /\nparallel
-    '⪯': '⪱',  // /\preceq
-    '⪰': '⪲',  // /\succeq
-    '⊂': '⊄',  // /\subset
-    '⊃': '⊅',  // /\supset
-    '⊆': '⊈',  // /\subseteq
-    '⊇': '⊉',  // /\supseteq
-    '⊑': '⋢',   // /\sqsubseteq
-    '⊒': '⋣'    // /\sqsupseteq
-};
 
 function isFunctionName(fn) {
     if (!fn.length)

@@ -5,14 +5,14 @@ This open-source applet implements UnicodeMath on the web.
 
 ## Entering equations
 You can enter equations in five ways:
-1. Enter UnicodeMath into the input (upper-left) window. The corresponding 2D built-up math displays in the output (upper-right) window and the [MathML](https://w3c.github.io/mathml/) for it displays below the output window. This option is quite reliable.
+1. Enter UnicodeMath into the input (upper-left) window. The corresponding 2D built-up math displays in the output (upper-right) window and the [MathML](https://w3c.github.io/mathml/) for it displays below the output window.
 2. Enter Nemeth braille, [La]TeX, or MathML into the input window. If the input window starts with a Unicode braille character (U+2800..U+28FF), Nemeth ASCII braille input is enabled. If the input starts with $, $$, \\(, or \\[, LaTeX input is enabled. If it starts with <math, MathML input is enabled.
 3. Enter UnicodeMath directly into the output window. This option builds up what you enter automatically, similarly to entry in the Microsoft Office apps. This option is a work in progress.
 4. Click on the Dictate button or type Alt+d, wait for the bell, and dictate the equation in English. You need to have Internet access, and you need to enunciate clearly. This option is also a work in progress but if you get it to work it’s the fastest entry method except for:
 5. Paste MathML into the input or output window.
 
-## See and/or hear it in action
-Click on the Demo button or type Alt+p in the input window to see it in action!
+## See and/or hear UnicodeMath in action
+Click on the Demo button or type Alt+p in the input window to see UnicodeMath in action!
 Hit the space bar to pause the demo and hit it again to continue the demo.
 The arrow keys → and ← move to the next/previous equation, respectively.
 Escape and Alt+p stop the demo. One of the equations has the UnicodeMath 1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²), which builds up to
@@ -118,14 +118,35 @@ When you type UnicodeMath into the input window, various conversions occur in th
 * Numeric subscripts/superscripts are converted to Unicode subscript/superscript characters, respectively. For example, a_2 → 𝑎₂ and a^2 → 𝑎².
 * Numeric fractions are converted to Unicode numeric fractions. For example, 1/2 → ½
 * Control words are converted to their symbols, e.g., \alpha → 𝛼
-* Some operator combinations are converted to Unicode operators, e.g., '+-' → '±' and '/=' → '≠'.
+* Various operator pairs are converted to Unicode operators, e.g., '+-' → '±' and '/=' → '≠'.
+
+It's easier to type −> to get → than \rightarrow, although with math autocomplete you only need to type \ri<​tab> to get →.
+Similarly, typing +- is easy for getting ±. Many of these operator pairs are listed in the following table.
+
+| Pair | Symbol | Pair | Symbol |
+|------|--------|------|--------|
+| +- | ±| -+ | ∓ |
+| /= | ≠ | /~ | ≁ |
+| <​= | ≤| >= | ≥|
+| ~= | ≅| ~~ | ≈|
+| :: | ∷| := | ≔|
+| << | ≪| >> | ≫|
+| +− | ± | −+ | ∓ |
+| −> | → | &lt;− | ← |
+| !! | ‼ | ... | …|
+| ≯= | ≱ | ≮= | ≰|
+| ⊀= | ⪱| ⊁= | ⪲|
+| ⊄= | ⊈| ⊅= | ⊉ |
+| /< | ≮ | /> | ≯ |
+
+The combination <​− gives ←. If you want to enter an expression like 𝑎<−𝑏, put a space between the > and -.
 
 These conversions aren't needed in the input window, but they make the input more readable.
 They also help in creating good looking UnicodeMath expressions for use in plain-text scenarios.
 
 ## LaTeX and MathML editing
 When you type LaTeX or MathML into the input window, control words for Unicode symbols are autocorrected to the symbols,
-and some operator combinations are converted to Unicode operators. For example, '$\alpha/=\beta' → '$𝛼≠𝛽'.
+and various operator pairs are converted to Unicode operators. For example, '$\alpha/=\beta' → '$𝛼≠𝛽'.
 
 To facilitate entry, for LaTeX typing a \{ also inserts the closing }, and for MathML typing an opening tag also inserts the closing tag.
 Type Ctrl+→ to bypass a tag.
