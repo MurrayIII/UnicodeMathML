@@ -1006,17 +1006,18 @@ const controlWords = {
     // with the Microsoft math autocorrect list and other sources. For a more
     // complete list, see https://texdoc.org/serve/unimath-symbols.pdf/0.
     // Circled and parenthesized symbols index the Examples in the Playground.
-    // E.g., \Faraday gives ⑭, which is the fourteenth Example: 𝛁⨯𝐄=−𝜕𝐁/𝜕𝑡.
-    //                             Unicode code point
+    // E.g., \Faraday gives ⑭, which inserts the fourteenth Example: 𝛁⨯𝐄=−𝜕𝐁/𝜕𝑡.
+    // Circled letters are special UnicodeMath operators that build up to
+    // bracketed matrices, fractions, absolute values, cardinality, cases,
+    // binomial coefficients, etc.
+//  Control word      Symbol   Codepoint  Comment
     '2root':            '√',    // 221A
     '3root':            '∛',    // 221B
     '4root':            '∜',    // 221C
     'Angstrom':         'Å',   // 212B
     'Bar':              '̿',	// 033F
     'Biconditional':    '⇔',	// 21D4
-    'Bigl':             '',
-    'Bigr':             '',
-    'Bmatrix':          'Ⓢ',	// 24C8
+    'Bmatrix':          'Ⓢ',	// 24C8 (UnicodeMath op)
     'Bumpeq':           '≎',    	// 224E
     'Cap':              '⋒',    	// 22D2
     'Colon':            '∷',    	// 2237
@@ -1034,7 +1035,7 @@ const controlWords = {
     'Implication':      '⇒',	// 21D2
     'Implies':          '⇒',	// 21D2
     'Intersection':     '⋂',    	// 22C2
-    'InverseFT':        '⒁',   // 2481
+    'InverseFT':        '⒁',   // 2481 (LaTeX example)
     'Join':             '⨝',   // 2A1D
     'Lambda':           'Λ',	// 039B
     'Langle':           '⟪',    	// 27EA
@@ -1056,7 +1057,7 @@ const controlWords = {
     'Rightarrow':       '⇒',	// 21D2
     'Rrightarrow':      '⇛',	    // 21DB
     'Rsh':              '↱',    	// 21B1
-    'SHO':              '⑽',   // 247D simple harmonic oscillator
+    'SHO':              '⑽',   // 247D (𝑥̈+2𝛾𝑥̇+𝜔²𝑥=0)
     'Sigma':            'Σ',	// 03A3
     'Subset':           '⋐',    	// 22D0
     'Supset':           '⋑',    	// 22D1
@@ -1069,12 +1070,12 @@ const controlWords = {
     'VDash':            '⊫',	    // 22AB
     'Vdash':            '⊩',	    // 22A9
     'Vert':             '‖',	    // 2016
-    'Vmatrix':          '⒩',	// 24A9
+    'Vmatrix':          '⒩',	// 24A9 (UnicodeMath op)
     'Vvdash':           '⊪',	    // 22AA
     'Xi':               'Ξ',	// 039E
     'above':            '┴',	// 2534
-    'abs':              '⒜',	// 249C
-    'absvalue':         '⑨',   // 2468
+    'abs':              '⒜',	// 249C (UnicodeMath op)
+    'absvalue':         '⑨',   // 2468 (|𝑥|=Ⓒ("if "𝑥>=&0,&𝑥@"if "𝑥<&0,&-𝑥))
     'acute':            '́',	    // 0301
     'adjoint':          '†',	// 2020
     'ain':		        'ع',    // 0639
@@ -1091,7 +1092,7 @@ const controlWords = {
     'approx':           '≈',	// 2248
     'approxeq':         '≊',    	// 224A
     'arc':              '⏜',	    // 23DC
-    'arg':              'ⓐ',   // 24D0
+    'arg':              'ⓐ',   // 24D0 (UnicodeMath op)
     'asmash':           '⬆',    	// 2B06
     'ast':              '∗',    	// 2217
     'asymp':            '≍',    	// 224D
@@ -1124,9 +1125,9 @@ const controlWords = {
     'bigunion':         '⋃',    	// 22C3
     'bigvee':           '⋁',    	// 22C1
     'bigwedge':         '⋀',	    // 22C0
-    'binom':            '⒝',   // 249D
-    'binomial':         '⑧',   // 2467 Binomial expansion
-    'bmatrix':          'ⓢ',	// 24E2
+    'binom':            '⒝',   // 249D (UnicodeMath op)
+    'binomial':         '⑧',   // 2467 ((𝑎+𝑏)^𝑛=∑_(𝑘=0)^𝑛 𝑛⒞𝑘 𝑎^𝑘 𝑏^(𝑛−𝑘))
+    'bmatrix':          'ⓢ',	// 24E2 (UnicodeMath op)
     'bot':              '⊥',	// 22A5
     'bowtie':           '⋈',	    // 22C8
     'box':              '□',	// 25A1
@@ -1142,8 +1143,8 @@ const controlWords = {
     'by':               '×',	// 00D7
     'cancel':           '╱',	// 2571
     'cap':              '∩',	// 2229
-    'card':             'ⓒ',   // 24D2
-    'cases':            'Ⓒ',	// 24B8
+    'card':             'ⓒ',   // 24D2 (UnicodeMath op)
+    'cases':            'Ⓒ',	// 24B8 (UnicodeMath op)
     'cbrt':             '∛',	    // 221B
     'ccwint':           '⨑',    // 2A11
     'cdot':             '⋅',	    // 22C5
@@ -1151,7 +1152,7 @@ const controlWords = {
     'cents':            '¢',    // 00A2
     'check':            '̌',	    // 030C
     'chi':              'χ',	// 03C7
-    'choose':           '⒞',	// 249E
+    'choose':           '⒞',	// 249E (UnicodeMath op)
     'circ':             '∘',	    // 2218
     'circeq':           '≗',    	// 2257
     'circle':           '◯',	// 25EF
@@ -1197,18 +1198,18 @@ const controlWords = {
     'dddot':            '⃛',	// 20DB
     'ddot':             '̈',	    // 0308
     'ddots':            '⋱',	    // 22F1
-    'def':              'ⓜ',   // 24DC
+    'def':              'ⓜ',   // 24DC (UnicodeMath op)
     'defeq':            '≝',	    // 225D
     'deg':              '°',	// 00B0
     'degc':             '℃',	// 2103
     'degf':             '℉',	    // 2109
     'degree':           '°',	// 00B0
     'delta':            'δ',	// 03B4
-    'det':              '⒱',	// 24B1
+    'det':              '⒱',	// 24B1 (UnicodeMath op)
     'diamond':          '⋄',	    // 22C4
     'diamondsuit':      '♢',	    // 2662
     'directsum':        '⊕',	    // 2295
-    'displaystyle':     'ⓓ',   // 24D3
+    'displaystyle':     'ⓓ',   // 24D3 (UnicodeMath op)
     'div':              '÷',	// 00F7
     'divide':           '∣',	    // 2223
     'divideontimes':    '⋇',	    // 22C7
@@ -1311,9 +1312,9 @@ const controlWords = {
     'infinity':         '∞',	// 221E
     'infty':            '∞',	// 221E
     'int':              '∫',	// 222B
-    'integral':         '⑦',   // 2466 Mode locking eq
-    'integralG':        '⑪',   // 246A Integral over Gaussian
-    'intent':           'ⓘ',   // 24D8
+    'integral':         '⑦',   // 2466 (1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²))
+    'integralG':        '⑪',   // 246A (∫_-∞^∞ 𝑒^-𝑥² ⅆ𝑥=√𝜋)
+    'intent':           'ⓘ',   // 24D8 (UnicodeMath op)
     'intercal':         '⊺',	    // 22BA
     'intersection':     '∩',	// 2229
     'iota':             'ι',	// 03B9
@@ -1368,7 +1369,7 @@ const controlWords = {
     'lesssim':          '≲',	    // 2272
     'lfloor':           '⌊',	    // 230A
     'lhvec':            '⃐',	// 20D0
-    'limit':            '⑫',   // 246B Definition of e
+    'limit':            '⑫',   // 246B (lim_(𝑛→∞) (1+1/𝑛)^𝑛=𝑒)
     'll':               '≪',	// 226A
     'lll':              '⋘',	    // 22D8
     'lmoust':           '⎰',	    // 23B0
@@ -1388,7 +1389,7 @@ const controlWords = {
     'lrhar':            '⇋',	    // 21CB
     'ltimes':           '⋉',    	// 22C9
     'lvec':             '⃖',	// 20D6
-    'lvert':            '|',
+    'lvert':            '|',    // 007C
     'mapsto':           '↦',	    // 21A6
     'mapstoleft':       '↤',	    // 21A4
     'mathparagraph':    '¶',    // 00B6
@@ -1423,7 +1424,7 @@ const controlWords = {
     'neq':              '≠',	// 2260
     'nequiv':           '≢',	// 2262
     'nexists':          '∄',	    // 2204
-    'newcommand':       'ⓜ',   // 24DC
+    'newcommand':       'ⓜ',   // 24DC (UnicodeMath op)
     'ngeq':             '≱',	    // 2271
     'ngt':              '≯',	    // 226F
     'ni':               '∋',	// 220B
@@ -1483,7 +1484,7 @@ const controlWords = {
     'odash':            '⊝',	    // 229D
     'odot':             '⊙',	    // 2299
     'oeq':              '⊜',	    // 229C
-    'of':               '▒',	// 2592
+    'of':               '▒',	// 2592 (UnicodeMath op)
     'oiiint':           '∰',	    // 2230
     'oiint':            '∯',    	// 222F
     'oint':             '∮',	// 222E
@@ -1512,9 +1513,9 @@ const controlWords = {
     'pi':               'π',	// 03C0
     'pitchfork':        '⋔',	    // 22D4
     'planck':           'ℏ',    // 210F (alias for hbar)
-    'plasma':           '⑿',   // 247F
+    'plasma':           '⑿',   // 247F (𝑍(𝛾+𝑖𝜔−𝑖𝜈)=𝑖/√𝜋 ∫_−∞^∞ 𝑒^(−(𝜔−𝜔′)^2 \/(Δ𝜔)^2)/(𝛾+𝑖(𝜔′−𝜈)) ⅆ𝜔′)
     'pm':               '±',	// 00B1
-    'pmatrix':          '⒨',	// 24A8
+    'pmatrix':          '⒨',	// 24A8 (UnicodeMath op)
     'powerset':         '℘',	    // 2118
     'pppprime':         '⁗',	    // 2057
     'ppprime':          '‴',	// 2034
@@ -1538,7 +1539,7 @@ const controlWords = {
     'qprime':           '⁗',	    // 2057
     'quad':             ' ',	// 2003
     'quadprime':        '⁗',	    // 2057
-    'quadratic':        '⑩',   // 24d9 Quadratic eq
+    'quadratic':        '⑩',   // 24d9 (𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎)
     'quarter':          '¼',    // 00BC
     'rad':              '㎭',   // 33AD
     'rangle':           '⟩',	    // 27E9
@@ -1552,7 +1553,7 @@ const controlWords = {
     'rddots':           '⋰',	    // 22F0
     'rect':             '▭',	// 25AD
     'reh':		        'ر',    // 0631
-    'relax':            'ⓝ',   // TeX ignore
+    'relax':            'ⓝ',   // 24DD (UnicodeMath op)
     'repeat':           '¯',	// 00AF
     'repeating':        '¯',	// 00AF
     'revpilcrow':       '⁋',    // 204B
@@ -1575,12 +1576,12 @@ const controlWords = {
     'risingdotseq':     '≓',	    // 2253
     'rlhar':            '⇌',	    // 21CC
     'rmoust':           '⎱',	    // 23B1
-    'root':             '⒭',	// 24AD
+    'root':             '⒭',	// 24AD (UnicodeMath op)
     'rparen':           ')',    // 0029
     'rrect':            '▢',	// 25A2
     'rtimes':           '⋊',    	// 22CA
     'rtriangle':        '⊿',	// 22BF
-    'rvert':            '|',
+    'rvert':            '|',    // 007C
     'sad':		        'ص',    // 0635
     'sdiv':             '⁄',	// 2044
     'sdivide':          '⁄',	// 2044
@@ -1630,8 +1631,8 @@ const controlWords = {
     'tautology':        '⊤',	    // 22A4
     'thal':		        'ذ',    // 0630
     'teh':		        'ت',    // 062A
-    'text':             'ⓣ',   // 24E3
-    'textrm':           'ⓣ',   // 24E3
+    'text':             'ⓣ',   // 24E3 (UnicodeMath op)
+    'textrm':           'ⓣ',   // 24E3 (UnicodeMath op)
     'theh':		        'ث',    // 062B
     'theta':            'θ',	// 03B8
     'thicksp':         '\u2005',// 2005
@@ -1690,10 +1691,10 @@ const controlWords = {
     'vee':              '∨',	// 2228
     'vert':             '|',	// 007C
     'vinculum':         '¯',	// 00AF
-    'vmatrix':          '⒱',	// 24B1
+    'vmatrix':          '⒱',	// 24B1 (UnicodeMath op)
     'vphantom':         '⇳',	// 21F3
     'vthicksp':         ' ',    	// 2004
-    'waveeq':           '⑳',   // 2473 Schrödinger wave equation
+    'waveeq':           '⑳',   // 2473 (𝑖ℏ 𝜕𝜓(𝑥,𝑡)/𝜕𝑡 =[−ℏ²/2𝑚 𝜕²/𝜕𝑥²+𝑉(𝑥,𝑡)]𝜓(𝑥,𝑡))
     'waw':		        'و',    // 0648
     'wedge':            '∧',	// 2227
     'widehat':          '̂',	    // 0302
@@ -1709,8 +1710,8 @@ const controlWords = {
     'zain':		        'ز',    // 0632
     'zero':             '0',    // 0030
     'zeta':             'ζ',	// 03B6
-    'zwnj':             '‌',
-    'zwsp':             '​',
+    'zwnj':             '‌',// 200C
+    'zwsp':             '​',// 200B
 };
 
 // replace control words with the specific characters. note that a control word
