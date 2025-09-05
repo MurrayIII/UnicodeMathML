@@ -3,7 +3,7 @@ For example, a/b is UnicodeMath for <math><mrow><mfrac><mi>a</mi><mi>b</mi></mfr
 It works well in Microsoft desktop apps such as Word, PowerPoint, Outlook, and OneNote but it hasn't been widely available elsewhere.
 This open-source applet implements UnicodeMath on the web.
 
-## Entering equations
+## 1. Entering equations
 You can enter equations in five ways:
 1. Enter UnicodeMath into the input (upper-left) window. The corresponding 2D built-up math displays in the output (upper-right) window and the [MathML](https://w3c.github.io/mathml/) for it displays below the output window.
 2. Enter Nemeth braille, [La]TeX, or MathML into the input window. If the input window starts with a Unicode braille character (U+2800..U+28FF), Nemeth ASCII braille input is enabled. If the input starts with $, $$, \\(, or \\[, LaTeX input is enabled. If it starts with <math, MathML input is enabled.
@@ -11,7 +11,7 @@ You can enter equations in five ways:
 4. Click on the Dictate button or type Alt+d, wait for the bell, and dictate the equation in English. You need to have Internet access, and you need to enunciate clearly. This option is also a work in progress but if you get it to work it’s the fastest entry method except for:
 5. Paste MathML into the input or output window.
 
-## See and/or hear UnicodeMath in action
+## 2. See and/or hear UnicodeMath in action
 Click on the Demo button or type Alt+p in the input window to see UnicodeMath in action!
 Hit the space bar to pause the demo and hit it again to continue the demo.
 The arrow keys → and ← move to the next/previous equation, respectively.
@@ -37,7 +37,7 @@ You can click on an example in the Examples gallery to enter it and the followin
 | \waveeq | 𝑖ℏ 𝜕𝜓(𝑥,𝑡)/𝜕𝑡 =[−ℏ²/2𝑚 𝜕²/𝜕𝑥²+𝑉(𝑥,𝑡)]𝜓(𝑥,𝑡) |
 
 
-## Entering symbols
+## 3. Entering symbols
 You can enter a symbol by clicking on the symbol in one of the symbol galleries below the input window.
 But it’s faster to type the symbol’s LaTeX control word such as \alpha for α.
 After typing two letters, you get a math autocomplete dropdown with possible matches.
@@ -58,9 +58,9 @@ The math autocomplete menu helps you discover a LaTeX control word, and it speed
            margin-left: auto; margin-right: auto;
            width: 25em"/>
 
-The symbol dictionary includes some control-word aliases, such as \union for \cup (∪), since you might not guess \cup is the LaTeX control word for the union operator ∪.
+The [control-word dictionary](#sec-18) includes some control-word aliases, such as \union for \cup (∪), since you might not guess \cup is the LaTeX control word for the union operator ∪.
 
-## Entering math alphanumerics
+## 4. Entering math alphanumerics
 Unicode has many math styled characters, such as the math fraktur H (ℌ). They can be entered by selecting the letter(s) in the input or output windows and clicking on the 𝔄𝔅ℭ button or other math-style button. 
 You can also enter a character in the Math styles text box and click on the desired math style button.
 
@@ -82,14 +82,14 @@ Or you can enter the control words for the desired characters. The math-style co
 
 Here roundhand and chancery are two script styles, and isolated, initial, tailed, looped, and stretched are Arabic math styles. Currently the Arabic math styles require the XITS Math font and the chancery and roundhand variants require the STIX Two Math font.
 
-## Character code points
+## 5. Character code points
 Below the input window, there’s a Unicode codepoint window that displays the codepoints of the input symbols above the symbols.
 This is particularly useful for comparing two strings that appear to be identical but differ in one or more characters.
 Both the input and output windows support the Alt+x symbol entry method popular in Microsoft Word, OneNote, and NotePad.
 (It should be supported in all editors 😊).
 For example, type 222b Alt+x to insert ∫.
 
-## Speech, braille, LaTeX, dictation
+## 6. Speech, braille, LaTeX, dictation
 In addition to generating MathML, you can click on buttons or enter a hot key to
 * Speak the math in English (Alt+s)
 * Braille the math in Nemeth  braille (Alt+b)
@@ -102,17 +102,18 @@ In addition to generating MathML, you can click on buttons or enter a hot key to
 The results for speech, braille and LaTeX are displayed below the input window.
 Dictation results are shown in the input, output, and MathML windows.
 Dictation hint: wait for the start beep (else the first word(s) might be missing) and enunciate clearly.
-## Math display
+## 7. Math display
 The math is rendered in the output window either natively or by MathJax according to a setting (click on the ⚙︎ to change it).
 MathJax’s typography resembles LaTeX’s.
 The native rendering is good although not yet as good as LaTeX.
 But an advantage of the native renderer is that you can edit built-up equations directly in the output window and copy all or part of an equation.
 If the selection is an insertion point, the whole equation is copied.
 The only editing feature in the MathJax mode is Ctrl+c, which copies the MathML for the whole equation to the clipboard.
-## Navigating the app
+
+## 8. Navigating the app
 A mouse or touchpad provides one way to move between and inside the various facilities. Another way is to use the Tab key. Since the app has myriad default Tab stops, users need a Tab hierarchy. The top of the hierarchy has the menu stops Help, Demo, Speak, Braille, TeX, Dictate, and About, followed by the Input and Output windows, Settings, History, math styles, and the symbol galleries. The galleries appear in alphabetical order, Accents, Arrows, Binary, etc. The Tab key navigates these stops in the forward direction, while Shift+Tab navigates in the backward direction. The Enter key activates the current stop's facility. In an activated facility, the left and right arrow keys move between the facility's options. The Enter key then runs the option. For an active symbol gallery, the Enter key inserts the current symbol. For most settings, the Enter key toggles the current option. For menu stops, the Enter key sends the associated hot key. Each change is accompanied by explanatory speech.
 
-## UnicodeMath editing
+## 9. UnicodeMath editing
 When you type UnicodeMath into the input window, various conversions occur in the input window:
 * Letters are converted to math italic unless they 1) are part of a function name or of a control word (backslash followed by letters), or 2) follow a quote. For example, a → 𝑎
 * Numeric subscripts/superscripts are converted to Unicode subscript/superscript characters, respectively. For example, a_2 → 𝑎₂ and a^2 → 𝑎².
@@ -144,15 +145,15 @@ The combination <​− gives ←. If you want to enter an expression like 𝑎<
 These conversions aren't needed in the input window, but they make the input more readable.
 They also help in creating good looking UnicodeMath expressions for use in plain-text scenarios.
 
-## LaTeX and MathML editing
+## 10. LaTeX and MathML editing
 When you type LaTeX or MathML into the input window, control words for Unicode symbols are autocorrected to the symbols,
 and various operator pairs are converted to Unicode operators. For example, '$\alpha/=\beta' → '$𝛼≠𝛽'.
 
 To facilitate entry, for LaTeX typing a \{ also inserts the closing }, and for MathML typing an opening tag also inserts the closing tag.
 Type Ctrl+→ to bypass a tag.
 
-## Editing hot keys
-| Hot key | Function    |
+## 11. Editing hot keys
+| Hot key | Function    |
 | ------- | ----------- |
 | Ctrl+b  | Toggle the bold attribute. For example, select 𝑎 (U+1D44E), type Ctrl+b and get 𝒂 (U+1D482) as you can verify in the codepoint window. |
 | Ctrl+c  | Copy the selected text to the clipboard. |
@@ -163,19 +164,20 @@ Type Ctrl+→ to bypass a tag.
 | Ctrl+x  | Copy the selected text to the clipboard, then delete the selected text.|
 | Ctrl+y  | Redo |
 | Ctrl+z  | Undo |
-## Symbol galleries
+## 12. Symbol galleries
 Unicode has [almost all math symbols](https://www.unicode.org/reports/tr25/) in use today.
 The symbol galleries located at the bottom of the web page contain the most common math symbols.
 You can enter a symbol in a gallery by clicking on it or by typing its control word as described in the _Entering symbols_ section above.
 
-Hovering over a symbol displays information about the symbol, specifically the Unicode code point, name, and block, as well as a LaTeX control word for entering the symbol and the symbol's math class. The symbol's Unicode category is defined in [Table 4-4](https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-4/#G124142) of the Unicode Standard and the symbol's math class is defined in the comments of [MathClass.txt](https://www.unicode.org/Public/math/revision-15/MathClass-15.txt), a file for Unicode Technical Report #25: _Unicode Support for Mathematics_.
+Hovering over a symbol displays a tooltip with information about the symbol, specifically the Unicode code point, name, and block, as well as a LaTeX control word for entering the symbol and the symbol's math class. The symbol's Unicode category is defined in [Table 4-4](https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-4/#G124142) of the Unicode Standard and the symbol's math class is defined in the comments of [MathClass.txt](https://www.unicode.org/Public/math/revision-15/MathClass-15.txt), a file for Unicode Technical Report #25: _Unicode Support for Mathematics_.
 For example, hovering a script K (𝒦) displays
 
 <img src="help-images/tooltip.png" style="display: block;
            margin-left: auto; margin-right: auto; width:20em;"/>
 
 Here the category "Lu" stands for upper-case letter and the math class "A" stands for alphabetic. 
-## Output window editing
+
+## 13. Output window editing
 You can enter equations and edit the built-up display in the output window as shown in this video
 
 <video src="help-images/Autobuildup5.mp4" style="display: block;
@@ -191,7 +193,7 @@ Note: math autobuildup works with native MathML rendering; if MathJax is active,
 
 The implementation uses JavaScript to manipulate the MathML in the browser DOM.
 
-## Intents
+## 14. Intents
 UnicodeMathML generates [Presentation MathML 4](https://w3c.github.io/mathml/).
 A key addition in MathML 4 is the intent attribute, which allows authors to disambiguate math notation and control math speech.
 
@@ -239,7 +241,8 @@ If you want |𝑎(|𝑏+𝑐|)𝑑|, enter |(𝑎|𝑏+𝑐|𝑑)| and the paren
 As we see here, some intent attribute values are implied by the input notations of LaTeX and UnicodeMath.
 Others are implied by context.
 Still others must be declared explicitly by the content author, by a math-knowledgeable copy editor, or maybe eventually by AI.
-## Author intents
+
+## 15. Author intents
 Since most content authors don’t know MathML, we need a way to allow them to enter intents easily.
 To this end, UnicodeMathML has an output-window context-menu option that lets you tag entities with intents.
 For example, right-clicking on the 𝐸 in 𝐸 = 𝑚𝑐², you get the input box
@@ -263,7 +266,7 @@ If you type in “energy”, the resulting MathML is
 
 Typing Atl+d speaks this as "energy equals m c squared".
 
-## TeX macros
+## 16. TeX macros
 You can use [La]TeX macros with [La]TeX input. Simple examples are:
 
 | Macro | Use | Result
@@ -279,9 +282,9 @@ This displays as
 
 <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><mi>𝑓</mi><mrow intent=":fenced"><mo>(</mo><mi>𝑥</mi><mo>)</mo></mrow><mo>=</mo><mrow intent=":nary($l,∞,$naryand)"><msubsup><mo>∫</mo><mrow arg="l"><mo>−</mo><mi>∞</mi></mrow><mi>∞</mi></msubsup><mrow arg="naryand"><mover accent="true"><mi>𝑓</mi><mo>̂</mo></mover><mrow intent=":fenced"><mo>(</mo><mi>𝜉</mi><mo>)</mo></mrow><mspace width="thinmathspace"></mspace></mrow></mrow><msup><mi>𝑒</mi><mrow><mn>2</mn><mi>𝜋</mi><mi>𝑖</mi><mi>𝜉</mi><mi>𝑥</mi></mrow></msup><mspace width="thinmathspace"></mspace><mi>𝑑</mi><mi>𝜉</mi></math>
 
-LaTeX \newcommand syntax is also supported.
+The LaTeX \newcommand syntax is also supported.
 
-## UnicodeMath selection attributes
+## 17. UnicodeMath selection attributes
 __Technical stuff__:
 When you edit the output window, the resulting MathML includes attributes that represent the state of the user selection.
 These attributes have been added partly because they are [needed to make editing accessible](https://devblogs.microsoft.com/math-in-office/mathml-and-omml-user-selection-attributes/).

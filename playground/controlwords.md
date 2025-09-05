@@ -1,13 +1,14 @@
-﻿##Control words
+﻿<a id="sec-18" />
+## 18. Control words
 
-To facilitate entering Unicode symbols, control words can be used. The following
-is a table of control words for many Unicode math symbols not including the math
-alphanumerics discussed above. For a more complete list, see [unimath-symbols]
-(https://texdoc.org/serve/unimath-symbols.pdf/0). Circled and parenthesized 
-symbols index the Examples in the Playground. E.g., \Faraday gives ⑭, which
-inserts the fourteenth Example: 𝛁⨯𝐄=−𝜕𝐁/𝜕𝑡. Circled letters are special
-UnicodeMath operators that build up to bracketed matrices, fractions, cases,
-absolute values, cardinality, binomial coefficients, etc.
+To facilitate entering Unicode symbols, control words can be used as discussed
+in [Sec. 3](#sec-3). The following is a table of control words for many Unicode math
+symbols not including the math alphanumerics discussed in [Sec. 4](#sec-4). For a more
+complete list, see [unimath-symbols](https://texdoc.org/serve/unimath-symbols.pdf/0).
+Circled and parenthesized symbols index the Examples in the Playground. E.g.,
+\Faraday gives ⑭, which inserts the fourteenth Example: 𝛁⨯𝐄=−𝜕𝐁/𝜕𝑡. Circled letters
+are special UnicodeMath operators that build up to bracketed matrices, fractions,
+cases, absolute values, cardinality, binomial coefficients, etc.
 
 | Control word | Symbol | Codepoint | Comment |
 |--------------|--------|-----------|---------|
@@ -513,7 +514,7 @@ absolute values, cardinality, binomial coefficients, etc.
 | pi                 | π |  03C0 |
 | pitchfork          | ⋔ |  22D4 |
 | planck             | ℏ |  210F |  alias for hbar |
-| plasma             | ⑿ | 247F |  𝑍(𝛾+𝑖𝜔−𝑖𝜈)=𝑖/√𝜋 ∫_−∞^∞ 𝑒^(−(𝜔−𝜔′)^2 \/(Δ𝜔)^2)/(𝛾+𝑖(𝜔′−𝜈)) ⅆ𝜔′) |
+| plasma             | ⑿ | 247F |  𝑍(𝛾+𝑖𝜔−𝑖𝜈)=... (see [Sec. 2](#sec-2) for formula) |
 | pm                 | ± |  00B1 |
 | pmatrix            | ⒨ |  24A8 |  UnicodeMath op |
 | powerset           | ℘ |  2118 |
@@ -539,7 +540,7 @@ absolute values, cardinality, binomial coefficients, etc.
 | qprime             | ⁗ |  2057 |
 | quad               |   |  2003 |
 | quadprime          | ⁗ |  2057 |
-| quadratic          | ⑩ | 24d9 |  𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎 |
+| quadratic          | ⑩ | 24D9 |  𝑥=(−𝑏±√(𝑏²−4𝑎𝑐))/2𝑎 |
 | quarter            | ¼ |  00BC |
 | rad                | ㎭ | 33AD |
 | rangle             | ⟩ |  27E9 |
