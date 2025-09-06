@@ -10,23 +10,53 @@ var emitDefaultIntents =
     typeof ummlConfig.defaultIntents === "undefined" ||
     ummlConfig.defaultIntents;
 
+const defaultConfiguration = {              // Order same as configDescriptions
+    splitInput: true,
+    resolveControlWords: true,
+    displaystyle: true,
+    debug: true,
+    caching: true,
+    tracing: false,
+    forceMathJax: false,
+    defaultIntents: false,
+    speakSelectionEnds: false,
+    doubleStruckMode: "us-tech",
+    transposeChar: "T",
+}
+
 function convertUnicodeMathToMathML(uMath, config) {
-    const defaultConfig = {                 // Order same as configDescriptions
-        splitInput: true,
-        resolveControlWords: true,
-        displaystyle: true,
-        debug: true,
-        caching: true,
-        tracing: false,
-        forceMathJax: false,
-        defaultIntents: false,
-        speakSelectionEnds: false,
-        doubleStruckMode: "us-tech",
-        transposeChar: "T",
-    }
-    ummlConfig = JSON.parse(JSON.stringify(config ? config : defaultConfig))
+    if (!ummlConfig)
+        ummlConfig = JSON.parse(JSON.stringify(config ? config : defaultConfiguration))
 
     return unicodemathml(uMath, ummlConfig.displaystyle)
+}
+
+function convertUnicodeMathZonesToMathML(text, config) {
+    if (!ummlConfig)
+        ummlConfig = JSON.parse(JSON.stringify(config ? config : defaultConfiguration))
+
+    let i = 0
+    let result = ''
+
+    for (; i < text.length; i++) {
+        // Find next UnicodeMath math zone
+        let k = text.indexOf('⁅', i)
+        if (k == -1)
+            break
+        if (text[k - 1] == '\\') {
+            i = k
+            continue
+        }
+        let n = text.indexOf('⁆', k + 1)
+        if (n == -1)
+            break;
+        result += text.substring(i, k)      // Add in preceding text substring
+        let displayStyle = !k || text[k - 1] == '\n'
+        let t = unicodemathml(text.substring(k + 1, n), displayStyle)
+        result += t.mathml                  // Add in MathML for math zone
+        i = n
+    }
+    return result + text.substring(i)       // Add in trailing text substring
 }
 
 function escapeHTMLSpecialChars(str) {
@@ -1017,6 +1047,8 @@ const controlWords = {
     'Angstrom':         'Å',   // 212B
     'Bar':              '̿',	// 033F
     'Biconditional':    '⇔',	// 21D4
+    'Bigl':             '',
+    'Bigr':             '',
     'Bmatrix':          'Ⓢ',	// 24C8 (UnicodeMath op)
     'Bumpeq':           '≎',    	// 224E
     'Cap':              '⋒',    	// 22D2
@@ -5575,5 +5607,7 @@ root.resolveCW = resolveCW;
 root.unicodemathml = unicodemathml;
 root.getUnicodeMath = getUnicodeMath
 root.controlWords = controlWords
+root.convertUnicodeMathToMathML = convertUnicodeMathToMathML
+root.convertUnicodeMathZonesToMathML = convertUnicodeMathZonesToMathML
 
 })(this);

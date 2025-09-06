@@ -1590,7 +1590,23 @@ function testHotKeys() {
 
     testInputEntry('$\\frac{\\alpha}{\\beta}/=0', '$\\frac{𝛼}{𝛽}≠0')
     testInputEntry('<math><mfrac><mi>\\alpha →<mi>\\beta →<mo>/=→<mn>0',
-                   '<math><mfrac><mi>𝛼</mi><mi>𝛽</mi><mo>≠</mo><mn>0</mn></mfrac></math>')
+        '<math><mfrac><mi>𝛼</mi><mi>𝛽</mi><mo>≠</mo><mn>0</mn></mfrac></math>')
+
+    const convertUnicodeMathZonesTests = [
+        ['The Einstein energy equation is ⁅E=mc^2⁆ as you see',
+         'The Einstein energy equation is <math display=\"inline\"><mi>𝐸</mi><mo>=</mo><mi>𝑚</mi><msup><mi>𝑐</mi><mn>2</mn></msup></math> as you see'],
+        [`Given a function ⁅f⁆ of a real variable ⁅x⁆ and an interval ⁅[a, b]⁆ of the real line, the **definite integral**\n⁅∫_a^b f(x) ⅆx⁆\ncan be interpreted informally as the signed area of the region in the ⁅xy⁆-plane that is bounded by the graph of ⁅f⁆, the ⁅x⁆-axis and the vertical lines ⁅x = a⁆ and ⁅x = b⁆.`,
+         `Given a function <math display=\"inline\"><mi>𝑓</mi></math> of a real variable <math display=\"inline\"><mi>𝑥</mi></math> and an interval <math display=\"inline\"><mrow intent=\":fenced\"><mo>[</mo><mrow><mi>𝑎</mi><mo>,</mo><mi>𝑏</mi></mrow><mo>]</mo></mrow></math> of the real line, the **definite integral**
+<math display=\"block\"><mrow intent=\":nary(𝑎,𝑏,$naryand)\"><msubsup><mo>∫</mo><mi>𝑎</mi><mi>𝑏</mi></msubsup><mrow arg=\"naryand\"><mi>𝑓</mi><mrow intent=\":fenced\"><mo>(</mo><mi>𝑥</mi><mo>)</mo></mrow><mi intent=\"ⅆ\">𝑑</mi><mi>𝑥</mi></mrow></mrow></math>
+can be interpreted informally as the signed area of the region in the <math display=\"inline\"><mi>𝑥</mi><mi>𝑦</mi></math>-plane that is bounded by the graph of <math display=\"inline\"><mi>𝑓</mi></math>, the <math display=\"inline\"><mi>𝑥</mi></math>-axis and the vertical lines <math display=\"inline\"><mi>𝑥</mi><mo>=</mo><mi>𝑎</mi></math> and <math display=\"inline\"><mi>𝑥</mi><mo>=</mo><mi>𝑏</mi></math>.`],
+    ]
+    for (i = 0; i < convertUnicodeMathZonesTests.length; i++) {
+        let result = convertUnicodeMathZonesToMathML(convertUnicodeMathZonesTests[i][0])
+        if (result == convertUnicodeMathZonesTests[i][1])
+            console.log('convertUnicodeMathZonesToMathML succeeded: ')
+        else
+            console.log('convertUnicodeMathZonesToMathML failed: ' + result)
+    }
 }
 
 const mathDictation = [
