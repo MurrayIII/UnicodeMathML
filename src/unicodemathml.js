@@ -32,6 +32,8 @@ function convertUnicodeMathToMathML(uMath, config) {
 }
 
 function convertUnicodeMathZonesToMathML(text, config) {
+    // Return text with UnicodeMath zones (⁅...⁆) replaced by the corresponding
+    // MathML strings.
     if (!ummlConfig)
         ummlConfig = JSON.parse(JSON.stringify(config ? config : defaultConfiguration))
 
@@ -39,7 +41,7 @@ function convertUnicodeMathZonesToMathML(text, config) {
     let result = ''
 
     for (; i < text.length; i++) {
-        // Find next UnicodeMath math zone
+        // Find next UnicodeMath zone
         let k = text.indexOf('⁅', i)
         if (k == -1)
             break
@@ -53,7 +55,7 @@ function convertUnicodeMathZonesToMathML(text, config) {
         result += text.substring(i, k)      // Add in preceding text substring
         let displayStyle = !k || text[k - 1] == '\n'
         let t = unicodemathml(text.substring(k + 1, n), displayStyle)
-        result += t.mathml                  // Add in MathML for math zone
+        result += t.mathml                  // Add in MathML for UnicodeMath zone
         i = n
     }
     return result + text.substring(i)       // Add in trailing text substring

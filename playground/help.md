@@ -114,12 +114,13 @@ The only editing feature in the MathJax mode is Ctrl+c, which copies the MathML 
 A mouse or touchpad provides one way to move between and inside the various facilities. Another way is to use the Tab key. Since the app has myriad default Tab stops, users need a Tab hierarchy. The top of the hierarchy has the menu stops Help, Demo, Speak, Braille, TeX, Dictate, and About, followed by the Input and Output windows, Settings, History, math styles, and the symbol galleries. The galleries appear in alphabetical order, Accents, Arrows, Binary, etc. The Tab key navigates these stops in the forward direction, while Shift+Tab navigates in the backward direction. The Enter key activates the current stop's facility. In an activated facility, the left and right arrow keys move between the facility's options. The Enter key then runs the option. For an active symbol gallery, the Enter key inserts the current symbol. For most settings, the Enter key toggles the current option. For menu stops, the Enter key sends the associated hot key. Each change is accompanied by explanatory speech.
 
 ## 9. UnicodeMath editing
-When you type UnicodeMath into the input window, various conversions occur in the input window:
+When you type UnicodeMath into the input window, various conversions occur in the input window (except inside a quoted literal):
 * Letters are converted to math italic unless they 1) are part of a function name or of a control word (backslash followed by letters), or 2) follow a quote. For example, a → 𝑎
 * Numeric subscripts/superscripts are converted to Unicode subscript/superscript characters, respectively. For example, a_2 → 𝑎₂ and a^2 → 𝑎².
 * Numeric fractions are converted to Unicode numeric fractions. For example, 1/2 → ½
 * Control words are converted to their symbols, e.g., \alpha → 𝛼
 * Various operator pairs are converted to Unicode operators, e.g., '+-' → '±' and '/=' → '≠'.
+* The ASCII hyphen-minus - (U+002D) is converted to the Unicode minus − (U+2212) and the ASCII apostrophe ' (U+0027) is converted to the Unicode prime ′ (U+2032).
 
 It's easier to type −> to get → than \rightarrow, although with math autocomplete you only need to type \ri<​tab> to get →.
 Similarly, typing +- is easy for getting ±. Many of these operator pairs are listed in the following table.
