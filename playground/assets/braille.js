@@ -517,7 +517,7 @@ function getAsciiFromBraille(b) {
 	return braille2Ascii[code]
 }
 
-function symbolBraille(ch) {
+function symbolBraille(ch, keepItalic) {
 	if (isBraille(ch))
 		return ch;							// Already braille
 
@@ -532,7 +532,7 @@ function symbolBraille(ch) {
 		[mathstyle, ch] = foldMathAlphanumeric(code, ch);
 
 		if (mathstyle) {
-			if (mathstyle == 'mit' || mathstyle == 'mup')
+			if (mathstyle == 'mit' && !keepItalic || mathstyle == 'mup')
 				mathstyleB = '';			// Suppress 'italic'
 			else
 				mathstyleB = mathstylesBraille[mathstyle];
@@ -658,7 +658,8 @@ function getBraille(node) {
 			// Need numeric indicator after braille space
 			ret += '⠼';
 		}
-		ch = symbolBraille(ch);
+		let displayBrailleItalic = ummlConfig && ummlConfig.displayBrailleItalic
+		ch = symbolBraille(ch, displayBrailleItalic);
 		if (ch[0] == '\u2800' && ret[ret.length - 1] == '⠐') {
 			// Braille space returns to base line, so don't need '⠐'
 			ret = ret.substring(0, ret.length - 1);

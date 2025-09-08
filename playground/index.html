@@ -391,6 +391,7 @@
             speakSelectionEnds: false,
             doubleStruckMode: "us-tech",
             transposeChar: "T",
+            displayBrailleItalic: false
         };
         const configDescriptions = {
             splitInput: "Process input lines separately",
@@ -402,6 +403,9 @@
             forceMathJax: "Use MathJax not native rendering",
             defaultIntents: "Emit default intent attributes",
             speakSelectionEnds: "Include selection ends in speech",
+            doubleStruckMode: "us-tech, us-patent, euro-tech",
+            transposeChar: "Character for transpose op",
+            displayBrailleItalic: "Display braille italic indicator",
         };
 
         var ummlConfig = JSON.parse(JSON.stringify(defaultConfig));  // clone it

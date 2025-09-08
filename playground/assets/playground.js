@@ -4885,7 +4885,7 @@ function getTooltip(ch) {
         tooltip = 'Name: ' + name + '<br>Block: ' + cpd["block"] +
             '<br>Category: ' + cpd["category"] + ',  Math Class: ' + mathclass
 
-        let braille = symbolBraille(ch)
+        let braille = symbolBraille(ch, true)
         if (braille != ch)
             tooltip += '<br>Braille: ' + braille
     } else {

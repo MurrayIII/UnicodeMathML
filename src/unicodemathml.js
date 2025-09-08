@@ -22,6 +22,7 @@ const defaultConfiguration = {              // Order same as configDescriptions
     speakSelectionEnds: false,
     doubleStruckMode: "us-tech",
     transposeChar: "T",
+    displayBrailleItalic: false
 }
 
 function convertUnicodeMathToMathML(uMath, config) {
