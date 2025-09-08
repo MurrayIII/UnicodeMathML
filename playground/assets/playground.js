@@ -4884,6 +4884,10 @@ function getTooltip(ch) {
             name = "&amp;lt;" + name.substring(1, name.length - 1) + "&amp;gt;"
         tooltip = 'Name: ' + name + '<br>Block: ' + cpd["block"] +
             '<br>Category: ' + cpd["category"] + ',  Math Class: ' + mathclass
+
+        let braille = symbolBraille(ch)
+        if (braille != ch)
+            tooltip += '<br>Braille: ' + braille
     } else {
         tooltip = "no info found"
     }

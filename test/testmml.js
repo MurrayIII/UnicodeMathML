@@ -1575,9 +1575,9 @@ function testHotKeys() {
             console.log('Symbol-to-control-word conversion succeeded')
     }
     const tooltipTests = [
-        ['𝓠', '1D4E0,false,Name: MATHEMATICAL BOLD SCRIPT CAPITAL Q<br>Block: Mathematical Alphanumeric Symbols<br>Category: Lu,  Math Class: A'],
-        ['∈', '2208,false,Name: ELEMENT OF<br>Block: Mathematical Operators<br>Category: Sm,  Math Class: R'],
-        ['ℋ', '210B,false,Name: SCRIPT CAPITAL H<br>Block: Letterlike Symbols<br>Category: Lu,  Math Class: A'],]
+        ['𝓠', '1D4E0,false,Name: MATHEMATICAL BOLD SCRIPT CAPITAL Q<br>Block: Mathematical Alphanumeric Symbols<br>Category: Lu,  Math Class: A<br>Braille: ⠸⠈⠰⠰⠠⠟'],
+        ['∈', '2208,false,Name: ELEMENT OF<br>Block: Mathematical Operators<br>Category: Sm,  Math Class: R<br>Braille: ⠀⠈⠑⠀'],
+        ['ℋ', '210B,false,Name: SCRIPT CAPITAL H<br>Block: Letterlike Symbols<br>Category: Lu,  Math Class: A<br>Braille: ⠈⠰⠰⠠⠓'],]
 
     // Test getTooltip()
     for (i = 0; i < tooltipTests.length; i++) {

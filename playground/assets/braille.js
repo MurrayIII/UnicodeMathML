@@ -372,6 +372,11 @@ const symbol2Braille = {
 	'\u2212': '⠤',				// −	Minus sign
 	'\u2A41': '⠤⠈⠨⠬⠻',			// ⩁	Union w minus sign
 	'\u2213': '⠤⠬',				// ∓		Minus - or -plus sign
+	'\u2145': '⠈⠈⠨⠰⠠⠙',			// ⅅ	Differential D
+	'\u2146': '⠈⠈⠨⠰⠙',			// ⅆ	Differential d
+	'\u2147': '⠈⠈⠨⠰⠑',			// ⅇ	Differential e
+	'\u2148': '⠈⠈⠨⠰⠊',			// ⅈ		Differential i
+	'\u2149': '⠈⠈⠨⠰⠚',			// ⅉ		Differential j
 	'\u00F7': '⠨⠌',				// ÷	Division sign	
 	'\u2211': '⠨⠠⠎',			// ∑	Summation
 	'\u2218': '⠨⠡',				// ∘		Ring operator 
@@ -491,6 +496,7 @@ const mathstylesBraille = {
 	'mitsans': '⠠⠨⠨⠰',
 	'mbfitsans': '⠠⠨⠸⠨⠰',
 	'mtt': '',
+	'mitBbb': '⠈⠈⠨',
 };
 
 //					 αβγδεζηθικλμνξοπρςστυφχψω
@@ -500,7 +506,6 @@ const greek2Ascii = 'ABGDEZ:?IKLMNXOPR STUF&YW'
 const ascii2Greek = 'ΑΒ ΔΕΦΓ Ι ΚΛΜΝΟΠ ΡΣΤΥ ΩΞΨΖ'
 const ascii2Greek2 = {':': 'η', '?': 'θ', '&': 'χ', '$': '∇'} // :?&$ → ηθχ∇
 const greekAlts = {'θ': 'ϑ', 'κ': 'ϰ', 'π': 'ϖ', 'ρ': 'ϱ'}
-const doubleStruck2Braille = {'ⅅ': '⠠⠙', 'ⅆ': '⠙', 'ⅇ': '⠑', 'ⅈ': '⠊', 'ⅉ': '⠚'}
 const subsupIndicators = ['⠰', '⠘', '⠐']
 
 function isBraille(ch) {					// In Unicode braille block?
@@ -965,7 +970,7 @@ function braille(value, subsup) {
 			if (value.hasAttribute('intent')) {
 				let ch = value.getAttribute('intent')
 				if (isDoubleStruck(ch))
-					return '⠈⠈⠨⠰' + doubleStruck2Braille[ch]
+					return ch
 			}
 			let mathvariant = value.getAttribute('mathvariant')
 

@@ -12,7 +12,7 @@ It works well in Microsoft desktop apps such as Word, PowerPoint, Outlook, and O
 
 ## Methodology
 UnicodeMath conversion to MathML starts with parsing the input with a peg grammar, thereby producing an abstract syntax tree (AST).
-This AST is then recursively preprocessed (via preProcess()) to make a new AST with some intent attributes as well as fix ups not easily accomplished in the grammar parsing.
+This AST is then recursively preprocessed (via preprocess()) to make a new AST with some intent attributes as well as fix ups not easily accomplished in the grammar parsing.
 Originally the idea was to create an AST useful for creating not only MathML, but also other formats such as LaTeX.
 But it turned out that creating LaTeX, speech, and Nemeth braille was more easily accomplished from a MathML DOM.
 The AST is then recursively converted into a MathML AST (via mtransform()) with additional intent attributes.
@@ -48,14 +48,11 @@ However, the subdirectories `lib/` and `playground/assets/lib/` contain some **t
 * Morgan McGuire's [Markdeep](https://casual-effects.com/markdeep/), which – along with a slightly modified variant that integrates with UnicodeMathML – is located at `lib/markdeep-1.11-orig.js`, is licensed under the *BSD 2-Clause "Simplified" License*, see [here](https://casual-effects.com/markdeep/#license).
 * Markdeep includes Ivan Sagalaev's [highlight.js](https://highlightjs.org) with its *BSD 3-Clause License*, see [here](https://github.com/highlightjs/highlight.js/blob/master/LICENSE).
 * [JQuery](https://jquery.com), which powers some of the interactions in the UnicodeMathML playground and resides at `playground/assets/lib/jquery.min.js`, is licensed under the *MIT License*, see [here](https://jquery.org/license/).
-* A stripped-down variant of [MathJax](https://www.mathjax.org) is included at `playground/assets/lib/mathjax/`, it's licensed under the *Apache License 2.0*, see [here](https://github.com/mathjax/MathJax/blob/master/LICENSE).
 * [LM Math](http://www.gust.org.pl/projects/e-foundry/lm-math/download/index_html), the typeface used for rendered UnicodeMath expressions in the playground in browsers with native MathML support, can be found at `playground/assets/lib/latinmodern/` and is licensed under the *GUST Font License*, see [here](http://www.gust.org.pl/projects/e-foundry/licenses/GUST-FONT-LICENSE.txt/view).
 * Belleve Invis' excellent typeface [Iosevka](https://github.com/be5invis/Iosevka) is located at `playground/assets/lib/iosevka/` and licensed under the *SIL OFL Version 1.1*, see [here](https://github.com/be5invis/Iosevka/blob/master/LICENSE.md).
 
-Lastly, the `docs/` subdirectory contains two PDF files:
-
-* Murray Sargent III's technical note "UnicodeMath, A Nearly Plain-Text Encoding of Mathematics" (located at `docs/sargent-unicodemathml-tech-note.pdf` is © 2006-2017 Murray Sargent III and Unicode, Inc. but used in accordance with the [Unicode Terms of Use](https://www.unicode.org/copyright.html).
-* Noah Doersing's Master's thesis is located at `docs/doersing-unicodemath-to-mathml.pdf`and included in this repository as a reference for some implementation details, it's not intended (or relevant) for general distribution.
+Lastly, Noah Doersing's Master's thesis is located at `docs/doersing-unicodemath-to-mathml.pdf`and is included in this repository as a reference for some implementation details.
+It's not intended (or relevant) for general distribution.
 
 ## Changes in this forked version
 Murray Sargent's forked version is located at https://github.com/MurrayIII/UnicodeMathML/tree/main.
@@ -113,7 +110,7 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Support simplified OfficeMath math paragraph using an mtable
 * Support Arabic math alphabetics and limited RTL math display
 * Support inputting a subset of [La]TeX including macros with arguments
-* Add mathclass to symbol tooltips
+* Add mathclass and braille to symbol tooltips
 * Facilitate entry of LaTeX and MathML by autocorrecting non-build-up control words to their Unicode symbols and converting some operator combinations to Unicode operators.
 
 ## MathML intent-attribute support:

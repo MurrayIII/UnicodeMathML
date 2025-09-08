@@ -170,10 +170,13 @@ Unicode has [almost all math symbols](https://www.unicode.org/reports/tr25/) in 
 The symbol galleries located at the bottom of the web page contain the most common math symbols.
 You can enter a symbol in a gallery by clicking on it or by typing its control word as described in the _Entering symbols_ section above.
 
-Hovering over a symbol displays a tooltip with information about the symbol, specifically the Unicode code point, name, and block, as well as a LaTeX control word for entering the symbol and the symbol's math class. The symbol's Unicode category is defined in [Table 4-4](https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-4/#G124142) of the Unicode Standard and the symbol's math class is defined in the comments of [MathClass.txt](https://www.unicode.org/Public/math/revision-15/MathClass-15.txt), a file for Unicode Technical Report #25: _Unicode Support for Mathematics_.
-For example, hovering a script K (𝒦) displays
+Hovering over a symbol displays a tooltip with information about the symbol,
+specifically the Unicode code point, name, and block, as well as a LaTeX control word
+for entering the symbol, the symbol's math class, and the Nemeth braille sequence (if defined).
+The symbol's Unicode category is defined in [Table 4-4](https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-4/#G124142) of the Unicode Standard and the symbol's math class is defined in the comments of [MathClass.txt](https://www.unicode.org/Public/math/revision-15/MathClass-15.txt), a file for Unicode Technical Report #25: _Unicode Support for Mathematics_.
+For example, hovering a script X (𝒳) displays
 
-<img src="help-images/tooltip.png" style="display: block;
+<img src="help-images/tooltip1.png" style="display: block;
            margin-left: auto; margin-right: auto; width:20em;"/>
 
 Here the category "Lu" stands for upper-case letter and the math class "A" stands for alphabetic. 
