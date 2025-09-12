@@ -199,7 +199,7 @@ unicodeSub = ex:(elementUnicodeSub / opUnicodeSub)+ {
 nUnicodeSup = s:([⁺⁻]?) n:[⁰¹²³⁴⁵⁶⁷⁸⁹]+ {
     var nPrime = {number: replaceMap("⁰¹²³⁴⁵⁶⁷⁸⁹", "0123456789", n)};
     if (s) {
-        return [{operator: replaceMap("⁺⁻", "+-", s)}, nPrime];
+        return [{operator: replaceMap("⁺⁻", "+−", s)}, nPrime];
     }
     return nPrime;
 }
@@ -210,7 +210,7 @@ opUnicodeSup
     = o:"⁺⁻" {return {operator: "\u00B1"}}  // 4.1 Character Translations
     / o:"⁻⁺" {return {operator: "\u2213"}}
     / o:[⁺⁻⁼] {
-        return {operator: replaceMap("⁺⁻⁼", "+-=", o)};
+        return {operator: replaceMap("⁺⁻⁼", "+−=", o)};
     }
 factorUnicodeSup
     = atomsUnicodeSup

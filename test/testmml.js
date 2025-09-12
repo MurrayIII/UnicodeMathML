@@ -1556,6 +1556,8 @@ function testHotKeys() {
         {in: '1+2+...+', ip: 8, expect: '1+2+⋯+', ipNew: 6},
         {in: '𝑎/=', ip: 4, expect: '𝑎≠', ipNew: 3},
         {in: '𝑎+-', ip: 4, expect: '𝑎±', ipNew: 3},
+        {in: '𝑒^𝑥+', ip: 6, expect: '𝑒ˣ+', ipNew: 4},
+        {in: '𝑒^−(𝑎+𝑏)+', ip: 12, expect: '𝑒⁻⁽ᵃ⁺ᵇ⁾+', ipNew: 9},
     ]
     autocorrects.forEach(x => {
         let key = x.in[x.in.length - 1]

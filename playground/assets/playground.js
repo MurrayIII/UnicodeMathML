@@ -872,8 +872,8 @@ function opAutocorrect(ip, delim) {
         // Convert ASCII - and ' to Unicode minus (2212) and prime (2032)
         input.value = input.value.substring(0, ip - 1) + mappedSingle[delim]
             + input.value.substring(ip);
-        input.selectionStart = input.selectionEnd = ip;
-        return false;
+        input.selectionStart = input.selectionEnd = ip
+        // Continue since minus converts 𝑎^2− to 𝑎²−
     }
     if (isMathML(input.value) || isTeX(input.value))
         return false
@@ -897,12 +897,12 @@ function opAutocorrect(ip, delim) {
         }
     }
     if (ip >= 4) {                          // E.g., replace "𝑎^2+" by "𝑎²+"
-        let n = getSubSupDigits(input.value, ip - 2, delim);
-        if (n) {
-            let j = (delim == ' ') ? ip : ip - 1;
-            input.value = input.value.substring(0, ip - n.length - 2) + n +
-                input.value.substring(j);
-            input.selectionStart = input.selectionEnd = j;
+        let [s, j] = getSubSups(input.value, ip - 2, delim);
+        if (s) {
+            let k = (delim == ' ') ? ip : ip - 1;
+            input.value = input.value.substring(0, j) + s +
+                input.value.substring(k);
+            input.selectionStart = input.selectionEnd = j + s.length + 1
             return false;
         }
     }
@@ -2761,7 +2761,7 @@ function checkAutoBuildUp(node, offset, nodeP, key, shift) {
     }
     let [cParen, k, opBuildUp] = checkBrackets(nodeP)
 
-    if ('+=-<> )]|⟩'.includes(key) || key == 'Enter' && shift ||
+    if ('+=-<>− )]|⟩'.includes(key) || key == 'Enter' && shift ||
         iNode + 1 == cNode &&
         (key == '/' && !node.textContent.endsWith(')') ||  // Not end of numerator
          key == '#' && !node.textContent.endsWith('('))) { // Not hex RGB: eq-no
@@ -4888,6 +4888,8 @@ function getTooltip(ch) {
         let braille = symbolBraille(ch, true)
         if (braille != ch)
             tooltip += '<br>Braille: ' + braille
+        if (isBuildOp(ch))
+            tooltip += ', Build-up op'
     } else {
         tooltip = "no info found"
     }

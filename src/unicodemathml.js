@@ -70,9 +70,6 @@ function escapeHTMLSpecialChars(str) {
     });
 }
 
-const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
-const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
-
 const overBrackets = '\u23B4\u23DC\u23DE\u23E0¯';
 const underBrackets = '\u23B5\u23DD\u23DF\u23E1';
 
@@ -131,24 +128,73 @@ const negs = {  // Negative operators
 //                    0    1    2    3    4    5    6    7    8    9
 const indicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩']
 
-function getSubSupDigits(str, i, delim) {
-    // Return e.g., '²' for '^2 ' (str[i-1] = '^', str[i] = '2', delim = ' ')
+const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
+const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
+const letterSubSups = {
+    // There are 25 ASCII letter superscripts (no 'q') and 17 ASCII letter
+    // subscripts. The missing subscripts are replaced by spaces. Subsup
+    // parens need parsing fixes.
+    'a': 'ₐᵃ', 'b': ' ᵇ', 'c': ' ᶜ', 'd': ' ᵈ', 'e': 'ₑᵉ', 'f': ' ᶠ', 'g': ' ᵍ',
+    'h': 'ₕʰ', 'i': 'ᵢⁱ', 'j': 'ⱼʲ', 'k': 'ₖᵏ', 'l': 'ₗˡ', 'm': 'ₘᵐ', 'n': 'ₙⁿ',
+    'o': 'ₒᵒ', 'p': 'ₚᵖ', 'r': 'ᵣʳ', 's': 'ₛˢ', 't': 'ₜᵗ', 'u': 'ᵤᵘ', 'v': 'ᵥᵛ',
+    'w': ' ʷ', 'x': 'ₓˣ', 'y': ' ʸ', 'z': ' ᶻ', '−': '₋⁻', '+': '₊⁺', '(': '₍⁽', ')': '₎⁾'
+}
+
+function getUniSubSup(op, str, k) {
+    // Get Unicode subscript (op = '^') or superscript (op = '_') for str[k]
+    let ch = str[k]
+    if (isAsciiDigit(ch))
+        return op == '^' ? digitSuperscripts[ch] : digitSubscripts[ch]
+    if (ch >= '\uDC4E')                     // Surrogate pair: go to lead surrogate
+        k--
+    let code = str.codePointAt(k)
+    ch = foldMathItalic(code)
+    if (!ch)
+        ch = str[k]
+    return letterSubSups[ch][op == '^' ? 1 : 0]
+}
+
+//                              𝑎     𝑏     𝑐     𝑑     𝑒     𝑓     𝑔     ℎ     𝑖      𝑗     𝑘     𝑙     𝑚     𝑛     𝑜     𝑝     𝑟     𝑠     𝑡     𝑢     𝑣     𝑤     𝑥     𝑦     𝑧     -
+const supTrailSurrogates = '\uDC4E\uDC4F\uDC50\uDC51\uDC52\uDC53\uDC54\u210E\uDC56\uDC57\uDC58\uDC59\uDC5A\uDC5B\uDC5C\uDC5D\uDC5F\uDC60\uDC61\uDC62\uDC63\uDC65\uDC65\uDC66\uDC67\u2212(+)'
+//                          𝑏     𝑐     𝑑      𝑓     𝑔    𝑤     𝑦     𝑧
+const subTrailMissing = '\uDC4F\uDC50\uDC51\uDC53\uDC54\uDC65\uDC66\uDC67'
+
+function getSubSups(str, i, delim) {
+    // Return a span of subscript/superscript symbols. E.g., return '²' for
+    // '^2 ' (str[i - 1] = '^', str[i] = '2', delim = ' ')
     if (!'+-=/ )]}'.includes(delim))
         return ''
+    let cParen = 0
     let j
-    for (j = i; j > 0 && isAsciiDigit(str[j]); j--)
-        ;                                   // Find digit span indices
+    let subOk = true
+    for (j = i; j > 0 && (isAsciiDigit(str[j]) ||
+        supTrailSurrogates.includes(str[j])); j--) {
+        if (str[j] >= '\uDC4E') {           // Find subsup span indices
+            if (subTrailMissing.includes(str[j]))
+                subOk = false               // No Unicode subscript for str[j]
+            j--                             // Bypass lead surrogate
+        } else if (str[j] == '(') {
+            cParen--
+            if (cParen < 0)
+                return ''                   // Unmatched parens
+        } else if (str[j] == ')') {
+            cParen++
+        }
+    }
     if (j == i)
-        return ''                           // No digits
-    let op = str[j]                         // Char preceding digits
+        return ''                           // Empty span
+    let op = str[j]                         // Char preceding span
 
-    if (!'_^'.includes(op))                 // Digits not preceded by * or _
-        return ''
+    if (op != '^' && (op != '_' || !subOk)) // Span not preceded by ^ or _,
+        return ''                           //  or _ but letter(s) w/o subs
 
-    let n = ''                              // Gets sub/sup number from digits
+    let s = ''                              // Collects sub/sup span
     let k = j + 1
-    for (; k < i + 1; k++)
-        n += (op == '^') ? digitSuperscripts[str[k]] : digitSubscripts[str[k]]
+    for (; k < i + 1; k++) {
+        if (str[k] == '\uD835')
+            k++                             // Bypass lead surrogate
+        s += getUniSubSup(op, str, k)
+    }
 
     // If the preceding op is the other subsup op, return '', e.g., for a_0^2
     // Code doesn't handle subsups (but could...)
@@ -159,12 +205,12 @@ function getSubSupDigits(str, i, delim) {
         if (str[k] == opSupSub)
             return ''
         if (str[k] < '\u3017' && !isAsciiAlphanumeric(str[k]) && !isDoubleStruck(str[k]))
-            break                           // Could allow other letters...
+            break                           // Could allow other base letters...
     }
     if (k == j - 1)
         return ''                           // No base character(s)
 
-    return n
+    return [s, j]
 }
 
 function getFencedOps(value) {
