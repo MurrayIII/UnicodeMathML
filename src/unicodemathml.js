@@ -10,58 +10,6 @@ var emitDefaultIntents =
     typeof ummlConfig.defaultIntents === "undefined" ||
     ummlConfig.defaultIntents;
 
-const defaultConfiguration = {              // Order same as configDescriptions
-    splitInput: true,
-    resolveControlWords: true,
-    displaystyle: true,
-    debug: true,
-    caching: true,
-    tracing: false,
-    forceMathJax: false,
-    defaultIntents: false,
-    speakSelectionEnds: false,
-    doubleStruckMode: "us-tech",
-    transposeChar: "T",
-    displayBrailleItalic: false
-}
-
-function convertUnicodeMathToMathML(uMath, config) {
-    if (!ummlConfig)
-        ummlConfig = JSON.parse(JSON.stringify(config ? config : defaultConfiguration))
-
-    return unicodemathml(uMath, ummlConfig.displaystyle)
-}
-
-function convertUnicodeMathZonesToMathML(text, config) {
-    // Return text with UnicodeMath zones (⁅...⁆) replaced by the corresponding
-    // MathML strings.
-    if (!ummlConfig)
-        ummlConfig = JSON.parse(JSON.stringify(config ? config : defaultConfiguration))
-
-    let i = 0
-    let result = ''
-
-    for (; i < text.length; i++) {
-        // Find next UnicodeMath zone
-        let k = text.indexOf('⁅', i)
-        if (k == -1)
-            break
-        if (text[k - 1] == '\\') {
-            i = k
-            continue
-        }
-        let n = text.indexOf('⁆', k + 1)
-        if (n == -1)
-            break;
-        result += text.substring(i, k)      // Add in preceding text substring
-        let displayStyle = !k || text[k - 1] == '\n'
-        let t = unicodemathml(text.substring(k + 1, n), displayStyle)
-        result += t.mathml                  // Add in MathML for UnicodeMath zone
-        i = n
-    }
-    return result + text.substring(i)       // Add in trailing text substring
-}
-
 function escapeHTMLSpecialChars(str) {
     const replacements = { '&': '&amp;', '<': '&lt;', '>': '&gt;' }
 
@@ -209,6 +157,9 @@ function getSubSups(str, i, delim) {
     }
     if (k == j - 1)
         return ''                           // No base character(s)
+
+    if (s[0] == '⁽' && s[s.length - 1] == '⁾')
+        s = s.substring(1, s.length - 1)    // Eliminate outer parens
 
     return [s, j]
 }
@@ -5636,6 +5587,57 @@ function unicodemathml(unicodemath, displaystyle) {
     }
 }
 
+const defaultConfiguration = {              // Order same as configDescriptions
+    splitInput: true,
+    resolveControlWords: true,
+    displaystyle: true,
+    debug: true,
+    caching: true,
+    tracing: false,
+    forceMathJax: false,
+    defaultIntents: false,
+    speakSelectionEnds: false,
+    doubleStruckMode: "us-tech",
+    transposeChar: "T",
+    displayBrailleItalic: false
+}
+
+function convertUnicodeMathToMathML(uMath, config) {
+    if (!ummlConfig)
+        ummlConfig = JSON.parse(JSON.stringify(config ? config : defaultConfiguration))
+
+    return unicodemathml(uMath, ummlConfig.displaystyle)
+}
+
+function convertUnicodeMathZonesToMathML(text, config) {
+    // Return text with UnicodeMath zones (⁅...⁆) replaced by the corresponding
+    // MathML strings.
+    if (!ummlConfig)
+        ummlConfig = JSON.parse(JSON.stringify(config ? config : defaultConfiguration))
+
+    let i = 0
+    let result = ''
+
+    for (; i < text.length; i++) {
+        // Find next UnicodeMath zone
+        let k = text.indexOf('⁅', i)
+        if (k == -1)
+            break
+        if (text[k - 1] == '\\') {
+            i = k
+            continue
+        }
+        let n = text.indexOf('⁆', k + 1)
+        if (n == -1)
+            break;
+        result += text.substring(i, k)      // Add in preceding text substring
+        let displayStyle = !k || text[k - 1] == '\n'
+        let t = unicodemathml(text.substring(k + 1, n), displayStyle)
+        result += t.mathml                  // Add in MathML for UnicodeMath zone
+        i = n
+    }
+    return result + text.substring(i)       // Add in trailing text substring
+}
 
 //////////////
 // PLUMBING //
