@@ -116,7 +116,7 @@ A mouse or touchpad provides one way to move between and inside the various faci
 ## 9. UnicodeMath editing
 When you type UnicodeMath into the input window, various conversions occur in the input window (except inside a quoted literal):
 * Letters are converted to math italic unless they 1) are part of a function name or of a control word (backslash followed by letters), or 2) follow a quote. For example, a → 𝑎
-* Numeric subscripts/superscripts are converted to Unicode subscript/superscript characters, respectively. For example, a_2 → 𝑎₂ and a^2 → 𝑎².
+* Numeric subscripts/superscripts are converted to Unicode subscript/superscript characters, respectively. For example, a_2 → 𝑎₂, a\^2 → 𝑎², and e\^-(a+b) → 𝑒⁻⁽ᵃ⁺ᵇ⁾.
 * Numeric fractions are converted to Unicode numeric fractions. For example, 1/2 → ½
 * Control words are converted to their symbols, e.g., \alpha → 𝛼
 * Various operator pairs are converted to Unicode operators, e.g., '+-' → '±' and '/=' → '≠'.
@@ -141,7 +141,7 @@ Similarly, typing +- is easy for getting ±. Many of these operator pairs are li
 | ⊄= | ⊈| ⊅= | ⊉ |
 | /< | ≮ | /> | ≯ |
 
-The combination <​− gives ←. If you want to enter an expression like 𝑎<−𝑏, put a space between the > and -.
+The combination <​− gives ←. If you want to enter an expression like 𝑎<−𝑏, put a space between the < and -.
 
 These conversions aren't needed in the input window, but they make the input more readable.
 They also help in creating good looking UnicodeMath expressions for use in plain-text scenarios.

@@ -1,10 +1,12 @@
 var autoBuildUp = false                     // (could be a unicodemathml() arg)
 var ksi = false
-var testing
+var output_trace
 var selanchor
 var selfocus
+var testing
 var useMfenced = 0                          // Generate recommended MathML
 var ummlConfig
+var ummlParser
 var emitDefaultIntents =
     typeof ummlConfig === "undefined" ||
     typeof ummlConfig.defaultIntents === "undefined" ||
@@ -763,8 +765,7 @@ function isMathMLObject(value, ignoreIntent) {
 }
 
 function hasSingleMrow(value) {
-    return Array.isArray(value) && value.length == 1 &&
-        value[0].hasOwnProperty('mrow');
+    return Array.isArray(value) && value.length == 1 && value[0].mrow
 }
 
 function codeAt(chars, i) {
@@ -1073,7 +1074,7 @@ const controlWords = {
     'Xi':               'Ξ',	// 039E
     'above':            '┴',	// 2534
     'abs':              '⒜',	// 249C (UnicodeMath op)
-    'absvalue':         '⑨',   // 2468 (|𝑥|=Ⓒ("if "𝑥>=&0,&𝑥@"if "𝑥<&0,&-𝑥))
+    'absvalue':         '⑨',   // 2468 (|𝑥|=Ⓒ("if "𝑥>=&0,&𝑥@"if "𝑥<&0,&-𝑥))
     'acute':            '́',	    // 0301
     'adjoint':          '†',	// 2020
     'ain':		        'ع',    // 0639
@@ -1914,8 +1915,8 @@ function italicizeCharacters(chars) {
 }
 
 function getAbsArg(content) {
-    if (Array.isArray(content) && content[0].hasOwnProperty("atoms") &&
-        content[0].atoms.length == 1 && content[0].atoms[0].hasOwnProperty("chars")) {
+    if (Array.isArray(content) && content[0].atoms &&
+        content[0].atoms.length == 1 && content[0].atoms[0].chars) {
         let arg = content[0].atoms[0].chars;
         let ch = getCh(arg, 0);
         if (ch.length == arg.length)
@@ -1946,18 +1947,18 @@ function getIntervalEndPoint(arg, content) {
 }
 
  function getOrder(high) {
-    if (high.hasOwnProperty('expr'))
+    if (high.expr)
         return high.expr[0][0].number;
 
-    if (high.hasOwnProperty('atoms'))
+    if (high.atoms)
         return high.atoms[0].chars;
 
     if (Array.isArray(high)) {
-        if (high[0].hasOwnProperty('number'))
+        if (high[0].number)
             return high[0].number;
-        if (high[0].hasOwnProperty('operator'))
+        if (high[0].operator)
             return '';
-        if (high[0].hasOwnProperty('atoms'))
+        if (high[0].atoms)
             return high[0].atoms[0].chars;
     }
     return '$n';                            // Order n
@@ -1968,14 +1969,14 @@ function getScriptArg(dsty, value) {
     let arg = value.arg;
     let intent = value.intent;
 
-    if (!arg && Array.isArray(value) && value[0].hasOwnProperty("bracketed"))
+    if (!arg && Array.isArray(value) && value[0].bracketed)
         arg = value[0].bracketed.arg;
 
     if (!arg && !intent)
         return mtransform(dsty, dropOutermostParens(value));
 
     value = dropOutermostParens(value);
-    if (Array.isArray(value) && value[0].hasOwnProperty('expr')) {
+    if (Array.isArray(value) && value[0].expr) {
         if(arg)
             value[0].expr.arg = arg;
         if (intent)
@@ -1993,7 +1994,7 @@ function getScript(limit, ref) {
     if (limit == undefined)
         return '';
     if (!Array.isArray(limit)) {
-        if (!limit.hasOwnProperty('expr') || !Array.isArray(limit.expr))
+        if (!limit.expr || !Array.isArray(limit.expr))
             return '';
         limit = limit.expr[0];
     }
@@ -2001,13 +2002,13 @@ function getScript(limit, ref) {
         return ref;
     limit = limit[0];
 
-    if (limit.hasOwnProperty('atoms')) {
-        if (limit.atoms.hasOwnProperty('chars'))
+    if (limit.atoms) {
+        if (limit.atoms.chars)
             return limit.atoms.chars;
-        if (Array.isArray(limit.atoms) && limit.atoms[0].hasOwnProperty('chars'))
+        if (Array.isArray(limit.atoms) && limit.atoms[0].chars)
             return limit.atoms[0].chars;
     }
-    if (limit.hasOwnProperty('number')) {
+    if (limit.number) {
         return limit.number;
     }
     return ref;
@@ -2016,8 +2017,8 @@ function getScript(limit, ref) {
 function getVariable(arg) {
     // Return atomic variables as is; return '$' if an arg reference
     // is needed.
-    if (!Array.isArray(arg) || !arg[0].hasOwnProperty('atoms') ||
-        arg[0].atoms.length > 1 || !arg[0].atoms[0].hasOwnProperty('chars')) {
+    if (!Array.isArray(arg) || !arg[0].atoms || arg[0].atoms.length > 1 ||
+        !arg[0].atoms[0].chars) {
         return '$';
     }
     let ch = getCh(arg[0].atoms[0].chars, 0);
@@ -2041,7 +2042,7 @@ function getDifferentialInfo(of, n) {
     if (arg == undefined)
         return [0, 0, 0];                   // Can't be differential
 
-    if (arg.hasOwnProperty('expr')) {       // Happens if argument was bracketed
+    if (arg.expr) {                         // Happens if argument was bracketed
         arg = arg.expr;
         if (Array.isArray(arg))
             arg = arg[0];
@@ -2052,10 +2053,9 @@ function getDifferentialInfo(of, n) {
         }
     }
 
-    if (arg.hasOwnProperty('function')) {
+    if (arg.function) {
         arg = arg.function.f;
-        if (n == 1 && arg.hasOwnProperty('atoms') &&
-            arg.atoms.hasOwnProperty('chars')) {
+        if (n == 1 && arg.atoms && arg.atoms.chars) {
             // Function in denominator, For, e.g., ⅆ/ⅆ𝑧⁡arcsin⁡𝑧.
             // Get diffentiation variable, here 𝑧
             let chars = arg.atoms.chars;
@@ -2074,8 +2074,8 @@ function getDifferentialInfo(of, n) {
         return [0, 0, 0];                   // Not a differential
     let cchChD = chD.length;
 
-    if (arg.hasOwnProperty('script')) {     // For, e.g., 𝑑𝑥², 𝑑²𝑓(𝑥), ⅆ²𝛾^∗, ⅆ𝛾^∗
-        if (arg.script.hasOwnProperty('high')) {
+    if (arg.script) {                       // For, e.g., 𝑑𝑥², 𝑑²𝑓(𝑥), ⅆ²𝛾^∗, ⅆ𝛾^∗
+        if (arg.script.high) {
             order = getOrder(arg.script.high);
             if (!arg1 && !order) {          // For, e.g., ⅆ𝛾^∗
                 order = '1';
@@ -2094,7 +2094,7 @@ function getDifferentialInfo(of, n) {
             // Get differentiation variable(s) in denominator with no superscript
             // e.g., 𝑥, 𝑡 in 𝜕²𝜓(𝑥,𝑡)/𝜕𝑥𝜕𝑡, 𝑥 in 𝑑𝑦/𝑑𝑥, 𝑥, 𝑥′ in 𝜕²𝑓(𝑥,𝑥′)/𝜕𝑥𝜕𝑥′
             let primes = 0;
-            if (arg.hasOwnProperty('primed')) {
+            if (arg.primed) {
                 primes = arg.primed.primes; // For, e.g., 𝜕²𝑓(𝑥,𝑥′)/𝜕𝑥𝜕𝑥′
                 arg = arg.primed.base;
             }
@@ -2121,25 +2121,25 @@ function getDifferentialInfo(of, n) {
             if (!arg1 && of[0].length > 1)
                 arg1 = of[0][1];
             if (arg1) {
-                if (arg1.hasOwnProperty('script') || arg1.hasOwnProperty('primed') ||
-                    arg1.hasOwnProperty('function') || of[0].length > 2) {
+                if (arg1.script || arg1.primed || arg1.function ||
+                    of[0].length > 2) {
                     darg = '$f';
-                } else if (arg1.hasOwnProperty('atoms')) {
+                } else if (arg1.atoms) {
                     darg = getCh(arg1.atoms[0].chars, 0); // Derivative argument
                 }
             }
-        } else if (of[0].length > 0 && arg.hasOwnProperty('atoms')) {
+        } else if (of[0].length > 0 && arg.atoms) {
             // For, e.g., 𝑑𝑓(𝑥)
             arg = arg.atoms;
             if (Array.isArray(arg))
                 arg = arg[0];
             if (arg.chars.length == cchChD) {
                 // No char preceding '('. Handle cases like ⅆ(tan x)/ⅆx
-                if (of[0].length > 1 && of[0][1].hasOwnProperty('bracketed')) {
+                if (of[0].length > 1 && of[0][1].bracketed) {
                     of[0][1].bracketed.arg = 'f';
                     darg = '$f';
                 }
-            } else if (arg.hasOwnProperty('funct')) {
+            } else if (arg.funct) {
                 darg = '$f';                     // 𝑑𝑓⁡(𝑥)/𝑑𝑥 (\u2061 follows 𝑓)
             } else {                             // Get function name char
                 if (arg.chars[cchChD] == ',')
@@ -2149,7 +2149,7 @@ function getDifferentialInfo(of, n) {
                     darg = '$f';                 // Ref for derivative function
                 }
             }
-        } else if (arg.hasOwnProperty('primed')) {
+        } else if (arg.primed) {
             darg = '$f';
         }
     }
@@ -2768,24 +2768,21 @@ function transposeChar() {
 // if the outermost node of an AST describes a parenthesized expression, remove
 // the parentheses. used for fractions, exponentiation, etc.
 function dropOutermostParens(uast) {
-    if (uast.hasOwnProperty("expr"))
+    if (uast.expr)
         return {expr: dropOutermostParens(uast.expr)};
 
     if (Array.isArray(uast)) {
         if (uast.length == 1)
-            return [dropOutermostParens(uast[0])];
-        if (uast.length == 2 && uast[0].hasOwnProperty("bracketed") &&
-            uast[1].hasOwnProperty("intend")) {
+            return [dropOutermostParens(uast[0])]
+
+        if (uast.length == 2 && uast[0].bracketed && uast[1].intend)
             return [dropOutermostParens(uast[0]), uast[1]]
-        }
     }
-    if (!uast.hasOwnProperty("bracketed"))
+    if (!uast.bracketed)
         return uast;
 
-    if (v(uast).open == "(" && v(uast).close == ")" &&
-        !v(uast).content.hasOwnProperty("separated")) {
+    if (v(uast).open == "(" && v(uast).close == ")" && !v(uast).content.separated)
         return v(uast).content;
-    }
     return uast;
 }
 
@@ -2800,8 +2797,7 @@ function dropSingletonLists(uast) {
 const brackets = {'⒨': '()', '⒩': '‖‖', 'ⓢ': '[]', 'Ⓢ': '{}', '⒱': '||'};
 
 function isCharsButNotFunction(value) {
-    return value.hasOwnProperty("chars") && value.chars[0] != 'Ⅎ' &&
-        !isFunctionName(value.chars);
+    return value.chars && value.chars[0] != 'Ⅎ' && !isFunctionName(value.chars)
 }
 
 ////////////////
@@ -2950,7 +2946,7 @@ function preprocess(dsty, uast, index, arr) {
                 // In display mode if not an integral, display limits abovebelow
                 value.limits.script.type = "abovebelow";
             }
-            if (value.naryand.hasOwnProperty("binom") && arr != undefined &&
+            if (value.naryand.binom && arr != undefined &&
                 index < arr.length - 1 && Array.isArray(arr[index + 1])) {
                 // Include array following binomial coefficient in naryand.
                 // Binomial coefficients like 𝑛⒞𝑘 should be part of operands
@@ -2966,11 +2962,11 @@ function preprocess(dsty, uast, index, arr) {
                 // move that element into value.naryand. E.g., in ∫_1^2 1/𝑥 ⅆ𝑥=ln 2,
                 // ⅆ𝑥 is moved into the integrand.
                 let next = arr[index + 1][0];
-                if (next.hasOwnProperty('primed'))
+                if (next.primed)
                     next = next.primed.base;
-                if (next.hasOwnProperty('atoms') && Array.isArray(next.atoms) &&
-                    next.atoms[0].hasOwnProperty('chars') &&
-                    next.atoms[0].chars[0] == 'ⅆ') {    // Differential d
+                if (next.atoms && Array.isArray(next.atoms) &&
+                    next.atoms[0].chars && next.atoms[0].chars[0] == 'ⅆ') {
+                    // Differential d
                     if (Array.isArray(value.naryand))
                         value.naryand.push(arr[index + 1][0]);
                     else
@@ -3020,9 +3016,8 @@ function preprocess(dsty, uast, index, arr) {
                             if (Array.isArray(value.of[1])) { // Denominator
                                 // Reorder tree for, e.g., ⅆ/ⅆ𝑧⁡arcsin⁡𝑧
                                 let val = value.of[1][0];
-                                if (val.hasOwnProperty('function') &&
-                                    val.function.f.hasOwnProperty('atoms') &&
-                                    val.function.f.atoms.hasOwnProperty('chars')) {
+                                if (val.function && val.function.f.atoms &&
+                                    val.function.f.atoms.chars) {
                                     let arg = val.function.of;
                                     value.of[1][0] = {atoms: {chars:
                                         value.of[1][0].function.f.atoms.chars.split(',').join('')}};
@@ -3030,15 +3025,15 @@ function preprocess(dsty, uast, index, arr) {
                                 }
                             }
                             if (Array.isArray(value.of[0]) && order0 == 1 &&
-                                value.of[0][0].hasOwnProperty('script')) { // Handle ⅆ𝑓₁/ⅆ𝑧
+                                value.of[0][0].script) { // Handle ⅆ𝑓₁/ⅆ𝑧
                                 arg0 = '$f';
                             }
                             if (index + 1 < arr.length) {
                                 let ele = arr[index + 1];
-                                if (ele.hasOwnProperty('operator') && ele.operator == '\u2061')
+                                if (ele.operator && ele.operator == '\u2061')
                                     ele = arr[index + 2];
                                 if (Array.isArray(ele)) {
-                                    if (ele.length == 1 && ele[0].hasOwnProperty("atoms"))
+                                    if (ele.length == 1 && ele[0].atoms)
                                         ele[0].atoms.arg = '$f'; // Target <mi>
                                     else
                                         ele.unshift({arg: 'f'}); // Target <mrow>
@@ -3050,49 +3045,47 @@ function preprocess(dsty, uast, index, arr) {
                             // Handle intent argument reference(s)
                             let ofDiff = value.of;
                             let s = ofDiff[0][0];
-                            if (s.hasOwnProperty('script')) {
+                            if (s.script) {
                                 // For, e.g., 𝑑^(n-1) 𝑓(𝑥)/𝑑𝑥^(𝑛-1), 𝑑^(𝑛-1) y/𝑑𝑥^(𝑛-1), ⅆ²𝛾′/ⅆ𝑧²
                                 if (Array.isArray(s.script.high)) {
                                     if (order0.startsWith('$')) {
-                                        if (s.script.high[0].hasOwnProperty('bracketed'))
+                                        if (s.script.high[0].bracketed)
                                             s.script.high[0].bracketed.arg = order0.substring(1);
-                                        else if (s.script.high[0].hasOwnProperty('atoms'))
+                                        else if (s.script.high[0].atoms)
                                             s.script.high[0].atoms.arg = order0.substring(1);
                                     } else if (arg0.startsWith('$')) {
                                         if (ofDiff[0].length == 1) {
                                             s.script.arg = arg0.substring(1);
-                                        } else if (ofDiff[0][1].hasOwnProperty('primed')) {
+                                        } else if (ofDiff[0][1].primed) {
                                             ofDiff[0][1].primed.arg = arg0.substring(1); // ⅆ^2 𝛾′/ⅆ𝑧²
                                         }
                                     }
                                 } else if (ofDiff[0].length == 2) {
-                                    if (ofDiff[0][1].hasOwnProperty('script')) { // For, e.g., ⅆ²𝛾^∗/ⅆ𝑧²
+                                    if (ofDiff[0][1].script) { // For, e.g., ⅆ²𝛾^∗/ⅆ𝑧²
                                         ofDiff[0][1].script.arg = arg0.substring(1);
-                                    } else if (ofDiff[0][1].hasOwnProperty('primed')) {
+                                    } else if (ofDiff[0][1].primed) {
                                         ofDiff[0][1].primed.arg = arg0.substring(1); // ⅆ²𝛾′/ⅆ𝑧²
-                                    } else if (ofDiff[0][1].hasOwnProperty('function')) { // 𝜕²𝑓⁡(𝑥)/𝜕𝑥² (incl \u2061)
+                                    } else if (ofDiff[0][1].function) { // 𝜕²𝑓⁡(𝑥)/𝜕𝑥² (incl \u2061)
                                         ofDiff[0][1].arg = arg0.substring(1);
                                     }
                                 } else if (s.script.low) {
                                     s.script.arg = arg0.substring(1);
                                 }
                                 // For, e.g., 𝑑²𝑓(𝑥)/𝑑𝑥² or 𝑑^(n-1) 𝑓(𝑥)/𝑑𝑥^(n-1)
-                                if (ofDiff[0].length == 3 &&
-                                    ofDiff[0][1].hasOwnProperty('atoms') &&
-                                    ofDiff[0][2].hasOwnProperty('bracketed')) {
+                                if (ofDiff[0].length == 3 && ofDiff[0][1].atoms &&
+                                    ofDiff[0][2].bracketed) {
                                     value.of[0] = [s, [{arg: arg0.substring(1)},
                                         ofDiff[0][1], ofDiff[0][2]]];
                                 } else if (ofDiff[0].length == 2) {
                                     // For, e.g., 𝑑^(n-1) y/𝑑𝑥^(n-1)
                                     value.of[0] = [s, ofDiff[0][1]];
                                 }
-                            } else if (s.hasOwnProperty('primed')) {
+                            } else if (s.primed) {
                                 s.primed.arg = arg0.substring(1);
-                            } else if (s.hasOwnProperty('function')) {
+                            } else if (s.function) {
                                 s.arg = arg0.substring(1);  // 𝜕𝑓⁡(𝑥,𝑥′)/𝜕𝑥′
                             } else if (ofDiff[0].length == 2 && // 𝑑𝑓(𝑥)/𝑑𝑥
-                                s.hasOwnProperty('atoms') &&
-                                ofDiff[0][1].hasOwnProperty('bracketed')) {
+                                s.atoms && ofDiff[0][1].bracketed) {
                                 let ch = getCh(s.atoms[0].chars, 0);
 
                                 if (s.atoms[0].chars.length > ch.length) {
@@ -3168,7 +3161,7 @@ function preprocess(dsty, uast, index, arr) {
                             ret.base = base
                         }
                     }
-                    if (base.hasOwnProperty('intend') && base.intend.op == 'Ⓐ') {
+                    if (base.intend && base.intend.op == 'Ⓐ') {
                         // If the selanchor is applied to the base, make the
                         // selanchor apply to the sub/superscript object to
                         // make it parsable
@@ -3177,7 +3170,7 @@ function preprocess(dsty, uast, index, arr) {
                         ret.high = value.high
                         ret.low = value.low
                         arr[index - 1] = {intend: {anchor: val}}
-                    } else if (base.hasOwnProperty("primed")) {
+                    } else if (base.primed) {
                         // if the subsup contains a primed expression, pull the
                         // prime up into the superscript and make the prime's
                         // base the subsup's base
@@ -3241,7 +3234,7 @@ function preprocess(dsty, uast, index, arr) {
                             // Euler partial derivative can't have superscript
                             break;
                         }
-                        if (Array.isArray(ret.high) || ret.high.hasOwnProperty('expr'))
+                        if (Array.isArray(ret.high) || ret.high.expr)
                             order = getOrder(ret.high);
                     }
                     n = 1;                  // Count of subscript letters
@@ -3269,7 +3262,7 @@ function preprocess(dsty, uast, index, arr) {
                     let darg = '';
                     if (arr.length - 1 > index) {
                         if (arr.length - 2 == index ||
-                            !arr[index + 2].hasOwnProperty('bracketed')) {
+                            !arr[index + 2].bracketed) {
                             arr[index + 1].arg = 'f';
                             darg = '$f';
                         } else {
@@ -3279,7 +3272,7 @@ function preprocess(dsty, uast, index, arr) {
                             arr.splice(index + 2, 1);
                             if (!chars1) {
                                 let val = arr[index + 1][2].bracketed.content;
-                                if (val.hasOwnProperty('expr'))
+                                if (val.expr)
                                     val = val.expr[0];
                                 chars1 = getChars(val);
                             }
@@ -3306,7 +3299,7 @@ function preprocess(dsty, uast, index, arr) {
                     // scripts up into the prescript, which will then have all
                     // four kinds of scripts set
                     base = dropSingletonLists(ret.base);
-                    if (base.hasOwnProperty("script") && base.script.type == "subsup") {
+                    if (base.script && base.script.type == "subsup") {
                         if ("low" in base.script) {
                             ret.low = preprocess(dsty, base.script.low);
                         }
@@ -3370,7 +3363,7 @@ function preprocess(dsty, uast, index, arr) {
             return {hbrack: {intent: intent, arg: arg, bracket: value.bracket, of: preprocess(dsty, value.of)}};
 
         case "intend":
-            if (value.content.hasOwnProperty("expr") && value.content.expr.length > 1) {
+            if (value.content.expr && value.content.expr.length > 1) {
                 // Set up to put attribute(s) on an <mrow>
                 let c = preprocess(dsty, v(value.content));
                 if (value.op == 'ⓘ') {
@@ -3429,7 +3422,7 @@ function preprocess(dsty, uast, index, arr) {
             // subscripts after certain function names into belowscripts. the
             // <mo> movablelimits attribute could in theory also be used here,
             // but it's not supported everywhere (e.g. safari)
-            if (value.f.hasOwnProperty("script")) {
+            if (value.f.script) {
                 let s = valuef.script;
                 let f = s.base.atoms.chars;
                 if (dsty.display && s.type == "subsup" && s.low &&
@@ -3450,7 +3443,7 @@ function preprocess(dsty, uast, index, arr) {
                 let x = ofFunc[0];
                 if (Array.isArray(x))
                     x = x[0];                  // '⒡' as separate array element
-                if (x != undefined && x.hasOwnProperty('atoms')) {
+                if (x != undefined && x.atoms) {
                     let ch = x.atoms[0].chars;
                     if (ch[0] == '⒡') {
                         // Remove '⒡' and enclose function arg in parens
@@ -3463,7 +3456,7 @@ function preprocess(dsty, uast, index, arr) {
                 }
             }
             let extra = [];
-            if (valuef.hasOwnProperty('atoms') && valuef.atoms.hasOwnProperty('chars')) {
+            if (valuef.atoms && valuef.atoms.chars) {
                 let chars = valuef.atoms.chars.split(",");
                 valuef.atoms.chars = chars.pop();
                 if (chars.length) {
@@ -3496,8 +3489,8 @@ function preprocess(dsty, uast, index, arr) {
             if (value.arg)
                 arg = value.arg;
             base = preprocess(dsty, value.base);
-            if (!uast.hasOwnProperty('inscript') && base.hasOwnProperty('atoms') &&
-                Array.isArray(base.atoms) && base.atoms[0].hasOwnProperty('chars')) {
+            if (!uast.inscript && base.atoms && Array.isArray(base.atoms) &&
+                base.atoms[0].chars) {
                 let chars = base.atoms[0].chars;
                 let cch = chars.length;
                 let cchCh = (chars[cch - 1] >= '\DC00') ? 2 : 1;
@@ -3512,20 +3505,20 @@ function preprocess(dsty, uast, index, arr) {
                     // Handle, e.g., ⓘ(":derivative"𝑓′(𝑥))
                     intent = 'derivative(' + String.fromCodePoint(value.primes + 0x30) + ',' + chars;
 
-                    if (index < arr.length - 1 && arr[index + 1].hasOwnProperty('bracketed')) {
+                    if (index < arr.length - 1 && arr[index + 1].bracketed) {
                         let val = arr[index + 1].bracketed.content;
                         let wrt = '';
 
-                        if (val.hasOwnProperty('expr') && Array.isArray(val.expr))
+                        if (val.expr && Array.isArray(val.expr))
                             val = val.expr[0];
                         if (Array.isArray(val))
                             val = val[0];
-                        if (val.hasOwnProperty('primed')) {
+                        if (val.primed) {
                             // Handle, e.g., ⓘ("derivative"𝑓′(𝑥′))
                             wrt = processPrimes(val.primed.primes);
                             val = val.primed.base;
                         }
-                        if (val.hasOwnProperty('atoms') && Array.isArray(val.atoms)) {
+                        if (val.atoms && Array.isArray(val.atoms)) {
                             wrt = val.atoms[0].chars + wrt;
                             intent += '(' + wrt + '),' + wrt + ')';
                         }
@@ -3545,7 +3538,7 @@ function preprocess(dsty, uast, index, arr) {
             return {factorial: value};
 
         case "atoms":
-            if (!value.hasOwnProperty("funct")) {
+            if (!value.funct) {
                 let chars;
                 let darg = '';
 
@@ -3558,7 +3551,7 @@ function preprocess(dsty, uast, index, arr) {
                 if (chars && chars[0] == 'ⅅ' && chars.length > 1 && !intent &&
                     emitDefaultIntents) {
                     // Get default intent for, e.g., ⅅ𝑓(𝑥)
-                    if (arr.length - 1 > index && arr[index + 1].hasOwnProperty('bracketed')) {
+                    if (arr.length - 1 > index && arr[index + 1].bracketed) {
                         // Get derivative variable
                         let val = arr[index + 1].bracketed.content.expr;
                         if (val && Array.isArray(val))
@@ -3603,7 +3596,7 @@ function preprocess(dsty, uast, index, arr) {
                     arg: arg, content: preprocess(dsty, value.content)}}
 
         case "bracketed":
-            if (value.content.hasOwnProperty("separated")) {
+            if (value.content.separated) {
                 let sep = value.content.separated.separator
                 if (value.open == '⟨' && sep == '│' && value.close == '⟩')  // U+2502
                     sep = '|'
@@ -3630,9 +3623,8 @@ function preprocess(dsty, uast, index, arr) {
                 } else {
                     value.content = preprocess(dsty, value.content);
                     if (!value.intent && value.open == '\u007B' && !value.close &&
-                        value.content.hasOwnProperty('expr') &&
-                        Array.isArray(value.content.expr) &&
-                        value.content.expr[0].hasOwnProperty('array')) {
+                        value.content.expr && Array.isArray(value.content.expr) &&
+                        value.content.expr[0].array) {
                         value.intent = ':cases';
                     }
                     if (!arg && value.arg)
@@ -3673,7 +3665,6 @@ function preprocess(dsty, uast, index, arr) {
         case "space":
         case "text":
         case "tt":
-
         default:
             return uast;
     }
@@ -3739,9 +3730,9 @@ function mtransform(dsty, puast) {
 
     if (Array.isArray(puast) && puast.length) {
         let val;
-        if (puast[0].hasOwnProperty('script'))
+        if (puast[0].script)
             val = puast[0].script;
-        else if (puast[0].hasOwnProperty('primed'))
+        else if (puast[0].primed)
             val = puast[0].primed;
 
         if (val && val.intent && val.intent.indexOf('derivative') != -1) {
@@ -3752,9 +3743,9 @@ function mtransform(dsty, puast) {
             return {mrow: withAttrs(attrs, puast.map(e => mtransform(dsty, e)))};
         }
         let arg = {};
-        if (puast.hasOwnProperty("arg"))
+        if (puast.arg)
             arg = {arg: puast.arg};
-        else if (puast[0].hasOwnProperty("arg"))
+        else if (puast[0].arg)
             arg = puast.shift();
         let ret = []
         for (let i = 0; i < puast.length; i++) {
@@ -3779,7 +3770,7 @@ function mtransform(dsty, puast) {
     let str
     let value = v(puast)
     let val
-    if (value && !value.arg && puast.hasOwnProperty("arg"))
+    if (value && !value.arg && puast.arg)
         value.arg = puast.arg;
 
     switch (key) {
@@ -3825,7 +3816,7 @@ function mtransform(dsty, puast) {
 
         case "expr":
             if (Array.isArray(value) && Array.isArray(value[0])) {
-                if (value[0][0].hasOwnProperty("intent") || value[0][0].hasOwnProperty("arg")) {
+                if (value[0][0].intent || value[0][0].arg) {
                     let c = mtransform(dsty, value[0][0]);
                     c.mrow.attributes = getAttrs(value[0][0], '');
                     return c;
@@ -3958,15 +3949,16 @@ function mtransform(dsty, puast) {
             let ofFrac = value.of.map(e => (mtransform(dsty, dropOutermostParens(e))));
 
             switch (value.symbol) {
-                case "\u2298":              // small fraction
+                case "\u2298":              // Small fraction
                     attrs.displaystyle = 'false'; // Fall through
-                case "/":                   // normal fraction ¹-₂
+                case "/":                   // Normal fraction ¹-₂
                     return {mfrac: withAttrs(attrs, ofFrac)};
-                case "\u2044":              // skewed fraction ¹/₂
+                case "\u2044":              // Skewed fraction ¹/₂
                     return {mfrac: withAttrs({ bevelled: true }, ofFrac)};
-                case "\u2215":              // linear fraction 1/2
+                case "\u2215":              // Linear fraction 1/2
                     return {mrow: noAttr([ofFrac[0], { mo: noAttr('/') }, ofFrac[1]])};
             }
+            break                           // (keep eslint happy)
 
         case "atop":
             attrs = getAttrs(value, '');
@@ -4141,8 +4133,8 @@ function mtransform(dsty, puast) {
             if (value.intent)
                 attrs.intent = value.intent;
 
-            if (base.hasOwnProperty("script") &&
-                (base.script.type == "subsup" || base.script.type == "abovebelow")) {
+            if (base.script && (base.script.type == "subsup" ||
+                    base.script.type == "abovebelow")) {
                 expLow = base.script.low;
                 expHigh = base.script.high;
                 let type = base.script.type;
@@ -4237,12 +4229,13 @@ function mtransform(dsty, puast) {
                 case "D":  // two sizes smaller
                     return {mstyle: withAttrs({fontsize: fontSize(-2)}, mtransform(dsty, value.of))};
             }
+            break
 
         case "colored":
             attrs = getAttrs(value.of, '')
             attrs.mathcolor = value.color
             value.of = mtransform(dsty, value.of);
-            if (value.of.hasOwnProperty('mo'))
+            if (value.of.mo)
                 return {mo: withAttrs(attrs, value.of.mo.content)};
             return {mstyle: withAttrs(attrs, value.of)}
 
@@ -4291,8 +4284,8 @@ function mtransform(dsty, puast) {
                     else
                         mis.push(val);
                 } else {
-                    if (n == 3 && value[1].hasOwnProperty('spaces') && str[0] == 'ⅆ' &&
-                        value[0].hasOwnProperty('chars')) {
+                    if (n == 3 && value[1].spaces && str[0] == 'ⅆ' &&
+                        value[0].chars) {
                         // Need a more general fix for cases like 𝑥 ⅆ𝑥
                         str = value[0].chars + '\u2009' + str;
                     }
@@ -4447,7 +4440,7 @@ function mtransform(dsty, puast) {
             let separator = ""
 
             // handle potential separator
-            if (value.content.hasOwnProperty("separated")) {
+            if (value.content.separated) {
                 separator = value.content.separated.separator;
                 value.content = value.content.separated.of;
             }
@@ -4686,7 +4679,6 @@ function pretty(mast) {
         case "msup":
         case "munder":
         case "munderover":
-
         case "mfenced":
         case "mfrac":
         case "mroot":
@@ -4713,7 +4705,7 @@ function pretty(mast) {
                             (vs == '\uFE01' ? "'ss01'" : "'ss00'") + " 1"
                     }
                 }
-            }
+            }                               // falls through
         case "mn":
         case "mo":
         case "mtext":
