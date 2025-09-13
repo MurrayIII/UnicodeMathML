@@ -570,6 +570,11 @@ const intervals = {
 	'open-interval': '⏕'			// 23D5
 }
 
+const argCounts = {
+	'msup': 2, 'msub': 2, 'msubsup': 3, 'munder': 2, 'mover': 2, 'munderover': 3,
+	'mfrac': 2, 'msqrt': 1, 'mroot': 2
+}
+
 function getPower(value) {
 	if (value == '2')
 		return '²';							// 'squared'

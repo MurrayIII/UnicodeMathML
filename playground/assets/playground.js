@@ -51,6 +51,15 @@ const mmlTags = ['math', 'mfenced', 'mfrac', 'menclose', 'merror', 'mi',
     'munderover',
     ]
 
+const mappedSingle = { "-": "\u2212", "\'": "\u2032" }
+
+const mappedPairs = {  // Need ASCII - (U+002D) 𝑎𝑛𝑑 Unicode - (U+2212)
+    "+-": "±", "-+": "∓", "<=": "≤", ">=": "≥", "~=": "≅", "~~": "≈",
+    "::": "∷", ":=": "≔", "<<": "≪", ">>": "≫", '+−': '±', "−+": "∓",
+    "!!": "‼", "...": "…", '≯=': '≱', '≮=': '≰', '⊀=': '⪱', '⊁=': '⪲',
+    '⊄=': '⊈', '⊅=': '⊉', '<-': '←', '<−': '←', '->': '→', '−>': '→',
+}
+
 function getMathJaxMathMlNode() {
     /* MathJax output-element DOM has the form:
        <mjx-container
@@ -105,6 +114,11 @@ function removeSelMarkers(uMath) {
         uMath = uMath.substring(0, index1) + uMath.substring(end1, index2) + uMath.substring(end2)
     //console.log('uMathNoSelAttr = ' + uMath)
     return uMath
+}
+
+function isTeX(unicodemath) {
+    return unicodemath[0] == '$' || unicodemath.startsWith('\\(') ||
+        unicodemath.startsWith('\\[')
 }
 
 function isBuildOp(ch) {

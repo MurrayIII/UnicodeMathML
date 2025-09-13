@@ -21,26 +21,12 @@ function escapeHTMLSpecialChars(str) {
 const overBrackets = '\u23B4\u23DC\u23DE\u23E0¯';
 const underBrackets = '\u23B5\u23DD\u23DF\u23E1';
 
-const argCounts = {
-    'msup': 2, 'msub': 2, 'msubsup': 3, 'munder': 2, 'mover': 2, 'munderover': 3,
-    'mfrac': 2, 'msqrt': 1, 'mroot': 2
-}
-
 const unicodeFractions = {
     "½": [1, 2], "⅓": [1, 3], "⅔": [2, 3], "¼": [1, 4], "¾": [3, 4], "⅕": [1, 5],
     "⅖": [2, 5], "⅗": [3, 5], "⅘": [4, 5], "⅙": [1, 6], "⅚": [5, 6], "⅐": [1, 7],
     "⅛": [1, 8], "⅜": [3, 8], "⅝": [5, 8], "⅞": [7, 8], "⅑": [1, 9], "↉": [0, 3],
     "⅒": [1, 10]
 };
-
-const mappedSingle = { "-": "\u2212", "\'": "\u2032" }
-
-const mappedPairs = {  // Need ASCII - (U+002D) 𝑎𝑛𝑑 Unicode - (U+2212)
-    "+-": "±", "-+": "∓", "<=": "≤", ">=": "≥", "~=": "≅", "~~": "≈",
-    "::": "∷", ":=": "≔", "<<": "≪", ">>": "≫", '+−': '±', "−+": "∓",
-    "!!": "‼", "...": "…", '≯=': '≱', '≮=': '≰', '⊀=': '⪱', '⊁=': '⪲',
-    '⊄=': '⊈', '⊅=': '⊉', '<-': '←', '<−': '←', '->': '→', '−>': '→',
-}
 
 const negs = {  // Negative operators
     '<': '≮',   // /<
@@ -78,6 +64,7 @@ const indicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩']
 
 const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
 const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
+const letterSubs = 'ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥₓ'
 const letterSubSups = {
     // There are 25 ASCII letter superscripts (no 'q') and 17 ASCII letter
     // subscripts. The missing subscripts are replaced by spaces. Subsup
@@ -86,6 +73,14 @@ const letterSubSups = {
     'h': 'ₕʰ', 'i': 'ᵢⁱ', 'j': 'ⱼʲ', 'k': 'ₖᵏ', 'l': 'ₗˡ', 'm': 'ₘᵐ', 'n': 'ₙⁿ',
     'o': 'ₒᵒ', 'p': 'ₚᵖ', 'r': 'ᵣʳ', 's': 'ₛˢ', 't': 'ₜᵗ', 'u': 'ᵤᵘ', 'v': 'ᵥᵛ',
     'w': ' ʷ', 'x': 'ₓˣ', 'y': ' ʸ', 'z': ' ᶻ', '−': '₋⁻', '+': '₊⁺', '(': '₍⁽', ')': '₎⁾'
+}
+
+function foldMathItalic(code) {
+    if (code == 0x210E) return 'h';                     // ℎ (Letterlike symbol)
+    if (code < 0x1D434 || code > 0x1D467) return '';    // Not math italic
+    code += 0x0041 - 0x1D434;                           // Convert to upper-case ASCII
+    if (code > 0x005A) code += 0x0061 - 0x005A - 1;     // Adjust for lower case
+    return String.fromCodePoint(code);                  // ASCII letter corresponding to math italic code
 }
 
 function getUniSubSup(op, str, k) {
@@ -103,14 +98,14 @@ function getUniSubSup(op, str, k) {
 }
 
 //                              𝑎     𝑏     𝑐     𝑑     𝑒     𝑓     𝑔     ℎ     𝑖      𝑗     𝑘     𝑙     𝑚     𝑛     𝑜     𝑝     𝑟     𝑠     𝑡     𝑢     𝑣     𝑤     𝑥     𝑦     𝑧     -
-const supTrailSurrogates = '\uDC4E\uDC4F\uDC50\uDC51\uDC52\uDC53\uDC54\u210E\uDC56\uDC57\uDC58\uDC59\uDC5A\uDC5B\uDC5C\uDC5D\uDC5F\uDC60\uDC61\uDC62\uDC63\uDC65\uDC65\uDC66\uDC67\u2212(+)'
+const supTrailSurrogates = '\uDC4E\uDC4F\uDC50\uDC51\uDC52\uDC53\uDC54\u210E\uDC56\uDC57\uDC58\uDC59\uDC5A\uDC5B\uDC5C\uDC5D\uDC5F\uDC60\uDC61\uDC62\uDC63\uDC64\uDC65\uDC66\uDC67\u2212(+)'
 //                          𝑏     𝑐     𝑑      𝑓     𝑔    𝑤     𝑦     𝑧
-const subTrailMissing = '\uDC4F\uDC50\uDC51\uDC53\uDC54\uDC65\uDC66\uDC67'
+const subTrailMissing = '\uDC4F\uDC50\uDC51\uDC53\uDC54\uDC64\uDC66\uDC67'
 
 function getSubSups(str, i, delim) {
     // Return a span of subscript/superscript symbols. E.g., return '²' for
     // '^2 ' (str[i - 1] = '^', str[i] = '2', delim = ' ')
-    if (!'+-=/ )]}'.includes(delim))
+    if (!'+-=/^ )]}'.includes(delim))
         return ''
     let cParen = 0
     let j
@@ -134,30 +129,20 @@ function getSubSups(str, i, delim) {
     let op = str[j]                         // Char preceding span
 
     if (op != '^' && (op != '_' || !subOk)) // Span not preceded by ^ or _,
-        return ''                           //  or _ but letter(s) w/o subs
+        return ''                           //  or _ but letter(s) w/o Unisubs
 
-    let s = ''                              // Collects sub/sup span
+    let ch = str[j - 1]                     // Check for base character
+    if (ch < '\u3017' && !isAsciiAlphanumeric(ch) && !isDoubleStruck(ch) &&
+        !digitSubscripts.includes(ch) && !letterSubs.includes(ch)) {
+        return ''                           // Could allow other base chars...
+    }
+    let s = ''                              // Collect sub/sup span
     let k = j + 1
     for (; k < i + 1; k++) {
         if (str[k] == '\uD835')
             k++                             // Bypass lead surrogate
         s += getUniSubSup(op, str, k)
     }
-
-    // If the preceding op is the other subsup op, return '', e.g., for a_0^2
-    // Code doesn't handle subsups (but could...)
-    let opSupSub = (op == '^') ? '_' : '^'
-    k = j - 1
-
-    for (; k >= 0; k--) {
-        if (str[k] == opSupSub)
-            return ''
-        if (str[k] < '\u3017' && !isAsciiAlphanumeric(str[k]) && !isDoubleStruck(str[k]))
-            break                           // Could allow other base letters...
-    }
-    if (k == j - 1)
-        return ''                           // No base character(s)
-
     if (s[0] == '⁽' && s[s.length - 1] == '⁾')
         s = s.substring(1, s.length - 1)    // Eliminate outer parens
 
@@ -311,17 +296,6 @@ function isAlphanumeric(ch) {
     return /[\w]/.test(ch) && ch != '_' || ch >= '\u3018' || isGreek(ch) || inRange('ℂ', ch, 'ⅉ')
 }
 
-function isMathAlphabetic(str, i) {
-    let ch = str[i]
-    let code = str.codePointAt(i)
-    if (isTrailSurrogate(code)) {
-        code = str.codePointAt(i - 1)
-        ch = str.substring(i - 1, i + 1)
-    }
-    let [font, chFolded] = foldMathAlphanumeric(code, ch);
-    return isAsciiAlphabetic(chFolded) || isGreek(chFolded)
-}
-
 function isArabic(ch) { return inRange('\u0627', ch, '\u06BA') }
 
 function isAsciiAlphabetic(ch) { return /[A-Za-z]/.test(ch); }
@@ -381,19 +355,12 @@ function isOpenDelimiter(op) {
     return '([{⟨〖⌈⌊❲⟦⟨⟪⟬⟮⦃⦅⦇⦉⦋⦍⦏⦑⦓⦕⦗⧘⧚⧼'.includes(op)
 }
 
-function isTeX(unicodemath) {
-    return unicodemath[0] == '$' || unicodemath.startsWith('\\(') ||
-        unicodemath.startsWith('\\[')
-}
-
 function isTrailSurrogate(code) { return code >= 0xDC00 && code <= 0xDFFF; }
 
 function isTranspose(value) {
     return Array.isArray(value) &&
-        value[0].hasOwnProperty('atoms') &&
-        Array.isArray(value[0].atoms) &&
-        value[0].atoms[0].hasOwnProperty("chars") &&
-        value[0].atoms[0].chars == '⊺';
+        value[0].atoms && Array.isArray(value[0].atoms) &&
+        value[0].atoms[0].chars && value[0].atoms[0].chars == '⊺'
 }
 
 function isUcAscii(ch) { return /[A-Z]/.test(ch); }
@@ -838,19 +805,18 @@ function getChars(value) {
             val = val[0];
     }
     for (let i = 0; i < n; val = value[++i]) {
-        if (val.hasOwnProperty('script')) {
+        if (val.script)
             val = val.script.base;
-        }
-        if (val.hasOwnProperty('primed')) {
+        if (val.primed) {
             primes = val.primed.primes;
             val = val.primed.base;
         }
-        if (val.hasOwnProperty('atoms')) {
+        if (val.atoms) {
             val = val.atoms;
             if (Array.isArray(val))
                 val = val[0];
             chars += primes ? val.chars + processPrimes(primes) : val.chars;
-        } else if (val.hasOwnProperty('number'))
+        } else if (val.number)
             chars = val.number;
         if (n == 1)
             break;                          // No array or value.length = 1
@@ -1353,7 +1319,6 @@ const controlWords = {
     'iplus':            '⁤',	    // 2064
     'isep':             '⁣',	    // 2063
     'itimes':           '⁢',	    // 2062
-    'intercal':         '⊺',    // 22BA
     'jeem':		        'ج',    // 062C
     'jj':               'ⅉ',    	// 2149
     'jmath':            'ȷ',	// 0237
@@ -1780,7 +1745,7 @@ function resolveCW(unicodemath, noCustomCW) {
             try {
                 let symbol = String.fromCodePoint("0x" + cw.substring(1));
                 return symbol;
-            } catch(error) {
+            } catch {
                 // do nothing – could be a regular control word starting with "u"
             }
         }
@@ -1918,14 +1883,6 @@ function isFunctionName(fn) {
     return ["Im", "Pr", "Re", "arg", "cos", "cot", "csc", "ctg", "deg",
         "det", "dim", "erf", "exp", "gcd", "hom", "inf", "ker", "lim", "log",
         "ln", "max", "min", "mod", "sec", "sin", "sup", "tan", "tg"].includes(fn)
-}
-
-function foldMathItalic(code) {
-    if (code == 0x210E) return 'h';                     // ℎ (Letterlike symbol)
-    if (code < 0x1D434 || code > 0x1D467) return '';    // Not math italic
-    code += 0x0041 - 0x1D434;                           // Convert to upper-case ASCII
-    if (code > 0x005A) code += 0x0061 - 0x005A - 1;     // Adjust for lower case
-    return String.fromCodePoint(code);                  // ASCII letter corresponding to math italic code
 }
 
 function foldMathItalics(chars) {
@@ -4144,7 +4101,7 @@ function mtransform(dsty, puast) {
             // but potentially helpful class attribute
 
             // TODO remove this class once all options are properly implemented
-            attrs = {class: options.join(" "), intent: intent};
+            attrs = {class: options.join(" "), intent: value.intent};
 
             // nAlignBaseline, nSpaceDefault, nSizeDefault: do nothing, these
             // are the defaults
@@ -4156,11 +4113,11 @@ function mtransform(dsty, puast) {
             // nSizeText, nSizeScript, nSizeScriptScript: adjust scriptlevel (not implemented by any mathml renderer, but easy)
             // TODO or set mathsize (would lead to inconsistency between different mathml renderers)
             if (options.includes("nSizeText")) {
-                attrs[scriptlevel] = 0;
+                attrs.scriptlevel = 0;
             } else if (options.includes("nSizeScript")) {
-                attrs[scriptlevel] = 1;
+                attrs.scriptlevel = 1;
             } else if (options.includes("nSizeScriptScript")) {
-                attrs[scriptlevel] = 2;
+                attrs.scriptlevel = 2;
             }
 
             // TODO fBreakable: maybe related to https://www.dessci.com/en/products/mathplayer/tech/mathml3-lb-indent.htm
