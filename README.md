@@ -1,43 +1,63 @@
 # UnicodeMathML
 
-This repository is a fork of [Noah Doersing's UnicodeMathML repository](https://github.com/doersino/unicodemathml) with added commits by Murray Sargent III.
-The changes are summarized at the end of this document. The facility is discussed in the [help file](./playground/help.html).
+This repository is a fork of [Noah Doersing's UnicodeMathML repository](https://github.com/doersino/unicodemathml)
+with added commits by Murray Sargent III. The changes are summarized at the end of
+this document. The facility is discussed in the [help file](./playground/help.html).
 
-The repository provides a JavaScript-based translation of [UnicodeMath](https://www.unicode.org/notes/tn28/) to [MathML 4.0](https://w3c.github.io/mathml/), hence the name "UnicodeMathML".
+The repository provides a JavaScript-based translation of [UnicodeMath](https://www.unicode.org/notes/tn28/)
+to [MathML 4.0](https://w3c.github.io/mathml/), hence the name "UnicodeMathML".
 In addition, the facility supports dictation, speech, Nemeth braille, and LaTeX.
-The interactive [playground](https://MurrayIII.github.io/UnicodeMathML/playground/) lets you experiment with UnicodeMath, LaTeX, speech, and braille and gives insight into the translation pipeline.
+The interactive [playground](https://MurrayIII.github.io/UnicodeMathML/playground/)
+lets you experiment with UnicodeMath, LaTeX, speech, and braille and gives insight
+into the translation pipeline.
 
-[UnicodeMath](https://www.unicode.org/notes/tn28/UTN28-PlainTextMath-v3.3.pdf) is a linear representation of math that often resembles math notation and is easy to enter.
-It works well in Microsoft desktop apps such as Word, PowerPoint, Outlook, and OneNote but it hasn't been widely available elsewhere. See also [Plurimath](https://www.plurimath.org/).
+[UnicodeMath](https://www.unicode.org/notes/tn28/UTN28-PlainTextMath-v3.3.pdf) is a linear
+representation of math that often resembles math notation and is easy to enter.
+It works well in Microsoft desktop apps such as Word, PowerPoint, Outlook, and
+OneNote but it hasn't been widely available elsewhere. See also [Plurimath](https://www.plurimath.org/).
 
 ## Methodology
-UnicodeMath conversion to MathML starts with parsing the input with a peg grammar, thereby producing an abstract syntax tree (AST).
-This AST is then recursively preprocessed (via preprocess()) to make a new AST with some intent attributes as well as fix ups not easily accomplished in the grammar parsing.
-Originally the idea was to create an AST useful for creating not only MathML, but also other formats such as LaTeX.
-But it turned out that creating LaTeX, speech, and Nemeth braille was more easily accomplished from a MathML DOM.
-The AST is then recursively converted into a MathML AST (via mtransform()) with additional intent attributes.
-The MathML AST is run through a prettifier (pretty()) eliminating superfluous mrow's and
-compensating for limitations in MathML Core's table functionality.
+UnicodeMath conversion to MathML starts with parsing the input with a peg grammar,
+thereby producing an abstract syntax tree (AST). This AST is then recursively
+preprocessed (via preprocess()) to make a new AST with some intent attributes
+as well as fix ups not easily accomplished in the grammar parsing.
 
-LaTeX, dictation, and Nemeth braille inputs are converted to UnicodeMath, which is converted, in turn, to MathML.
-Since LaTeX, speech, and Nemeth braille outputs are derived from a MathML DOM,
-a MathML parser would be needed in node.js environments.
+Originally the idea was to create an AST useful for creating not only MathML,
+but also other formats such as LaTeX. But it turned out that creating LaTeX,
+speech, and Nemeth braille was more easily accomplished from a MathML DOM.
+The AST is then recursively converted into a MathML AST (via mtransform())
+with additional intent attributes. The MathML AST is run through a prettifier
+(pretty()) eliminating superfluous mrow's and compensating for limitations
+in the MathML-Core table functionality.
 
-UnicodeMath entered into the output window, i.e., in-place editing, is handled by autobuildup routines that manipulate the MathML DOM.
+LaTeX, dictation, and Nemeth braille inputs are converted to UnicodeMath,
+which is converted, in turn, to MathML. Since LaTeX, speech, and Nemeth
+braille outputs are derived from a MathML DOM, a MathML parser would be
+needed in node.js environments.
+
+UnicodeMath entered into the output window, i.e., in-place editing, is handled
+by autobuildup routines that manipulate the MathML DOM.
 
 ## Testing
-There are two test pages: ./dist/example.html and ./test/MmlToUM.html used to test conversions and UI behavior.
+There are two test pages: ./dist/example.html and ./test/MmlToUM.html used to
+test conversions and UI behavior.
 
-example.html contains text with myriad UnicodeMath or LaTeX math zones that are converted to MathML and compared to known results.
-The tests pass if the console reports 0 failures.
+example.html contains text with myriad UnicodeMath or LaTeX math zones that
+are converted to MathML and compared to known results. The tests pass if the
+console reports 0 failures.
 
-MmlToUM.html has a set of buttons for testing UI behavior and conversions other than UnicodeMath/LaTeX to MathML.
-Clicking on the buttons runs the tests and the results are reported in the console window.
+MmlToUM.html has a set of buttons for testing UI behavior and conversions
+other than UnicodeMath/LaTeX to MathML. Clicking on the buttons runs the
+tests and the results are reported in the console window.
 
-Although there are many tests, they are not exhaustive. They sure help in reducing regressions.
+Although there are many tests, they are not exhaustive. They sure help
+in reducing regressions.
 
 ## Integration
-Documentation will be coming soon on how to include UnicodeMathML in node.js environments.
+Search the [npm registry](https://www.npmjs.com/) for "unicodemathml".
+The README.md of the [unicodemathml package](https://www.npmjs.com/package/unicodemathml)
+explains how to convert a UnicodeMath expression into MathML. It also explains how to convert
+UnicodeMath math zones in a document to MathML. Use version 1.0.5 or higher.
 
 ## License
 You may use this repository's contents under the terms of the [MIT License](https://en.wikipedia.org/wiki/MIT_License).

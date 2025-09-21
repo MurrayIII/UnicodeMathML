@@ -128,7 +128,7 @@ function isBuildOp(ch) {
         buildOps = ''
         for (let i = 3; i < build.childElementCount; i++)
             buildOps += build.children[i].textContent
-        console.log('buildOps = ' + buildOps)
+        //console.log('buildOps = ' + buildOps)
     }
     return buildOps.includes(ch)
 }
@@ -241,6 +241,83 @@ function getChildIndex(node, nodeP) {
     for (; iChild < nodeP.childElementCount && node != nodeP.children[iChild]; iChild++)
         ;                                   // Find child index
     return iChild
+}
+
+function getCch(chars, i) {
+    return codeAt(chars, i) > 0xFFFF ? 2 : 1
+}
+
+function checkBrackets(node) {
+    // Return count of open brackets - count of close brackets. The value 0
+    // implies equal counts, but the code doesn't check for correct balance
+    // order. Also return the node index of the final child that shouldn't be
+    // included in partial build up. Partial build up of trailing children
+    // may occur for a nonzero bracket count difference, e.g., √(𝑎²-𝑏². Also
+    // return opBuildUp: 1 means possible build up; 2 means possible build up
+    // and that an nary op is present.
+    let cNode = node.childElementCount
+    let cBracket = 0
+    let ket = false
+    let opBuildUp = 0
+    let vbar = false
+    let k = -1                              // Index of final child not in
+    //  partial build up
+    if (!isMrowLike(node) || !cNode)
+        return 0
+
+    for (let i = cNode - 1; i >= 0; i--) {
+        let nodeC = node.children[i]
+        let text = nodeC.textContent
+
+        if (nodeC.childElementCount) {
+            // Most built-up objects currently aren't included in partial
+            // build up but just in case base of msup, etc. is a function
+            // name or nary operator...
+            const scripts = ['msub', 'msup', 'msubsup', 'mover', 'munder', 'munderover']
+
+            if (scripts.includes(nodeC.nodeName)) {
+                opBuildUp = isNary(nodeC.firstElementChild.textContent) ? 2 : 1
+            } else if (k == -1) {
+                k = i
+            }
+        } else if (nodeC.localName == 'mo') { // Sometimes nodeName is capitalized...
+            if (isOpenDelimiter(text)) {
+                if (k == -1)
+                    k = i
+                cBracket++
+                if (cBracket > 0)
+                    break
+            } else if (isCloseDelimiter(text)) {
+                if (text == '⟩')            // Set up |𝜓⟩
+                    ket = true
+                cBracket--
+                if (k == -1)
+                    k = i
+                opBuildUp = 1
+            } else if (text == '|') {
+                if (k == -1)
+                    k = i
+                if (vbar) {
+                    vbar = false
+                    opBuildUp = 1
+                    break
+                } else if (ket) {           // Handle |𝜓⟩
+                    cBracket++
+                    continue
+                }
+                vbar = true
+            } else if ('_^/√⒞\u2061▒'.includes(text)) {
+                opBuildUp = 1
+            } else if (isNary(text)) {
+                opBuildUp = 2
+            }
+        }
+    }
+    if (vbar)
+        cBracket = 1
+    if (k == cNode - 1)
+        k = -1
+    return [cBracket, k, opBuildUp]
 }
 
 function getFunctionName(node) {

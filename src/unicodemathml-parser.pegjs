@@ -694,11 +694,11 @@ preScript
     = "(" __? s:script __? ")" o:operand {
         s.base = o;
         s.type = "pre";
-        if (s.hasOwnProperty("low")) {
+        if (s.low) {
             s.prelow = s.low;
             delete s.low;
         }
-        if (s.hasOwnProperty("high")) {
+        if (s.high) {
             s.prehigh = s.high;
             delete s.high;
         }
@@ -708,11 +708,11 @@ preScript
                              // prescript and base
         s.base = o;
         s.type = "pre";
-        if (s.hasOwnProperty("low")) {
+        if (s.low) {
             s.prelow = s.low;
             delete s.low;
         }
-        if (s.hasOwnProperty("high")) {
+        if (s.high) {
             s.prehigh = s.high;
             delete s.high;
         }
@@ -726,11 +726,11 @@ preScript
                               // grammar)
         s.base = o;
         s.type = "pre";
-        if (s.hasOwnProperty("low")) {
+        if (s.low) {
             s.prelow = s.low;
             delete s.low;
         }
-        if (s.hasOwnProperty("high")) {
+        if (s.high) {
             s.prehigh = s.high;
             delete s.high;
         }

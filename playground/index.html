@@ -389,11 +389,11 @@
             forceMathJax: false,
             defaultIntents: false,
             speakSelectionEnds: false,
+            displayBrailleItalic: false,
             doubleStruckMode: "us-tech",
             transposeChar: "T",
-            displayBrailleItalic: false
         };
-        const configDescriptions = {
+        const configDescriptions = {        // (for booleans)
             splitInput: "Process input lines separately",
             resolveControlWords: "Autocorrect control words",
             displaystyle: "Use display style not inline style",
@@ -403,8 +403,6 @@
             forceMathJax: "Use MathJax not native rendering",
             defaultIntents: "Emit default intent attributes",
             speakSelectionEnds: "Include selection ends in speech",
-            doubleStruckMode: "us-tech, us-patent, euro-tech",
-            transposeChar: "Character for transpose op",
             displayBrailleItalic: "Display braille italic indicator",
         };
 
@@ -418,10 +416,10 @@
                 if (configDescriptions[k])
                     return `<div><input type="checkbox" id="c${i}" name="${k}" ${ummlConfig[k] ? "checked" : ""}><label for="c${i}">${configDescriptions[k]}</label></div>`;
             }).join("");
-            e.innerHTML += `<div class="buttons"><button onclick="applyConfigAndReload()">Apply & Reload Page</button></div>`;
-            e.innerHTML += `<div class="buttons"><button onclick="resetConfigAndReload()">Reset & Reload Page</button></div>`;
             e.innerHTML += `<div class="buttons"><button onclick="chooseFormatMode(1)">Choose display format for ⅅ ⅆ ⅇ ⅈ ⅉ</div>`;
             e.innerHTML += `<div class="buttons"><button onclick="chooseFormatMode(2)">Choose character for transpose ⊺</div>`;
+            e.innerHTML += `<div class="buttons"><button onclick="resetConfigAndReload()">Reset & Reload Page</button></div>`;
+            e.innerHTML += `<div class="buttons"><button onclick="applyConfigAndReload()">Apply & Reload Page</button></div>`;
         }
         function loadConfigIntoPane() {
             let tempConfig = defaultConfig;
@@ -459,7 +457,7 @@
             localStorage.setItem('config', JSON.stringify(defaultConfig));
             window.location.reload(false);
         }
-        function chooseFormatMode(list) {
+        function chooseFormatMode(list) {   // Handle nonbooleans
             closeFormatModeList();
 
             const doubleStruckModes = ["us-tech", "us-patent", "euro-tech"];

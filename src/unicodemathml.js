@@ -8,10 +8,8 @@ var useMfenced = 0                          // Generate recommended MathML
 var ummlConfig
 var ummlParser
 var emitDefaultIntents =
-    typeof ummlConfig === "undefined" ||
-    typeof ummlConfig.defaultIntents === "undefined" ||
+    !ummlConfig || ummlConfig.defaultIntents === "undefined" ||
     ummlConfig.defaultIntents;
-
 function escapeHTMLSpecialChars(str) {
     const replacements = { '&': '&amp;', '<': '&lt;', '>': '&gt;' }
 
@@ -503,79 +501,6 @@ function checkCardinalityIntent(intent, miContent) {
     return intent
 }
 
-function checkBrackets(node) {
-    // Return count of open brackets - count of close brackets. The value 0
-    // implies equal counts, but the code doesn't check for correct balance
-    // order. Also return the node index of the final child that shouldn't be
-    // included in partial build up. Partial build up of trailing children
-    // may occur for a nonzero bracket count difference, e.g., √(𝑎²-𝑏². Also
-    // return opBuildUp: 1 means possible build up; 2 means possible build up
-    // and that an nary op is present.
-    let cNode = node.childElementCount
-    let cBracket = 0
-    let ket = false
-    let opBuildUp = 0
-    let vbar = false
-    let k = -1                              // Index of final child not in
-                                            //  partial build up
-    if (!isMrowLike(node) || !cNode)
-        return 0
-
-    for (let i = cNode - 1; i >= 0; i--) {
-        let nodeC = node.children[i]
-        let text = nodeC.textContent
-
-        if (nodeC.childElementCount) {
-            // Most built-up objects currently aren't included in partial
-            // build up but just in case base of msup, etc. is a function
-            // name or nary operator...
-            const scripts = ['msub', 'msup', 'msubsup', 'mover', 'munder', 'munderover']
-
-            if (scripts.includes(nodeC.nodeName)) {
-                opBuildUp = isNary(nodeC.firstElementChild.textContent) ? 2 : 1
-            } else if (k == -1) {
-                k = i
-            }
-        } else if (nodeC.localName == 'mo') { // Sometimes nodeName is capitalized...
-            if (isOpenDelimiter(text)) {
-                if (k == -1)
-                    k = i
-                cBracket++
-                if (cBracket > 0)
-                    break
-            } else if (isCloseDelimiter(text)) {
-                if (text == '⟩')            // Set up |𝜓⟩
-                    ket = true
-                cBracket--
-                if (k == -1)
-                    k = i
-                opBuildUp = 1
-            } else if (text == '|') {
-                if (k == -1)
-                    k = i
-                if (vbar) {
-                    vbar = false
-                    opBuildUp = 1
-                    break
-                } else if (ket) {           // Handle |𝜓⟩
-                    cBracket++
-                    continue
-                }
-                vbar = true
-            } else if ('_^/√⒞\u2061▒'.includes(text)) {
-                opBuildUp = 1
-            } else if (isNary(text)) {
-                opBuildUp = 2
-            }
-        }
-    }
-    if (vbar)
-        cBracket = 1
-    if (k == cNode - 1)
-        k = -1
-    return [cBracket, k, opBuildUp]
-}
-
 function checkSpace(i, node, ret) {
     // Return ' ' if node is an <mrow> containing an ASCII-alphabetic first
     // child and preceded by an alphanumeric character. Else return ''. E.g.,
@@ -776,10 +701,6 @@ function codeAt(chars, i) {
         code = chars.codePointAt(i - 1);
     return code;
 }
-function getCch(chars, i) {
-    return codeAt(chars, i) > 0xFFFF ? 2 : 1
-}
-
 function getCh(str, i) {
     // Get BMP character or surrogate pair at offset i
     let ch = str[i]
@@ -975,7 +896,7 @@ function getMathAlphanumeric(ch, mathStyle) {
 function debugGroup(s) {
     if (testing)
         return
-    if (typeof ummlConfig !== "undefined" && typeof ummlConfig.debug !== "undefined" && ummlConfig.debug) {
+    if (ummlConfig && ummlConfig.debug) {
         if (s != null) {
             console.group(s);
         } else {
@@ -984,13 +905,10 @@ function debugGroup(s) {
     }
 }
 
-// if in debug mode, console.log the given value
 function debugLog(x) {
-    if (testing)
-        return
-    if (typeof ummlConfig !== "undefined" && typeof ummlConfig.debug !== "undefined" && ummlConfig.debug) {
+    // if in debug mode, console.log the given value
+    if (!testing && ummlConfig && ummlConfig.debug)
         console.log(x);
-    }
 }
 
 ///////////
@@ -1645,8 +1563,11 @@ const controlWords = {
     'triangle':         '△',	// 25B3
     'triangleleft':     '◁',    // 25C1
     'trianglelefteq':   '⊴',	    // 22B4
+    'triangleminus':    '⨺',   // 2A3A
+    'triangleplus':     '⨹',   // 2A39
     'triangleright':    '▷',    // 25B7
     'trianglerighteq':  '⊵',	    // 22B5
+    'triangletimes':    '⨻',   // 2A3B
     'tripleint':        '∭',	    // 222D
     'tripleprime':      '‴',	// 2034
     'true':             '⊨',	    // 22A8
@@ -1825,7 +1746,27 @@ function resolveCW(unicodemath, noCustomCW) {
     return res;
 }
 
-const keys = Object.keys(controlWords);
+var keys = Object.keys(controlWords)
+
+function binarySearchInsert(arr, target) {
+    let left = 0
+    let right = arr.length - 1
+
+    while (left <= right) {
+        const mid = Math.floor((left + right) / 2)
+
+        if (arr[mid] === target)
+            return mid                      // Target already exists, return its index
+        if (arr[mid] < target)
+            left = mid + 1
+        else
+            right = mid - 1
+    }
+
+    // Insert target at the correct position
+    arr.splice(left, 0, target)
+    return left                             // Return index where target was inserted
+}
 
 function getPartialMatches(cw) {
     // Get array of control-word partial matches for autocomplete drop down
@@ -2278,6 +2219,8 @@ function mapToPrivate(s) {
                     let cw, body
                     [cw, body, i] = getMacro(s, i)
                     if (cw) {
+                        controlWords[cw] = body
+                        binarySearchInsert(keys, cw)
                         if (!ummlConfig.customControlWords)
                             ummlConfig.customControlWords = {}
                         ummlConfig.customControlWords[cw] = body
@@ -2433,7 +2376,10 @@ function parse(unicodemath) {
     unicodemath = mapToPrivate(unicodemath);
 
     let uast;
-    if (typeof ummlConfig === "undefined" || typeof ummlConfig.tracing === "undefined" || !ummlConfig.tracing) {
+    if (!ummlParser)
+        ummlParser = globalThis.ummlParser
+
+    if (!ummlConfig || !ummlConfig.tracing) {
 
         // no tracing
         uast = ummlParser.parse(unicodemath);
@@ -2752,7 +2698,7 @@ const variants = {
 }
 
 function doublestruckChar(value) {
-    if (typeof ummlConfig !== "undefined" && typeof ummlConfig.doubleStruckMode !== "undefined" &&
+    if (ummlConfig && ummlConfig.doubleStruckMode &&
         ummlConfig.doubleStruckMode in variants) {
         return variants[ummlConfig.doubleStruckMode][value];
     }
@@ -2760,9 +2706,7 @@ function doublestruckChar(value) {
 }
 
 function transposeChar() {
-    if (typeof ummlConfig !== "undefined" && ummlConfig.transposeChar != undefined)
-        return ummlConfig.transposeChar
-    return "T"
+    return ummlConfig && ummlConfig.transposeChar ? ummlConfig.transposeChar : "T"
 }
 
 // if the outermost node of an AST describes a parenthesized expression, remove
@@ -3792,7 +3736,7 @@ function mtransform(dsty, puast) {
             // Assign equation numbers by wrapping everything in an mtable.
             // For MathJax, the table contains an <mlabeledtr> containing the
             // eqnumber and content in individual mtd's.
-            if (ummlConfig.forceMathJax || testing) {
+            if (ummlConfig && ummlConfig.forceMathJax || testing) {
                 return {math: withAttrs(attrs,
                     {mtable: withAttrs({displaystyle: true}, {mlabeledtr: withAttrs({id: id}, [
                         {mtd: noAttr({mtext: noAttr(value.eqnumber)})},
@@ -5400,7 +5344,24 @@ function getUnicodeMath(doc, keepSelInfo, noAddParens) {
 // PLUMBING //
 //////////////
 
+const defaultConfiguration = {              // Order same as configDescriptions
+    splitInput: true,
+    resolveControlWords: true,
+    displaystyle: true,
+    debug: true,
+    caching: true,
+    tracing: false,
+    forceMathJax: false,
+    defaultIntents: false,
+    speakSelectionEnds: false,
+    displayBrailleItalic: false,
+    doubleStruckMode: "us-tech",
+    transposeChar: "T",
+}
+
 function unicodemathml(unicodemath, displaystyle) {
+    if (!ummlConfig)
+        ummlConfig = defaultConfiguration
     debugGroup(unicodemath);
     selanchor = selfocus = null
     let k = unicodemath.length
@@ -5412,7 +5373,8 @@ function unicodemathml(unicodemath, displaystyle) {
         if (unicodemath.startsWith('<mml:math') || unicodemath.startsWith('<m:math'))
             unicodemath = removeMmlPrefixes(unicodemath);
         return {mathml: unicodemath, details: {}};
-    } else if (unicodemath[0] == '$' || unicodemath.startsWith('\\[') ||
+    }
+    if (unicodemath[0] == '$' || unicodemath.startsWith('\\[') ||
         unicodemath.startsWith('\\(')) {
         // Handle [La]TeX. Remove math-zone delimiters and define display style
         let j = 2                           // For start delims '$$', '\[', '\)'
@@ -5536,21 +5498,6 @@ function unicodemathml(unicodemath, displaystyle) {
     }
 }
 
-const defaultConfiguration = {              // Order same as configDescriptions
-    splitInput: true,
-    resolveControlWords: true,
-    displaystyle: true,
-    debug: true,
-    caching: true,
-    tracing: false,
-    forceMathJax: false,
-    defaultIntents: false,
-    speakSelectionEnds: false,
-    doubleStruckMode: "us-tech",
-    transposeChar: "T",
-    displayBrailleItalic: false
-}
-
 function convertUnicodeMathToMathML(uMath, config) {
     if (!ummlConfig)
         ummlConfig = JSON.parse(JSON.stringify(config ? config : defaultConfiguration))
@@ -5610,4 +5557,4 @@ root.controlWords = controlWords
 root.convertUnicodeMathToMathML = convertUnicodeMathToMathML
 root.convertUnicodeMathZonesToMathML = convertUnicodeMathZonesToMathML
 
-})(this);
+})(globalThis)
