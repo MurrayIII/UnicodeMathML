@@ -270,6 +270,7 @@ If you type in “energy”, the resulting MathML is
 
 Typing Atl+d speaks this as "energy equals m c squared".
 
+<a id="sec-16" />
 ## 16. TeX macros
 You can use [La]TeX macros with [La]TeX input. Simple examples are:
 

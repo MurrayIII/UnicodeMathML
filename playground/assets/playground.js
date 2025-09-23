@@ -1088,6 +1088,11 @@ input.addEventListener("keydown", function (e) {
                 setOutputSelection()
                 return
 
+            case 'w':
+                e.preventDefault()
+                console.log(controlWords)
+                return
+
             case 'y':                       // Ctrl+y
                 // Redo
                 e.preventDefault()
@@ -1327,10 +1332,11 @@ function autocomplete() {
 
         if (!/[a-zA-Z0-9]/.test(delim) && input.value[i] == '\\') {
             // Delimiter entered: try to autocorrect control word
-            let symbol = resolveCW(input.value.substring(i, ip - 1));
+            let cw = input.value.substring(i, ip - 1)
+            let symbol = resolveCW(cw);
             let cch = symbol.length;
 
-            if (isTeX(input.value) && isBuildOp(symbol))
+            if (isTeX(input.value) && isBuildOp(symbol) || symbol == 'ⓜ')
                 return                      // Only convert LaTeX control words
             if (symbol[0] != '\"' || cch == 3) {
                 // Control word found: replace it with its symbol and update
@@ -4090,6 +4096,10 @@ document.addEventListener('keydown', function (e) {
                 speechDisplay.innerText += '\n' + braille
                 break
 
+            case 'c':
+                navigator.clipboard.writeText(JSON.stringify(controlWords).replace(/,/g,'\n'))
+                break
+
             case 'd':                       // Alt+d
             case '∂':
                 // Toggle dictation mode on/off
@@ -4160,12 +4170,17 @@ document.addEventListener('keydown', function (e) {
                 mathTeX()
                 break
 
+            case 'c':
+                navigator.clipboard.writeText(controlWords)
+                break
+
             default:
                 return
         }           // switch (e.key) {}
         e.preventDefault()
         return
     }               // if (e.altKey) {}
+
     let id
     let node
     let sel = window.getSelection()
@@ -5428,31 +5443,6 @@ $('button#insert_codepoint').click(function () {
     let symbol = String.fromCodePoint("0x" + $('#codepoint').val())
     insertAtCursorPos(symbol);
     addToHistory(symbol);
-})
-
-// custom control word insertion. call resolveCW() in unicodemathml.js
-$('#controlword').keydown(function (e) {
-    $('#controlword').css('color', 'black');
-});
-$('#controlword').keypress(function (e) {
-    let key = e.which;
-    if (key == 13) {  // enter
-        $('button#insert_controlword').click();
-    }
-})
-
-$('button#insert_controlword').click(function () {
-    let cw = $('#controlword').val();
-    let symbol = resolveCW(cw);
-
-    if (symbol[0] == '\"') {
-        // control word not found; display it as is
-        symbol = cw;
-    } else {
-        addToHistory(symbol);
-    }
-    speak(symbol)
-    insertAtCursorPos(symbol);
 })
 
 //$('button#insert_dictation').click(function () {

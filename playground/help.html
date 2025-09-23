@@ -250,7 +250,8 @@
         <li>Numeric fractions are converted to Unicode numeric fractions. For example, 1/2 → ½</li>
         <li>Control words are converted to their symbols, e.g., \alpha → 𝛼</li>
         <li>Various operator pairs are converted to Unicode operators, e.g., '+-' → '±' and '/=' → '≠'.</li>
-        <li>The ASCII hyphen-minus - (U+002D) is converted to the Unicode minus − (U+2212) and the
+        <li>
+            The ASCII hyphen-minus - (U+002D) is converted to the Unicode minus − (U+2212) and the
             ASCII apostrophe ' (U+0027) is converted to the Unicode prime ′ (U+2032).
         </li>
     </ul>
@@ -522,6 +523,8 @@
     &lt;mn&gt;2&lt;/mn&gt;&lt;/msup&gt;&lt;/mrow&gt;&lt;/mrow&gt;
 </code></pre>
     <p>Typing Atl+d speaks this as &quot;energy equals m c squared&quot;.</p>
+
+    <a id="sec-16" />
     <h2>16. TeX macros</h2>
     <p>You can use [La]TeX macros with [La]TeX input. Simple examples are:</p>
     <table>
@@ -582,12 +585,25 @@
         control words for Unicode math symbols not including the math alphanumerics
         discussed in <a href="#sec-4">Sec. 4</a>. For a more complete list, see
         <a href="https://texdoc.org/serve/unimath-symbols.pdf/0">unimath-symbols</a>.
-        Circled and parenthesized symbols index the Examples in the Playground.
+        Circled and parenthesized numbers index the Examples in the Playground.
         E.g., \Faraday gives ⑭, which inserts the fourteenth Example: 𝛁⨯𝐄=−𝜕𝐁/𝜕𝑡.
         Circled letters are special UnicodeMath operators that build up to
         bracketed matrices, fractions, absolute values, cardinality, cases,
         binomial coefficients, etc.
     </p>
+    <p>
+        To define a new control word, called a custom control word, use the
+        \def construct discussed in <a href="#sec-16">Sec. 16</a>. For example,
+        \def\circplus{⨢} defines \circplus to be ⨢ (U+2A22). Custom control words
+        are saved in page's local storage when you click on Settings/Apply and
+        Reload Page. Custom control words appear along with built-in control
+        words in math autocomplete drop downs. You can see your custom control
+        words by right-clicking on the app, choosing the <b>Inspect</b> option,
+        and in the resulting menu, clicking on the Application button. This
+        shows the values of the app's local-storage items. Clicking on <b>config</b>
+        expands its contents revealing your <b>customControlWords</b>.
+    </p>
+    <p>To copy the complete current control-word list, type Alt+c.</p>
     <table>
         <thead>
             <tr>

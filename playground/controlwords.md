@@ -2,13 +2,26 @@
 ## 18. Control words
 
 To facilitate entering Unicode symbols, control words can be used as discussed
-in [Sec. 3](#sec-3). The following is a table of control words for many Unicode math
-symbols not including the math alphanumerics discussed in [Sec. 4](#sec-4). For a more
-complete list, see [unimath-symbols](https://texdoc.org/serve/unimath-symbols.pdf/0).
-Circled and parenthesized symbols index the Examples in the Playground. E.g.,
+in [Sec. 3](#sec-3). The following is a built-in table of control words for many
+Unicode math symbols not including the math alphanumerics discussed in
+[Sec. 4](#sec-4). For a more complete list, see [unimath-symbols](https://texdoc.org/serve/unimath-symbols.pdf/0).
+Circled and parenthesized numbers index the Examples in the Playground. E.g.,
 \Faraday gives ⑭, which inserts the fourteenth Example: 𝛁⨯𝐄=−𝜕𝐁/𝜕𝑡. Circled letters
 are special UnicodeMath operators that build up to bracketed matrices, fractions,
 cases, absolute values, cardinality, binomial coefficients, etc.
+
+To define a new control word, called a custom control word, use the \def construct
+discussed in [Sec. 16](#sec-16). For example, \def\circplus{⨢} defines \circplus
+to be ⨢ (U+2A22). Custom control words are saved in page's local storage when you
+click on **Settings/Apply and Reload Page**. Custom control words appear along with
+built-in control words in math autocomplete drop downs. You can see your custom
+control words by right-clicking on the app, choosing the **Inspect** option, and in
+the resulting menu, clicking on the Application button. This shows the values of
+the app-'s local-storage items. Clicking on **config** expands its contents
+revealing your **customControlWords**.
+
+To copy the following control-word list along with your custom control words to
+the clipboard, type Alt+c.
 
 | Control word | Symbol | Codepoint | Comment |
 |--------------|--------|-----------|---------|
@@ -162,7 +175,9 @@ cases, absolute values, cardinality, binomial coefficients, etc.
 | circledast         | ⊛ |  229B |
 | circledcirc        | ⊚ |  229A |
 | circleddash        | ⊝ |  229D |
+| circleddot         | ⊙ |  2299 | (alias for xnor)
 | circledequal       | ⊜ |  229C |
+| circledplus        | ⊕ |  2295 | (alias for xor)
 | close              | ┤ |  2524 |
 | clubsuit           | ♣ |  2663 |
 | coint              | ∲ |  2232 |
@@ -256,7 +271,7 @@ cases, absolute values, cardinality, binomial coefficients, etc.
 | expect             | 𝔼 |  1D53C
 | fallingdotseq      | ≒ |  2252
 | false              | ⊥ |  22A5
-| feh	       | ف |    0641
+| feh				 | ف |    0641
 | five               | 5 |    0035
 | forall             | ∀ |  2200
 | forces             | ⊩ |  22A9
@@ -268,7 +283,7 @@ cases, absolute values, cardinality, binomial coefficients, etc.
 | frown              | ⌢ |  2322
 | fullouterjoin      | ⟗ |   27D7
 | funcapply          | ⁡ |  2061
-| ghain           | غ |    063A
+| ghain				 | غ |    063A
 | gamma              | γ |  03B3
 | ge                 | ≥ |  2265
 | geq                | ≥ |  2265
@@ -286,13 +301,13 @@ cases, absolute values, cardinality, binomial coefficients, etc.
 | gtrless            | ≷ |  2277
 | gtrsim             | ≳ |  2273
 | hadamard           | ⊙ |  2299
-| hah	       | ح |    062D
+| hah				 | ح |    062D
 | hairsp             |   |  200A
 | half               | ½ |    00BD
 | hat                | ̂ |  0302
 | hbar               | ℏ |  210F
 | heartsuit          | ♡ |  2661
-| heh	       | ه |    0647
+| heh				 | ه |    0647
 | hookleftarrow      | ↩ |  21A9
 | hookrightarrow     | ↪ |  21AA
 | hourglass          | ⏳ |   23F3
@@ -323,17 +338,17 @@ cases, absolute values, cardinality, binomial coefficients, etc.
 | isep               | ⁣ |  2063 |
 | itimes             | ⁢ |  2062 |
 | intercal           | ⊺ |  22BA |
-| jeem	        | ج |    062C
+| jeem				 | ج |    062C
 | jj                 | ⅉ |  2149
 | jmath              | ȷ |  0237
 | join               | ⋈ |  22C8
-| kaf	        | ك |    0643
+| kaf				 | ك |    0643
 | kappa              | κ |  03BA
 | ket                | ⟩ |  27E9
-| khah	        | خ |    062E
+| khah				 | خ |    062E
 | kron               | ⊗ |  2297
 | labove             | └ |  2514
-| lam	        | ل |    0644
+| lam				 | ل |    0644
 | lambda             | λ |  03BB |
 | land               | ∧ |  2227 |
 | langle             | ⟨ |  27E8 |
@@ -398,7 +413,7 @@ cases, absolute values, cardinality, binomial coefficients, etc.
 | mean               | μ |  03BC |
 | measangle          | ∡ |  2221 |
 | medsp              |   |  205F |
-| meem	        | م |    0645
+| meem				 | م |    0645
 | meq                | ≞ |  225E |
 | mid                | ∣ |  2223 |
 | models             | ⊨ |  22A8 |
@@ -436,11 +451,11 @@ cases, absolute values, cardinality, binomial coefficients, etc.
 | nless              | ≮ |  226E |
 | nlt                | ≮ |  226E |
 | nmid               | ∤ |  2224 |
-| nodotbeh        | ٮ |    066E
-| nodotqaf        | ٯ |    066F
-| nodotfeh        | ڡ |    06A1
+| nodotbeh			 | ٮ |    066E
+| nodotqaf			 | ٯ |    066F
+| nodotfeh			 | ڡ |    06A1
 | nodotnoon          | ں |    06BA
-| noon	        | ن |    0646
+| noon				 | ن |    0646
 | nor                | ⊽ |  22BD |
 | norm               | ‖ |  2016 |
 | not                | / |  002F |
@@ -534,7 +549,7 @@ cases, absolute values, cardinality, binomial coefficients, etc.
 | propto             | ∝ |  221D |
 | proves             | ⊢ |  22A2 |
 | psi                | ψ |  03C8 |
-| qaf	       | ق |    0642
+| qaf				 | ق |    0642
 | qdrt               | ∜ |  221C |
 | qed                | ∎ |  220E |
 | qprime             | ⁗ |  2057 |
@@ -553,7 +568,7 @@ cases, absolute values, cardinality, binomial coefficients, etc.
 | rceil              | ⌉ |  2309 |
 | rddots             | ⋰ |  22F0 |
 | rect               | ▭ |  25AD |
-| reh	        | ر |    0631
+| reh				 | ر |    0631
 | relax              | ⓝ | 24DD |  UnicodeMath op |
 | repeat             | ¯ |  00AF |
 | repeating          | ¯ |  00AF |
@@ -583,14 +598,14 @@ cases, absolute values, cardinality, binomial coefficients, etc.
 | rtimes             | ⋊ |  22CA |
 | rtriangle          | ⊿ | 22BF |
 | rvert              | \| |  007C |
-| sad	        | ص |    0635
+| sad				 | ص |    0635
 | sdiv               | ⁄ |  2044 |
 | sdivide            | ⁄ |  2044 |
 | searrow            | ↘ |  2198 |
-| seen	        | س |    0633
+| seen				 | س |    0633
 | setminus           | ∖ |  2216 |
 | seven              | 7 |  0037 |
-| sheen           | ش |    0634
+| sheen				 | ش |    0634
 | sigma              | σ |  03C3 |
 | sim                | ∼ |  223C |
 | simeq              | ≃ |  2243 |
@@ -607,34 +622,34 @@ cases, absolute values, cardinality, binomial coefficients, etc.
 | sqsupseteq         | ⊒ |  2292 |
 | star               | ⋆ |  22C6 |
 | stddev             | σ |  03C3 |
-| subset             | ⊂ |  2282
-| subseteq           | ⊆ |  2286
-| subsetneq          | ⊊ |  228A
-| subsetnoteq        | ⊊ |  228A
-| subsub             | ⫕ |  2AD5
-| subsup             | ⫓ |  2AD3
-| succ               | ≻ |  227B
-| succcurlyeq        | ≽ |  227D
-| succeq             | ≽ |  227D
-| succnsim           | ⋩ |  22E9
-| succsim            | ≿ |  227F
-| sum                | ∑ |  2211
-| supset             | ⊃ |  2283
-| supseteq           | ⊇ |  2287
-| supsetneq          | ⊋ |  228B
-| supsetnoteq        | ⊋ |  228B
-| supsub             | ⫔ |  2AD4
-| supsup             | ⫖ |  2AD6
-| surd               | √ |  221A
-| swarrow            | ↙ |  2199
-| tah	        | ط |    0637
+| subset             | ⊂ |  2282 |
+| subseteq           | ⊆ |  2286 |
+| subsetneq          | ⊊ |  228A  |
+| subsetnoteq        | ⊊ |  228A  |
+| subsub             | ⫕ |  2AD5 |
+| subsup             | ⫓ |  2AD3 | 
+| succ               | ≻ |  227B  |
+| succcurlyeq        | ≽ |  227D  |
+| succeq             | ≽ |  227D  |
+| succnsim           | ⋩ |  22E9  |
+| succsim            | ≿ |  227F  |
+| sum                | ∑ |  2211  |
+| supset             | ⊃ |  2283 |
+| supseteq           | ⊇ |  2287 |
+| supsetneq          | ⊋ |  228B  |
+| supsetnoteq        | ⊋ |  228B  |
+| supsub             | ⫔ |  2AD4  |
+| supsup             | ⫖ |  2AD6  |
+| surd               | √ |  221A  |
+| swarrow            | ↙ |  2199  |
+| tah				 | ط |    0637
 | tau                | τ |  03C4
 | tautology          | ⊤ |  22A4
-| thal	        | ذ |    0630
-| teh	        | ت |    062A
+| thal				 | ذ |    0630
+| teh				 | ت |    062A
 | text               | ⓣ |   24E3 |  UnicodeMath op |
 | textrm             | ⓣ |   24E3 |  UnicodeMath op |
-| theh	        | ث |    062B
+| theh				 | ث |    062B
 | theta              | θ |  03B8
 | thicksp            | \u2005 |2005
 | thinsp             |    |  2009 |
@@ -648,8 +663,11 @@ cases, absolute values, cardinality, binomial coefficients, etc.
 | triangle           | △ |  25B3 |
 | triangleleft       | ◁ |  25C1 |
 | trianglelefteq     | ⊴ |  22B4 |
+| triangleminus      | ⨺ | 2A3A |
+| triangleplus       | ⨹ | 2A39 |
 | triangleright      | ▷ |  25B7 |
 | trianglerighteq    | ⊵ |  22B5 |
+| triangletimes      | ⨻ | 2A3B |
 | tripleint          | ∭ |  222D |
 | tripleprime        | ‴ |  2034 |
 | true               | ⊨ |  22A8 |
@@ -696,7 +714,7 @@ cases, absolute values, cardinality, binomial coefficients, etc.
 | vphantom           | ⇳ |  21F3 |
 | vthicksp           |   |  2004 |
 | waveeq             | ⑳ | 2473 |  𝑖ℏ 𝜕𝜓(𝑥,𝑡)/𝜕𝑡 =[−ℏ²/2𝑚 𝜕²/𝜕𝑥²+𝑉(𝑥,𝑡)]𝜓(𝑥,𝑡) |
-| waw	        | و |    0648
+| waw				 | و |    0648
 | wedge              | ∧ |  2227 |
 | widehat            | ̂ |  0302 |
 | widetilde          | ̃ |  0303 |
@@ -706,9 +724,9 @@ cases, absolute values, cardinality, binomial coefficients, etc.
 | xi                 | ξ |  03BE |
 | xnor               | ⊙ |  2299 |
 | xor                | ⊕ |  2295 |
-| yeh	        | ي |    064A
-| zah	        | ظ |    0638
-| zain	        | ز |    0632
+| yeh				 | ي |    064A
+| zah				 | ظ |    0638
+| zain				 | ز |    0632
 | zero               | 0 |  0030 |
 | zeta               | ζ |  03B6 |
 | zwnj               | ‌ |200C |

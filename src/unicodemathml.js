@@ -920,11 +920,12 @@ const controlWords = {
     // From tech-note Appendix B. Character Keywords and Properties updated
     // with the Microsoft math autocorrect list and other sources. For a more
     // complete list, see https://texdoc.org/serve/unimath-symbols.pdf/0.
-    // Circled and parenthesized symbols index the Examples in the Playground.
+    // Circled and parenthesized numbers index the Examples in the Playground.
     // E.g., \Faraday gives ⑭, which inserts the fourteenth Example: 𝛁⨯𝐄=−𝜕𝐁/𝜕𝑡.
     // Circled letters are special UnicodeMath operators that build up to
     // bracketed matrices, fractions, absolute values, cardinality, cases,
-    // binomial coefficients, etc.
+    // binomial coefficients, etc. Keep list in ASCII order for binary search
+    // in getPartialMatches().
 //  Control word      Symbol   Codepoint  Comment
     '2root':            '√',    // 221A
     '3root':            '∛',    // 221B
@@ -1078,7 +1079,9 @@ const controlWords = {
     'circledast':       '⊛',    // 229B
     'circledcirc':      '⊚',    // 229A
     'circleddash':      '⊝',    // 229D
+    'circleddot':       '⊙',	    // 2299 (alias for xnor)
     'circledequal':     '⊜',    // 229C
+    'circledplus':      '⊕',	    // 2295 (alias for xor)
     'close':            '┤',	// 2524
     'clubsuit':         '♣',	// 2663
     'coint':            '∲',	    // 2232
@@ -1184,7 +1187,6 @@ const controlWords = {
     'frown':            '⌢',	    // 2322
     'fullouterjoin':    '⟗',   // 27D7
     'funcapply':        '⁡',	    // 2061
-    'ghain':	        'غ',    // 063A
     'gamma':            'γ',	// 03B3
     'ge':               '≥',	// 2265
     'geq':              '≥',	// 2265
@@ -1192,6 +1194,7 @@ const controlWords = {
     'gets':             '←',	// 2190
     'gg':               '≫',	// 226B
     'ggg':              '⋙',    	// 22D9
+    'ghain':	        'غ',    // 063A
     'gimel':            'ℷ',    	// 2137
     'gneqq':            '≩',    	// 2269
     'gnsim':            '⋧',    	// 22E7
@@ -1640,7 +1643,7 @@ const controlWords = {
 // "literal" operator if there were single-character control words
 function resolveCW(unicodemath, noCustomCW) {
     let cwPrev = ''
-    let customCWEnabled = !noCustomCW && ummlConfig && ummlConfig.customControlWords
+    let customCWEnabled = false //!noCustomCW && ummlConfig && ummlConfig.customControlWords
 
     let res = unicodemath.replace(/\\([A-Za-z0-9]+) ?/g, (match, cw) => {
         if (cwPrev == 'def' || cwPrev == 'newcommand') {
@@ -1746,27 +1749,13 @@ function resolveCW(unicodemath, noCustomCW) {
     return res;
 }
 
-var keys = Object.keys(controlWords)
-
-function binarySearchInsert(arr, target) {
-    let left = 0
-    let right = arr.length - 1
-
-    while (left <= right) {
-        const mid = Math.floor((left + right) / 2)
-
-        if (arr[mid] === target)
-            return mid                      // Target already exists, return its index
-        if (arr[mid] < target)
-            left = mid + 1
-        else
-            right = mid - 1
-    }
-
-    // Insert target at the correct position
-    arr.splice(left, 0, target)
-    return left                             // Return index where target was inserted
+// Insert custom control words into controlWords{}
+if (ummlConfig && ummlConfig.customControlWords) {
+    Object.entries(ummlConfig.customControlWords).forEach(([cw, body]) => {
+        controlWords[cw] = body
+    })
 }
+var keys = Object.keys(controlWords)        // Needs var for binarySearchInsert()
 
 function getPartialMatches(cw) {
     // Get array of control-word partial matches for autocomplete drop down
@@ -1777,7 +1766,7 @@ function getPartialMatches(cw) {
     let key
     let matches = [];
 
-    do {                                // Binary search for a partial match
+    do {                                    // Binary search for a partial match
         iMid = Math.floor((iMin + iMax) / 2);
         key = keys[iMid];
         if (key.startsWith(cw)) {
@@ -1808,6 +1797,28 @@ function getPartialMatches(cw) {
         }
     }
     return matches;
+}
+
+function binarySearchInsert(arr, target) {
+    let left = 0
+    let right = arr.length - 1
+
+    while (left <= right) {
+        const mid = Math.floor((left + right) / 2)
+
+        if (arr[mid] === target) {          // Target already exists
+            arr[mid] = target
+            return mid                      // Return its index
+        }
+        if (arr[mid] < target)
+            left = mid + 1
+        else
+            right = mid - 1
+    }
+
+    // Insert target at the correct position
+    arr.splice(left, 0, target)
+    return left                             // Return index where target was inserted
 }
 
 function isFunctionName(fn) {
@@ -2215,15 +2226,21 @@ function mapToPrivate(s) {
                     // Remove \newcommand {} around control word
                     s = s.substring(0, i + 1) + s.substring(i + 2, k) + s.substring(k + 1)
                 }
-                if (s[i + 1] == '\\') {
+                if (s[i + 1] == '\\') {     // Define control word
                     let cw, body
                     [cw, body, i] = getMacro(s, i)
                     if (cw) {
-                        controlWords[cw] = body
-                        binarySearchInsert(keys, cw)
-                        if (!ummlConfig.customControlWords)
-                            ummlConfig.customControlWords = {}
-                        ummlConfig.customControlWords[cw] = body
+                        if (body) {
+                            controlWords[cw] = body
+                            binarySearchInsert(keys, cw)
+                            if (!ummlConfig.customControlWords)
+                                ummlConfig.customControlWords = {}
+                            ummlConfig.customControlWords[cw] = body
+                        } else {
+                            delete controlWords[cw]
+                            delete keys[cw]
+                            delete ummlConfig.customControlWords[cw]
+                        }
                         if (!testing)
                             console.log('cw: ' + cw + ', body: ' + body)
                             i--             // Cancel upcoming i++
