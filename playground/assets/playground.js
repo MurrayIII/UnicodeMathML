@@ -15,6 +15,7 @@ var inputRedoStack = []
 var inputUndoStack = [{uMath: ''}]
 var inSelChange = false
 var keydownLast
+var output_HTML
 var outputRedoStack = ['']
 var outputUndoStack = ['']
 var prevInputValue = "";
@@ -58,23 +59,6 @@ const mappedPairs = {  // Need ASCII - (U+002D) 𝑎𝑛𝑑 Unicode - (U+2212)
     "::": "∷", ":=": "≔", "<<": "≪", ">>": "≫", '+−': '±', "−+": "∓",
     "!!": "‼", "...": "…", '≯=': '≱', '≮=': '≰', '⊀=': '⪱', '⊁=': '⪲',
     '⊄=': '⊈', '⊅=': '⊉', '<-': '←', '<−': '←', '->': '→', '−>': '→',
-}
-
-function getMathJaxMathMlNode() {
-    /* MathJax output-element DOM has the form:
-       <mjx-container
-         <svg
-         <mjx-assistive-mml
-           <mjx-container
-             <svg
-             <mjx-assistive-mml
-               <math ...
-     */
-    let node = output.firstElementChild.lastElementChild.firstElementChild
-    console.log('nodename = ' + node.nodeName)
-    if (node.nodeName == 'MJX-CONTAINER')
-        node = node.lastElementChild.firstElementChild
-    return node
 }
 
 function removeSelMarkers(uMath) {
@@ -1570,7 +1554,7 @@ function removeActive(x) {
 ///////////////////////////////////
 
 function speechSel(sel) {
-    if (output.firstElementChild.nodeName == 'MJX-CONTAINER')
+    if (output.firstElementChild.nodeName != 'math')
         return                              // MathJax
 
     let node = sel.anchorNode;
@@ -4084,14 +4068,9 @@ document.addEventListener('keydown', function (e) {
             case 'b':                       // Alt+b
             case '∫':
                 // Braille MathML
-                let braille = ''
-                if (isMathML(input.value)) {
-                    braille = MathMLtoBraille(input.value)
-                } else {
-                    let node = output.firstElementChild.nodeName == 'MJX-CONTAINER'
-                        ? getMathJaxMathMlNode() : output.firstElementChild
-                    braille = getBraille(node)
-                }
+                let braille = isMathML(input.value) ? MathMLtoBraille(input.value)
+                    : output.firstElementChild.nodeName != 'math' ? MathMLtoBraille(output_HTML)
+                    : getBraille(output.firstElementChild)
                 console.log('Math braille = ' + braille)
                 speechDisplay.innerText += '\n' + braille
                 break
@@ -4152,14 +4131,9 @@ document.addEventListener('keydown', function (e) {
             case 's':                       // Alt+s
             case 'ß':
                 // Speak MathML
-                let s = ''
-                if (isMathML(input.value)) {
-                    s = MathMLtoSpeech(input.value)
-                } else {
-                    let node = output.firstElementChild.nodeName == 'MJX-CONTAINER'
-                        ? getMathJaxMathMlNode() : output.firstElementChild
-                    s = speech(node)
-                }
+                let s = isMathML(input.value) ? MathMLtoSpeech(input.value)
+                    : output.firstElementChild.nodeName != 'math' ? MathMLtoSpeech(output_HTML)
+                    : speech(output.firstElementChild)
                 speak(s)
                 speechDisplay.innerText = '\n' + resolveSpeechSymbols(s)
                 break
@@ -4393,17 +4367,13 @@ output.addEventListener('keydown', function (e) {
     let key = e.key
     keydownLast = key
 
-    if (output.firstElementChild.nodeName == 'MJX-CONTAINER') {
+    if (output.firstElementChild.nodeName != 'math') {
         // MathJax is active. Copying the whole math zone is supported
         e.preventDefault()
         if (key.length > 1)
             return
-        if (e.ctrlKey && key == 'c') {      // Ctrl+c
-            let node = getMathJaxMathMlNode()
-            let mathml = node.outerHTML
-            if (mathml.startsWith('<math'))
-                navigator.clipboard.writeText(mathml)
-        }
+        if (e.ctrlKey && key == 'c')        // Ctrl+c
+            navigator.clipboard.writeText(output_HTML)
         return
     }
     let x = document.getElementById(this.id + "autocomplete-list")
@@ -5221,12 +5191,12 @@ async function draw(undo) {
     let m_preprocess = 0
     let m_transform = 0
     let m_pretty = 0
-    let output_HTML = "";
     let output_pegjs_ast_HTML = "";
     let output_preprocess_ast_HTML = "";
     let output_mathml_ast_HTML = "";
     let output_source_HTML = ""
     let iEq = 0                             // inp equation index
+    output_HTML = "";
 
     // TODO: This loop should be implemented in unicodemathml.js so that
     // unicodemathml() can generate the MathML for a math paragraph.

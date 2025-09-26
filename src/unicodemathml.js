@@ -4,6 +4,7 @@ var output_trace
 var selanchor
 var selfocus
 var testing
+var fTeX = false
 var useMfenced = 0                          // Generate recommended MathML
 var ummlConfig
 var ummlParser
@@ -1641,26 +1642,16 @@ const controlWords = {
 // in order to be properly terminated.
 // this control word replacement would fly in the face of the UnicodeMath
 // "literal" operator if there were single-character control words
-function resolveCW(unicodemath, noCustomCW) {
+function resolveCW(unicodemath) {
     let cwPrev = ''
-    let customCWEnabled = false //!noCustomCW && ummlConfig && ummlConfig.customControlWords
 
     let res = unicodemath.replace(/\\([A-Za-z0-9]+) ?/g, (match, cw) => {
         if (cwPrev == 'def' || cwPrev == 'newcommand') {
             // Leave cw for defining in mapToPrivate() (search for 'ⓜ')
             cwPrev = ''
-            if (customCWEnabled)            // Don't use previous def
-                ummlConfig.customControlWords[cw] = ''
             return match
         }
         cwPrev = cw
-        // check custom control words first, i.e. custom control words shadow
-        // built-in ones. noCustomCW is true for TeX input
-        if (customCWEnabled) {
-            let symbol = ummlConfig.customControlWords[cw]
-            if (symbol)
-                return symbol
-        }
         if (isFunctionName(cw))
             return ' ' + cw                 // E.g., TeX \sin
 
@@ -2935,10 +2926,18 @@ function preprocess(dsty, uast, index, arr) {
                     arr.splice(index + 1, 1);
                 }
             }
-            value.naryand = preprocess(dsty, value.naryand);
             value.limits = preprocess(dsty, value.limits);
+            value.naryand = preprocess(dsty, value.naryand);
 
-            if (useMfenced && !Array.isArray(value.naryand)) {
+            let isArr = Array.isArray(value.naryand)
+            if (isArr && value.naryand.length == 1 &&
+                value.naryand[0].bracketed && !value.naryand[0].bracketed.open) {
+                let val = value.naryand[0].bracketed.content
+                if (val.expr && Array.isArray(val.expr) && val.expr.length == 1)
+                    value.naryand = val.expr[0] // Remove enclosing〖〗
+                isArr = false
+            }
+            if (useMfenced && !isArr) {
                 // Word MML2OMML.XSL wants naryand to be an <mrow>
                 value.naryand = [value.naryand]
             }
@@ -3404,7 +3403,7 @@ function preprocess(dsty, uast, index, arr) {
                 let x = ofFunc[0];
                 if (Array.isArray(x))
                     x = x[0];                  // '⒡' as separate array element
-                if (x != undefined && x.atoms) {
+                if (x && x.atoms) {
                     let ch = x.atoms[0].chars;
                     if (ch[0] == '⒡') {
                         // Remove '⒡' and enclose function arg in parens
@@ -3412,7 +3411,14 @@ function preprocess(dsty, uast, index, arr) {
                             ofFunc[0].shift();
                         else
                             ofFunc[0].atoms[0].chars = ch.substring(1);
-                        ofFunc = {bracketed: {open: '(', close: ')', content: ofFunc}}
+                        ofFunc = { bracketed: { open: '(', close: ')', content: ofFunc } }
+                    }
+                } else if (x && x.bracketed && !x.bracketed.open) {
+                    let val = x.bracketed.content
+                    if (val.expr && Array.isArray(val.expr) && val.expr.length == 1) {
+                        val = val.expr[0]
+                        if (Array.isArray(val) && val.length == 1)
+                            ofFunc = val[0] // Remove {
                     }
                 }
             }
@@ -3583,6 +3589,8 @@ function preprocess(dsty, uast, index, arr) {
                     value.content = preprocess(dsty, value.content);
                 } else {
                     value.content = preprocess(dsty, value.content);
+                    if (fTeX && !value.open)
+                        return value.content
                     if (!value.intent && value.open == '\u007B' && !value.close &&
                         value.content.expr && Array.isArray(value.content.expr) &&
                         value.content.expr[0].array) {
@@ -5391,11 +5399,13 @@ function unicodemathml(unicodemath, displaystyle) {
             unicodemath = removeMmlPrefixes(unicodemath);
         return {mathml: unicodemath, details: {}};
     }
+    fTeX = false
     if (unicodemath[0] == '$' || unicodemath.startsWith('\\[') ||
         unicodemath.startsWith('\\(')) {
         // Handle [La]TeX. Remove math-zone delimiters and define display style
         let j = 2                           // For start delims '$$', '\[', '\)'
         displaystyle = 1                    // display="block"
+        fTeX = true
 
         if (unicodemath[0] == '$') {
             if (unicodemath[1] != '$') {

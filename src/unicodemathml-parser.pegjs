@@ -504,7 +504,7 @@ identityMatrix = t:("■" / opEnclosedMatrix) n:nASCII {
 // n-ary operations such as sums and integrals (this is fairly complex and
 // refers to a bunch of rules defined further down). allow opNaryand or a
 // space
-nary = o:opNary m:bitmask? s:(script / abscript)? (opNaryand / " ") a:element {
+nary = o:opNary m:bitmask? s:(script / abscript)? (opNaryand / __) a:element {
     if (s == null) {
         s = {type: "subsup"}
     }

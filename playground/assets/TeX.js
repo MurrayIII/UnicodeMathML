@@ -665,16 +665,27 @@ function TeX2UMath(tex) {
                 if (i < tex.length && !'+-=/^_ )'.includes(tex[i]))
                     uniTeX += ' '
                 break
+            case '\\':                      // Most cases handled in pass 1
+                if (tex[i] == '{' || tex[i] == '}') {
+                    uniTeX = uniTeX.substring(0, uniTeX.length - 1) + tex[i]
+                    i++
+                }
+                break
             case '{':
                 [j, k] = findClosingBrace(tex, i, '/')
                 if (k > 0) {
                     let op = tex[k] == '/' ? '⍁' : '⒝'
-                        // E.g., TeX {a+b\over c+d}
-                        uniTeX = uniTeX.substring(0, uniTeX.length - 1) + op +
-                            TeX2UMath(tex.substring(i, k)) + '&' +
-                            TeX2UMath(tex.substring(k + 1, j)) + '〗'
-                        i = j + 1
+                    // E.g., TeX {a+b\over c+d}
+                    uniTeX = uniTeX.substring(0, uniTeX.length - 1) + op +
+                        TeX2UMath(tex.substring(i, k)) + '&' +
+                        TeX2UMath(tex.substring(k + 1, j)) + '〗'
+                    i = j + 1
+                    break
                 }
+                // Replace {...} by〖...〗
+                uniTeX = uniTeX.substring(0, uniTeX.length - 1) + '〖' +
+                    TeX2UMath(tex.substring(i, j)) + '〗 '
+                i = j + 1
                 break
             case '〖':                       // Begin environment
                 if (tex[i] != '{')
@@ -765,6 +776,11 @@ function TeX2UnicodeMath(tex) {
                     i = tex.length          // Set up to exit for(;;)
                     break
                 }
+                if (tex[i] == '{' || tex[i] == '}') {
+                    uniTeX += '\\' + tex[i] // Keep quoted braces
+                    i++
+                    break
+                }
                 let cw = ''
                 for (; i < tex.length && isAsciiAlphabetic(tex[i]); i++)
                     cw += tex[i]
@@ -788,13 +804,14 @@ function TeX2UnicodeMath(tex) {
                     symbol = '\u2009 '
                     i++
                 } else {
-                    symbol = resolveCW('\\' + cw, true)
+                    symbol = resolveCW('\\' + cw)
                 }
                 if (symbol[0] && symbol[0] != '"')
                     uniTeX += symbol
-                else
+                else if (cw)
                     uniTeX += '\\' + cw
                 break
+            case '\r':
             case '\n':
                 i++                         // Skip new lines
                 break
