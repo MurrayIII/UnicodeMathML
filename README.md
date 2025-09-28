@@ -42,13 +42,13 @@ by autobuildup routines that manipulate the MathML DOM.
 There are two test pages: ./dist/example.html and ./test/MmlToUM.html used to
 test conversions and UI behavior.
 
-example.html contains text with myriad UnicodeMath or LaTeX math zones that
+**example.html** contains text with myriad UnicodeMath or LaTeX math zones that
 are converted to MathML and compared to known results. The tests pass if the
 console reports 0 failures.
 
-MmlToUM.html has a set of buttons for testing UI behavior and conversions
-other than UnicodeMath/LaTeX to MathML. Clicking on the buttons runs the
-tests and the results are reported in the console window.
+**MmlToUM.html** has a set of buttons for testing UI behavior and conversions
+other than UnicodeMath/LaTeX to MathML. Clicking on the buttons runs the tests
+and the results are reported in the console window.
 
 Although there are many tests, they are not exhaustive. They sure help
 in reducing regressions.
@@ -56,8 +56,9 @@ in reducing regressions.
 ## Integration
 Search the [npm registry](https://www.npmjs.com/) for "unicodemathml".
 The README.md of the [unicodemathml package](https://www.npmjs.com/package/unicodemathml)
-explains how to convert a UnicodeMath expression into MathML. It also explains how to convert
-UnicodeMath math zones in a document to MathML. Use version 1.0.5 or higher.
+explains how to convert a UnicodeMath expression into MathML. It also
+explains how to convert UnicodeMath math zones embedded in text string
+to MathML. Use version 1.0.5 or higher.
 
 ## License
 You may use this repository's contents under the terms of the [MIT License](https://en.wikipedia.org/wiki/MIT_License).

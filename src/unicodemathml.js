@@ -132,13 +132,24 @@ function getSubSups(str, i, delim) {
     if (op != '^' && (op != '_' || !subOk)) // Span not preceded by ^ or _,
         return ''                           //  or _ but letter(s) w/o Unisubs
 
-    let ch = str[j - 1]                     // Check for base character
-    if (ch < '\u3017' && !isAsciiAlphanumeric(ch) && !isDoubleStruck(ch) &&
-        !digitSubscripts.includes(ch) && !letterSubs.includes(ch)) {
-        return ''                           // Could allow other base chars...
+    let opSupSub = (op == '^') ? '_' : '^'  // Opposite subsup operator
+    let k = j - 1
+
+    for (; k >= 0; k--) {
+        if (str[k] == opSupSub)
+            return ''                       // Handle _...^... ?
+        if (str[k] < '\u3017' && !isAsciiAlphanumeric(str[k]) && !isDoubleStruck(str[k]))
+            break                           // Could allow other letters...
     }
+    if (k == j - 1)
+        return ''                           // No base character(s)
+    //let ch = str[j - 1]                     // Check for base character
+    //if (ch < '\u3017' && !isAsciiAlphanumeric(ch) && !isDoubleStruck(ch) &&
+    //    !digitSubscripts.includes(ch) && !letterSubs.includes(ch)) {
+    //    return ''                           // Could allow other base chars...
+    //}
     let s = ''                              // Collect sub/sup span
-    let k = j + 1
+    k = j + 1
     for (; k < i + 1; k++) {
         if (str[k] == '\uD835')
             k++                             // Bypass lead surrogate
@@ -625,6 +636,31 @@ function needParens(ret) {
         ch1 = ret[i];
     }
     return false;
+}
+
+function needBeginEnd(node) {
+    // Like needParens() but checks if children of node need〖〗
+    let cChild = node.childElementCount
+    if (cChild <= 1)
+        return false
+
+    let prevOpHat = false
+
+    for (let i = 0; i < cChild; i++) {
+        let nodeI = node.children[i]
+        if (nodeI.nodeName == 'mo') {
+            let op = nodeI.textContent
+            if (op == '^') {
+                prevOpHat = true
+                continue
+            }
+            // Don't require〖〗for parens and ^−
+            if (op != '(' && op != ')' && (op != '−' || !prevOpHat))
+                return true
+        }
+        prevOpHat = false
+    }
+    return false
 }
 
 function removeMmlPrefixes(mathML) {
@@ -4803,7 +4839,7 @@ function dump(value, noAddParens) {
         return ''
 
     let cNode = value.childElementCount ? value.childElementCount : 1
-    let intent
+    let intent = value.getAttribute('intent')
     let nodeLEC                             // node.lastElementChild
     let op
     let ret = ''
@@ -4813,7 +4849,6 @@ function dump(value, noAddParens) {
     switch (value.localName) {
         case 'mtable':
             symbol = '■';
-            intent = value.getAttribute('intent')
             if (intent == ':equations') {
                 symbol = '█';
             } else if (value.parentElement.hasAttribute('intent')) {
@@ -4857,7 +4892,6 @@ function dump(value, noAddParens) {
             break;
 
         case 'mtd':
-            intent = value.getAttribute('intent')
             if (intent == ':no-equation-label')
                 return ''
             ret = nary(value, '', cNode)
@@ -5102,8 +5136,6 @@ function dump(value, noAddParens) {
             val = value.innerHTML;
             if (val == '\u200B' && value.parentElement.getAttribute('intent') == ':cases')
                 return ''                   // Discard ZWSP (used for in-line editing)
-            if (!intent)
-                intent = value.getAttribute('intent')
             if (intent == ':text') {
                 ret = '\\' + val
                 break
@@ -5170,7 +5202,6 @@ function dump(value, noAddParens) {
             break;
 
         case 'mi':
-            intent = value.getAttribute('intent')
             if (isDoubleStruck(intent)) {
                 ret = intent;
                 break;
@@ -5248,7 +5279,12 @@ function dump(value, noAddParens) {
     for (let i = 0; i < cNode; i++) {
         let node = value.children[i];
         ret += checkSpace(i, node, ret)
-        ret += dump(node, false, i);
+        let val = dump(node, false, i)
+        if (i == cNode - 1 && intent && intent.startsWith(':nary') &&
+            node.nodeName == 'mrow' && needBeginEnd(node)) {
+            val = '〖' + val + '〗'
+        }
+        ret += val
     }
 
     if (selcode) {
