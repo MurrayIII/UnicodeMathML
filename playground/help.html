@@ -8,22 +8,28 @@
     <script src="assets/lib/jquery.min.js"></script>
     <script src="jquery.toc.js"></script>
     <style>
-        table {margin: auto}
+        table {
+            margin: auto
+        }
+
         th {
             text-align: left
         }
+
         tr:nth-child(even) {
             background-color: #e0e0e0;
         }
     </style>
 </head>
 <body style="max-width:45em; font-size:1.1em">
-    <h1 id="welcome-to-unicodemathml" style="margin-top: 0px !important; margin-right: 0px; margin-bottom: 16px; margin-left: 0px; font-weight: 600; padding-bottom: 0.3em; font-size: 2em; border-bottom: 1px solid rgb(216, 222, 228); line-height: 1.25; color: rgb(36, 41, 47); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Helvetica, Arial, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; letter-spacing: normal; orphans: 2; text-align: start; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial;">Welcome to UnicodeMathML</h1>
+    <h1>Welcome to UnicodeMathML</h1>
     <p>
-        <a href="https://www.unicode.org/notes/tn28/UTN28-PlainTextMath-v3.3.pdf">UnicodeMath</a> is a linear representation of math that often resembles math notation and is easy to enter.
-        For example, a/b is UnicodeMath for <math><mrow><mfrac><mi>a</mi><mi>b</mi></mfrac><mo>.</mo></mrow></math>
-        It works well in Microsoft desktop apps such as Word, PowerPoint, Outlook, and OneNote but it hasn't been widely available elsewhere.
-        This open-source applet implements UnicodeMath on the web.
+        <a href="https://www.unicode.org/notes/tn28/UTN28-PlainTextMath-v3.3.pdf">UnicodeMath</a> is a linear
+        representation of math that often resembles math notation and is easy to enter. For example,
+        a/b is UnicodeMath for <math><mrow><mfrac><mi>a</mi><mi>b</mi></mfrac><mo>.</mo></mrow></math>
+        UnicodeMath works well in Microsoft desktop apps such as Word, PowerPoint, Outlook, OneNote,
+        and the Windows Calculator but it hasn't been widely available elsewhere. This open-source
+        applet implements UnicodeMath on the web.
     </p>
     <ul data-toc data-toc-headings="h2,h3"></ul>
     <h2>1. Entering equations</h2>
@@ -99,10 +105,11 @@
     <a id="sec-3" />
     <h2>3. Entering symbols</h2>
     <p>
-        You can enter a symbol by clicking on the symbol in one of the symbol galleries below the input window.
-        But it’s faster to type the symbol’s LaTeX control word such as \alpha for α.
-        After typing two letters, you get a math autocomplete dropdown with possible matches.
-        This lets you enter the selected symbol (the one highlighted in blue) quickly by typing Enter or Tab.
+        You can enter a symbol by clicking on the symbol in one of the symbol galleries
+        below the input window. But it’s faster to type the symbol’s LaTeX control word
+        such as \alpha for α. After typing two letters, you get a math autocomplete dropdown
+        with possible matches. This lets you enter the selected symbol (the one highlighted
+        in blue) quickly by typing Enter or Tab.
     </p>
     <p>For example, if you type \al, you see</p>
     <p>
@@ -111,23 +118,39 @@
            width: 25em" />
     </p>
     <p>
-        Typing the Enter or Tab key inserts 𝛼.
-        If you want a different symbol in the dropdown, you can click on it, or you can use the up/down (↑↓) arrow keys to select the symbol you want and type the Enter or Tab key to enter it.
+        Typing the Enter or Tab key inserts 𝛼. If you want a different symbol in the dropdown,
+        you can click on it, or you can use the up/down (↑↓) arrow keys to select the symbol
+        you want and type the Enter or Tab key to enter it.
     </p>
-    <p>The math autocomplete menu helps you discover a LaTeX control word, and it speeds entry especially for long control words such as those in the dropdown</p>
+    <p>
+        The math autocomplete menu helps you discover a LaTeX control word, and it speeds
+        entry especially for long control words such as those in the dropdown
+    </p>
     <p>
         <img src="help-images/autocllong.png" style="display: block;
            margin-left: auto; margin-right: auto;
            width: 25em" />
     </p>
-    <p>The <a href="#sec-18">control-word dictionary</a> includes some control-word aliases, such as \union for \cup (∪), since you might not guess \cup is the LaTeX control word for the union operator ∪.</p>
+    <p>
+        The <a href="#sec-18">control-word dictionary</a> includes some control-word aliases, such
+        as \union for \cup (∪), since you might not guess \cup is the LaTeX control word
+        for the union operator ∪.
+    </p>
     <a id="sec-4" />
     <h2>4. Entering math alphanumerics</h2>
     <p>
-        Unicode has many math styled characters, such as the math fraktur H (ℌ). They can be entered by selecting the letter(s) in the input or output windows and clicking on the 𝔄𝔅ℭ button or other math-style button.
-        You can also enter a character in the Math styles text box and click on the desired math style button.
+        Unicode has many math styled characters, such as the math fraktur H (ℌ). They can
+        be entered by selecting the letter(s) in the input or output windows and clicking
+        on the 𝔄𝔅ℭ button or other math-style button. You can also enter a character in
+        the Math styles text box and click on the desired math style button.
     </p>
-    <p>Or you can enter the control words for the desired characters. The math-style control words consist of a math-style prefix followed by the unstyled character. For example, the prefix &quot;mbf&quot; (math boldface) defines the bold math style and the control word \mbfH gives a bold H, that is, 𝐇. The math-style prefixes are defined in the table</p>
+    <p>
+        Or you can enter the control words for the desired characters. The math-style
+        control words consist of a math-style prefix followed by the unstyled character.
+        For example, the prefix &quot;mbf&quot; (math boldface) defines the bold math style and
+        the control word \mbfH gives a bold H, that is, 𝐇. The math-style prefixes are
+        defined in the table
+    </p>
     <table>
         <thead>
             <tr>
@@ -206,14 +229,20 @@
             </tr>
         </tbody>
     </table>
-    <p>Here roundhand and chancery are two script styles, and isolated, initial, tailed, looped, and stretched are Arabic math styles. Currently the Arabic math styles require the XITS Math font and the chancery and roundhand variants require the STIX Two Math font.</p>
+    <p>
+        Here roundhand and chancery are two script styles, and isolated, initial,
+        tailed, looped, and stretched are Arabic math styles. Currently the Arabic
+        math styles require the XITS Math font and the chancery and roundhand variants
+        require the STIX Two Math font.
+    </p>
     <h2>5. Character code points</h2>
     <p>
-        Below the input window, there’s a Unicode codepoint window that displays the codepoints of the input symbols above the symbols.
-        This is particularly useful for comparing two strings that appear to be identical but differ in one or more characters.
-        Both the input and output windows support the Alt+x symbol entry method popular in Microsoft Word, OneNote, and NotePad.
-        (It should be supported in all editors 😊).
-        For example, type 222b Alt+x to insert ∫.
+        Below the input window, there’s a Unicode codepoint window that displays the codepoints
+        of the input symbols above the symbols. This is particularly useful for comparing two
+        strings that appear to be identical but differ in one or more characters. Both the input
+        and output windows support the Alt+x symbol entry method popular in Microsoft Word,
+        OneNote, and NotePad. (It should be supported in all editors 😊). For example, type
+        222b Alt+x to insert ∫.
     </p>
     <h2>6. Speech, braille, LaTeX, dictation</h2>
     <p>In addition to generating MathML, you can click on buttons or enter a hot key to</p>
@@ -241,23 +270,37 @@
         The only editing feature in the MathJax mode is Ctrl+c, which copies the MathML for the whole equation to the clipboard.
     </p>
     <h2>8. Navigating the app</h2>
-    <p>A mouse or touchpad provides one way to move between and inside the various facilities. Another way is to use the Tab key. Since the app has myriad default Tab stops, users need a Tab hierarchy. The top of the hierarchy has the menu stops Help, Demo, Speak, Braille, TeX, Dictate, and About, followed by the Input and Output windows, Settings, History, math styles, and the symbol galleries. The galleries appear in alphabetical order, Accents, Arrows, Binary, etc. The Tab key navigates these stops in the forward direction, while Shift+Tab navigates in the backward direction. The Enter key activates the current stop's facility. In an activated facility, the left and right arrow keys move between the facility's options. The Enter key then runs the option. For an active symbol gallery, the Enter key inserts the current symbol. For most settings, the Enter key toggles the current option. For menu stops, the Enter key sends the associated hot key. Each change is accompanied by explanatory speech.</p>
+    <p>
+        A mouse or touchpad provides one way to move between and inside the various facilities.
+        Another way is to use the Tab key. Since the app has myriad default Tab stops, users
+        need a Tab hierarchy. The top of the hierarchy has the menu stops Help, Demo, Speak,
+        Braille, TeX, Dictate, and About, followed by the Input and Output windows, Settings,
+        History, math styles, and the symbol galleries. The galleries appear in alphabetical order,
+        Accents, Arrows, Binary, etc. The Tab key navigates these stops in the forward direction,
+        while Shift+Tab navigates in the backward direction. The Enter key activates the current
+        stop's facility. In an activated facility, the left and right arrow keys move between
+        the facility's options. The Enter key then runs the option. For an active symbol gallery,
+        the Enter key inserts the current symbol. For most settings, the Enter key toggles the
+        current option. For menu stops, the Enter key sends the associated hot key. Each change
+        is accompanied by explanatory speech.
+    </p>
     <h2>9. UnicodeMath editing</h2>
-    <p>When you type UnicodeMath into the input window, various conversions occur in the input window (except inside a quoted literal):</p>
+    <p>
+        When you type UnicodeMath into the input window, various conversions occur in the input
+        window (except inside a quoted literal):
+    </p>
     <ul>
         <li>Letters are converted to math italic unless they 1) are part of a function name or of a control word (backslash followed by letters), or 2) follow a quote. For example, a → 𝑎</li>
         <li>Numeric subscripts/superscripts are converted to Unicode subscript/superscript characters, respectively. For example, a_2 → 𝑎₂, a^2 → 𝑎², and e^-(a+b) → 𝑒⁻⁽ᵃ⁺ᵇ⁾.</li>
         <li>Numeric fractions are converted to Unicode numeric fractions. For example, 1/2 → ½</li>
         <li>Control words are converted to their symbols, e.g., \alpha → 𝛼</li>
         <li>Various operator pairs are converted to Unicode operators, e.g., '+-' → '±' and '/=' → '≠'.</li>
-        <li>
-            The ASCII hyphen-minus - (U+002D) is converted to the Unicode minus − (U+2212) and the
-            ASCII apostrophe ' (U+0027) is converted to the Unicode prime ′ (U+2032).
-        </li>
+        <li>The ASCII hyphen-minus - (U+002D) is converted to the Unicode minus − (U+2212) and the ASCII apostrophe ' (U+0027) is converted to the Unicode prime ′ (U+2032).</li>
     </ul>
     <p>
-        It's easier to type −&gt; to get → than \rightarrow, although with math autocomplete you only need to type \ri&lt;​tab&gt; to get →.
-        Similarly, typing +- is easy for getting ±. Many of these operator pairs are listed in the following table.
+        It's easier to type −&gt; to get → than \rightarrow, although with math autocomplete you
+        only need to type \ri&lt;​tab&gt; to get →. Similarly, typing +- is easy for getting ±.
+        Many of these operator pairs are listed in the following table.
     </p>
     <table>
         <thead>
@@ -349,19 +392,23 @@
             </tr>
         </tbody>
     </table>
-    <p>The combination &lt;​− gives ←. If you want to enter an expression like 𝑎&lt;−𝑏, put a space between the &lt; and -.</p>
+    <p>
+        The combination &lt;​− gives ←. If you want to enter an expression like 𝑎&lt;−𝑏, put
+        a space between the &lt; and -.
+    </p>
     <p>
         These conversions aren't needed in the input window, but they make the input more readable.
         They also help in creating good looking UnicodeMath expressions for use in plain-text scenarios.
     </p>
     <h2>10. LaTeX and MathML editing</h2>
     <p>
-        When you type LaTeX or MathML into the input window, control words for Unicode symbols are autocorrected to the symbols,
-        and various operator pairs are converted to Unicode operators. For example, '$\alpha/=\beta' → '$𝛼≠𝛽'.
+        When you type LaTeX or MathML into the input window, control words for Unicode
+        symbols are autocorrected to the symbols, and various operator pairs are converted
+        to Unicode operators. For example, '$\alpha/=\beta' → '$𝛼≠𝛽'.
     </p>
     <p>
-        To facilitate entry, for LaTeX typing a { also inserts the closing }, and for MathML typing an opening tag also inserts the closing tag.
-        Type Ctrl+→ to bypass a tag.
+        To facilitate entry, for LaTeX typing a { also inserts the closing }, and for MathML
+        typing an opening tag also inserts the closing tag. Type Ctrl+→ to bypass a tag.
     </p>
     <h2>11. Editing hot keys</h2>
     <table>
@@ -414,14 +461,14 @@
     <p>
         Unicode has <a href="https://www.unicode.org/reports/tr25/">almost all math symbols</a> in use today.
         The symbol galleries located at the bottom of the web page contain the most common math symbols.
-        You can enter a symbol in a gallery by clicking on it or by typing its control word as described in the <em>Entering symbols</em> section above.
+        You can enter a symbol in a gallery by clicking on it or by typing its control word as
+        described in <a href="#sec-3">Sec. 3</a>.
     </p>
     <p>
-        Hovering over a symbol displays a tooltip with information about the symbol, specifically the
-        Unicode code point, name, and block, as well as a LaTeX control word for entering the symbol,
-        the symbol's math class, and the Nemeth braille sequence (if defined). The symbol's Unicode category
-        is defined in <a href="https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-4/#G124142">Table 4-4</a>
-        of the Unicode Standard and the symbol's math class is defined in the comments of <a href="https://www.unicode.org/Public/math/revision-15/MathClass-15.txt">MathClass.txt</a>, a file for Unicode Technical Report #25: <em>Unicode Support for Mathematics</em>.
+        Hovering over a symbol displays a tooltip with information about the symbol,
+        specifically the Unicode code point, name, and block, as well as a LaTeX control word
+        for entering the symbol, the symbol's math class, and the Nemeth braille sequence (if defined).
+        The symbol's Unicode category is defined in <a href="https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-4/#G124142">Table 4-4</a> of the Unicode Standard and the symbol's math class is defined in the comments of <a href="https://www.unicode.org/Public/math/revision-15/MathClass-15.txt">MathClass.txt</a>, a file for Unicode Technical Report #25: <em>Unicode Support for Mathematics</em>.
         For example, hovering a script X (𝒳) displays
     </p>
     <p>
@@ -438,42 +485,46 @@
     </p>
     <p>
         This &quot;in-place&quot; editing mimics the <a href="https://devblogs.microsoft.com/math-in-office/officemath/">math editing experience</a>
-        in desktop Microsoft Word, Outlook, PowerPoint, and OneNote, and in the Windows Calculator.
-        The hot keys listed above work here too, as do the symbol galleries and the math autocomplete menus.
-        The copy hot key, Ctrl+c, copies the MathML for the selected content into the plain-text copy slot, rather than copying the underlying plain text.
-        This enables you to paste built-up math equations into Word and other apps that interpret &quot;plain-text&quot; MathML as MathML rather than as plain text.
-        Note: math autobuildup works with native MathML rendering; if MathJax is active, only Ctrl+c works.
+        in desktop Microsoft Word, Outlook, PowerPoint, and OneNote, and in the Windows
+        Calculator. The hot keys listed above work here too, as do the symbol galleries
+        and the math autocomplete menus. The copy hot key, Ctrl+c, copies the MathML for
+        the selected content into the plain-text copy slot, rather than copying the
+        underlying plain text. This enables you to paste built-up math equations into Word
+        and other apps that interpret &quot;plain-text&quot; MathML as MathML rather than as plain text.
+        Note: math autobuildup works with native MathML rendering; if MathJax is active,
+        only Ctrl+c works.
     </p>
     <p>The implementation uses JavaScript to manipulate the MathML in the browser DOM.</p>
     <h2>14. Intents</h2>
     <p>
         UnicodeMathML generates <a href="https://w3c.github.io/mathml/">Presentation MathML 4</a>.
-        A key addition in MathML 4 is the intent attribute, which allows authors to disambiguate math notation and control math speech.
+        A key addition in MathML 4 is the intent attribute, which allows authors to
+        disambiguate math notation and control math speech.
     </p>
     <p>
         For example, does |𝑥| mean the absolute value of 𝑥 or the cardinality of 𝑥?
         Absolute value is assumed by default since absolute value is more common than cardinality.
         The default MathML for |x| is
     </p>
-<pre><code class="language-html">&lt;mrow intent=&quot;absolute-value(𝑥)&quot;&gt;
-  &lt;mo&gt;|&lt;/mo&gt;&lt;mi&gt;𝑥&lt;/mi&gt;&lt;mo&gt;|&lt;/mo&gt;&lt;/mrow&gt;.
+<pre><code class="language-html">  &lt;mrow intent=&quot;absolute-value(𝑥)&quot;&gt;
+     &lt;mo&gt;|&lt;/mo&gt;&lt;mi&gt;𝑥&lt;/mi&gt;&lt;mo&gt;|&lt;/mo&gt;&lt;/mrow&gt;.
 </code></pre>
     <p>
-        To specify cardinality, enter \card(x) (or ⓒ(x)).
-        These inputs produce the MathML
+    To specify cardinality, enter \card(x) (or ⓒ(x)).
+    These inputs produce the MathML
     </p>
-<pre><code class="language-html">&lt;mrow intent=&quot;cardinality(𝑥)&quot;&gt;
-  &lt;mo&gt;|&lt;/mo&gt;&lt;mi&gt;𝑥&lt;/mi&gt;&lt;mo&gt;|&lt;/mo&gt;&lt;/mrow&gt;.
+<pre><code class="language-html">  &lt;mrow intent=&quot;cardinality(𝑥)&quot;&gt;
+     &lt;mo&gt;|&lt;/mo&gt;&lt;mi&gt;𝑥&lt;/mi&gt;&lt;mo&gt;|&lt;/mo&gt;&lt;/mrow&gt;.
 </code></pre>
     <p>
-        If you enter an absolute value or cardinality containing more than one symbol as in |a+b|, the MathML intent contains an argument reference $a.
-        For |a+b|, the MathML is
+        If you enter an absolute value or cardinality containing more than one symbol as in
+        |a+b|, the MathML intent contains an argument reference $a. For |a+b|, the MathML is
     </p>
-<pre><code class="language-html">&lt;mrow intent=&quot;absolute-value($a)&quot;&gt;
-  &lt;mo&gt;|&lt;/mo&gt;
-    &lt;mrow arg=&quot;a&quot;&gt;
-      &lt;mi&gt;𝑎&lt;/mi&gt;&lt;mo&gt;+&lt;/mo&gt;&lt;mi&gt;𝑏&lt;/mi&gt;&lt;/mrow&gt;
-  &lt;mo&gt;|&lt;/mo&gt;&lt;/mrow&gt;
+<pre><code class="language-html">  &lt;mrow intent=&quot;absolute-value($a)&quot;&gt;
+    &lt;mo&gt;|&lt;/mo&gt;
+      &lt;mrow arg=&quot;a&quot;&gt;
+        &lt;mi&gt;𝑎&lt;/mi&gt;&lt;mo&gt;+&lt;/mo&gt;&lt;mi&gt;𝑏&lt;/mi&gt;&lt;/mrow&gt;
+    &lt;mo&gt;|&lt;/mo&gt;&lt;/mrow&gt;
 </code></pre>
     <p>
         A matrix enclosed in vertical bars is treated as a determinant.
@@ -481,29 +532,32 @@
     </p>
     <p><math display="block"><mrow intent="determinant($a)"><mo>|</mo><mtable arg="a"><mtr><mtd><mi>𝑎</mi></mtd><mtd><mi>𝑏</mi></mtd></mtr><mtr><mtd><mi>𝑐</mi></mtd><mtd><mi>𝑑</mi></mtd></mtr></mtable><mo>|</mo></mrow></math></p>
     <p>which has the MathML</p>
-<pre><code class="language-html">&lt;mrow intent=&quot;determinant($a)&quot;&gt;
-  &lt;mo&gt;|&lt;/mo&gt;
-    &lt;mtable arg=&quot;a&quot;&gt;
-      &lt;mtr&gt;
-        &lt;mtd&gt;&lt;mi&gt;𝑎&lt;/mi&gt;&lt;/mtd&gt;&lt;mtd&gt;&lt;mi&gt;𝑏&lt;/mi&gt;&lt;/mtd&gt;&lt;/mtr&gt;
-      &lt;mtr&gt;&lt;mtd&gt;&lt;mi&gt;𝑐&lt;/mi&gt;&lt;/mtd&gt;&lt;mtd&gt;&lt;mi&gt;𝑑&lt;/mi&gt;&lt;/mtd&gt;&lt;/mtr&gt;&lt;/mtable&gt;
-  &lt;mo&gt;|&lt;/mo&gt;&lt;/mrow&gt;.
+<pre><code class="language-html">  &lt;mrow intent=&quot;determinant($a)&quot;&gt;
+    &lt;mo&gt;|&lt;/mo&gt;
+      &lt;mtable arg=&quot;a&quot;&gt;
+        &lt;mtr&gt;
+          &lt;mtd&gt;&lt;mi&gt;𝑎&lt;/mi&gt;&lt;/mtd&gt;&lt;mtd&gt;&lt;mi&gt;𝑏&lt;/mi&gt;&lt;/mtd&gt;&lt;/mtr&gt;
+        &lt;mtr&gt;&lt;mtd&gt;&lt;mi&gt;𝑐&lt;/mi&gt;&lt;/mtd&gt;&lt;mtd&gt;&lt;mi&gt;𝑑&lt;/mi&gt;&lt;/mtd&gt;&lt;/mtr&gt;&lt;/mtable&gt;
+    &lt;mo&gt;|&lt;/mo&gt;&lt;/mrow&gt;.
 </code></pre>
     <p>
-        The program infers intent attributes for absolute value and determinant, so only cardinality needs to be input without vertical bars.
-        Note that the ambiguous expression |𝑎|𝑏+𝑐|𝑑| is assumed to be (|𝑎|)𝑏+𝑐(|𝑑|).
-        If you want |𝑎(|𝑏+𝑐|)𝑑|, enter |(𝑎|𝑏+𝑐|𝑑)| and the parentheses will be removed.
+        The program infers intent attributes for absolute value and determinant, so only
+        cardinality needs to be input without vertical bars. Note that the ambiguous
+        expression |𝑎|𝑏+𝑐|𝑑| is assumed to be (|𝑎|)𝑏+𝑐(|𝑑|). If you want |𝑎(|𝑏+𝑐|)𝑑|,
+        enter |(𝑎|𝑏+𝑐|𝑑)| and the parentheses will be removed.
     </p>
     <p>
-        As we see here, some intent attribute values are implied by the input notations of LaTeX and UnicodeMath.
-        Others are implied by context.
-        Still others must be declared explicitly by the content author, by a math-knowledgeable copy editor, or maybe eventually by AI.
+        As we see here, some intent attribute values are implied by the input notations
+        of LaTeX and UnicodeMath. Others are implied by context. Still others must be
+        declared explicitly by the content author, by a math-knowledgeable copy editor,
+        or maybe eventually by AI.
     </p>
     <h2>15. Author intents</h2>
     <p>
-        Since most content authors don’t know MathML, we need a way to allow them to enter intents easily.
-        To this end, UnicodeMathML has an output-window context-menu option that lets you tag entities with intents.
-        For example, right-clicking on the 𝐸 in 𝐸 = 𝑚𝑐², you get the input box
+        Since most content authors don’t know MathML, we need a way to allow them to
+        enter intents easily. To this end, UnicodeMathML has an output-window context-menu
+        option that lets you tag entities with intents. For example, right-clicking on
+        the 𝐸 in 𝐸 = 𝑚𝑐², you get the input box
     </p>
     <p>
         <img src="help-images/intentbox.png" style="display: block;
@@ -514,16 +568,15 @@
         and you can type in “energy” or whatever you want followed by the Enter key.
         If you type in “energy”, the resulting MathML is
     </p>
-<pre><code class="language-html">&lt;mrow&gt;
-  &lt;mi intent=&quot;energy&quot;&gt;𝐸&lt;/mi&gt;
-  &lt;mo&gt;=&lt;/mo&gt;
-  &lt;mrow&gt;
-    &lt;mi&gt;𝑚&lt;/mi&gt;
-    &lt;msup&gt;&lt;mi&gt;𝑐&lt;/mi&gt;
-    &lt;mn&gt;2&lt;/mn&gt;&lt;/msup&gt;&lt;/mrow&gt;&lt;/mrow&gt;
+<pre><code class="language-html">  &lt;mrow&gt;
+    &lt;mi intent=&quot;energy&quot;&gt;𝐸&lt;/mi&gt;
+    &lt;mo&gt;=&lt;/mo&gt;
+    &lt;mrow&gt;
+      &lt;mi&gt;𝑚&lt;/mi&gt;
+      &lt;msup&gt;&lt;mi&gt;𝑐&lt;/mi&gt;
+      &lt;mn&gt;2&lt;/mn&gt;&lt;/msup&gt;&lt;/mrow&gt;&lt;/mrow&gt;
 </code></pre>
     <p>Typing Atl+d speaks this as &quot;energy equals m c squared&quot;.</p>
-
     <a id="sec-16" />
     <h2>16. TeX macros</h2>
     <p>You can use [La]TeX macros with [La]TeX input. Simple examples are:</p>
@@ -556,19 +609,24 @@
     <h2>17. UnicodeMath selection attributes</h2>
     <p>
         <strong>Technical stuff</strong>:
-        When you edit the output window, the resulting MathML includes attributes that represent the state of the user selection.
-        These attributes have been added partly because they are <a href="https://devblogs.microsoft.com/math-in-office/mathml-and-omml-user-selection-attributes/">needed to make editing accessible</a>.
-        The attribute &quot;selanchor&quot; defines the selection &quot;anchor&quot; end (the nonmoving end) and &quot;selfocus&quot; defines the selection active end, e.g., the end that moves with Shift+→.
-        The attribute values define the offsets for the selection <a href="https://developer.mozilla.org/en-US/docs/Web/API/Selection/setBaseAndExtent">setBaseAndExtent</a> method.
-        If the selection is an insertion point (a degenerate selection), only selanchor is included since the anchor and focus ends coincide.
+        When you edit the output window, the resulting MathML includes attributes that
+        represent the state of the user selection. These attributes have been added
+        partly because they are <a href="https://devblogs.microsoft.com/math-in-office/mathml-and-omml-user-selection-attributes/">needed to make editing accessible</a>.
+        The attribute &quot;selanchor&quot; defines the selection &quot;anchor&quot; end (the nonmoving end)
+        and &quot;selfocus&quot; defines the selection active end, e.g., the end that moves with Shift+→.
+        The attribute values define the offsets for the selection <a href="https://developer.mozilla.org/en-US/docs/Web/API/Selection/setBaseAndExtent">setBaseAndExtent</a>
+        method. If the selection is an insertion point (a degenerate selection), only
+        selanchor is included since the anchor and focus ends coincide.
     </p>
     <p>
-        Corresponding constructs have been added to UnicodeMath to represent the selection state.
-        They are needed for the multilevel undo facility, which saves back states by caching the back-state UnicodeMath strings.
-        The enclosure Ⓐ(<em>offset</em>) defines the position of the selection <em>anchor</em> and the enclosure Ⓕ(<em>offset</em>) defines the position of the selection <em>focus</em>.
-        If no <em>offset</em> appears, 0 is assumed.
-        To increase readability, these enclosures are not included in the UnicodeMath displayed in the input window.
-        Nondegenerate selections have the focus enclosure as well, as in the UnicodeMath &quot;Ⓐ()Ⓕ(1)⬚&quot; for the selected &quot;⬚&quot;.
+        Corresponding constructs have been added to UnicodeMath to represent the selection
+        state. They are needed for the multilevel undo facility, which saves back states
+        by caching the back-state UnicodeMath strings. The enclosure Ⓐ(<em>offset</em>) defines
+        the position of the selection <em>anchor</em> and the enclosure Ⓕ(<em>offset</em>) defines the
+        position of the selection <em>focus</em>. If no <em>offset</em> appears, 0 is assumed. To increase
+        readability, these enclosures are not included in the UnicodeMath displayed in the
+        input window. Nondegenerate selections have the focus enclosure as well, as in the
+        UnicodeMath &quot;Ⓐ()Ⓕ(1)⬚&quot; for the selected &quot;⬚&quot;.
     </p>
     <p>
         A negative offset is used if the selection construct refers to a text node.
@@ -580,32 +638,28 @@
     <a id="sec-18" />
     <h2>18. Control words</h2>
     <p>
-        To facilitate entering Unicode symbols, control words can be used as
-        discussed in <a href="#sec-3">Sec. 3</a>. The following is a table of
-        control words for Unicode math symbols not including the math alphanumerics
-        discussed in <a href="#sec-4">Sec. 4</a>. For a more complete list, see
-        <a href="https://texdoc.org/serve/unimath-symbols.pdf/0">unimath-symbols</a>.
-        Circled and parenthesized numbers index the Examples in the Playground.
-        E.g., \Faraday gives ⑭, which inserts the fourteenth Example: 𝛁⨯𝐄=−𝜕𝐁/𝜕𝑡.
-        Circled letters are special UnicodeMath operators that build up to
-        bracketed matrices, fractions, absolute values, cardinality, cases,
-        binomial coefficients, etc.
+        To facilitate entering Unicode symbols, control words can be used as discussed
+        in <a href="#sec-3">Sec. 3</a>. The following is a built-in table of control words for many
+        Unicode math symbols not including the math alphanumerics discussed in
+        <a href="#sec-4">Sec. 4</a>. For a more complete list, see <a href="https://texdoc.org/serve/unimath-symbols.pdf/0">unimath-symbols</a>.
+        Circled and parenthesized numbers index the Examples in the Playground. E.g.,
+        \Faraday gives ⑭, which inserts the fourteenth Example: 𝛁⨯𝐄=−𝜕𝐁/𝜕𝑡. Circled letters
+        are special UnicodeMath operators that build up to bracketed matrices, fractions,
+        cases, absolute values, cardinality, binomial coefficients, etc.
     </p>
     <p>
-        To define a new control word, called a custom control word, use the
-        \def construct discussed in <a href="#sec-16">Sec. 16</a>. For example,
-        \def\circplus{⨢} defines \circplus to be ⨢ (U+2A22). Custom control words
-        are saved in page's local storage when you click on Settings/Apply and
-        Reload Page. Custom control words appear along with built-in control
-        words in math autocomplete drop downs. You can see your custom control
-        words by right-clicking on the app, choosing the <b>Inspect</b> option,
-        and in the resulting menu, clicking on the Application button. This
-        shows the values of the app's local-storage items. Clicking on <b>config</b>
-        expands its contents revealing your <b>customControlWords</b>.
+        To define a new control word, called a custom control word, use the \def construct
+        discussed in <a href="#sec-16">Sec. 16</a>. For example, \def\circplus{⨢} defines \circplus
+        to be ⨢ (U+2A22). Custom control words are saved in the app's local storage when
+        you click on <strong>Settings/Apply and Reload Page</strong>. Custom control words appear along
+        with built-in control words in math autocomplete drop downs. You can see your custom
+        control words by right-clicking on the app, choosing the <strong>Inspect</strong> option, and in
+        the resulting menu, clicking on the Application button. This displays the values of
+        the app's local-storage items. Clicking on <strong>config</strong> shows your <strong>customControlWords</strong>.
     </p>
     <p>
-        To copy the following control-word list along with your custom control words
-        to the clipboard, type Alt+c.
+        To copy the following control-word list along with your custom control words to
+        the clipboard, type Alt+c.
     </p>
     <table>
         <thead>
@@ -1518,10 +1572,22 @@
                 <td></td>
             </tr>
             <tr>
+                <td>circleddot</td>
+                <td>⊙</td>
+                <td>2299</td>
+                <td>(alias for xnor)</td>
+            </tr>
+            <tr>
                 <td>circledequal</td>
                 <td>⊜</td>
                 <td>229C</td>
                 <td></td>
+            </tr>
+            <tr>
+                <td>circledplus</td>
+                <td>⊕</td>
+                <td>2295</td>
+                <td>(alias for xor)</td>
             </tr>
             <tr>
                 <td>close</td>
@@ -4041,6 +4107,7 @@
                 <td>rvert</td>
                 <td>|</td>
                 <td>007C</td>
+                <td></td>
             </tr>
             <tr>
                 <td>sad</td>
@@ -4433,6 +4500,18 @@
                 <td></td>
             </tr>
             <tr>
+                <td>triangleminus</td>
+                <td>⨺</td>
+                <td>2A3A</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>triangleplus</td>
+                <td>⨹</td>
+                <td>2A39</td>
+                <td></td>
+            </tr>
+            <tr>
                 <td>triangleright</td>
                 <td>▷</td>
                 <td>25B7</td>
@@ -4442,6 +4521,12 @@
                 <td>trianglerighteq</td>
                 <td>⊵</td>
                 <td>22B5</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>triangletimes</td>
+                <td>⨻</td>
+                <td>2A3B</td>
                 <td></td>
             </tr>
             <tr>
@@ -4688,6 +4773,7 @@
                 <td>vert</td>
                 <td>|</td>
                 <td>007C</td>
+                <td></td>
             </tr>
             <tr>
                 <td>vinculum</td>

@@ -51,7 +51,7 @@ other than UnicodeMath/LaTeX to MathML. Clicking on the buttons runs the tests
 and the results are reported in the console window.
 
 Although there are many tests, they are not exhaustive. They sure help
-in reducing regressions.
+in preventing regressions.
 
 ## Integration
 Search the [npm registry](https://www.npmjs.com/) for "unicodemathml".

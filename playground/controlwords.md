@@ -1,4 +1,5 @@
 ﻿<a id="sec-18" />
+
 ## 18. Control words
 
 To facilitate entering Unicode symbols, control words can be used as discussed
@@ -12,13 +13,12 @@ cases, absolute values, cardinality, binomial coefficients, etc.
 
 To define a new control word, called a custom control word, use the \def construct
 discussed in [Sec. 16](#sec-16). For example, \def\circplus{⨢} defines \circplus
-to be ⨢ (U+2A22). Custom control words are saved in page's local storage when you
-click on **Settings/Apply and Reload Page**. Custom control words appear along with
-built-in control words in math autocomplete drop downs. You can see your custom
+to be ⨢ (U+2A22). Custom control words are saved in the app's local storage when
+you click on **Settings/Apply and Reload Page**. Custom control words appear along
+with built-in control words in math autocomplete drop downs. You can see your custom
 control words by right-clicking on the app, choosing the **Inspect** option, and in
-the resulting menu, clicking on the Application button. This shows the values of
-the app-'s local-storage items. Clicking on **config** expands its contents
-revealing your **customControlWords**.
+the resulting menu, clicking on the Application button. This displays the values of
+the app's local-storage items. Clicking on **config** shows your **customControlWords**.
 
 To copy the following control-word list along with your custom control words to
 the clipboard, type Alt+c.
