@@ -20,8 +20,8 @@ control words by right-clicking on the app, choosing the **Inspect** option, and
 the resulting menu, clicking on the Application button. This displays the values of
 the app's local-storage items. Clicking on **config** shows your **customControlWords**.
 
-To copy the following control-word list along with your custom control words to
-the clipboard, type Alt+c.
+The hot key Alt+c copies the following control-word list along with your custom
+control words to the clipboard.
 
 | Control word | Symbol | Codepoint | Comment |
 |--------------|--------|-----------|---------|

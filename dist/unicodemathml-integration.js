@@ -10,14 +10,14 @@ if (!umml) {
     (typeof unicodemathml === "function") || console.log("There's a problem with the UnicodeMathML integration: It seems like the translator isn't loaded.");
 }
 
-
 ////////////////////////
 // OPTIONS PROCESSING //
 ////////////////////////
 
-// initialize with defaults (this variable has the same name as the config used
-// by the playground – but really only the resolveControlWords key is shared)
+// initialize defaults
 var ummlConfig = {
+    defaultIntents: true,
+    displaystyle: true,
     showProgress: true,
     resolveControlWords: false,
     customControlWords: undefined,  // a dictionary, e.g. {'playground': '𝐏𝓁𝔞𝚢𝗴𝑟𝖔𝓊𝙣𝕕'}
@@ -220,8 +220,8 @@ async function renderMarkedUnicodemath(node) {
     // initialize cache and test results
     var cache = {};
     var results = {
-    "0a+b": "<math display=\"inline\"><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></math>",
-    "0lim▒_(n→∞) a_n": "<math display=\"inline\"><mrow intent=\":function\"><msub><mi>lim</mi><mrow><mi>𝑛</mi><mo stretchy=\"true\">→</mo><mi>∞</mi></mrow></msub><mo>⁡</mo><msub><mi>𝑎</mi><mi>𝑛</mi></msub></mrow></math>",
+    "0a+b": "<math><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></math>",
+    "0lim▒_(n→∞) a_n": "<math><mrow intent=\":function\"><msub><mi>lim</mi><mrow><mi>𝑛</mi><mo stretchy=\"true\">→</mo><mi>∞</mi></mrow></msub><mo>⁡</mo><msub><mi>𝑎</mi><mi>𝑛</mi></msub></mrow></math>",
     "1\"A collection of 716 UnicodeMath expressions from various sources\"": "<math display=\"block\"><mtext>A collection of 716 UnicodeMath expressions from various sources</mtext></math>",
     "1\"So long\" ∧ \"thanks\"   ∀  \"🐟🐠🐡\".": "<math display=\"block\"><mtext>So long</mtext><mo>∧</mo><mtext>thanks</mtext><mspace width=\"veryverythinmathspace\" /><mspace width=\"mediummathspace\" /><mo>∀</mo><mspace width=\"mediummathspace\" /><mtext>🐟🐠🐡</mtext><mo>.</mo></math>",
     "1\"hex\"={■(0@1@2@3@4@5@6@7@8@9@A@B@C@D@E@F)┤ \" with \" |\"hex\"|=16": "<math display=\"block\"><mtext>hex</mtext><mo>=</mo><mrow intent=\":fenced\"><mo>{</mo><mtable intent=\":array(16,1)\"><mtr><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mn>1</mn></mtd></mtr><mtr><mtd><mn>2</mn></mtd></mtr><mtr><mtd><mn>3</mn></mtd></mtr><mtr><mtd><mn>4</mn></mtd></mtr><mtr><mtd><mn>5</mn></mtd></mtr><mtr><mtd><mn>6</mn></mtd></mtr><mtr><mtd><mn>7</mn></mtd></mtr><mtr><mtd><mn>8</mn></mtd></mtr><mtr><mtd><mn>9</mn></mtd></mtr><mtr><mtd><mi>𝐴</mi></mtd></mtr><mtr><mtd><mi>𝐵</mi></mtd></mtr><mtr><mtd><mi>𝐶</mi></mtd></mtr><mtr><mtd><mi>𝐷</mi></mtd></mtr><mtr><mtd><mi>𝐸</mi></mtd></mtr><mtr><mtd><mi>𝐹</mi></mtd></mtr></mtable><mo>​</mo></mrow><mtext> with </mtext><mrow intent=\"absolute-value($a)\"><mo>|</mo><mtext arg=\"a\">hex</mtext><mo>|</mo></mrow><mo>=</mo><mn>16</mn></math>",
@@ -912,10 +912,10 @@ async function renderMarkedUnicodemath(node) {
     "1300-3.14^10000^2":  "<math display=\"block\"><mn>300</mn><mo>−</mo><msup><mn>3.14</mn><msup><mn>10000</mn><mn>2</mn></msup></msup></math>",
     "1𞸁²+𞸕²=𞸖^2": "<math display=\"block\" dir=\"rtl\"><msup><mi style=\"font-family:XITS Math\">𞸁</mi><mn>٢</mn></msup><mo>+</mo><msup><mi style=\"font-family:XITS Math\">𞸕</mi><mn>٢</mn></msup><mo>=</mo><msup><mi style=\"font-family:XITS Math\">𞸖</mi><mn>٢</mn></msup></math>",
     "1\\mrhndH+\\mchanQ/=\\mscrT": "<math display=\"block\"><mi style=\"font-family:STIX Two Math; font-feature-settings: 'ss01' 1\">ℋ︁</mi><mo>+</mo><mi style=\"font-family:STIX Two Math; font-feature-settings: 'ss00' 1\">𝒬︀</mi><mo>≠</mo><mi>𝒯</mi></math>",
-    "1$\\alpha^2+\\beta^2=\\gamma^2 + \\frac{a+\\frac12}{c+d}": "<math display=\"inline\"><msup><mi>𝛼</mi><mn>2</mn></msup><mo>+</mo><msup><mi>𝛽</mi><mn>2</mn></msup><mo>=</mo><msup><mi>𝛾</mi><mn>2</mn></msup><mo>+</mo><mfrac><mrow><mi>𝑎</mi><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac></mrow><mrow><mi>𝑐</mi><mo>+</mo><mi>𝑑</mi></mrow></mfrac></math>",
+    "1$\\alpha^2+\\beta^2=\\gamma^2 + \\frac{a+\\frac12}{c+d}": "<math><msup><mi>𝛼</mi><mn>2</mn></msup><mo>+</mo><msup><mi>𝛽</mi><mn>2</mn></msup><mo>=</mo><msup><mi>𝛾</mi><mn>2</mn></msup><mo>+</mo><mfrac><mrow><mi>𝑎</mi><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac></mrow><mrow><mi>𝑐</mi><mo>+</mo><mi>𝑑</mi></mrow></mfrac></math>",
     "1$$\\frac{1}{2π}\\int_0^{2π} \\frac{dθ}{a+b\\sin θ}=\\frac{1}{\\sqrt{a^2-b^2}}":  "<math display=\"block\"><mfrac><mn>1</mn><mrow><mn>2</mn><mi>𝜋</mi></mrow></mfrac><mrow intent=\":nary(0,$h,$naryand)\"><msubsup><mo>∫</mo><mn>0</mn><mrow arg=\"h\"><mn>2</mn><mi>𝜋</mi></mrow></msubsup><mrow arg=\"naryand\"><mfrac><mrow><mi>𝑑</mi><mi>𝜃</mi></mrow><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi><mrow intent=\":function\"><mi>sin</mi><mo>⁡</mo><mi>𝜃</mi></mrow></mrow></mfrac></mrow></mrow><mo>=</mo><mfrac><mn>1</mn><msqrt><msup><mi>𝑎</mi><mn>2</mn></msup><mo>−</mo><msup><mi>𝑏</mi><mn>2</mn></msup></msqrt></mfrac></math>",
     "1\\[(𝑎+𝑏)^𝑛=∑_{𝑘=0}^𝑛\\binom{𝑛}{𝑘}𝑎^𝑘𝑏^{𝑛−𝑘}\\]": "<math display=\"block\"><msup><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow><mo>)</mo></mrow><mi>𝑛</mi></msup><mo>=</mo><mrow intent=\":nary($l,𝑛,$naryand)\"><munderover><mo>∑</mo><mrow arg=\"l\"><mi>𝑘</mi><mo>=</mo><mn>0</mn></mrow><mi>𝑛</mi></munderover><mrow arg=\"naryand\"><mrow intent=\"binomial-coefficient($t,$b)\"><mo>(</mo><mfrac linethickness=\"0\"><mrow arg=\"t\"><mi>𝑛</mi></mrow><mrow arg=\"b\"><mi>𝑘</mi></mrow></mfrac><mo>)</mo></mrow></mrow></mrow><msup><mi>𝑎</mi><mi>𝑘</mi></msup><msup><mi>𝑏</mi><mrow><mi>𝑛</mi><mo>−</mo><mi>𝑘</mi></mrow></msup></math>",
-    "1\\(\\sqrt[n]{a+b}\\)": "<math display=\"inline\"><mroot><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow><mi>𝑛</mi></mroot></math>",
+    "1\\(\\sqrt[n]{a+b}\\)": "<math><mroot><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow><mi>𝑛</mi></mroot></math>",
     "1$${a+b\\over c+d}": "<math display=\"block\"><mfrac><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow><mrow><mi>𝑐</mi><mo>+</mo><mi>𝑑</mi></mrow></mfrac></math>",
     "1$$\\root n\\of{a+b}": "<math display=\"block\"><mroot><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow><mi>𝑛</mi></mroot></math>",
     "1\\[\\hat{𝑓}(𝜉)=∫_{−∞}^∞𝑓(𝑥)𝑒^{−2𝜋𝑖𝑥𝜉}𝑑𝑥\\]": "<math display=\"block\"><mover accent=\"true\"><mi>𝑓</mi><mo>&#x302;</mo></mover><mrow intent=\":fenced\"><mo>(</mo><mi>𝜉</mi><mo>)</mo></mrow><mo>=</mo><mrow intent=\":nary($l,∞,$naryand)\"><msubsup><mo>∫</mo><mrow arg=\"l\"><mo>−</mo><mi>∞</mi></mrow><mi>∞</mi></msubsup><mrow arg=\"naryand\"><mi>𝑓</mi><mrow intent=\":fenced\"><mo>(</mo><mi>𝑥</mi><mo>)</mo></mrow><msup><mi>𝑒</mi><mrow><mo>−</mo><mn>2</mn><mi>𝜋</mi><mi>𝑖</mi><mi>𝑥</mi><mi>𝜉</mi></mrow></msup><mi>𝑑</mi><mi>𝑥</mi></mrow></mrow></math>",

@@ -281,7 +281,7 @@ If you enter an absolute value or cardinality containing more than one symbol as
         <mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow>
     <mo>|</mo></mrow>
 ```
-A matrix enclosed in vertical bars is treated as a determinant.
+A matrix enclosed in vertical bars gets the default intent "determinant".
 For example, the UnicodeMath |■(a&b@c&d)| builds up to
 
 <math display="block"><mrow intent="determinant($a)"><mo>|</mo><mtable arg="a"><mtr><mtd><mi>𝑎</mi></mtd><mtd><mi>𝑏</mi></mtd></mtr><mtr><mtd><mi>𝑐</mi></mtd><mtd><mi>𝑑</mi></mtd></mtr></mtable><mo>|</mo></mrow></math>
@@ -296,10 +296,10 @@ which has the MathML
         <mtr><mtd><mi>𝑐</mi></mtd><mtd><mi>𝑑</mi></mtd></mtr></mtable>
     <mo>|</mo></mrow>.
 ```
-The program infers intent attributes for absolute value and determinant, so only
-cardinality needs to be input without vertical bars. Note that the ambiguous
-expression |𝑎|𝑏+𝑐|𝑑| is assumed to be (|𝑎|)𝑏+𝑐(|𝑑|). If you want |𝑎(|𝑏+𝑐|)𝑑|,
-enter |(𝑎|𝑏+𝑐|𝑑)| and the parentheses will be removed.
+Since the intent attributes for absolute value and determinant are inferred,
+only cardinality needs to be input without vertical bars (as \card(...)).
+Note that the ambiguous expression |𝑎|𝑏+𝑐|𝑑| is assumed to be (|𝑎|)𝑏+𝑐(|𝑑|).
+If you want |𝑎(|𝑏+𝑐|)𝑑|, enter |(𝑎|𝑏+𝑐|𝑑)| and the parentheses will be removed.
 
 As we see here, some intent attribute values are implied by the input notations
 of LaTeX and UnicodeMath. Others are implied by context. Still others must be
@@ -371,9 +371,9 @@ readability, these enclosures are not included in the UnicodeMath displayed in t
 input window. Nondegenerate selections have the focus enclosure as well, as in the
 UnicodeMath "Ⓐ()Ⓕ(1)⬚" for the selected "⬚".
 
-A negative offset is used if the selection construct refers to a text node.
-The absolute value of a negative offset gives the offset into a string.
-For example, &lt;mi selanchor="-1">sin&lt;/mi> sets the anchor to the "i" in "sin".
-Positive attribute values give the index of a child element.
-So, &lt;mi selanchor="1">sin&lt;/mi> places the anchor immediately following "sin".
+A negative offset is used if the selection construct refers to a text node. The
+absolute value of a negative offset gives the offset into a string. For example,
+&lt;mi selanchor="-1">sin&lt;/mi> sets the anchor to the "i" in "sin". Positive
+attribute values give the index of a child element. So, &lt;mi selanchor="1">sin&lt;/mi>
+places the anchor immediately following "sin".
 

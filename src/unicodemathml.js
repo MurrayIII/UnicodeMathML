@@ -1,16 +1,30 @@
 var autoBuildUp = false                     // (could be a unicodemathml() arg)
+var emitDefaultIntents
+var fTeX = false
 var ksi = false
 var output_trace
 var selanchor
 var selfocus
 var testing
-var fTeX = false
-var useMfenced = 0                          // Generate recommended MathML
 var ummlConfig
 var ummlParser
-var emitDefaultIntents =
-    !ummlConfig || ummlConfig.defaultIntents === "undefined" ||
-    ummlConfig.defaultIntents;
+var useMfenced = 0                          // Generate recommended MathML
+
+const defaultConfiguration = {              // Order same as configDescriptions
+    splitInput: true,
+    resolveControlWords: true,
+    displaystyle: true,
+    debug: true,
+    caching: true,
+    tracing: false,
+    forceMathJax: false,
+    defaultIntents: true,
+    speakSelectionEnds: false,
+    displayBrailleItalic: false,
+    doubleStruckMode: "us-tech",
+    transposeChar: "T",
+}
+
 function escapeHTMLSpecialChars(str) {
     const replacements = { '&': '&amp;', '<': '&lt;', '>': '&gt;' }
 
@@ -425,9 +439,10 @@ function getMacro(s, i) {
                 body = 'ⓜ' + s.substring(j, k + 1)
             else
                 body = s.substring(j + 1, k)
+            if (!testing)
+                console.log('cw: ' + cw + ', body: ' + body + ', k: ' + k)
             return [cw, body, k + 1]
         }
-        console.log('cw: ' + cw + ', body: ' + body + ', k: ' + k)
     }
     return ['']
 }
@@ -3783,7 +3798,8 @@ function mtransform(dsty, puast) {
             if (autoBuildUp)                // Used for WYSIWYG editing
                 return mtransform(dsty, value.content);
             attrs = getAttrs(value, '')
-            attrs.display = dsty & 1 ? "block" : "inline"
+            if (dsty & 1)
+                attrs.display = "block"
             if (dsty & 2)
                 attrs.dir = 'rtl'
             if (value.eqnumber == null)
@@ -5405,24 +5421,10 @@ function getUnicodeMath(doc, keepSelInfo, noAddParens) {
 // PLUMBING //
 //////////////
 
-const defaultConfiguration = {              // Order same as configDescriptions
-    splitInput: true,
-    resolveControlWords: true,
-    displaystyle: true,
-    debug: true,
-    caching: true,
-    tracing: false,
-    forceMathJax: false,
-    defaultIntents: false,
-    speakSelectionEnds: false,
-    displayBrailleItalic: false,
-    doubleStruckMode: "us-tech",
-    transposeChar: "T",
-}
-
 function unicodemathml(unicodemath, displaystyle) {
     if (!ummlConfig)
         ummlConfig = defaultConfiguration
+    emitDefaultIntents = ummlConfig.defaultIntents
     debugGroup(unicodemath);
     selanchor = selfocus = null
     let k = unicodemath.length
@@ -5561,18 +5563,47 @@ function unicodemathml(unicodemath, displaystyle) {
     }
 }
 
-function convertUnicodeMathToMathML(uMath, config) {
-    if (!ummlConfig)
-        ummlConfig = JSON.parse(JSON.stringify(config ? config : defaultConfiguration))
+    //////////////
+// PLUMBING //
+//////////////
 
-    return unicodemathml(uMath, ummlConfig.displaystyle)
+root.doublestruckChar = doublestruckChar
+root.dump = dump
+root.foldMathItalic = foldMathItalic;
+root.foldMathItalics = foldMathItalics;
+root.foldMathAlphanumeric = foldMathAlphanumeric;
+root.getPartialMatches = getPartialMatches;
+root.isFunctionName = isFunctionName;
+root.italicizeCharacter = italicizeCharacter;
+root.italicizeCharacters = italicizeCharacters;
+root.MathMLtoUnicodeMath = MathMLtoUnicodeMath
+root.negs = negs;
+root.resolveCW = resolveCW;
+root.unicodemathml = unicodemathml;
+root.getUnicodeMath = getUnicodeMath
+root.controlWords = controlWords
+
+})(globalThis)
+
+function checkConfig(config) {
+    if (!ummlConfig)
+        ummlConfig = defaultConfiguration
+
+    if (config) {
+        for (const [key, val] of Object.entries(config))
+            ummlConfig[key] = val
+    }
+}
+
+function convertUnicodeMathToMathML(uMath, config) {
+    checkConfig(config)
+    return unicodemathml(uMath, ummlConfig.displaystyle).mathml
 }
 
 function convertUnicodeMathZonesToMathML(text, config) {
     // Return text with UnicodeMath zones (⁅...⁆) replaced by the corresponding
     // MathML strings.
-    if (!ummlConfig)
-        ummlConfig = JSON.parse(JSON.stringify(config ? config : defaultConfiguration))
+    checkConfig(config)
 
     let i = 0
     let result = ''
@@ -5597,27 +5628,3 @@ function convertUnicodeMathZonesToMathML(text, config) {
     }
     return result + text.substring(i)       // Add in trailing text substring
 }
-
-//////////////
-// PLUMBING //
-//////////////
-
-root.doublestruckChar = doublestruckChar
-root.dump = dump
-root.foldMathItalic = foldMathItalic;
-root.foldMathItalics = foldMathItalics;
-root.foldMathAlphanumeric = foldMathAlphanumeric;
-root.getPartialMatches = getPartialMatches;
-root.isFunctionName = isFunctionName;
-root.italicizeCharacter = italicizeCharacter;
-root.italicizeCharacters = italicizeCharacters;
-root.MathMLtoUnicodeMath = MathMLtoUnicodeMath
-root.negs = negs;
-root.resolveCW = resolveCW;
-root.unicodemathml = unicodemathml;
-root.getUnicodeMath = getUnicodeMath
-root.controlWords = controlWords
-root.convertUnicodeMathToMathML = convertUnicodeMathToMathML
-root.convertUnicodeMathZonesToMathML = convertUnicodeMathZonesToMathML
-
-})(globalThis)

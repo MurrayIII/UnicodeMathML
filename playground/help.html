@@ -526,10 +526,10 @@
         &lt;mi&gt;𝑎&lt;/mi&gt;&lt;mo&gt;+&lt;/mo&gt;&lt;mi&gt;𝑏&lt;/mi&gt;&lt;/mrow&gt;
     &lt;mo&gt;|&lt;/mo&gt;&lt;/mrow&gt;
 </code></pre>
-    <p>
-        A matrix enclosed in vertical bars is treated as a determinant.
-        For example, the UnicodeMath |■(a&amp;b@c&amp;d)| builds up to
-    </p>
+<p>
+    A matrix enclosed in vertical bars gets the default intent "determinant".
+    For example, the UnicodeMath |■(a&amp;b@c&amp;d)| builds up to
+</p>
     <p><math display="block"><mrow intent="determinant($a)"><mo>|</mo><mtable arg="a"><mtr><mtd><mi>𝑎</mi></mtd><mtd><mi>𝑏</mi></mtd></mtr><mtr><mtd><mi>𝑐</mi></mtd><mtd><mi>𝑑</mi></mtd></mtr></mtable><mo>|</mo></mrow></math></p>
     <p>which has the MathML</p>
 <pre><code class="language-html">  &lt;mrow intent=&quot;determinant($a)&quot;&gt;
@@ -540,12 +540,12 @@
         &lt;mtr&gt;&lt;mtd&gt;&lt;mi&gt;𝑐&lt;/mi&gt;&lt;/mtd&gt;&lt;mtd&gt;&lt;mi&gt;𝑑&lt;/mi&gt;&lt;/mtd&gt;&lt;/mtr&gt;&lt;/mtable&gt;
     &lt;mo&gt;|&lt;/mo&gt;&lt;/mrow&gt;.
 </code></pre>
-    <p>
-        The program infers intent attributes for absolute value and determinant, so only
-        cardinality needs to be input without vertical bars. Note that the ambiguous
-        expression |𝑎|𝑏+𝑐|𝑑| is assumed to be (|𝑎|)𝑏+𝑐(|𝑑|). If you want |𝑎(|𝑏+𝑐|)𝑑|,
-        enter |(𝑎|𝑏+𝑐|𝑑)| and the parentheses will be removed.
-    </p>
+<p>
+    Since the intent attributes for absolute value and determinant are inferred, only
+    cardinality needs to be input without vertical bars (as \card(...)). Note that
+    the ambiguous expression |𝑎|𝑏+𝑐|𝑑| is assumed to be (|𝑎|)𝑏+𝑐(|𝑑|). If you want
+    |𝑎(|𝑏+𝑐|)𝑑|, enter |(𝑎|𝑏+𝑐|𝑑)| and the parentheses will be removed.
+</p>
     <p>
         As we see here, some intent attribute values are implied by the input notations
         of LaTeX and UnicodeMath. Others are implied by context. Still others must be
@@ -658,8 +658,8 @@
         the app's local-storage items. Clicking on <strong>config</strong> shows your <strong>customControlWords</strong>.
     </p>
     <p>
-        To copy the following control-word list along with your custom control words to
-        the clipboard, type Alt+c.
+        The hot key Alt+c copies the following control-word list along with your custom
+        control words to the clipboard.
     </p>
     <table>
         <thead>

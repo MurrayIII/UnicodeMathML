@@ -56,9 +56,13 @@ in preventing regressions.
 ## Integration
 Search the [npm registry](https://www.npmjs.com/) for "unicodemathml".
 The README.md of the [unicodemathml package](https://www.npmjs.com/package/unicodemathml)
-explains how to convert a UnicodeMath expression into MathML. It also
-explains how to convert UnicodeMath math zones embedded in text string
-to MathML. Use version 1.0.5 or higher.
+explains how to make three kinds of conversions of UnicodeMath to MathML.
+
+- convert a UnicodeMath string uMath to MathML
+- convert UnicodeMath math zones embedded in text to MathML
+- convert UnicodeMath math zones embedded in markdown into markdown-it tokens (markdown-it then produces HTML with the corresponding MathML).
+
+Use version 1.0.6 or higher.
 
 ## License
 You may use this repository's contents under the terms of the [MIT License](https://en.wikipedia.org/wiki/MIT_License).
