@@ -1,0 +1,39 @@
+{
+  "name": "unicodemathml",
+  "version": "1.0.7",
+  "description": "Converts UnicodeMath to MathML",
+  "keywords": [
+    "Unicode",
+    "math",
+    "UnicodeMath",
+    "MathML"
+  ],
+  "homepage": "https://github.com/MurrayIII/UnicodeMathML#readme",
+  "bugs": {
+    "url": "https://github.com/MurrayIII/UnicodeMathML/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MurrayIII/UnicodeMathML.git"
+  },
+  "license": "MIT",
+  "author": "Murray Sargent",
+  "type": "commonjs",
+  "main": "unicodemathml.js",
+  "scripts": {
+    "test": "echo 'Error: no test specified' && exit 1",
+    "lint": "eslint"
+  },
+  "files": [
+    "unicodemathml.js",
+    "unicodemathml-parser.js"
+  ],
+  "devDependencies": {
+    "@eslint/js": "^9.35.0",
+    "eslint": "^9.35.0",
+    "globals": "^16.4.0"
+  },
+  "dependencies": {
+    "markdown-it": "^14.1.0"
+  }
+}
