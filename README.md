@@ -28,7 +28,7 @@ speech, and Nemeth braille was more easily accomplished from a MathML DOM.
 The AST is then recursively converted into a MathML AST (via mtransform())
 with additional intent attributes. The MathML AST is run through a prettifier
 (pretty()) eliminating superfluous mrow's and compensating for limitations
-in the MathML-Core table functionality.
+in the MathML-Core 4.0 table functionality.
 
 LaTeX, dictation, and Nemeth braille inputs are converted to UnicodeMath,
 which is converted, in turn, to MathML. Since LaTeX, speech, and Nemeth
@@ -58,7 +58,7 @@ Search the [npm registry](https://www.npmjs.com/) for "unicodemathml".
 The README.md of the [unicodemathml package](https://www.npmjs.com/package/unicodemathml)
 explains how to make three kinds of conversions of UnicodeMath to MathML.
 
-- convert a UnicodeMath string uMath to MathML
+- convert a UnicodeMath string to MathML
 - convert UnicodeMath math zones embedded in text to MathML
 - convert UnicodeMath math zones embedded in markdown into markdown-it tokens (markdown-it then produces HTML with the corresponding MathML).
 
@@ -70,8 +70,6 @@ You may use this repository's contents under the terms of the [MIT License](http
 However, the subdirectories `lib/` and `playground/assets/lib/` contain some **third-party software with its own licenses**:
 
 * The parser generator [PEG.js](https://github.com/pegjs/pegjs), a copy of which is located at `lib/peg-0.10.0.min.js`, is licensed under the *MIT License*, see [here](https://github.com/pegjs/pegjs/blob/master/LICENSE).
-* Morgan McGuire's [Markdeep](https://casual-effects.com/markdeep/), which – along with a slightly modified variant that integrates with UnicodeMathML – is located at `lib/markdeep-1.11-orig.js`, is licensed under the *BSD 2-Clause "Simplified" License*, see [here](https://casual-effects.com/markdeep/#license).
-* Markdeep includes Ivan Sagalaev's [highlight.js](https://highlightjs.org) with its *BSD 3-Clause License*, see [here](https://github.com/highlightjs/highlight.js/blob/master/LICENSE).
 * [JQuery](https://jquery.com), which powers some of the interactions in the UnicodeMathML playground and resides at `playground/assets/lib/jquery.min.js`, is licensed under the *MIT License*, see [here](https://jquery.org/license/).
 * [LM Math](http://www.gust.org.pl/projects/e-foundry/lm-math/download/index_html), the typeface used for rendered UnicodeMath expressions in the playground in browsers with native MathML support, can be found at `playground/assets/lib/latinmodern/` and is licensed under the *GUST Font License*, see [here](http://www.gust.org.pl/projects/e-foundry/licenses/GUST-FONT-LICENSE.txt/view).
 * Belleve Invis' excellent typeface [Iosevka](https://github.com/be5invis/Iosevka) is located at `playground/assets/lib/iosevka/` and licensed under the *SIL OFL Version 1.1*, see [here](https://github.com/be5invis/Iosevka/blob/master/LICENSE.md).

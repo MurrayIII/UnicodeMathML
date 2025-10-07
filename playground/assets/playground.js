@@ -15,6 +15,7 @@ var inputRedoStack = []
 var inputUndoStack = [{uMath: ''}]
 var inSelChange = false
 var keydownLast
+var md
 var output_HTML
 var outputRedoStack = ['']
 var outputUndoStack = ['']
@@ -100,11 +101,6 @@ function removeSelMarkers(uMath) {
     return uMath
 }
 
-function isTeX(unicodemath) {
-    return unicodemath[0] == '$' || unicodemath.startsWith('\\(') ||
-        unicodemath.startsWith('\\[')
-}
-
 function isBuildOp(ch) {
     if (!buildOps) {
         let build = document.getElementById('Build').firstElementChild
@@ -115,6 +111,20 @@ function isBuildOp(ch) {
         //console.log('buildOps = ' + buildOps)
     }
     return buildOps.includes(ch)
+}
+
+function isMarkdown() {
+    if (input.value[0] == '⍗') {
+        if (md)
+            return true
+        alert('Markdown not enabled')
+    }
+    return false
+}
+
+function isTeX(unicodemath) {
+    return unicodemath[0] == '$' || unicodemath.startsWith('\\(') ||
+        unicodemath.startsWith('\\[')
 }
 
 function checkSelectionChangeEvent() {
@@ -1226,6 +1236,9 @@ function autocomplete() {
             input.value = input.value.substring(0, ip) + '}' + input.value.substring(ip)
             input.selectionStart = input.selectionEnd = ip
             return
+        }
+        if (isMarkdown()) {
+
         }
         let i = ip - 2;
         let oddQuote = delim == '"';
@@ -5061,18 +5074,27 @@ function getMathParaMtr(mathml, iEq, cEq, cAmp) {
     return mathml
 }
 
-// compile and draw mathml code from input field
+// compile and draw input field
 async function draw(undo) {
 
     // if required, wait for the parser to be generated, via
     // https://stackoverflow.com/a/39914235
     function sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+        return new Promise(resolve => setTimeout(resolve, ms))
     }
-    while (typeof ummlParser === "undefined") {
+    while (typeof ummlParser === "undefined")
         await sleep(10);
-    }
 
+    if (ummlConfig && ummlConfig.enableMarkdown && !md) {
+        for (let i = 10; !md && i-- > 0; ) {
+            await sleep(10);
+            md = window.markdownit()
+            if (md) {
+                md.inline.ruler.at('text', ruleText)
+                md.inline.ruler.after('emphasis', 'unicodemathml', unicodeMathToMd)
+            }
+        }
+    }
     // avoid doing anything if the input hasn't changed – e.g. when the
     // user has only been moving the cursor
     if (input.value == prevInputValue) {
@@ -5124,10 +5146,17 @@ async function draw(undo) {
 
     prevInputValue = input.value;
 
+    if (isMarkdown()) {
+        let indent = ''
+        output_HTML = md.render(input.value.substring(1))
+        output.innerHTML = output_HTML
+        output_source.innerHTML = highlightMathML(escapeHTMLSpecialChars(indentMathML(output_HTML, indent))) + "\n"
+        return
+    }
     if (isMathML(input.value)) {
         // Resize to display input MathML
         input.style.height = window.innerHeight > 1000 ? "500px" : "400px";
-    //    input.style.fontSize = "0.9rem";
+        //    input.style.fontSize = "0.9rem";
     } else if(!testing) {
         codepoints.innerHTML = getCodePoints()
     }

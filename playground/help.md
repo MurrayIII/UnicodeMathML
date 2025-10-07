@@ -296,10 +296,11 @@ which has the MathML
         <mtr><mtd><mi>𝑐</mi></mtd><mtd><mi>𝑑</mi></mtd></mtr></mtable>
     <mo>|</mo></mrow>.
 ```
-Since the intent attributes for absolute value and determinant are inferred,
-only cardinality needs to be input without vertical bars (as \card(...)).
-Note that the ambiguous expression |𝑎|𝑏+𝑐|𝑑| is assumed to be (|𝑎|)𝑏+𝑐(|𝑑|).
-If you want |𝑎(|𝑏+𝑐|)𝑑|, enter |(𝑎|𝑏+𝑐|𝑑)| and the parentheses will be removed.
+Since the intent attributes for determinants containing matrices and for
+absolute values are inferred, generally only cardinality needs to be input
+without vertical bars (as \card(...)). Note that the ambiguous expression
+|𝑎|𝑏+𝑐|𝑑| is assumed to be (|𝑎|)𝑏+𝑐(|𝑑|). If you want |𝑎(|𝑏+𝑐|)𝑑|, enter
+|(𝑎|𝑏+𝑐|𝑑)| and the parentheses will be removed.
 
 As we see here, some intent attribute values are implied by the input notations
 of LaTeX and UnicodeMath. Others are implied by context. Still others must be
