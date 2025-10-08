@@ -1,5 +1,7 @@
 ﻿'use strict';
 
+var prevInputValue
+
 const mathML = [
     "<math display=\"block\"><mrow><mfrac><mn>1</mn><mrow><mn>2</mn><mi>𝜋</mi></mrow></mfrac><mrow intent=\":nary(0,$h,$n)\"><msubsup><mo>∫</mo><mn>0</mn><mrow arg=\"h\"><mn>2</mn><mpadded width=\"0\"><mi>𝜋</mi></mpadded></mrow></msubsup><mfrac arg=\"n\"><mrow><mi intent=\"ⅆ\">𝑑</mi><mi>𝜃</mi></mrow><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi><mrow intent=\":function\"><mi>sin</mi><mo>⁡</mo><mi>𝜃</mi></mrow></mrow></mfrac></mrow><mo>=</mo><mfrac><mn>1</mn><msqrt><mrow><msup><mi>𝑎</mi><mn>2</mn></msup><mo>−</mo><msup><mi>𝑏</mi><mn>2</mn></msup></mrow></msqrt></mfrac></mrow></math>",
     "<math display=\"block\"><mrow><mi>𝛁</mi><mo>⨯</mo><mi>𝐄</mi><mo>=</mo><mo>−</mo><mfrac intent=\":partial-derivative(1,𝐁,𝑡)\"><mrow><mi>𝜕</mi><mi>𝐁</mi></mrow><mrow><mi>𝜕</mi><mi>𝑡</mi></mrow></mfrac></mrow></math>",
@@ -1611,8 +1613,28 @@ can be interpreted informally as the signed area of the region in the <math><mi>
         else
             console.log('convertUnicodeMathZonesToMathML failed: ' + result)
     }
-    // TODO: test
-    // ⍗The mode-locking integral ⁅1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)⁆ appears in several contexts.
+
+    // Test Markdown option
+    var md
+    const text = `# Mode-locking integral\nThe mode-locking integral \n⁅1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎 + 𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)⁆ appears in several ⁅(𝑎+𝑏)/𝑐⁆ contexts.`
+    const result = `<h1>Mode-locking integral</h1>
+<p>The mode-locking integral
+<math display="block"><mfrac><mn>1</mn><mrow><mn>2</mn><mi>𝜋</mi></mrow></mfrac><mrow intent=":nary(0,$h,$naryand)"><msubsup><mo>∫</mo><mn>0</mn><mrow arg="h"><mn>2</mn><mi>𝜋</mi></mrow></msubsup><mfrac arg="naryand"><mrow><mi intent="ⅆ">𝑑</mi><mi>𝜃</mi></mrow><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi><mrow intent=":function"><mi>sin</mi><mo>⁡</mo><mi>𝜃</mi></mrow></mrow></mfrac></mrow><mo>=</mo><mfrac><mn>1</mn><msqrt><msup><mi>𝑎</mi><mn>2</mn></msup><mo>−</mo><msup><mi>𝑏</mi><mn>2</mn></msup></msqrt></mfrac></math> appears in several <math><mfrac><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow><mi>𝑐</mi></mfrac></math> contexts.</p>
+`
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms))
+    }
+
+    for (let i = 10; !md && i-- > 0;) {
+        sleep(10);
+        md = window.markdownit()
+        if (md) {
+            md.inline.ruler.at('text', ruleText)
+            md.inline.ruler.after('emphasis', 'unicodemathml', unicodeMathToMd)
+        }
+    }
+    let html = md.render(text)
+    console.log('Markdown ' + (html == result ? 'succeeded' : 'failed'))
 }
 
 const mathDictation = [

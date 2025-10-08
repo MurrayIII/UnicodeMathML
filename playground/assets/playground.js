@@ -114,7 +114,7 @@ function isBuildOp(ch) {
 }
 
 function isMarkdown() {
-    if (input.value[0] == '⍗') {
+    if (input.value[0] == '⍗' || input.value[0] == '#') {
         if (md)
             return true
         alert('Markdown not enabled')
@@ -1260,9 +1260,6 @@ function autocomplete() {
             input.value = input.value.substring(0, ip) + '}' + input.value.substring(ip)
             input.selectionStart = input.selectionEnd = ip
             return
-        }
-        if (isMarkdown()) {
-
         }
         let i = ip - 2;
         let oddQuote = delim == '"';
@@ -5122,9 +5119,8 @@ async function draw(undo) {
     }
     // avoid doing anything if the input hasn't changed – e.g. when the
     // user has only been moving the cursor
-    if (input.value == prevInputValue) {
-        return;
-    }
+    if (input.value == prevInputValue)
+        return
 
     // clear some stuff
     if (!testing) {
@@ -5166,7 +5162,7 @@ async function draw(undo) {
         inputRedoStack = []
         outputUndoStack = ['']
         outputRedoStack = ['']
-        return;
+        return
     }
 
     prevInputValue = input.value;
@@ -5174,11 +5170,23 @@ async function draw(undo) {
     if (isMarkdown()) {
         let indent = ''
         checkResize()
-        let tabs = document.getElementsByClassName('tabs');
-        tabs[0].style.display = "none";
-        output_HTML = md.render(input.value.substring(1))
+        let tabs = document.getElementsByClassName('tabs')
+        tabs[0].style.display = "none"
+        let text = input.value              // Default text[0] = #, i.e., md heading
+        if (text[0] == '⍗')
+            text = text.substring(1)        // Don't include Markdown ID
+        output_HTML = md.render(text)
         output.innerHTML = output_HTML
         output_source.innerHTML = highlightMathML(escapeHTMLSpecialChars(indentMathML(output_HTML, indent))) + "\n"
+        input.style.height = "600px"
+        input.style.overflow = 'auto'
+        output.style.height = "400px"
+        output.style.overflow = 'auto'
+        input.style.scrollbarWidth = 'thin'
+        output.style.scrollbarWidth = 'thin'
+        let tabcontent = document.getElementsByClassName('tabcontent')
+        tabcontent[0].style.overflow = 'auto'
+        tabcontent[0].style.scrollbarWidth = 'thin'
         return
     }
     if (isMathML(input.value)) {

@@ -5,7 +5,8 @@ representation of math that often resembles math notation and is easy to enter. 
 a/b is UnicodeMath for <math><mrow><mfrac><mi>a</mi><mi>b</mi></mfrac><mo>.</mo></mrow></math>
 UnicodeMath works well in Microsoft desktop apps such as Word, PowerPoint, Outlook, OneNote,
 and the Windows Calculator but it hasn't been widely available elsewhere. This open-source
-applet implements UnicodeMath on the web.
+applet implements UnicodeMath on the web and includes Markdown support with embedded UnicodeMath
+math zones.
 
 <ul data-toc data-toc-headings="h2,h3"></ul>
 
@@ -17,6 +18,7 @@ You can enter equations in five ways:
 3. Enter UnicodeMath directly into the output window. This option builds up what you enter automatically, similarly to entry in the Microsoft Office apps. This option is a work in progress.
 4. Click on the Dictate button or type Alt+d, wait for the bell, and dictate the equation in English. You need to have Internet access, and you need to enunciate clearly. This option is also a work in progress but if you get it to work it’s the fastest entry method except for:
 5. Paste MathML into the input or output window.
+6. Enter Markdown content with embedded UnicodeMath math zones.
 
 <a id="sec-2" />
 
@@ -162,7 +164,7 @@ is accompanied by explanatory speech.
 ## 9. UnicodeMath editing
 
 When you type UnicodeMath into the input window, various conversions occur in the input
-window (except inside a quoted literal):
+window (except inside a quoted literal or outside math zones in Markdown content):
 
 * Letters are converted to math italic unless they 1) are part of a function name or of a control word (backslash followed by letters), or 2) follow a quote. For example, a → 𝑎
 * Numeric subscripts/superscripts are converted to Unicode subscript/superscript characters, respectively. For example, a_2 → 𝑎₂, a\^2 → 𝑎², and e\^-(a+b) → 𝑒⁻⁽ᵃ⁺ᵇ⁾.
@@ -197,13 +199,18 @@ a space between the < and -.
 These conversions aren't needed in the input window, but they make the input more readable.
 They also help in creating good looking UnicodeMath expressions for use in plain-text scenarios.
 
-## 10. LaTeX and MathML editing
+## 10. LaTeX, MathML, and Markdown editing
 When you type LaTeX or MathML into the input window, control words for Unicode
 symbols are autocorrected to the symbols, and various operator pairs are converted
 to Unicode operators. For example, '$\alpha/=\beta' → '$𝛼≠𝛽'.
 
 To facilitate entry, for LaTeX typing a \{ also inserts the closing }, and for MathML
 typing an opening tag also inserts the closing tag. Type Ctrl+→ to bypass a tag.
+
+In Markdown content (starts with a heading (#) or Markdown ID (⍗)), autocorrect and
+autocomplete dropdowns work everywhere, but letters are only italicized inside embedded
+math zones. The math zones are inside the math-zone delimiters ⁅ ⁆, which you can enter
+with the Alt+= hot key. Copy the Markdown HTML with Ctrl+c in the output window.
 
 ## 11. Editing hot keys
 
@@ -218,6 +225,7 @@ typing an opening tag also inserts the closing tag. Type Ctrl+→ to bypass a ta
 | Ctrl+x  | Copy the selected text to the clipboard, then delete the selected text.|
 | Ctrl+y  | Redo |
 | Ctrl+z  | Undo |
+| Alt+=   | Insert math-zone delimiters ⁅ ⁆ to define a math zone in Markdown content. |
 ## 12. Symbol galleries
 Unicode has [almost all math symbols](https://www.unicode.org/reports/tr25/) in use today.
 The symbol galleries located at the bottom of the web page contain the most common math symbols.
