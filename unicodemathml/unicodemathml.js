@@ -5723,10 +5723,7 @@ function unicodeMathToMd(state, silent) {
 
     // found!
     const content = state.src.slice(start + 1, state.pos)
-    let config = display ? {displaystyle: display} : null
-    const mml = convertUnicodeMathToMathML(content, config)
-    //console.log("um: " + content)
-    //console.log("mml: " + mml)
+    const mml = convertUnicodeMathToMathML(content, {displaystyle: display})
 
     state.posMax = state.pos
     state.pos = start + 1

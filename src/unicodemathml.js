@@ -5723,8 +5723,7 @@ function unicodeMathToMd(state, silent) {
 
     // found!
     const content = state.src.slice(start + 1, state.pos)
-    let config = display ? { displaystyle: display } : null
-    const mml = convertUnicodeMathToMathML(content, config)
+    const mml = convertUnicodeMathToMathML(content, {displaystyle: display})
 
     state.posMax = state.pos
     state.pos = start + 1
@@ -5758,6 +5757,7 @@ function isTerminatorChar(ch) {
 }
 
 function ruleText(state, silent) {
+    // Same code as markdown-it default text()
     let pos = state.pos;
     while (pos < state.posMax && !isTerminatorChar(state.src[pos])) {
         pos++;

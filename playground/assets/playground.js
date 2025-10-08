@@ -122,6 +122,23 @@ function isMarkdown() {
     return false
 }
 
+function isMathZone() {
+    if (!isMarkdown())
+        return true
+
+    let ip = input.selectionStart
+    let k
+
+    for (let i = 0; ; i = k + 1) {
+        i = input.value.indexOf('⁅', i)
+        if (i == -1 || ip <= i || input.selectionEnd < i)
+            return false
+        k = input.value.indexOf('⁆', i + 1)
+        if (k == -1 || ip <= k && input.selectionEnd <= k)
+            return true
+    }
+}
+
 function isTeX(unicodemath) {
     return unicodemath[0] == '$' || unicodemath.startsWith('\\(') ||
         unicodemath.startsWith('\\[')
@@ -1037,14 +1054,21 @@ input.addEventListener("keydown", function (e) {
         undoTop.selStart = input.selectionStart
     }
     if (e.altKey) {
-        if (e.key == 'x') {                 // Alt+x: toggle between char code
-            e.preventDefault()              //  and char
+        let ch
+        if (e.key == 'x' || e.key == '=') { // Alt+x: toggle between char code &
+            e.preventDefault()              //  char. Or Alt+=: insert math zone
             let cchSel = input.selectionEnd - input.selectionStart
-            let [ch, cchDel] = hexToUnicode(input.value, input.selectionEnd, cchSel)
-            let offsetStart = input.selectionEnd - cchDel
+            let i = 1
+            if (e.key == 'x') {
+                [ch, cchSel] = hexToUnicode(input.value, input.selectionEnd, cchSel)
+                i = ch.length
+            } else {
+                ch = '⁅⁆'
+            }
+            let offsetStart = input.selectionEnd - cchSel
             input.value = input.value.substring(0, offsetStart) + ch +
                 input.value.substring(input.selectionEnd)
-            input.selectionStart = input.selectionEnd = offsetStart + ch.length
+            input.selectionStart = input.selectionEnd = offsetStart + i
             return
         }
     }
@@ -1310,7 +1334,7 @@ function autocomplete() {
         if (i < 0 || input.value[i] != '\\' && (!i ||
                 !isMathColor(input.value.substring(i - 1, i + 1)))) {
             // Not control word; check for italicization & operator autocorrect
-            if (input.value[0] != '<' && !isTeX(input.value)) {
+            if (input.value[0] != '<' && !isTeX(input.value) && isMathZone()) {
                 let ch = italicizeCharacter(delim);
                 if (ch != delim) {
                     // Change ASCII or lower-case Greek letter to math-italic letter
@@ -4824,12 +4848,13 @@ output.addEventListener('keydown', function (e) {
 })
 
 function checkResize() {
-    let h = document.getElementsByTagName('h1');
     let heading = document.getElementById("heading");
     if (heading == undefined) {
         testing = true
         return                              // (for tests)
     }
+    let body = document.getElementsByTagName('body')
+    body[0].setAttribute('style', (isMarkdown() ? 'max-width:160em' : 'max-width:90em'))
 
     if (window.innerHeight > 1000) {
         let outputs = document.getElementsByClassName('tabcontent');
@@ -5148,6 +5173,9 @@ async function draw(undo) {
 
     if (isMarkdown()) {
         let indent = ''
+        checkResize()
+        let tabs = document.getElementsByClassName('tabs');
+        tabs[0].style.display = "none";
         output_HTML = md.render(input.value.substring(1))
         output.innerHTML = output_HTML
         output_source.innerHTML = highlightMathML(escapeHTMLSpecialChars(indentMathML(output_HTML, indent))) + "\n"
@@ -5419,7 +5447,10 @@ $(document).on('click', function (e) {
             iExample++;
             if (iExample > cExamples)
                 iExample = 0;
-            input.value = str;
+            if (isMarkdown())
+                insertAtCursorPos('⁅' + str + '⁆')
+            else
+                input.value = str
             input.focus();
             draw();
             if (demoID)
