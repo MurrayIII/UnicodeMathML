@@ -114,16 +114,11 @@ function isBuildOp(ch) {
 }
 
 function isMarkdown() {
-    if (input.value[0] == '⍗' || input.value[0] == '#') {
-        if (md)
-            return true
-        alert('Markdown not enabled')
-    }
-    return false
+    return input.value[0] == '⍗' || input.value[0] == '#'
 }
 
 function isMathZone() {
-    if (!isMarkdown())
+    if (!md)
         return true
 
     let ip = input.selectionStart
@@ -5107,14 +5102,16 @@ async function draw(undo) {
     while (typeof ummlParser === "undefined")
         await sleep(10);
 
-    if (ummlConfig && ummlConfig.enableMarkdown && !md) {
+    if (ummlConfig && ummlConfig.enableMarkdown && !md && isMarkdown()) {
         for (let i = 10; !md && i-- > 0; ) {
             await sleep(10);
-            md = window.markdownit()
-            if (md) {
-                md.inline.ruler.at('text', ruleText)
-                md.inline.ruler.after('emphasis', 'unicodemathml', unicodeMathToMd)
-            }
+            try {
+                md = window.markdownit()
+                if (md) {
+                    md.inline.ruler.at('text', ruleText)
+                    md.inline.ruler.after('emphasis', 'unicodemathml', unicodeMathToMd)
+                }
+            } catch { }
         }
     }
     // avoid doing anything if the input hasn't changed – e.g. when the
@@ -5167,7 +5164,7 @@ async function draw(undo) {
 
     prevInputValue = input.value;
 
-    if (isMarkdown()) {
+    if (isMarkdown() && md) {
         let indent = ''
         checkResize()
         let tabs = document.getElementsByClassName('tabs')

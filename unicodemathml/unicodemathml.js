@@ -11,7 +11,7 @@ var testing
 var ummlConfig
 var useMfenced = 0                          // Generate recommended MathML
 
-const defaultConfiguration = {
+const defaultConfiguration = {              // Order same as configDescriptions
     splitInput: true,
     resolveControlWords: true,
     displaystyle: false,
@@ -22,6 +22,7 @@ const defaultConfiguration = {
     defaultIntents: true,
     speakSelectionEnds: false,
     displayBrailleItalic: false,
+    enableMarkdown: false,
     doubleStruckMode: "us-tech",
     transposeChar: "T",
 }
@@ -5564,6 +5565,7 @@ function unicodemathml(unicodemath, displaystyle) {
         };
     }
 }
+
 //////////////
 // PLUMBING //
 //////////////
@@ -5629,7 +5631,7 @@ function convertUnicodeMathZonesToMathML(text, config) {
     return result + text.substring(i)       // Add in trailing text substring
 }
 
-// Convert math zones given by $UnicodeMath$ into MathML for markdown-it
+// Convert math zones given by ⁅UnicodeMath⁆ into MathML for markdown-it
 function pushAttr(token, mml, i) {
     // Push MathML token attributes
     let j = i                               // Get attribute name
@@ -5641,7 +5643,6 @@ function pushAttr(token, mml, i) {
     let k = j
     for (; k < mml.length && mml[k] != '"'; k++)
         ;
-    //console.log('attr: ' + mml.substring(i, j - 2) + ', value: ' + mml.substring(j, k))
     token.attrs.push([mml.substring(i, j - 2), mml.substring(j, k)])
     return k + 1
 }
@@ -5682,10 +5683,8 @@ function pushToken(state, mml, i) {
     }
 
     for (i = j; i < mml.length; i++) {
-        if (mml[i] == '>') {
-            //console.log((type == 1 ? "open" : "close") + " tag: " + tag)
+        if (mml[i] == '>')
             return i + 1
-        }
     }
     return -1
 }
@@ -5694,7 +5693,6 @@ function unicodeMathToMd(state, silent) {
     // UnicodeMath plug-in for markdown-it. Similar to markdown-it superscript plug-in
     const max = state.posMax
     let start = state.pos
-    //console.log('state.src: ' + state.src + ", start: " + start)
 
     if (state.src[start] != '⁅') { return false }
     if (silent) { return false } // don't run any pairs in validation mode
@@ -5757,6 +5755,7 @@ function isTerminatorChar(ch) {
 }
 
 function ruleText(state, silent) {
+    // Same code as markdown-it default text()
     let pos = state.pos;
     while (pos < state.posMax && !isTerminatorChar(state.src[pos])) {
         pos++;

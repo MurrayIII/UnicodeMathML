@@ -5566,7 +5566,7 @@ function unicodemathml(unicodemath, displaystyle) {
     }
 }
 
-    //////////////
+//////////////
 // PLUMBING //
 //////////////
 
@@ -5585,7 +5585,6 @@ root.resolveCW = resolveCW;
 root.unicodemathml = unicodemathml;
 root.getUnicodeMath = getUnicodeMath
 root.controlWords = controlWords
-
 })(globalThis)
 
 function checkConfig(config) {
@@ -5631,6 +5630,7 @@ function convertUnicodeMathZonesToMathML(text, config) {
     }
     return result + text.substring(i)       // Add in trailing text substring
 }
+
 // Convert math zones given by ⁅UnicodeMath⁆ into MathML for markdown-it
 function pushAttr(token, mml, i) {
     // Push MathML token attributes
@@ -5683,10 +5683,8 @@ function pushToken(state, mml, i) {
     }
 
     for (i = j; i < mml.length; i++) {
-        if (mml[i] == '>') {
-            //console.log((type == 1 ? "open" : "close") + " tag: " + tag)
+        if (mml[i] == '>')
             return i + 1
-        }
     }
     return -1
 }

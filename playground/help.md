@@ -210,7 +210,8 @@ typing an opening tag also inserts the closing tag. Type Ctrl+→ to bypass a ta
 In Markdown content (starts with a heading (#) or Markdown ID (⍗)), autocorrect and
 autocomplete dropdowns work everywhere, but letters are only italicized inside embedded
 math zones. The math zones are inside the math-zone delimiters ⁅ ⁆, which you can enter
-with the Alt+= hot key. Copy the Markdown HTML with Ctrl+c in the output window.
+with the Alt+= hot key. Precede the opening delimiter ⁅ with a line feed to create a
+displayed equation (instead of inline). Copy the Markdown HTML with Ctrl+c in the output window.
 
 ## 11. Editing hot keys
 
