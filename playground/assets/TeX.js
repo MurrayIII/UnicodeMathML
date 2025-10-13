@@ -652,6 +652,7 @@ function TeX2UMath(tex) {
                     }
                     break
                 }
+            case 'ⓑ':
             case 'ⓓ':
                 if (getNonBlankChar(tex, i) != '{')
                     break
@@ -805,6 +806,8 @@ function TeX2UnicodeMath(tex) {
                     i++
                 } else {
                     symbol = resolveCW('\\' + cw)
+                    if (tex[i] == ' ')
+                        i++
                 }
                 if (symbol[0] && symbol[0] != '"')
                     uniTeX += symbol

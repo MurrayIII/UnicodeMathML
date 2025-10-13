@@ -393,6 +393,29 @@ function isTranspose(value) {
 
 function isUcAscii(ch) { return /[A-Z]/.test(ch); }
 
+function bold(chars) {                      // For LaTeX \mathbf{}
+    if (!Array.isArray(chars))
+        return chars
+
+    let boldchars = ''
+
+    for (let i = 0; i < chars.length; i++) {
+        let charsI = chars[i]
+        if (Array.isArray(charsI))
+            charsI = charsI[0]
+        if (charsI.operator) {
+            charsI = charsI.operator
+        } else if (charsI.atoms) {
+            charsI = charsI.atoms
+            if (Array.isArray(charsI))
+                charsI = charsI[0]
+            charsI = charsI.chars
+        }
+        for (let j = 0; j < charsI.length; j++)
+            boldchars += getMathAlphanumeric(charsI[j], 'mbf')
+    }
+    return boldchars
+}
 function removeOuterParens(ret) {
     if (ret[0] == '(') {
         // Remove outermost parens if they match one another. Needed
@@ -1365,6 +1388,7 @@ const controlWords = {
     'lvert':            '|',    // 007C
     'mapsto':           '↦',	    // 21A6
     'mapstoleft':       '↤',	    // 21A4
+    'mathbf':           'ⓑ',   // 24D1 (UnicodeMath op)
     'mathparagraph':    '¶',    // 00B6
     'matrix':           '■',	// 25A0
     'md':               '⍗',    // 2357 (use to start markdown)
@@ -3363,6 +3387,12 @@ function preprocess(dsty, uast, index, arr) {
                 }
                 // For example, for '𝑎Ⓐ()^', value.mask = '^'
                 return {intend: {symbol: value.symbol, value: val, op: value.mask}}
+            }
+            if (value.symbol == 'ⓑ') {      // Bold chars in value.of
+                let chars = value.of        // Tunnel down to chars
+                if (chars.expr)
+                    chars = chars.expr
+                return {atoms: [{chars: bold(chars)}]}
             }
             if (value.symbol >= "╱" && value.symbol <= "╳") {
                 // Set mask for \cancel, \bcancel, \xcancel
