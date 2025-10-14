@@ -2829,6 +2829,8 @@ function getSup(value) {
     if (!value.atoms)
         return ''
     value = value.atoms
+    if (Array.isArray(value))
+        value = value[0]
     return value.chars ? value.chars : ''
 }
 
