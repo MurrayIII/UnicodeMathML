@@ -395,9 +395,9 @@ function isUcAscii(ch) { return /[A-Z]/.test(ch); }
 
 function bold(chars) {                      // For LaTeX \mathbf{}
     if (!Array.isArray(chars))
-        return chars
+        return chars                        // Unlikely exit
 
-    let boldchars = ''
+    let boldchars = ''                      // Collects math bold chars
 
     for (let i = 0; i < chars.length; i++) {
         let charsI = chars[i]
@@ -2816,6 +2816,57 @@ function dropOutermostParens(uast) {
     return uast;
 }
 
+function getSup(value) {
+    if (!value.script || !value.script.high || value.script.low)
+        return ''
+    value = value.script.high
+    if (value.expr)
+        value = value.expr
+    if (Array.isArray(value))
+        value = value[0]
+    if (Array.isArray(value))
+        value = value[0]
+    if (!value.atoms)
+        return ''
+    value = value.atoms
+    return value.chars ? value.chars : ''
+}
+
+function isLeviCivita(base, low, arr, index) {
+    // Return true if value is of the form 𝜀ᵢⱼₖ 𝑎ⁱbʲcᵏ. Parse 𝜀ᵢⱼₖ
+    if (!base.atoms || !arr || arr.length != 4)
+        return false
+    base = base.atoms
+    if (Array.isArray(base))
+        base = base[0]
+    if (!base.chars || base.chars != '𝜀')
+        return false
+    if (low.expr)
+        low = low.expr
+    if (Array.isArray(low)) {
+        if (low.length != 1)
+            return false
+        low = low[0]
+    }
+    if (Array.isArray(low))
+        low = low[0]
+    if (!low.atoms)
+        return false
+    low = low.atoms
+    if (Array.isArray(low))
+        low = low[0]
+    if (!low.chars || low.chars.length != 3 && low.chars.length != 6)
+        return false
+
+    // Compare levichars to superscripts in arr[index + 1]...arr[index + 3]
+    let levichars = foldMathItalics(low.chars)
+    let civichars = ''
+
+    for (let i = 1; i < 4; i++)
+        civichars += getSup(arr[i])
+    return foldMathItalics(civichars) == levichars
+}
+
 // return the given AST, which may be wrapped in a stack of singleton lists,
 // sans those lists
 function dropSingletonLists(uast) {
@@ -2839,9 +2890,15 @@ function isCharsButNotFunction(value) {
 function preprocess(dsty, uast, index, arr) {
 
     // map preprocessing over lists
+    let intentSup = false                   // Default intent ≠ 'sup'
+
     if (Array.isArray(uast)) {
         for (let i = 0; i < uast.length; i++) {
-            uast[i] = preprocess(dsty, uast[i], i, uast);
+            uast[i] = preprocess(dsty, uast[i], i, uast)
+            if (uast[i].script && uast[i].script.intent == ':levi-civita')
+                intentSup = true            // Following scripts have 'sup'
+            if (intentSup)                  //  e.g., for a, b, c in 𝜀ᵢⱼₖ 𝑎ⁱbʲcᵏ
+                dsty.intent = 'sup'
         }
     }
 
@@ -3225,6 +3282,8 @@ function preprocess(dsty, uast, index, arr) {
                     } else {
                         if ("low" in value) {
                             ret.low = preprocess(dsty, value.low);
+                            if (isLeviCivita(base, ret.low, arr, index))
+                                ret.intent = ':levi-civita'
                         }
                         if ("high" in value) {
                             ret.high = preprocess(dsty, value.high);
