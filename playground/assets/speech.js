@@ -772,12 +772,12 @@ function speech(value, noAddParens) {
 	function Nary(node) {
 		if (node.childElementCount == 3) {
 			// symbol 'from' lower-limit 'to' upper-limit 'of'
-			return speech(node.firstElementChild) + '☟' +	// 'from'
-				speech(node.children[1], true) + '☝' +		// 'to'
-				speech(node.lastElementChild, true) + '▒';	// 'of'
+			return speech(node.firstElementChild) + '☟' +	 // 'from'
+				speech(node.children[1], true) + '☝' +		 // 'to'
+				speech(node.lastElementChild, true) + '⏳▒'; // 'of'
 		}
 		if (node.childElementCount == 2) {
-			// symbol 'from' lower-limit 'to' upper-limit 'of'
+			// symbol 'over' lower-limit 'of'
 			return speech(node.firstElementChild) + '/' +	// 'over'
 				speech(node.lastElementChild, true) + '▒';	// 'of'
 		}
@@ -989,8 +989,8 @@ function speech(value, noAddParens) {
 			break
 
 		case 'msup':
-			if (value.getAttribute('intent') == ':sup')
-				ret = speech(value.firstElementChild) + '^' + speech(value.lastElementChild)
+			if (value.getAttribute('intent') == 'sup')
+				ret = speech(value.firstElementChild) + '^' + speech(value.lastElementChild) + '⏳'
 			else if (value.lastElementChild.nodeName == 'mn' &&
 				isAsciiDigit(value.lastElementChild.textContent[0])) {
 				let power = getPower(value.lastElementChild.textContent);
@@ -1011,7 +1011,7 @@ function speech(value, noAddParens) {
 				}
 				ret = speech(value.lastElementChild, true);
 				ret = speech(value.firstElementChild) + '⮵' + ret +
-					(needParens(ret) ? '⚡' : '⏳')		// 'power' : pause
+					(needParens(ret) ? '⚡⏳' : '⏳')	// 'power' : pause
 			}
 			break
 
@@ -1041,6 +1041,7 @@ function speech(value, noAddParens) {
 		case 'msub':
 			ret = isNary(value.firstElementChild.innerHTML)
 				? Nary(value) : binary(value, '_')
+			ret += '⏳'
 			break
 
 		case 'munderover':
