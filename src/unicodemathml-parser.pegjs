@@ -1102,7 +1102,10 @@ diacritics = d:diacritic+ {
 mathspaces = s:mathspace+ {
     return {spaces: s};
 }
-mathspace
+
+mathspace = [\u00A0\u2002-\u2005\u2009\u200A\u200B\u205F]
+
+/* mathspace
     = "\u200B" {
         return {space: 0};  // 0/18 em
     }
@@ -1136,6 +1139,7 @@ mathspace
     / "\u00A0" {
         return {space: "space"};
     }
+    */
 
 // numbers, e.g. 1.1 or 1 or .1
 number = o:opDecimal b:digits {
@@ -1180,7 +1184,7 @@ expBracket
         return {bracketed: {open: "(", close: ")", content: {separated: {separator: "│", of: [e, f]}}}};
     }
     / op:expBracketOpen __? cl:expBracketClose {  // empty bracket pairs
-        return {bracketed: {open: op, close: cl, content: {atoms: {spaces: {space: 0}}}}};
+        return {bracketed: {open: op, close: cl, content: {atoms: {spaces: []}}}};
     }
     / op:expBracketOpen e:expBracketContents cl:expBracketClose {
         return {bracketed: {open: op, close: cl, content: e}};

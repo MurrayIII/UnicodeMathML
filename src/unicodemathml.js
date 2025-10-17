@@ -4521,25 +4521,14 @@ function mtransform(dsty, puast) {
                 }
                 ret = {menclose: withAttrs({notation: notation}, ret)};
             }
-            return ret;
+            return ret
+
         case "spaces":
-            return mtransform(dsty, value);
-        case "space":
-            if (typeof value == 'number') {
-                return {mspace: withAttrs({width: spaceWidths[value]}, null)};
-            } else if (value == 'digit') {
-                // mathml provides no way of getting the width of a digit and
-                // using that as a space, so let's use a phantomized 0 here
-                // return {mphantom: noAttr({mtext: noAttr(0)})};
-                // Let the display engine figure out the spacing
-                return {mo: noAttr('\u2007')};
-            } else if (value == 'space') {
-                // same deal: phantomized non-breaking space
-                //return {mphantom: noAttr({mtext: noAttr('\xa0')})};
-                return {mo: noAttr('\u00A0')};
-           } else {
-                throw "incorrect space"
+            for (let i = 0; i < value.length; i++) {
+                // Reveal Unicode spaces in the MathML
+                ret += '&#x' + value[i].codePointAt(0).toString(16) + ';'
             }
+            return {mo: noAttr(ret)}
 
         case "number":
             // If dir is 'rtl' & value is ASCII digit, convert to indic digit
