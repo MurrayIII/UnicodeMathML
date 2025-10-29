@@ -804,6 +804,9 @@ function TeX2UnicodeMath(tex) {
                 } else if (tex[i] == ',') {
                     symbol = '\u2009 '
                     i++
+                //} else if (tex[i] == ' ') {
+                //    symbol = '\u00A0 '
+                //    i++
                 } else {
                     symbol = resolveCW('\\' + cw)
                     if (tex[i] == ' ')
@@ -819,9 +822,9 @@ function TeX2UnicodeMath(tex) {
                 i++                         // Skip new lines
                 break
             case '%':
-                j = tex.indexOf('\n')       // Skip comments
-                if (j == -1)
-                    j = i
+                j = tex.indexOf('\n', i+1)  // Skip comments
+                if (j == -1)                // No EOL:
+                    j = tex.length          //  discard remainder
                 i = j + 1
                 break
             case '{':
