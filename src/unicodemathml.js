@@ -1624,6 +1624,7 @@ const controlWords = {
     'supsup':           '⫖',	// 2AD6
     'surd':             '√',	// 221A
     'swarrow':          '↙',    	// 2199
+    'tag':              'Ⓣ',   // 24C9 (for LaTeX equation \tag)
     'tah':		        'ط',    // 0637
     'tau':              'τ',	// 03C4
     'tautology':        '⊤',	    // 22A4
@@ -5556,6 +5557,8 @@ function unicodemathml(unicodemath, displaystyle) {
 
     let uast;
     let t1s = performance.now();
+    let errorParse = ''
+
     try {
         uast = parse(unicodemath);
     } catch (error) {
@@ -5564,6 +5567,7 @@ function unicodemathml(unicodemath, displaystyle) {
         autoBuildUp = false                 // If called for autobuildup, return failure
         if(!testing)
             console.log(unicodemath + ' parse error: ' + error.name)
+        errorParse = error.name
     }
     let jsonParse;                          // Initially undefined
     let puast;
@@ -5614,11 +5618,14 @@ function unicodemathml(unicodemath, displaystyle) {
                     preprocess: puast,
                     transform:  mast,
                     json:       jsonParse
-                }
-            }
+                },
+                error: errorParse
+            },
         };
     } catch(error) {
         debugLog(error);
+        if (!errorParse)
+            errorParse = error.name
 
         // convert error to string and invert any private use area mappings
         let strError = ''; // mapFromPrivate("" + error);
@@ -5640,7 +5647,8 @@ function unicodemathml(unicodemath, displaystyle) {
                     preprocess: puast,
                     transform: mast,
                     json: jsonParse
-                }
+                },
+                error: errorParse
             }
         };
     }

@@ -5291,7 +5291,7 @@ async function draw(undo) {
             if (iEq > 1)
                 indent = '     '
         }
-        output_HTML += mathml
+        output_HTML += !details.error ? mathml : ' '
         if (isMathML(input.value))
             output_source_HTML = MathMLtoUnicodeMath(input.value);
         else

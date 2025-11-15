@@ -788,7 +788,7 @@ function TeX2UnicodeMath(tex) {
                 if (cwPrev == 'def') {      // Leave cw for defining in macro pass
                     cwPrev = ''
                     uniTeX += '\\' + cw
-                    if (tex[i] == '}')   // For \newcommand
+                    if (tex[i] == '}')      // For \newcommand
                         i++
                     needMacroPass = true
                     if (macrosEnabled)
@@ -804,9 +804,6 @@ function TeX2UnicodeMath(tex) {
                 } else if (tex[i] == ',') {
                     symbol = '\u2009 '
                     i++
-                //} else if (tex[i] == ' ') {
-                //    symbol = '\u00A0 '
-                //    i++
                 } else {
                     symbol = resolveCW('\\' + cw)
                     if (tex[i] == ' ')
@@ -817,9 +814,12 @@ function TeX2UnicodeMath(tex) {
                 else if (cw)
                     uniTeX += '\\' + cw
                 break
-            case '\r':
+            case '\t':
             case '\n':
-                i++                         // Skip new lines
+            case '\v':
+            case '\r':
+                uniTeX += ' '
+                i++                         // Treat line breaks & tabs as ' '
                 break
             case '%':
                 j = tex.indexOf('\n', i+1)  // Skip comments
