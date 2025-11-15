@@ -1250,7 +1250,7 @@ function autocomplete() {
         closeAutocompleteList();
 
         let delim = input.value[ip - 1];    // Last char entered
-        if (delim == '{' && isTeX(input.value)) {
+        if (delim == '{' && isTeX(input.value) && e.inputType != "deleteContentBackward") {
             // Insert matching brace
             input.value = input.value.substring(0, ip) + '}' + input.value.substring(ip)
             input.selectionStart = input.selectionEnd = ip
