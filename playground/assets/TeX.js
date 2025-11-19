@@ -688,6 +688,18 @@ function TeX2UMath(tex) {
                     TeX2UMath(tex.substring(i, j)) + '〗 '
                 i = j + 1
                 break
+            case 'ⓞ':                       // Define math function
+                if (tex[i] != '{')
+                    break
+                j = findClosingBrace(tex, i + 1)
+                if (j == -1)
+                    break
+                uniTeX = uniTeX.substring(0, uniTeX.length - 1) // Remove 'ⓞ'
+                if (isAsciiAlphabetic(uniTeX[uniTeX.length - 1]))
+                    uniTeX += ' '
+                uniTeX += tex.substring(i + 1, j) + '\u2061'
+                i = j + 1
+                break
             case '〖':                       // Begin environment
                 if (tex[i] != '{')
                     break

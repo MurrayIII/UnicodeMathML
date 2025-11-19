@@ -1491,6 +1491,7 @@ const controlWords = {
     'one':              '1',    // 0031
     'oo':               '∞',	// 221E
     'open':             '├',	// 251C
+    'operatorname':     'ⓞ',   // 24DE (UnicodeMath op)
     'oplus':            '⊕',	    // 2295
     'or':               '∨',	// 2228
     'oslash':           '⊘',	    // 2298
