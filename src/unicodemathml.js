@@ -3538,7 +3538,7 @@ function preprocess(dsty, uast, index, arr) {
                         s.type = "abovebelow";
                     } else {
                         // create a new belowscript around the base and superscript
-                        s = {base: {script: {base: s.base, type: s.type, high: s.high}}, type: "abovebelow", low: s.low};
+                        s = {base: {script: {base: s.base, type: s.type, high: s.high}}, type: "abovebelow", low: s.low}
                     }
                 }
                 valuef.script = s;
@@ -3570,12 +3570,19 @@ function preprocess(dsty, uast, index, arr) {
             }
             let extra = [];
             if (valuef.atoms && valuef.atoms.chars) {
-                let chars = valuef.atoms.chars.split(",");
-                valuef.atoms.chars = chars.pop();
-                if (chars.length) {
-                    // Separate out character(s) preceding function name,
-                    // e.g., the 𝑑 in 𝑑𝜓⁡(𝑥,𝑡)/𝑑𝑡
-                    extra.push({atoms: {chars: chars.join('')}});
+                if (Array.isArray(ofFunc) && ofFunc[0].bracketed) {
+                    // Separate out character(s) preceding function name, e.g.,
+                    // the 𝑑 in 𝑑𝜓⁡(𝑥,𝑡)/𝑑𝑡. Note that this condition prevents
+                    // defining multiple-letter math fumctions of parenthesized
+                    // arguments, e.g., "fcn(𝑥)". Maybe require an invisible
+                    // times operator or space before a function name? That's
+                    // the condition for built-in functions like "sin(𝑥)".
+                    let chars = valuef.atoms.chars.split(",")
+                    valuef.atoms.chars = chars.pop()
+                    if (chars.length)
+                        extra.push({atoms: {chars: chars.join('')}})
+                } else {
+                    valuef.atoms.chars = valuef.atoms.chars.replace(/,/g, '')
                 }
             }
             ret = {function: {f: preprocess(dsty, valuef), intent: intent, arg: arg, of: ofFunc}}

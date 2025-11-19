@@ -833,6 +833,10 @@ function TeX2UnicodeMath(tex) {
                     i++
                     continue
                 }
+            case '}':
+                if (i && tex[i - 1] == '{')
+                    uniTeX += '⬚'           // Display '⬚' for {}
+                                            // Fall through to default
             default:
                 uniTeX += tex[i++]
         }

@@ -204,8 +204,9 @@ When you type LaTeX or MathML into the input window, control words for Unicode
 symbols are autocorrected to the symbols, and various operator pairs are converted
 to Unicode operators. For example, '$\alpha/=\beta' → '$𝛼≠𝛽'.
 
-To facilitate entry, for LaTeX typing a \{ also inserts the closing }, and for MathML
-typing an opening tag also inserts the closing tag. Type Ctrl+→ to bypass a tag.
+To facilitate LaTeX entry, typing a { also inserts the closing } and the output
+display shows the empty placeholder ⬚ instead of the {}. For MathML, typing an
+opening tag also inserts the closing tag. Type Ctrl+→ to bypass a tag.
 
 In Markdown content (starts with a heading (#) or Markdown ID (⍗)), autocorrect and
 autocomplete dropdowns work everywhere, but letters are only italicized inside embedded
