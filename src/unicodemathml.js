@@ -3570,19 +3570,12 @@ function preprocess(dsty, uast, index, arr) {
             }
             let extra = [];
             if (valuef.atoms && valuef.atoms.chars) {
-                if (Array.isArray(ofFunc) && ofFunc[0].bracketed) {
-                    // Separate out character(s) preceding function name, e.g.,
-                    // the 𝑑 in 𝑑𝜓⁡(𝑥,𝑡)/𝑑𝑡. Note that this condition prevents
-                    // defining multiple-letter math fumctions of parenthesized
-                    // arguments, e.g., "fcn(𝑥)". Maybe require an invisible
-                    // times operator or space before a function name? That's
-                    // the condition for built-in functions like "sin(𝑥)".
-                    let chars = valuef.atoms.chars.split(",")
-                    valuef.atoms.chars = chars.pop()
-                    if (chars.length)
-                        extra.push({atoms: {chars: chars.join('')}})
-                } else {
-                    valuef.atoms.chars = valuef.atoms.chars.replace(/,/g, '')
+                valuef.atoms.chars = valuef.atoms.chars.replace(/,/g, '')
+                if (valuef.atoms.chars[0] == 'ⅆ') {
+                    // Separate out ⅆ preceding function name, e.g., the
+                    // upper ⅆ in ⅆ𝜓⁡(𝑥,𝑡)/ⅆ𝑡.
+                    valuef.atoms.chars = valuef.atoms.chars.substring(1)
+                    extra.push({atoms: {chars: 'ⅆ'}})
                 }
             }
             ret = {function: {f: preprocess(dsty, valuef), intent: intent, arg: arg, of: ofFunc}}
