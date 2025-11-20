@@ -604,7 +604,7 @@ function TeX2UMath(tex) {
     let uniTeX = ''
     let val
 
-    for (i = 0; i < tex.length;) {
+    for (let i = 0; i < tex.length;) {
         let ch = getCh(tex, i)
         i += ch.length
         uniTeX += ch
@@ -688,19 +688,32 @@ function TeX2UMath(tex) {
                     TeX2UMath(tex.substring(i, j)) + '〗 '
                 i = j + 1
                 break
-            case 'ⓞ':                       // Define math function
+            case 'Ⓣ':                      // Define equation label
+            case 'ⓞ':                      // Define math function
+                val = tex[i]
+                if (val == '*')             // Check for \tag*
+                    i++
                 if (tex[i] != '{')
                     break
                 j = findClosingBrace(tex, i + 1)
                 if (j == -1)
                     break
                 uniTeX = uniTeX.substring(0, uniTeX.length - 1) // Remove 'ⓞ'
-                if (isAsciiAlphabetic(uniTeX[uniTeX.length - 1]))
-                    uniTeX += ' '
-                uniTeX += tex.substring(i + 1, j) + '\u2061'
-                i = j + 1
+                // TODO: is tex.substring(i + 1, j) a valid label?
+                if (ch == 'Ⓣ') {
+                    uniTeX += '#'           // Start equation label
+                    if (val == '*')         // No parens
+                        uniTeX += tex.substring(i + 1, j)
+                    else
+                        uniTeX += '(' + tex.substring(i + 1, j) + ')'
+                } else {                    // ch == 'ⓞ'
+                    if (isAsciiAlphabetic(uniTeX[uniTeX.length - 1]))
+                        uniTeX += ' '
+                    uniTeX += tex.substring(i + 1, j) + '\u2061'
+                }
+                i = j + 1                   // Skip past closing brace
                 break
-            case '〖':                       // Begin environment
+            case '〖':                      // Begin environment
                 if (tex[i] != '{')
                     break
                 j = findClosingBrace(tex, i + 1)
