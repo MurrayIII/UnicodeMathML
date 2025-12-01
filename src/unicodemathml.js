@@ -1667,6 +1667,7 @@ const controlWords = {
     'underbracket':     '⎵',	// 23B5
     'underline':        '▁',	// 2581
     'underparen':       '⏝',	    // 23DD
+    'underset':         'ⓤ',   // 24E4 (LaTeX UnicodeMath op)
     'undershell':       '⏡',	    // 23E1
     'union':           '∪',	    // 222A
     'uparrow':          '↑',	// 2191
@@ -4753,10 +4754,19 @@ function pretty(mast) {
                     attributes.intent != ':fenced')) {
                 // Unless this mrow has the ':fenced' attribute, move the
                 // children of attributeless-mrow children up into this mrow
-                // after removing the parents.
-                if (value[0].munder && value[0].munder.attributes.intent == ':function') {
+                // after removing the parents. First check for math function
+                // with underscript
+                arg = value[0]
+                if (arg.mrow) {             // LaTeX code adds mrow
+                    arg = arg.mrow
+                    if (arg.content)
+                        arg = arg.content
+                    if (Array.isArray(arg))
+                        arg = arg[0]
+                }
+                if (arg.munder && arg.munder.attributes.intent == ':function') {
                     attributes.intent = ':function'
-                    value[0].munder.attributes = []
+                    arg.munder.attributes = []
                 } else {
                     promoteAttributelessMrowChildren(value)
                 }

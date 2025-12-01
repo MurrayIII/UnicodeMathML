@@ -600,7 +600,7 @@ function getArg(tex, i, checkNeedParens) {
 
 function TeX2UMath(tex) {
     // Recursive function that converts Unicode LaTeX to UnicodeMath
-    let j
+    let j, k
     let uniTeX = ''
     let val
 
@@ -712,6 +712,19 @@ function TeX2UMath(tex) {
                     uniTeX += tex.substring(i + 1, j) + '\u2061'
                 }
                 i = j + 1                   // Skip past closing brace
+                break
+            case 'ⓤ':                      // \underscript TODO: \overscript
+                if (tex[i] != '{')
+                    break
+                [val, j] = getArg(tex, i, true)
+                if (j == -1)
+                    break
+                if (tex[j] == '{') {
+                    uniTeX = uniTeX.substring(0, uniTeX.length - 1) // Remove 'ⓤ'
+                    let [base, k] = getArg(tex, j, false)
+                    uniTeX += base + '┬' + val + ' '
+                    i = k
+                }
                 break
             case '〖':                      // Begin environment
                 if (tex[i] != '{')
