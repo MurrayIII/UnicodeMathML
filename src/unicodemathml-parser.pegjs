@@ -840,7 +840,7 @@ enclosed
         return {text: o.map(v => v[1]).join("")};
     }
     / '⍁' r:exp '&' t:exp '〗' {
-        // Dictation fraction...end-fraction option; prefer '/' to '&'
+        // Dictation/LaTeX fraction...end-fraction option; prefer '/' to '&'
         // as in OfficeMath implementation but can't get it to parse
         return {fraction: {symbol: '/', of: [r, t]}};
     }
@@ -923,7 +923,7 @@ arctrigName = ("arcsin" / "arcsec" / "arctan" / "arccot" / "arccos" / "arccsc") 
 
 functionName
     // via https://www.cs.bgu.ac.il/~khitron/Equation%20Editor.pdf
-    = trigName / arctrigName / limName
+    = t:(trigName / arctrigName / limName
     / "arg"
     / "def"
     / "deg"
@@ -951,8 +951,12 @@ functionName
     / "glb"  // "greatest lower bound" => inf
     / "lim inf"  // ⚠ space is a non-breaking space and must be entered as such
     / "lim sup"  // ⚠ space is a non-breaking space and must be entered as such
-    / αn+ '\u2061'
-
+    ) !αASCII {
+        return t;
+    }
+    / t:αn+ '\u2061' {  // User defined function with function-apply character
+        return t;
+    }
 
 // unprocessed (plain) text
 text = '"' c:("\\\"" / (! '"') char)+ '"' {  // see sec. 3.15

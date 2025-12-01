@@ -2928,7 +2928,7 @@ function preprocess(dsty, uast, index, arr) {
             return {unicodemath: {content: preprocess(dsty, value.content), eqnumber: value.eqnumber}};
 
         case "expr":
-            return {expr: preprocess(dsty, value)};
+            return {expr: preprocess(dsty, value)}
 
         case "element":
             return {element: preprocess(dsty, value)};
@@ -3424,6 +3424,18 @@ function preprocess(dsty, uast, index, arr) {
                     }
                     if ("high" in value) {
                         ret.high = preprocess(dsty, value.high);
+                    }
+                    if (value.base.operator == '\u2061') {
+                        if (index && arr[index - 1].atoms && arr.length >= 3) {
+                            // Handle expressions like 'argmax\u2061┬𝑥 𝑃𝑥'
+                            let atoms = arr[index - 1].atoms
+                            if (Array.isArray(atoms) && atoms[0].chars) {
+                                ret.base = {chars: foldMathItalics(atoms[0].chars)}
+                                ret.intent = ':function'
+                                arr[index - 1] = {script: ret}
+                                return {operator: '\u2061'}
+                            }
+                        }
                     }
                     break;
 
@@ -4742,7 +4754,12 @@ function pretty(mast) {
                 // Unless this mrow has the ':fenced' attribute, move the
                 // children of attributeless-mrow children up into this mrow
                 // after removing the parents.
-                promoteAttributelessMrowChildren(value)
+                if (value[0].munder && value[0].munder.attributes.intent == ':function') {
+                    attributes.intent = ':function'
+                    value[0].munder.attributes = []
+                } else {
+                    promoteAttributelessMrowChildren(value)
+                }
             } else if (!Object.keys(attributes).length) {
                 return pretty(value);
             }

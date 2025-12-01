@@ -698,7 +698,7 @@ function TeX2UMath(tex) {
                 j = findClosingBrace(tex, i + 1)
                 if (j == -1)
                     break
-                uniTeX = uniTeX.substring(0, uniTeX.length - 1) // Remove 'ⓞ'
+                uniTeX = uniTeX.substring(0, uniTeX.length - 1) // Remove 'Ⓣ' or 'ⓞ'
                 // TODO: is tex.substring(i + 1, j) a valid label?
                 if (ch == 'Ⓣ') {
                     uniTeX += '#'           // Start equation label
@@ -831,7 +831,7 @@ function TeX2UnicodeMath(tex) {
                     i++
                 } else {
                     symbol = resolveCW('\\' + cw)
-                    if (tex[i] == ' ')
+                    if (tex[i] == ' ' && !isFunctionName(cw))
                         i++
                 }
                 if (symbol[0] && symbol[0] != '"')
