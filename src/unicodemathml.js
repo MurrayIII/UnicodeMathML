@@ -372,7 +372,7 @@ function isMathML(unicodemath) {
 
 function isMrowLike(node) {
     return ['math', 'menclose', 'merror', 'mpadded', 'mphantom', 'mrow',
-        'mscarry', 'msqrt', 'mstyle', 'mtd'].includes(node.localName)
+        'mscarry', 'msqrt', 'mstyle', 'mtd', 'a'].includes(node.localName)
 }
 
 function isNary(op) {
@@ -1293,6 +1293,7 @@ const controlWords = {
     'hookrightarrow':   '↪',    	// 21AA
     'hourglass':        '⏳',   // 23F3
     'hphantom':         '⬄',	// 2B04
+    'href':             'ⓗ',   // 24D7
     'hsmash':           '⬌',	// 2B0C
     'hvec':             '⃑',	// 20D1
     'identity':         '𝐈',    // 1D408
@@ -3241,6 +3242,18 @@ function preprocess(dsty, uast, index, arr) {
             return {bracketed: {intent: intent, arg: arg, open: "(", close: ")",
                                 content: {atop: [value.top, value.bottom]}}};
 
+        case "href":
+            val = value.url
+            if (val.expr)
+                val = val.expr
+            while (Array.isArray(val))
+                val = val[0]
+            if (val.text)
+                val = val.text
+            if (!value.name)
+                value.name = val
+            return {href: {url: val, content: preprocess(dsty, value.name)}};
+
         case "script":
             value.base.inscript = true;     // Need for case "primed":
             ret = {type: value.type, base: preprocess(dsty, value.base)};
@@ -4113,6 +4126,11 @@ function mtransform(dsty, puast) {
             // desugar (not done in preprocessing step since LaTeX requires this sugar)
             return mtransform(dsty, {bracketed: {intent: value.intent, arg: value.arg, open: "(", close: ")", content: {atop: [value.top, value.bottom]}}});
 
+        case "href":
+            attrs = getAttrs(value, '')
+            attrs.href = value.url
+            return {a: withAttrs(attrs, mtransform(dsty, value.content))}
+
         case "script":
             attrs = getAttrs(value, '');
 
@@ -4775,6 +4793,7 @@ function pretty(mast) {
             }
             return tag(key, attributes, pretty(value));
 
+        case "a":
         case "math":
         case "menclose":
         case "merror":
@@ -4804,8 +4823,11 @@ function pretty(mast) {
                     arg = arg.substring(0, i) + ' selanchor="0"' + arg.substring(i)
                 }
             }
+            if (key == 'a' && arg == '<mi>⬚</mi>')
+                arg = '<mtext>' + attributes.href + '</mtext>'
             return tag(key, attributes, arg)
 
+        case "a":
         case "mover":
         case "msub":
         case "msubsup":

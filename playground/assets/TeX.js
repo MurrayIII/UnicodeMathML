@@ -612,6 +612,24 @@ function TeX2UMath(tex) {
             break
 
         switch (ch) {
+            case 'ⓗ':                      // E.g., \href{url}{name}
+                if (tex[i] != '{')
+                    continue
+                j = findClosingBrace(tex, i + 1)
+                if (j == -1)
+                    continue
+                uniTeX += '"' + foldMathItalics(tex.substring(i + 1, j)) + '"'
+                i = j + 1
+                if (tex[i] != '{') {
+                    uniTeX += '〗'
+                    continue            // URL w/out name
+                }
+                j = findClosingBrace(tex, i + 1)
+                if (j == -1)
+                    continue
+                uniTeX += '&' + TeX2UMath(tex.substring(i + 1, j)) + '〗'
+                i = j + 1
+                continue
             case '⒝':                       // E.g., \binom{n}{k}
             case '⍁':                       // E.g., \frac{a}{b}
                 if (tex[i] == '{') {
@@ -622,9 +640,9 @@ function TeX2UMath(tex) {
                     i = j + 1
                     if (tex[i] == ' ')
                         i++
-                    j = findClosingBrace(tex, i + 1)
                     if (tex[i] != '{')
                         continue
+                    j = findClosingBrace(tex, i + 1)
                     uniTeX += TeX2UMath(tex.substring(i + 1, j)) + '〗 '
                     i = j + 1
                 } else {                    // E.g., \frac12 is ½

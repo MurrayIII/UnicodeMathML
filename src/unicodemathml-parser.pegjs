@@ -376,7 +376,7 @@ opTt = "ￗ"
     / opCommentOpen
     / opCommentClose
     / opTt*/
-opBuildup = [█⒜⒝ⓑⒸⓓⓣ⍁■@&([{⟨〖⌈⌊├)}⟩〗⌉⌋┤|│∣⏜⏝⏞⏟⏠⏡⎴⎵¯∑⅀⨊∏∐⨋∫∬∭⨌∮∯∰∱⨑∲∳⨍⨎⨏⨕⨖⨗⨘⨙⨚⨛⨜⨒⨓⨔⋀⋁⋂⋃⨃⨄⨅⨆⨀⨁⨂⨉⫿▒ⅅⅆⅇⅈⅉ¦⒞/\u2044\u2215\u2298▭̄▁▢○⟌⃧⬭#⟡⬄⇳⬍⬆⬇⬌□√∛∜_^┬┴Ⅎ✎☁⫷⫸ￗ╱╲╳ⒶⒻ] / "]"  // ⚡ performance optimization
+opBuildup = [█⒜⒝ⓑⒸⓓⓗⓣ⍁■@&([{⟨〖⌈⌊├)}⟩〗⌉⌋┤|│∣⏜⏝⏞⏟⏠⏡⎴⎵¯∑⅀⨊∏∐⨋∫∬∭⨌∮∯∰∱⨑∲∳⨍⨎⨏⨕⨖⨗⨘⨙⨚⨛⨜⨒⨓⨔⋀⋁⋂⋃⨃⨄⨅⨆⨀⨁⨂⨉⫿▒ⅅⅆⅇⅈⅉ¦⒞/\u2044\u2215\u2298▭̄▁▢○⟌⃧⬭#⟡⬄⇳⬍⬆⬇⬌□√∛∜_^┬┴Ⅎ✎☁⫷⫸ￗ╱╲╳ⒶⒻ] / "]"  // ⚡ performance optimization
 other = !(_ / αn / nn / diacritic / unicodeFraction / opBuildup / "\n") char
 
 
@@ -847,6 +847,10 @@ enclosed
     / '⒝' r:exp '&' t:exp '〗' {
         // TeX binomial coefficient
         return {binom: {top: r, bottom: t}};
+    }
+    / 'ⓗ' r:exp '&' t:exp '〗' {
+        // TeX \href control word
+        return {href: {url: r, name: t}};
     }
     / e:opSelection "(" o:exp? ")" m:opSubSupEtc? {
         return {enclosed: {mask: m, symbol: e, of: o}};
