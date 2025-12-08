@@ -827,6 +827,9 @@ enclosed
     = "▭(" m:bitmask "&" o:exp ")" {
         return {enclosed: {mask: m, symbol: null, of: o}};
     }
+    / "ⓗ(" u:((! '&') char)+ "&" n:exp? ")" {
+        return {href: {url: u.map(v => v[1]).join(""), name: n}};
+    }
     / e:opEnclosure "(" o:exp ")" {  // ⚡ performance optimization
         return {enclosed: {mask: null, symbol: e, of: o}};
     }

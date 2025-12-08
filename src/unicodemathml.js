@@ -3243,15 +3243,9 @@ function preprocess(dsty, uast, index, arr) {
                                 content: {atop: [value.top, value.bottom]}}};
 
         case "href":
-            val = value.url
-            if (val.expr)
-                val = val.expr
-            while (Array.isArray(val))
-                val = val[0]
-            if (val.text)
-                val = val.text
+            val = foldMathItalics(value.url)
             if (!value.name)
-                value.name = val
+                value.name = ''
             return {href: {url: val, content: preprocess(dsty, value.name)}};
 
         case "script":
@@ -4129,6 +4123,8 @@ function mtransform(dsty, puast) {
         case "href":
             attrs = getAttrs(value, '')
             attrs.href = value.url
+            if (!value.content)
+                return {a: withAttrs(attrs, '<mtext>' + value.url + '</mtext>')}
             return {a: withAttrs(attrs, mtransform(dsty, value.content))}
 
         case "script":
@@ -4823,8 +4819,6 @@ function pretty(mast) {
                     arg = arg.substring(0, i) + ' selanchor="0"' + arg.substring(i)
                 }
             }
-            if (key == 'a' && arg == '<mi>⬚</mi>')
-                arg = '<mtext>' + attributes.href + '</mtext>'
             return tag(key, attributes, arg)
 
         case "a":

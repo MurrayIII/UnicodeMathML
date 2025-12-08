@@ -2355,7 +2355,7 @@ function checkMathSelection(sel) {
 
     if (node.nodeName == '#text')
         node = node.parentElement
-    if (node.nodeName[0] != 'm')
+    if (node.nodeName[0] != 'm' && (node.nodeName != 'a' || node.parentElement.nodeName[0] != 'm'))
         return null                         // Not MathML ⇒ not output window
 
     if (uMathSave)
