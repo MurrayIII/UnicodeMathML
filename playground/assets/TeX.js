@@ -370,6 +370,10 @@ function TeX(value, noAddParens) {
                 ret = opmap[val]
                 break
             }
+            if (val == '$') {
+                ret = '\\$'
+                break
+            }
             if (!intent)
                 intent = value.getAttribute('intent')
             if (intent == ':text') {
@@ -835,6 +839,11 @@ function TeX2UnicodeMath(tex) {
                 }
                 if (tex[i] == '{' || tex[i] == '}') {
                     uniTeX += '\\' + tex[i] // Keep quoted braces
+                    i++
+                    break
+                }
+                if (tex[i] == '$') {
+                    uniTeX += '$'           // Keep quoted dollar sign
                     i++
                     break
                 }

@@ -60,6 +60,9 @@ table {
 a {
     color: cyan;
 }
+a:hover {
+    color: deepskyblue;
+}
 
 /***********************\
 *         INPUT         *
