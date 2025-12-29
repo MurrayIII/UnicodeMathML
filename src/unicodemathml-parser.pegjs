@@ -987,9 +987,12 @@ color = co:(!"&" char)+ {  // colors can be anything – it's up to the mathml
                            // renderer to interpret these
     return co.map(c => c[1]).join('');
 }
-comment = opCommentOpen c:(("\\" opCommentClose) / (! opCommentClose) char)* opCommentClose {
-    return {comment: c.map(v => v[1]).join("")};
-}
+comment = '<!--' c:(!"-->" char)* "-->" {
+        return {comment: c.map(v => v[1]).join("")};
+    }
+    / opCommentOpen c:(("\\" opCommentClose) / (! opCommentClose) char)* opCommentClose {
+        return {comment: c.map(v => v[1]).join("")};
+    }
 tt = opTt "(" t:("\\)" / (! ")") char)* ")" {
         return {tt: t.map(v => v[1]).join("")};
     }

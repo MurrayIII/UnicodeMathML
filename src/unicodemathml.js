@@ -228,7 +228,7 @@ function getUnicodeFraction(chNum, chDenom) {
 
 // determine space width attribute values: x/18em
 //                    0         1                       2                   3                  4                   5               6                       7                 8       9      10    11    12   13    14     15    16   17     18
-const uniSpaces = ['\u200B', '\u200A',            '\u200A\u200A',       '\u2009',          '\u205F',          '\u2005',         '\u2004',              '\u2004\u200A',       '', '\u2002',  '',   '',   '',   '',  '',    '',   '',  '', '\u2003'];
+const uniSpaces = ['\u200B',    '\u200A',            '\u200A\u200A',       '\u2009',         '\u205F',          '\u2005',          '\u2004',             '\u2004\u200A',       '', '\u2002',  '',   '',   '',   '',  '',    '',   '',  '', '\u2003'];
 const spaceWidths = ['0', 'veryverythinmathspace', 'verythinmathspace', 'thinmathspace', 'mediummathspace', 'thickmathspace', 'verythickmathspace', 'veryverythickmathspace', null, '0.5em', null, null, null, null, null, null, null, null, '1em'];
 
 const mathStyles = [
@@ -5277,7 +5277,7 @@ function dump(value, noAddParens) {
             break;
 
         case 'mo':
-            val = value.innerHTML;
+            val = value.textContent;
             if (val == '\u200B' && value.parentElement.getAttribute('intent') == ':cases')
                 return ''                   // Discard ZWSP (used for in-line editing)
             if (intent == ':text') {

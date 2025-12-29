@@ -1326,7 +1326,7 @@ function autocomplete() {
         if (i < 0 || input.value[i] != '\\' && (!i ||
                 !isMathColor(input.value.substring(i - 1, i + 1)))) {
             // Not control word; check for italicization & operator autocorrect
-            if (input.value[0] != '<' && !isTeX(input.value) && isMathZone()) {
+            if (!isMathML(input.value) && !isTeX(input.value) && isMathZone()) {
                 let ch = italicizeCharacter(delim);
                 if (ch != delim) {
                     // Change ASCII or lower-case Greek letter to math-italic letter
@@ -4142,10 +4142,13 @@ document.addEventListener('keydown', function (e) {
                 // Toggle Unicode and MathML in input display
                 ksi = true
                 if (isMathML(input.value)) {
-                    input.value = MathMLtoUnicodeMath(input.value, true)
+                    input.value = getUnicodeMath(output.firstElementChild)//MathMLtoUnicodeMath(input.value, true)
                 } else {
-                    let node = output.firstElementChild.nodeName == 'MJX-CONTAINER'
-                        ? getMathJaxMathMlNode() : output.firstElementChild
+                    let node = output.firstElementChild
+                    if (node) {
+                        if (node.nodeName == 'MJX-CONTAINER')
+                            node = getMathJaxMathMlNode()
+                    }
                     input.value = node.outerHTML
                 }
                 draw()
