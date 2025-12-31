@@ -4392,10 +4392,16 @@ function mtransform(dsty, puast) {
             return {mstyle: withAttrs(attrs, mtransform(dsty, value.of))}
 
         case "remark":
-            return {mi: noAttr(value)}
+            val = value.base
+            // TODO: check all chars in val and use mtext for mixtures
+            if (isAsciiDigit(val[0]))
+                return {mn: noAttr(value)}
+            if (isAsciiAlphabetic(val[0]) || isGreek(val[0]) || val[0] > '\u3017' || letterLikeSymbols[val[0]])
+                return {mi: noAttr(value)}
+            return {mo: noAttr(value)}
 
         case "comment":
-            return {"␢": noAttr()};
+            return {"␢": noAttr()};         // for invisible comment ⫷...⫸
         case "tt":
             return {mstyle: withAttrs({fontfamily: "monospace"}, {mtext: noAttr(value.split(" ").join("\xa0"))})};
 
@@ -4846,7 +4852,7 @@ function pretty(mast) {
             return tag(key, attributes, pretty(value));
         case "mi":
             if (value.comment)
-                value = value.opnd + `<!--` + value.comment + `-->`
+                value = value.base + `<!--` + value.comment + `-->`
             if (value[0] == '\uD83B') {
                 // Arabic math alphabetic: XITS Math has the glyphs
                 attributes.style = 'font-family:XITS Math'
@@ -4868,7 +4874,7 @@ function pretty(mast) {
         case "mtext":
         case "mspace":
             if (value.comment)
-                value = value.opnd + `<!--` + value.comment + `-->`
+                value = value.base + `<!--` + value.comment + `-->`
             return tag(key, attributes, value);
         case "maligngroup":
         case "malignmark":

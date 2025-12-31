@@ -138,6 +138,7 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Add Markdown option using markdown-it. Enable via settings and start input with # or ⍗. Alt+= inserts math zone delimiters ⁅ ⁆.
 * Support LaTeX \operatorname, \tag, and \href control words.
 * Add \href(url&name) construction for hyperlinks to UnicodeMath.
+* Add \remark(base&comment) construction for commented strings to UnicodeMath.
 
 ## MathML intent-attribute support:
 * Derivative and partial-derivative intent attributes are defined for Leipzig and Euler derivative notations.

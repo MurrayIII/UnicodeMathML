@@ -822,7 +822,7 @@ sfactor
         return {atoms: {chars: "∞"}};
     }
 
-// terms enclosed in rectangles, circles, etc.
+// terms enclosed in rectangles, circles, etc., and other special enclosures
 enclosed
     = "▭(" m:bitmask "&" o:exp ")" {
         return {enclosed: {mask: m, symbol: null, of: o}};
@@ -830,10 +830,8 @@ enclosed
     / "ⓗ(" u:((! '&') char)+ "&" n:exp? ")" {
         return {href: {url: u.map(v => v[1]).join(""), name: n}};
     }
-    / "ⓡ(" o:(αn / other) "&" r:((! ')') char)+ ")" {
-        if (Array.isArray(o))
-            o = o[1]
-        return {remark: {opnd: o, comment: r.map(v => v[1]).join("")}};
+    / "ⓡ(" o:(!'&' char)+ "&" r:((! ')') char)+ ")" {
+        return {remark: {base: o.map(v => v[1]).join(""), comment: r.map(v => v[1]).join("")}};
     }
     / e:opEnclosure "(" o:exp ")" {  // ⚡ performance optimization
         return {enclosed: {mask: null, symbol: e, of: o}};
