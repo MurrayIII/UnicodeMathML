@@ -830,6 +830,11 @@ enclosed
     / "ⓗ(" u:((! '&') char)+ "&" n:exp? ")" {
         return {href: {url: u.map(v => v[1]).join(""), name: n}};
     }
+    / "ⓡ(" o:(αn / other) "&" r:((! ')') char)+ ")" {
+        if (Array.isArray(o))
+            o = o[1]
+        return {remark: {opnd: o, comment: r.map(v => v[1]).join("")}};
+    }
     / e:opEnclosure "(" o:exp ")" {  // ⚡ performance optimization
         return {enclosed: {mask: null, symbol: e, of: o}};
     }
@@ -987,10 +992,7 @@ color = co:(!"&" char)+ {  // colors can be anything – it's up to the mathml
                            // renderer to interpret these
     return co.map(c => c[1]).join('');
 }
-comment = '<!--' c:(!"-->" char)* "-->" {
-        return {comment: c.map(v => v[1]).join("")};
-    }
-    / opCommentOpen c:(("\\" opCommentClose) / (! opCommentClose) char)* opCommentClose {
+comment = opCommentOpen c:(("\\" opCommentClose) / (! opCommentClose) char)* opCommentClose {
         return {comment: c.map(v => v[1]).join("")};
     }
 tt = opTt "(" t:("\\)" / (! ")") char)* ")" {

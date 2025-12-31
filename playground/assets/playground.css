@@ -458,7 +458,7 @@ pre .value {
 pre .comment {
     background-color: gold;
     color: black;
-    font-style: italic;
+    /*font-style: italic;*/
 }
 
 /***********************\

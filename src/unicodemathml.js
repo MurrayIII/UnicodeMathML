@@ -1164,6 +1164,7 @@ const controlWords = {
     'coint':            '∲',	    // 2232
     'colon':            '∶',	// 2236
     'color':            '✎',	// 270E
+    'comment':          'ⓡ',   // 24E1 (UnicodeMath op)
     'comp':             '∘',    // 2218
     'complement':       '∁',	    // 2201
     'cong':             '≅',    	// 2245
@@ -1554,6 +1555,7 @@ const controlWords = {
     'rect':             '▭',	// 25AD
     'reh':		        'ر',    // 0631
     'relax':            'ⓝ',   // 24DD (UnicodeMath op)
+    'remark':           'ⓡ',   // 24E1 (UnicodeMath op)
     'repeat':           '¯',	// 00AF
     'repeating':        '¯',	// 00AF
     'revpilcrow':       '⁋',    // 204B
@@ -3798,6 +3800,7 @@ function preprocess(dsty, uast, index, arr) {
         case "newline":
         case "number":
         case "opnary":
+        case "remark":
         case "space":
         case "text":
         case "tt":
@@ -4388,6 +4391,9 @@ function mtransform(dsty, puast) {
             attrs.mathbackground = value.color
             return {mstyle: withAttrs(attrs, mtransform(dsty, value.of))}
 
+        case "remark":
+            return {mi: noAttr(value)}
+
         case "comment":
             return {"␢": noAttr()};
         case "tt":
@@ -4839,6 +4845,8 @@ function pretty(mast) {
         case "none":
             return tag(key, attributes, pretty(value));
         case "mi":
+            if (value.comment)
+                value = value.opnd + `<!--` + value.comment + `-->`
             if (value[0] == '\uD83B') {
                 // Arabic math alphabetic: XITS Math has the glyphs
                 attributes.style = 'font-family:XITS Math'
@@ -4859,6 +4867,8 @@ function pretty(mast) {
         case "mo":
         case "mtext":
         case "mspace":
+            if (value.comment)
+                value = value.opnd + `<!--` + value.comment + `-->`
             return tag(key, attributes, value);
         case "maligngroup":
         case "malignmark":
