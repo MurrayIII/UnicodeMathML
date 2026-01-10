@@ -890,8 +890,12 @@ function getMathAlphanumeric(ch, mathStyle) {
             varsel = mathStyle == 'mchan' ? '\uFE00' : '\uFE01'
             mathStyle = 'mscr'
         }
-        // Handle legacy Unicode Letterlike characters first
+        // Handle legacy Unicode Letterlike characters and mitBbb first.
+        // Short control words are, e.g., \\d for 'ⅆ'. The only \mitBbb
+        // characters are:
+        const mitBbb = { 'D': 'ⅅ', 'd': 'ⅆ', 'e': 'ⅇ', 'i': 'ⅈ', 'j': 'ⅉ' }
         let chT = ''
+
         switch (mathStyle) {
             case 'mit':                     // Math italic
                 if (ch == 'h')
@@ -905,6 +909,9 @@ function getMathAlphanumeric(ch, mathStyle) {
                 break
             case 'Bbb':                     // Math blackboard bold (double-struck)
                 chT = letterlikeDoubleStruck[ch]
+                break
+            case 'mitBbb':
+                chT = mitBbb[ch]
                 break
         }
         if (chT)
@@ -1796,12 +1803,6 @@ function resolveCW(unicodemath) {
                     if (c != undefined) {
                         if (mathStyle == 'mup') // Upright
                             return '"' + c + '"'
-                    }
-                    if (mathStyle == 'mitBbb') {
-                        // Short control words are, e.g., \\d for 'ⅆ'. The only \mitBbb
-                        // characters are:
-                        const mitBbb = {'D': 'ⅅ', 'd': 'ⅆ', 'e': 'ⅇ', 'i': 'ⅈ', 'j': 'ⅉ'}
-                        return mitBbb[c]
                     }
                     return getMathAlphanumeric(c, mathStyle)
                 } else {                    // No trailing letter
