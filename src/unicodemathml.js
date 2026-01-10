@@ -191,6 +191,15 @@ function getFencedOps(value) {
     return [opClose, opOpen, opSeparators]
 }
 
+function getMathAlphanumerics(str, mathStyle) {
+    let result = ''
+
+    for (let i = 0; i < str.length; i++)
+        result += getMathAlphanumeric(str[i], mathStyle)
+
+    return result
+}
+
 function getNonBlankChar(tex, i) {
     while (tex[i] == ' ')
         i++
@@ -863,6 +872,9 @@ function getMathAlphanumeric(ch, mathStyle) {
     let code = ch.charCodeAt(0)
     let n                                   // Set index
 
+    if (code > 0x6BA && ch != '∂' && ch != '∇') 
+        return ch
+
     // ASCII digits
     if (ch >= '0' && ch <= '9') {
         code += 0x1D7CE - 0x30              // Get math-digit codepoint
@@ -934,9 +946,6 @@ function getMathAlphanumeric(ch, mathStyle) {
         return ch == 'ı'                    // Dotless i and j
             ? '𝚤' : ch == 'ȷ'
                 ? '𝚥' : ch
-
-    if (code > 0x6BA)                       // No unhandled chars above U+06BA
-        return ch
 
     // Arabic letters
     n = setsAr.indexOf(mathStyle)
@@ -1751,50 +1760,53 @@ function resolveCW(unicodemath) {
         }
 
         // Check for math alphanumeric control words like \mscrH for ℋ defined in
-        // unimath-symbols.pdf (link below)
-        let cch = cw.length;
-        if (cch > 3) {
-            let mathStyle = '';
-            let c = '';
-            if (cw.startsWith('Bbb') || cw.startsWith('double')) {
-                // Blackboard bold (double-struck)
-                mathStyle = 'Bbb';
-                cw = mathStyle + cw[cw.length - 1]
-            } else if (cw.startsWith('script')) {
-                // Script
-                mathStyle = 'mscr'
-                cw = mathStyle + cw[cw.length - 1]
-            } else if (cw.startsWith('bold')) {
-                // Script
-                mathStyle = 'mbf'
-                cw = mathStyle + cw.substring(4)
-            } else if (cw[0] == 'm') {
-                // Check for the other math styles
+        // unimath-symbols.pdf (link below) as well as \doubleX, \scriptX, \boldX
+        let cchMS = 6                       // Length of 'double' and 'script'
+
+        if (cw.length >= 3) {
+            let mathStyle = ''
+
+            if (cw[0] == 'm') {
                 for (let i = 0; i < mathStyles.length; i++) {
                     if (cw.startsWith(mathStyles[i])) {
-                        mathStyle = mathStyles[i];
-                        break;
+                        mathStyle = mathStyles[i]
+                        cchMS = mathStyle.length
+                        break
                     }
                 }
+            } else if (cw.startsWith('Bbb')) {
+                // Blackboard bold (double-struck)
+                mathStyle = 'Bbb'
+                cchMS = 3
+            } else if (cw.startsWith('double')) {
+                // Blackboard bold (double-struck)
+                mathStyle = 'Bbb'
+            } else if (cw.startsWith('script')) {
+                mathStyle = 'mscr'
+            } else if (cw.startsWith('bold')) {
+                mathStyle = 'mbf'
+                cchMS = 4
             }
             if (mathStyle) {
-                c = cw.substring(mathStyle.length);
-                if (c != undefined && c.length) {
-                    if (c.length > 1) {     // Might be Greek
-                        c = controlWords[c];
-                    }
+                let c = cw.substring(cchMS)
+
+                if (c) {
+                    if (c.length > 1)       // Might be Greek
+                        c = controlWords[c]
                     if (c != undefined) {
-                        if (mathStyle == 'mup') { // Upright
-                            return '"' + c + '"';
-                        }
-                        if (mathStyle == 'mitBbb') {
-                            // Short control words are, e.g., \\d for 'ⅆ'.
-                            // The only \mitBbb characters are:
-                            const mitBbb = {'D': 'ⅅ', 'd': 'ⅆ', 'e': 'ⅇ', 'i': 'ⅈ', 'j': 'ⅉ'};
-                            return mitBbb[c];
-                        }
-                        return getMathAlphanumeric(c, mathStyle)
+                        if (mathStyle == 'mup') // Upright
+                            return '"' + c + '"'
                     }
+                    if (mathStyle == 'mitBbb') {
+                        // Short control words are, e.g., \\d for 'ⅆ'. The only \mitBbb
+                        // characters are:
+                        const mitBbb = {'D': 'ⅅ', 'd': 'ⅆ', 'e': 'ⅇ', 'i': 'ⅈ', 'j': 'ⅉ'}
+                        return mitBbb[c]
+                    }
+                    return getMathAlphanumeric(c, mathStyle)
+                } else {                    // No trailing letter
+                    let n = mathStyles.indexOf(mathStyle) + 0x61
+                    return 'Ⅎ' + String.fromCharCode(n)  // Ⅎa..Ⅎv (22 mathStyles)
                 }
             }
         }
@@ -3794,6 +3806,11 @@ function preprocess(dsty, uast, index, arr) {
                     value = '⋯'
             }
             return {[key]: {intent: intent, arg: arg, content: value}};
+
+        case "fontoverride":
+            val = mathStyles[value.font.codePointAt(0) - 0x61]
+            ret = getMathAlphanumerics(foldMathItalics(value.of), val)
+            return {atoms: [{chars: ret}]}
 
         case "chars":
         case "comment":
