@@ -978,9 +978,13 @@ text = '"' c:("\\\"" / (! '"') char)+ '"' {  // see sec. 3.15
 sizeOverride = opSizeOverride s:[A-D] o:(operand / basicOperator) {
     return {sizeoverride: {size: s, of: o}};
 }
-fontOverride = opSizeOverride s:[a-z] o:αn+ {
-    return {fontoverride: {font: s, of: o.join("")}};
-}
+fontOverride
+    = opSizeOverride s:[a-z] o:αn+ {
+        return {fontoverride: {font: s, of: o.join("")}};
+    }
+    / opSizeOverride s:[a-z] "(" o:exp ")" {
+        return {fontoverride: {font: s, of: o}};
+    }
 
 // ✎ colors and non-standard extensions: comments and typewriter font
 colored

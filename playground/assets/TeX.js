@@ -663,6 +663,13 @@ function TeX2UMath(tex) {
                     break
                 }
                 break
+            case 'Ⅎ':
+                if (tex[i + 1] == '{') {
+                    j = findClosingBrace(tex, i + 2)
+                    uniTeX += tex[i] + '(' + tex.substring(i + 2, j) + ')'
+                    i = j + 1
+                }
+                break
             case '√':
                 if (tex[i] == '[') {        // E.g., √[n]{a+b} → √(n&a+b)
                     j = tex.indexOf(']', i + 1)

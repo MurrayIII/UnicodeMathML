@@ -241,7 +241,9 @@ const uniSpaces = ['\u200B',    '\u200A',            '\u200A\u200A',       '\u20
 const spaceWidths = ['0', 'veryverythinmathspace', 'verythinmathspace', 'thinmathspace', 'mediummathspace', 'thickmathspace', 'verythickmathspace', 'veryverythickmathspace', null, '0.5em', null, null, null, null, null, null, null, null, '1em'];
 
 const mathStyles = [
+//    a       b        c        d        e       f        g         h
     'mup', 'mbfit', 'mscr', 'mbfscr', 'mfrak', 'Bbb', 'mbffrak', 'mitBbb',
+//      i          j           k         l      m       n       o       p
     'mbfsans', 'mitsans', 'mbfitsans', 'mbf', 'mit', 'msans', 'mtt', 'misol',
     'minit', 'mtail', 'mloop', 'mstrc', 'mrhnd', 'mchan']
 
@@ -573,6 +575,35 @@ function checkSpace(i, node, ret) {
         return ' '
     }
     return ''
+}
+
+function getTextContent(ast) {
+    // A DOM node has the textContent property, but an AST node does not.
+    // This function extracts the text content from simple AST nodes.
+    if (ast.expr)
+        ast = ast.expr
+    if (!Array.isArray(ast)) {
+        if (ast.atoms)
+            return ast.atoms[0].chars
+        if (ast.operator)
+            return ast.operator
+        else if (ast.number)
+            return ast.number
+        return ast
+    }
+
+    let chars = ''
+    ast.forEach(node => {
+        if (Array.isArray(node))
+            chars += getTextContent(node)
+        else if (node.atoms)
+            chars += node.atoms[0].chars
+        else if (node.operator)
+            chars += node.operator
+        else if (node.number)
+            chars += node.number
+    })
+    return chars
 }
 
 function getMathMLDOM(mathML) {
@@ -1406,7 +1437,16 @@ const controlWords = {
     'lvert':            '|',    // 007C
     'mapsto':           '↦',	    // 21A6
     'mapstoleft':       '↤',	    // 21A4
-    'mathbf':           'ⓑ',   // 24D1 (UnicodeMath op)
+    'mathbb':           'Ⅎf',   // 2132 f (Bbb) (letters are offsets into mathStyles[])
+    'mathbf':           'Ⅎl',   // 2132 l (mbf)
+    'mathbi':           'Ⅎb',   // 2132 b (mbfit)
+    'mathcal':          'Ⅎc',   // 2132 c (mscr)
+    'mathfrak':         'Ⅎe',   // 2132 e (mfrak)
+    'mathit':           'Ⅎm',   // 2132 m (mit)
+    'mathnor':          'Ⅎa',   // 2132 a (mup)
+    'mathrm':           'Ⅎa',   // 2132 a (mup)
+    'mathsf':           'Ⅎn',   // 2132 n (msans)
+    'mathtt':           'Ⅎo',   // 2132 o (mtt)
     'mathparagraph':    '¶',    // 00B6
     'matrix':           '■',	// 25A0
     'md':               '⍗',    // 2357 (use to start markdown)
@@ -3486,12 +3526,6 @@ function preprocess(dsty, uast, index, arr) {
                 // For example, for '𝑎Ⓐ()^', value.mask = '^'
                 return {intend: {symbol: value.symbol, value: val, op: value.mask}}
             }
-            if (value.symbol == 'ⓑ') {      // Bold chars in value.of
-                let chars = value.of        // Tunnel down to chars
-                if (chars.expr)
-                    chars = chars.expr
-                return {atoms: [{chars: bold(chars)}]}
-            }
             if (value.symbol >= "╱" && value.symbol <= "╳") {
                 // Set mask for \cancel, \bcancel, \xcancel
                 value.mask = (value.symbol == "╱") ? 79 : (value.symbol == "╲") ? 143 : 207;
@@ -3809,8 +3843,12 @@ function preprocess(dsty, uast, index, arr) {
             return {[key]: {intent: intent, arg: arg, content: value}};
 
         case "fontoverride":
+            // A more general approach would walk the value.of AST, setting
+            // the mathvariant on each character. The present code only handles
+            // expr, arrays, and the text nodes atoms, number, and operator.
             val = mathStyles[value.font.codePointAt(0) - 0x61]
-            ret = getMathAlphanumerics(foldMathItalics(value.of), val)
+            ret = getTextContent(value.of)
+            ret = getMathAlphanumerics(foldMathItalics(ret), val)
             return {atoms: [{chars: ret}]}
 
         case "chars":
