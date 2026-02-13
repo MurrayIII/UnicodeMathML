@@ -1434,7 +1434,8 @@ const controlWords = {
     'lrhar':            '⇋',	    // 21CB
     'ltimes':           '⋉',    	// 22C9
     'lvec':             '⃖',	// 20D6
-    'lvert':            '|',    // 007C
+    'lVert':            '├‖',    // 2016
+    'lvert':            '├|',   // 007C
     'mapsto':           '↦',	    // 21A6
     'mapstoleft':       '↤',	    // 21A4
     'mathbb':           'Ⅎf',   // 2132 f (Bbb) (letters are offsets into mathStyles[])
@@ -1639,7 +1640,8 @@ const controlWords = {
     'rrect':            '▢',	// 25A2
     'rtimes':           '⋊',    	// 22CA
     'rtriangle':        '⊿',	// 22BF
-    'rvert':            '|',    // 007C
+    'rVert':            '┤‖',	// 2016
+    'rvert':            '┤|',   // 007C
     'sad':		        'ص',    // 0635
     'sdiv':             '⁄',	// 2044
     'sdivide':          '⁄',	// 2044
@@ -5387,7 +5389,7 @@ function dump(value, noAddParens) {
             if (val == '|') {
                 ret = val
                 let node = value.parentElement.parentElement
-                if (node.getAttribute('intent') == ':fenced' &&
+                if (node && node.getAttribute('intent') == ':fenced' &&
                     node.firstElementChild.textContent == '⟨' &&
                     node.lastElementChild.textContent == '⟩') {
                     ret = '│'               // U+2502

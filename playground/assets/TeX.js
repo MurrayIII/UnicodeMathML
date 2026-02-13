@@ -713,8 +713,13 @@ function TeX2UMath(tex) {
                     break
                 }
                 // Replace {...} by〖...〗
-                uniTeX = uniTeX.substring(0, uniTeX.length - 1) + '〖' +
-                    TeX2UMath(tex.substring(i, j)) + '〗 '
+                if (tex[j + 1] == '_') {
+                    uniTeX = uniTeX.substring(0, uniTeX.length - 1) +
+                        TeX2UMath(tex.substring(i, j))
+                } else {
+                    uniTeX = uniTeX.substring(0, uniTeX.length - 1) + '〖' +
+                        TeX2UMath(tex.substring(i, j)) + '〗 '
+                }
                 i = j + 1
                 break
             case 'Ⓣ':                      // Define equation label
@@ -849,8 +854,8 @@ function TeX2UnicodeMath(tex) {
                     i++
                     break
                 }
-                if (tex[i] == '$') {
-                    uniTeX += '$'           // Keep quoted dollar sign
+                if ('$%'.includes(tex[i])) {
+                    uniTeX += tex[i]        // Keep quoted dollar sign
                     i++
                     break
                 }
@@ -905,6 +910,8 @@ function TeX2UnicodeMath(tex) {
                     i++
                     continue
                 }
+                uniTeX += tex[i++]
+                break
             case '}':
                 if (i && tex[i - 1] == '{')
                     uniTeX += '⬚'           // Display '⬚' for {}
