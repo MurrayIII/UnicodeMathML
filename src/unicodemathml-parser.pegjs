@@ -376,7 +376,7 @@ opTt = "ￗ"
     / opCommentOpen
     / opCommentClose
     / opTt*/
-opBuildup = [█⒜⒝ⓑⒸⓓⓗⓣ⍁■@&([{⟨〖⌈⌊├)}⟩〗⌉⌋┤|│∣⏜⏝⏞⏟⏠⏡⎴⎵¯∑⅀⨊∏∐⨋∫∬∭⨌∮∯∰∱⨑∲∳⨍⨎⨏⨕⨖⨗⨘⨙⨚⨛⨜⨒⨓⨔⋀⋁⋂⋃⨃⨄⨅⨆⨀⨁⨂⨉⫿▒ⅅⅆⅇⅈⅉ¦⒞/\u2044\u2215\u2298▭̄▁▢○⟌⃧⬭#⟡⬄⇳⬍⬆⬇⬌□√∛∜_^┬┴Ⅎ✎☁⫷⫸ￗ╱╲╳ⒶⒻ] / "]"  // ⚡ performance optimization
+opBuildup = [█⒜⒝ⓑⒸⓓⓗⓣ⍁■@&([{⟨〖⌈⌊├)}⟩〗⌉⌋┤|‖│∣⏜⏝⏞⏟⏠⏡⎴⎵¯∑⅀⨊∏∐⨋∫∬∭⨌∮∯∰∱⨑∲∳⨍⨎⨏⨕⨖⨗⨘⨙⨚⨛⨜⨒⨓⨔⋀⋁⋂⋃⨃⨄⨅⨆⨀⨁⨂⨉⫿▒ⅅⅆⅇⅈⅉ¦⒞/\u2044\u2215\u2298▭̄▁▢○⟌⃧⬭#⟡⬄⇳⬍⬆⬇⬌□√∛∜_^┬┴Ⅎ✎☁⫷⫸ￗ╱╲╳ⒶⒻ] / "]"  // ⚡ performance optimization
 other = !(_ / αn / nn / diacritic / unicodeFraction / opBuildup / "\n") char
 
 
@@ -777,10 +777,10 @@ below = "┬" b:(abovebelowBelow / soperand) {
 
 // base of all three kinds of script (see primedbase further down)
 scriptbase
-    = "|" {  // enable using pipe symbol as scriptbase
-        return {atoms: {chars: "|"}};
-    }
-    / text
+    //= "|" {  // enable using pipe symbol as scriptbase
+    //    return {atoms: {chars: "|"}};
+    //}
+    = text
     / e:primedbase (!prime) {return e}  // ⚡ performance optimization
     / primed
     /// primedbase  // ⚡ performance optimization

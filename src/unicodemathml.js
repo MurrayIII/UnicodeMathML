@@ -2552,6 +2552,30 @@ function parse(unicodemath) {
     return uast;
 }
 
+//function checkVerticalBars(unicodemath) {
+//    let j = unicodemath.indexOf('|')
+//    if (j == -1)
+//        return null
+//    let fChanged = false
+
+//    while (j != -1) {
+//        unicodemath = unicodemath.substring(0, j) + '├' + unicodemath.substring(j)
+//        j = unicodemath.indexOf('|', j + 2)
+//        if (j == -1)
+//            break
+//        unicodemath = unicodemath.substring(0, j) + '┤' + unicodemath.substring(j)
+//        fChanged = true
+//        j = unicodemath.indexOf('|', j + 2)
+//    }
+//    if (fChanged) {
+//        try {
+//            return parse(unicodemath)
+//        } catch (error) {
+//        }
+//    }
+//    return null
+//}
+
 
 ///////////////
 // UTILITIES //

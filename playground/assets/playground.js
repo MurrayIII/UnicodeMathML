@@ -1326,7 +1326,8 @@ function autocomplete() {
         if (i < 0 || input.value[i] != '\\' && (!i ||
                 !isMathColor(input.value.substring(i - 1, i + 1)))) {
             // Not control word; check for italicization & operator autocorrect
-            if (!isMathML(input.value) && !isTeX(input.value) && isMathZone()) {
+            if (!isMathML(input.value) && !isTeX(input.value) && isMathZone() &&
+                input.value[0] != '`') {
                 let ch = italicizeCharacter(delim);
                 if (ch != delim) {
                     // Change ASCII or lower-case Greek letter to math-italic letter
@@ -5278,6 +5279,8 @@ async function draw(undo) {
 
         if (isBraille(val[0]))
             val = braille2UnicodeMath(val)
+        else if (val[0] == '`')
+            val = dictationToUnicodeMath(val.substring(1))
 
         // MathML output
         let mathml = ''

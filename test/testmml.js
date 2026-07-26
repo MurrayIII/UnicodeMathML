@@ -1671,6 +1671,8 @@ const mathDictation = [
     'open interval from minus infinity to 3 end interval',
     'closed open interval from 3 to b end interval',
     'Integral from A+B to C + D of DX.',
+    'b all over c + d= 0',
+    'x equals a + b all over c + d equals 0',
 ];
 
 const unicodeMathDictation = [
@@ -1707,6 +1709,8 @@ const unicodeMathDictation = [
     ']−∞,3[',                                               // 30
     '[3,𝑏)',                                                // 31
     '∫_(𝑎+𝑏)^(𝑐+ⅆ) 𝑑𝑥',                                     // 32
+    '𝑏/(𝑐+𝑑)=0',                                            // 33
+    '𝑥=(𝑎+𝑏)/(𝑐+𝑑)=0',                                      // 34
 ];
 
 function testDictation() {

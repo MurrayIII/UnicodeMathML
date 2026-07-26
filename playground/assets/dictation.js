@@ -5,11 +5,13 @@
 	// playgroud.js. The UnicodeMath produced can be converted to MathML by calling
 	// unicodemathml(). 
 
-const dictationWords = {
-	// English math dictation dictionary
+const lexiconEn = {
+	// English math dictation lexicon
 	'absolute value':			'⒜',		// \abs
+	'all over':					'/(',		// (fraction with implied start/end)
 	'alpha':					'α',		// α
 	'ampersand':				'&',		// & (for matrix cell separator or eqarray alignments)
+	'an':						'\uFFFF',	// (ignore)
 	'and':						'&',		// & (for matrix cell separator)
 	'angle bracket':			'⟨',			// ⟨ (for "bra")
 	'approximately equal':		'≅',			// ≅
@@ -69,6 +71,7 @@ const dictationWords = {
 	'eight':					'8',		// 8
 	'eighth':					'/8 ',		// 1/8
 	'eighths':					'/8 ',		// n/8
+	'element of':				'∈',		// ∈
 	'ellipse':					'⬭',		// ⬭ enclosure
 	'ellipsis':					'…',		// Ellipsis
 	'end':						'\u3017',	// End
@@ -231,6 +234,7 @@ const dictationWords = {
 	'var phi':					'φ',		// φ
 	'var theta':				'ϑ',		// ϑ
 	'vertical bar':				'|',		// For absolute value (see also "abs" '⒜')
+    'why':						'y',		// (autocorrect misspelled y)'
 	'with respect to':			'/ⅆ',		// As in "derivative of f with respect to x"
 	'wp':						'℘',			// ℘
 	'wrt':						'/ⅆ',		// (speed up debugging involving "with respect to")
@@ -238,11 +242,16 @@ const dictationWords = {
 	'zero':						'0',		// 0
 	'zeta':						'ζ',		// ζ
 };
+const keysEn = Object.keys(lexiconEn);
 
-const keys = Object.keys(dictationWords);
+const lexiconEn1 = {	// English Pass-1 lexicon
+	'equal': '=',		// =
+	'equals': '=',		// =
+}
+const keysEn1 = Object.keys(lexiconEn1);
 
-function resolveDW(dictation) {
-	// Get longest dictationWords match
+function resolveDW(dictation, keys) {
+	// Get longest lexiconEn match
 	let cchWord = 0
 	let cKeys = keys.length;
 	let iMax = cKeys - 1;
@@ -361,31 +370,49 @@ function getMathAlphanumericFromSpeech(ch, mathStyle) {
 
 function dictationToUnicodeMath(dictation) {
 	// Translate dictated text to UnicodeMath
-	let i
+	let ch
+	let chPrev = ''
 	let d = ''
+	let i
 
-	// First convert dictation to lower case without '.,?' unless a digit
+	// Pass 1: convert dictation to lower case without '.,?' unless a digit
 	// precedes '.' or ','
-	for (i = 0; i < dictation.length; i++) {
-		let ch = dictation[i]
-		if (isUcAscii(ch)) {
-			d += ch.toLowerCase()
-		} else if (ch == '.' || ch == ',') {
+	for (i = 0; i < dictation.length; i++, chPrev = ch) {
+		ch = dictation[i]
+		if (isUcAscii(ch))
+			ch = ch.toLowerCase()
+		if (ch == '.' || ch == ',') {
 			if (i && isAsciiDigit(dictation[i - 1]))
 				d += ch
-		} else if (ch != '?')
+		} else if (isLcAscii(ch) && isLcAscii(chPrev)) {
+			let key = resolveDW(dictation.substring(i - 1), keysEn1)
+			if (key != '') {
+				d = d.substring(0, d.length - 1) + lexiconEn[key]
+				i += key.length - 1
+				ch = 0
+			} else {
+				// Copy rest of unresolved word
+				d += ch
+				while (++i < dictation.length) {
+					if (!isLcAscii(dictation[i]))
+						break
+					d += dictation[i]
+				}
+				i--
+			}
+		} else if (ch != '?' && (ch != ' ' || chPrev != ' '))
 			d += ch
 	}
 	dictation = d
 
 	let cDerivOrder = 0;
-	let ch = '';
 	let ch2 = '';
-	let chPrev = '';
 	let derivClose = false;
 	let derivOrder = 0;
 	let derivPartial = false;
 	let fraction = 0
+	let iEnd = 0
+	let iEqual = 0
 	let integral = false;
 	let interval = 0;
 	let iSubSup = 0;
@@ -393,7 +420,8 @@ function dictationToUnicodeMath(dictation) {
 	let mathStyle = [];
 	let nary = '';
 
-	for (i = 0; i < dictation.length; chPrev = ch) {
+	// Pass 2
+	for (chPrev = '', i = 0; i < dictation.length; chPrev = ch) {
 		ch = dictation[i]
 		if (i >= 2)
 			ch2 = dictation[i - 2];
@@ -413,10 +441,21 @@ function dictationToUnicodeMath(dictation) {
 			mathStyle = [];
 			continue;
 		}
+		if (ch == '=') {
+			if (iEnd) {						// Close "all over" denominator
+				dictation = dictation.substring(0, i) + ')=' +
+					dictation.substring(i + 1)
+				i++
+				iEnd--
+				continue
+			}
+			iEqual = i						// Note index in case "all over"
+		}
+
 		if (isLcAscii(ch) && isLcAscii(chPrev)) {
-			let key = resolveDW(dictation.substring(i - 1));
+			let key = resolveDW(dictation.substring(i - 1), keysEn);
 			if (key != '') {
-				var unicodeMath = dictationWords[key];
+				var unicodeMath = lexiconEn[key];
 				let b = '';
 				let iRem = i - 1 + key.length;
 
@@ -457,6 +496,19 @@ function dictationToUnicodeMath(dictation) {
 						}
 					} else {
 						fraction++;
+					}
+				} else if (unicodeMath == '/(') { // "all over"
+					if (iEnd)
+						unicodeMath = '';	// Ignore (no all-over nesting)
+					else {
+						iEnd++;
+						if (iEqual) {
+							dictation = dictation.substring(0, iEqual + 1) + '(' +
+								dictation.substring(iEqual + 1)
+							unicodeMath = ')/('
+							i++
+							iRem++
+						}
 					}
 				}
 
@@ -506,7 +558,7 @@ function dictationToUnicodeMath(dictation) {
 								// Parenthesize compound upper limit
 								iRem++
 								i++
-								dictation = dictation.substring(0, k +1) + '(' +
+								dictation = dictation.substring(0, k + 1) + '(' +
 									dictation.substring(k + 1)
 								unicodeMath = ') '
 							}
@@ -515,7 +567,8 @@ function dictationToUnicodeMath(dictation) {
 							derivClose = true;	// Queue up corresponding ')'
 						} else if (ch2 == '\u2061') {
 							unicodeMath = '⒡';
-						}
+						} else if (dictation[i - 2] == '^')
+							unicodeMath = '';
 					} else if (mathStyle.length && (isAsciiDigit(unicodeMath) ||
 						isLcGreek(unicodeMath))) {
 						unicodeMath = getMathAlphanumericFromSpeech(unicodeMath, mathStyle);
@@ -618,6 +671,8 @@ function dictationToUnicodeMath(dictation) {
 		if (nary == 'naryAnd') nary = '';
 		i++;
 	}	// for loop over dictation
+	if (iEnd > 0)
+		dictation += ')'
 
 	// Polish the UnicodeMath extracted from dictation. Specifically, convert
 	// ASCII and lower-case Greek letters to math italic unless they comprise
