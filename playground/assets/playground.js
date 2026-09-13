@@ -3994,7 +3994,7 @@ function getMathSelection() {
             node = walker.currentNode
         }
     }
-    mathml = `<math display="block" xmlns="http://www.w3.org/1998/Math/MathML">${mathml}</math>`
+    mathml = `<math display="block">${mathml}</math>`
     mathml = mathml.replace(/&nbsp;/g, ' ')
     mathml = mathml.replace(/<malignmark><\/malignmark>/g, '<malignmark/>')
     mathml = mathml.replace(/<maligngroup><\/maligngroup>/g, '<maligngroup/>')

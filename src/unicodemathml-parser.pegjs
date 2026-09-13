@@ -1105,16 +1105,14 @@ diacriticized = b:diacriticbase d:diacritics {
     return {diacriticized: {base: b, diacritics: d}};
 }
 diacriticbase
-    = c:αn {
-        return {chars: c};
+    = c:αn "\u00A0"? {          // Optional NBSP to decouple diacritic visually
+        return {chars: c};      //  from base in plain text
     }
     / n:nn {
         return {number: n};
     }
-    / "(" e:exp ")" "\u00A0"? {  // optional non-breaking space to visually
-                                 // decouple diacritic from closing bracket in
-                                 // plaintext
-        return e;
+    / "(" e:exp ")" "\u00A0"? { // Optional NBSP to decouple diacritic visually
+        return e;               //  from base's closing paren in plain text
     }
 diacritics = d:diacritic+ {
     return d;
@@ -1212,10 +1210,10 @@ expBracket
         return {bracketed: {open: op, close: cl, content: e}};
     }
     / "Ⓒ(" r:arows ")" {  // cases
-        return {bracketed: {open: "{", close: "", intent: ":cases", content: {array: r}}};  // }
+        return {bracketed: {open: "{", close: "", intent: ":piecewise", content: {array: r}}};  // }
     }
     / "Ⓒ〖" r:arows "〗" {  // cases
-        return {bracketed: {open: "{", close: "", intent: ":cases", content: {array: r}}};  // }
+        return {bracketed: {open: "{", close: "", intent: ":piecewise", content: {array: r}}};  // }
     }
     / op:expBracketOpen {
         return {colored: {color: '#F01', of: {operator: op}}};  // Suppress error message

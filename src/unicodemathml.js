@@ -3166,7 +3166,7 @@ function preprocess(dsty, uast, index, arr) {
             if (!intent && emitDefaultIntents) {
                 let arg0 = getScript(value.limits.script.low, '$l')
                 let arg1 = getScript(value.limits.script.high, '$h')
-                intent = ':nary(' + arg0 + ',' + arg1 + ',$naryand)'
+                intent = ':largeop(' + arg0 + ',' + arg1 + ',$naryand)'
                 value.naryand.arg = 'naryand';
                 if (arg0 == '$l')
                     value.limits.script.low.arg = arg0.substring(1);
@@ -3836,7 +3836,7 @@ function preprocess(dsty, uast, index, arr) {
                     if (!value.intent && value.open == '\u007B' && !value.close &&
                         value.content.expr && Array.isArray(value.content.expr) &&
                         value.content.expr[0].array) {
-                        value.intent = ':cases';
+                        value.intent = ':piecewise';
                     }
                     if (!arg && value.arg)
                         arg = value.arg;        // Happens for derivative w bracketed order
@@ -4080,7 +4080,7 @@ function mtransform(dsty, puast) {
 
         case "array":                       // Equation array
             value = mtransform(dsty, value);
-            attrs = getAttrs(value, ':equations');
+            attrs = getAttrs(value, ':system-of-equations');
             attrs.columnspacing = '0pt'     // MathJax needs this
             return {mtable: withAttrs(attrs, value)};
         case "arows":
@@ -5313,7 +5313,7 @@ function dump(value, noAddParens) {
 
         case 'munderover':
             intent = value.parentElement.getAttribute('intent')
-            if (!intent || !intent.startsWith(':nary')) {
+            if (!intent || !intent.startsWith(':largeop')) {
                 ret = ternary(value, '┬', '┴');
                 break;
             }
@@ -5376,7 +5376,7 @@ function dump(value, noAddParens) {
 
         case 'mo':
             val = value.textContent;
-            if (val == '\u200B' && value.parentElement.getAttribute('intent') == ':cases')
+            if (val == '\u200B' && value.parentElement.getAttribute('intent') == ':piecewise')
                 return ''                   // Discard ZWSP (used for in-line editing)
             if (intent == ':text') {
                 ret = '\\' + val
@@ -5522,7 +5522,7 @@ function dump(value, noAddParens) {
         let node = value.children[i];
         ret += checkSpace(i, node, ret)
         let val = dump(node, false, i)
-        if (i == cNode - 1 && intent && intent.startsWith(':nary') &&
+        if (i == cNode - 1 && intent && intent.startsWith(':largeop') &&
             node.nodeName == 'mrow' && needBeginEnd(node)) {
             val = '〖' + val + '〗'
         }
@@ -5544,7 +5544,7 @@ function dump(value, noAddParens) {
         ? value.getAttribute('intent') : '';
 
     if (mrowIntent) {
-        if (mrowIntent == ':cases')
+        if (mrowIntent == ':piecewise')
             return 'Ⓒ' + ret.substring(2);
 
         if (mrowIntent == ':fenced' && value.childElementCount &&
