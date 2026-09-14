@@ -4964,7 +4964,7 @@ function pretty(mast) {
                 return tag(key, attributes, value);
             return key == 'maligngroup'
                 ? `</mtd><mtd style='padding-left:0;text-align:right;float:right;display:math'>`
-                : `</mtd><mtd style='padding-left:0;text-align:left;vertical-align:middle'>`
+                : `</mtd><mtd style='padding-left:0;text-align:left'>`
         case "␢":
             return "";
         default:
