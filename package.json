@@ -1,0 +1,48 @@
+{
+  "name": "unicodemath-ml",
+  "version": "1.0.0",
+  "description": "JavaScript library for converting UnicodeMath to MathML in Node.js",
+  "main": "src/index.js",
+  "module": "src/index.mjs",
+  "types": "src/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.mjs",
+      "require": "./src/index.js",
+      "types": "./src/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build:parser": "pegjs --format commonjs -o src/parser.js src/unicodemathml-parser.pegjs",
+    "build": "npm run build:parser",
+    "test": "npm run build && node test/test.js",
+    "example": "npm run build && node examples/node-example.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "math",
+    "mathml",
+    "unicodemath",
+    "mathematics",
+    "parser",
+    "converter"
+  ],
+  "author": "Community (based on work by Noah Doersing and Murray Sargent III)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MurrayIII/UnicodeMathML.git"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "files": [
+    "src/",
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "devDependencies": {
+    "pegjs": "^0.10.0"
+  }
+}
