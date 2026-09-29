@@ -123,7 +123,7 @@ function TeX(value, noAddParens) {
         case 'mtable':
             let symbol = 'matrix'
             intent = value.getAttribute('intent')
-            if (intent == ':equations')
+            if (intent == ':system-of-equations')
                 symbol = 'align'
             if (value.parentElement.firstElementChild.textContent == '{' &&
                 (value.parentElement.childElementCount == 2 ||
@@ -316,7 +316,7 @@ function TeX(value, noAddParens) {
 
         case 'munderover':
             intent = value.parentElement.getAttribute('intent')
-            if (!intent || !intent.startsWith(':nary')) {
+            if (!intent || !intent.startsWith(':largeop')) {
                 ret = ternary(value, '┬', '┴');
                 break;
             }

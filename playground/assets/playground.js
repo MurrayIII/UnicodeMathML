@@ -1615,9 +1615,9 @@ function getTableRowName(node) {
     let name = 'row'
     let intent = node.parentElement.getAttribute('intent')
 
-    if (intent == ':equations') {
+    if (intent == ':system-of-equations') {
         intent = node.parentElement.parentElement.getAttribute('intent')
-        name = intent == ':cases' ? 'case' : 'equation'
+        name = intent == ':piecewise' ? 'case' : 'equation'
     }
     return name
 }
@@ -1643,9 +1643,9 @@ function checkTable(node) {
     let unit = 'row'
     let intent = node.parentElement.getAttribute('intent')
 
-    if (intent == ':equations') {
+    if (intent == ':system-of-equations') {
         intent = node.parentElement.parentElement.getAttribute('intent')
-        unit = intent == ':cases' ? 'case' : 'equation'
+        unit = intent == ':piecewise' ? 'case' : 'equation'
     }
     speak('next ' + unit)
     return node.firstElementChild
@@ -1792,7 +1792,7 @@ function checkEmulationIntent(node) {
         return 'fenced'
     if (intent.startsWith('binomial-'))
         return 'binomial coefficient'
-    if (!intent.startsWith(':nary'))
+    if (!intent.startsWith(':largeop'))
         return ''
 
     node = node.firstElementChild
@@ -1892,7 +1892,7 @@ function checkNaryand(node) {
     let intent = node.parentElement.getAttribute('intent')
     let text
 
-    if (intent.startsWith(':nary')) {
+    if (intent.startsWith(':largeop')) {
         node = node.parentElement.firstElementChild
         if (node.childElementCount)         // <msubsup>, <msub>, etc.
             text = node.firstElementChild.textContent
@@ -3189,7 +3189,7 @@ function moveRight0(sel, node, e) {
                                     name = '¶▒' + name    // 'end of ' + name
                                 } else {
                                     intent = node.parentElement.getAttribute('intent')
-                                    if (intent && (intent.startsWith('derivative') || intent.startsWith(':nary'))) {
+                                    if (intent && (intent.startsWith('derivative') || intent.startsWith(':largeop'))) {
                                         node = node.parentElement
                                         offset = node.childElementCount
                                         if (node.nextElementSibling) {
@@ -3212,7 +3212,7 @@ function moveRight0(sel, node, e) {
                     offset = 1
                     if (intent == ':function')
                         name = '¶▒function'
-                    else if (intent == ':cases') {
+                    else if (intent == ':piecewise') {
                         node = nodeP
                         offset = node.childElementCount
                     } else if (nodeP.parentElement.getAttribute('intent') == ':fenced') {
@@ -3325,7 +3325,7 @@ function moveRight0(sel, node, e) {
         intent = node.getAttribute('intent')
     node = node.firstElementChild
     if (intent) {
-        if (intent.startsWith(':nary')) {
+        if (intent.startsWith(':largeop')) {
             // Moving into emulated nary element
             if (elementsWithLimits[node.nodeName]) {
                 // Move to nary operator
@@ -3566,7 +3566,7 @@ function moveRight(sel, node, offset, e) {
                     return
                 }
                 if (node.nodeName == 'mtr' &&
-                    node.parentElement.getAttribute('intent') == ':equations') {
+                    node.parentElement.getAttribute('intent') == ':system-of-equations') {
                     speak('¶▒equations')
                     setSelectionEx(sel, node, node.childElementCount, e)
                     return              // Place to add new equation
@@ -3630,7 +3630,7 @@ function moveRight(sel, node, offset, e) {
         name = checkNaryand(node)
         if (!name && node.textContent == '\u200B') {
             let intent = node.parentElement.getAttribute('intent')
-            if (intent == ':cases')     // ZWSP used for selection attrs
+            if (intent == ':piecewise')     // ZWSP used for selection attrs
                 name = '¶▒cases'
         }
         if (!name && (node.nodeName == 'mrow' || node.nodeName == 'mtd')) {

@@ -803,10 +803,10 @@ function speech(value, noAddParens) {
 			let intnt = value.parentElement.getAttribute('intent')
 			let the = 'ⓣ';
 
-			if (value.getAttribute('intent') == ':equations') {
+			if (value.getAttribute('intent') == ':system-of-equations') {
 				symbol = '█';				// 'equation array'
 				sep = '⍈';					// 'equation'
-				if (intnt == ':cases') {
+				if (intnt == ':piecewise') {
 					sep = '⍆';				// 'case'
 					symbol = 'Ⓒ';			// 'cases'
 				}
@@ -859,7 +859,7 @@ function speech(value, noAddParens) {
 		case 'mtr':
 			op = '⏳';
 			intent = value.parentElement.getAttribute('intent')
-			if (intent && intent.endsWith('equations'))
+			if (intent && intent.endsWith('system-of-equations'))
 				op = '';
 			ret = nary(value, op, cNode)
 			break
@@ -1102,7 +1102,7 @@ function speech(value, noAddParens) {
 			if (val == '\u2062')			// Ignore invisible times
 				break
 
-			if (val == '{' && value.parentElement.getAttribute('intent') == ':cases')
+			if (val == '{' && value.parentElement.getAttribute('intent') == ':piecewise')
 				break						// Don't add 'open brace'
 
 			if (val[0] == '&') {
@@ -1234,7 +1234,7 @@ function speech(value, noAddParens) {
 			value.children[1].nodeName == 'mtable' &&
 			(cNode == 2 || !value.lastElementChild.textContent ||
 			 value.lastElementChild.textContent == '┤')) {
-			value.setAttribute('intent', ':cases');
+			value.setAttribute('intent', ':piecewise');
 		} else if (cNode == 3 && value.firstElementChild.textContent == '(' &&
 			value.children[1].nodeName == 'mtable' &&
 			value.lastElementChild.textContent == ')') {

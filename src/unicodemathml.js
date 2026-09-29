@@ -82,16 +82,17 @@ const indicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩']
 const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
 const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
 const charSubs = {
-    // There are 17 ASCII letter subscripts and 5 Greek subscripts 
+    // There are 17 lower-case Latin subscripts and 5 lower-case Greek
+    // subscripts 
     'a': 'ₐ', 'e': 'ₑ', 'h': 'ₕ', 'i': 'ᵢ', 'j': 'ⱼ', 'k': 'ₖ', 'l': 'ₗ',
     'm': 'ₘ', 'n': 'ₙ', 'o': 'ₒ', 'p': 'ₚ', 'r': 'ᵣ', 's': 'ₛ', 't': 'ₜ',
-    'u': 'ᵤ', 'v': 'ᵥ', 'x': 'ₓ', '−': '₋', '+': '₊', '(': '₍', ')': '₎',
+    'u': 'ᵤ', 'v': 'ᵥ', 'x': 'ₓ',
+    '−': '₋', '+': '₊', '=': '₌', '(': '₍', ')': '₎',
     'β': 'ᵦ', 'γ': 'ᵧ', 'ρ': 'ᵨ', 'φ': 'ᵩ', 'χ': 'ᵪ',
 }
 const charSups = {
-    // There are 26 lower-case ASCII-letter superscripts (superscript 'q'
-    // is U+ 107A5), and 20 uppercase ASCII-letter superscripts. Subsup
-    // parens need parsing fixes.
+    // There are 26 lower-case Latin superscripts (superscript 'q' is U+107A5),
+    // 20 uppercase Latin superscripts, and 7 lower-case Greek superscripts.
     'A': 'ᴬ', 'B': 'ᴮ', 'C': 'ꟲ', 'D': 'ᴰ', 'E': 'ᴱ', 'F': 'ꟳ', 'G': 'ᴳ',
     'H': 'ᴴ', 'I': 'ᴵ', 'J': 'ᴶ', 'K': 'ᴷ', 'L': 'ᴸ', 'M': 'ᴹ', 'N': 'ᴺ',
     'O': 'ᴼ', 'P': 'ᴾ', 'Q': 'ꟴ', 'R': 'ᴿ', 'T': 'ᵀ', 'U': 'ᵁ', 'V': 'ⱽ',
@@ -100,7 +101,7 @@ const charSups = {
     'h': 'ʰ', 'i': 'ⁱ', 'j': 'ʲ', 'k': 'ᵏ', 'l': 'ˡ', 'm': 'ᵐ', 'n': 'ⁿ',
     'o': 'ᵒ', 'p': 'ᵖ', 'q': '𐞥', 'r': 'ʳ', 's': 'ˢ', 't': 'ᵗ', 'u': 'ᵘ',
     'v': 'ᵛ', 'w': 'ʷ', 'x': 'ˣ', 'y': 'ʸ', 'z': 'ᶻ',
-    '−': '⁻', '+': '⁺', '(': '⁽', ')': '⁾',
+    '−': '⁻', '+': '⁺', '=': '⁼', '(': '⁽', ')': '⁾',
     'α': 'ᵅ', 'β': 'ᵝ', 'γ': 'ᵞ', 'δ': 'ᵟ', 'θ': 'ᶿ', 'φ': 'ᵠ', 'χ': 'ᵡ'
 }
 
@@ -5107,7 +5108,7 @@ function dump(value, noAddParens) {
     switch (value.localName) {
         case 'mtable':
             symbol = '■';
-            if (intent == ':equations') {
+            if (intent == ':system-of-equations') {
                 symbol = '█';
             } else if (value.parentElement.hasAttribute('intent')) {
                 intent = value.parentElement.getAttribute('intent');
