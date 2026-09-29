@@ -81,41 +81,57 @@ const indicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩']
 
 const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
 const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
-const letterSubs = 'ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥₓ'
-const letterSubSups = {
-    // There are 25 ASCII letter superscripts (no 'q') and 17 ASCII letter
-    // subscripts. The missing subscripts are replaced by spaces. Subsup
+const charSubs = {
+    // There are 17 ASCII letter subscripts and 5 Greek subscripts 
+    'a': 'ₐ', 'e': 'ₑ', 'h': 'ₕ', 'i': 'ᵢ', 'j': 'ⱼ', 'k': 'ₖ', 'l': 'ₗ',
+    'm': 'ₘ', 'n': 'ₙ', 'o': 'ₒ', 'p': 'ₚ', 'r': 'ᵣ', 's': 'ₛ', 't': 'ₜ',
+    'u': 'ᵤ', 'v': 'ᵥ', 'x': 'ₓ', '−': '₋', '+': '₊', '(': '₍', ')': '₎',
+    'β': 'ᵦ', 'γ': 'ᵧ', 'ρ': 'ᵨ', 'φ': 'ᵩ', 'χ': 'ᵪ',
+}
+const charSups = {
+    // There are 26 lower-case ASCII-letter superscripts (superscript 'q'
+    // is U+ 107A5), and 20 uppercase ASCII-letter superscripts. Subsup
     // parens need parsing fixes.
-    'a': 'ₐᵃ', 'b': ' ᵇ', 'c': ' ᶜ', 'd': ' ᵈ', 'e': 'ₑᵉ', 'f': ' ᶠ', 'g': ' ᵍ',
-    'h': 'ₕʰ', 'i': 'ᵢⁱ', 'j': 'ⱼʲ', 'k': 'ₖᵏ', 'l': 'ₗˡ', 'm': 'ₘᵐ', 'n': 'ₙⁿ',
-    'o': 'ₒᵒ', 'p': 'ₚᵖ', 'r': 'ᵣʳ', 's': 'ₛˢ', 't': 'ₜᵗ', 'u': 'ᵤᵘ', 'v': 'ᵥᵛ',
-    'w': ' ʷ', 'x': 'ₓˣ', 'y': ' ʸ', 'z': ' ᶻ', '−': '₋⁻', '+': '₊⁺', '(': '₍⁽', ')': '₎⁾'
+    'A': 'ᴬ', 'B': 'ᴮ', 'C': 'ꟲ', 'D': 'ᴰ', 'E': 'ᴱ', 'F': 'ꟳ', 'G': 'ᴳ',
+    'H': 'ᴴ', 'I': 'ᴵ', 'J': 'ᴶ', 'K': 'ᴷ', 'L': 'ᴸ', 'M': 'ᴹ', 'N': 'ᴺ',
+    'O': 'ᴼ', 'P': 'ᴾ', 'Q': 'ꟴ', 'R': 'ᴿ', 'T': 'ᵀ', 'U': 'ᵁ', 'V': 'ⱽ',
+    'W': 'ᵂ', 
+    'a': 'ᵃ', 'b': 'ᵇ', 'c': 'ᶜ', 'd': 'ᵈ', 'e': 'ᵉ', 'f': 'ᶠ', 'g': 'ᵍ',
+    'h': 'ʰ', 'i': 'ⁱ', 'j': 'ʲ', 'k': 'ᵏ', 'l': 'ˡ', 'm': 'ᵐ', 'n': 'ⁿ',
+    'o': 'ᵒ', 'p': 'ᵖ', 'q': '𐞥', 'r': 'ʳ', 's': 'ˢ', 't': 'ᵗ', 'u': 'ᵘ',
+    'v': 'ᵛ', 'w': 'ʷ', 'x': 'ˣ', 'y': 'ʸ', 'z': 'ᶻ',
+    '−': '⁻', '+': '⁺', '(': '⁽', ')': '⁾',
+    'α': 'ᵅ', 'β': 'ᵝ', 'γ': 'ᵞ', 'δ': 'ᵟ', 'θ': 'ᶿ', 'φ': 'ᵠ', 'χ': 'ᵡ'
 }
 
 function foldMathItalic(code) {
-    if (code == 0x210E) return 'h';                     // ℎ (Letterlike symbol)
-    if (code < 0x1D434 || code > 0x1D467) return '';    // Not math italic
-    code += 0x0041 - 0x1D434;                           // Convert to upper-case ASCII
-    if (code > 0x005A) code += 0x0061 - 0x005A - 1;     // Adjust for lower case
-    return String.fromCodePoint(code);                  // ASCII letter corresponding to math italic code
+    if (code == 0x210E) return 'h'          // ℎ (Letterlike symbol)
+    if (code >= 0x1D434 && code <= 0x1D467) {
+        code += 0x0041 - 0x1D434            // Convert to upper-case ASCII
+        if (code > 0x005A)
+            code += 0x0061 - 0x005A - 1     // Adjust for lower case
+    } else if (code >= 0x1D6FC && code <= 0x1D71B) {
+        code += 0x03B1 - 0x1D6FC            // Convert to lower-case BMP Greek
+    } else return ''                        // Not math italic
+    return String.fromCodePoint(code);      // ASCII/Greek letter ⟷ math-italic code
 }
 
 function getUniSubSup(op, str, k) {
-    // Get Unicode subscript (op = '^') or superscript (op = '_') for str[k]
+    // Get Unicode subscript (op = '_') or superscript (op = '^') for str[k]
     let ch = str[k]
     if (isAsciiDigit(ch))
         return op == '^' ? digitSuperscripts[ch] : digitSubscripts[ch]
-    if (ch >= '\uDC4E')                     // Surrogate pair: go to lead surrogate
-        k--
+    if (ch >= '\uDC00')                     // Trail surrogate: back up
+        k--                                 //  to lead surrogate
     let code = str.codePointAt(k)
     ch = foldMathItalic(code)
     if (!ch)
         ch = str[k]
-    return letterSubSups[ch][op == '^' ? 1 : 0]
+    return (op == '^') ? charSups[ch] : charSubs[ch]
 }
 
-//                              𝑎     𝑏     𝑐     𝑑     𝑒     𝑓     𝑔     ℎ     𝑖      𝑗     𝑘     𝑙     𝑚     𝑛     𝑜     𝑝     𝑟     𝑠     𝑡     𝑢     𝑣     𝑤     𝑥     𝑦     𝑧     -
-const supTrailSurrogates = '\uDC4E\uDC4F\uDC50\uDC51\uDC52\uDC53\uDC54\u210E\uDC56\uDC57\uDC58\uDC59\uDC5A\uDC5B\uDC5C\uDC5D\uDC5F\uDC60\uDC61\uDC62\uDC63\uDC64\uDC65\uDC66\uDC67\u2212(+)'
+//                             𝐴     𝐵     𝐶     𝐷     𝐸     𝐹     𝐺     𝐻     𝐼     𝐽     𝐾     𝐿     𝑀     𝑁    𝑂     𝑃     𝑄     𝑅     𝑇     𝑈    𝑉     𝑊     𝑎     𝑏     𝑐     𝑑     𝑒     𝑓     𝑔     ℎ     𝑖      𝑗     𝑘     𝑙     𝑚     𝑛     𝑜     𝑝     𝑟     𝑠      𝑡     𝑢     𝑣     𝑤     𝑥     𝑦     𝑧     𝛼     𝛽     𝛾     𝛿     𝜃     𝜑     𝜒     -
+const supTrailSurrogates = '\uDC34\uDC35\uDC36\uDC37\uDC38\uDC39\uDC3A\uDC3B\uDC3C\uDC3D\uDC3E\uDC3F\uDC40\uDC41\uDC42\uDC43\uDC44\uDC45\uDC47\uDC48\uDC49\uDC4A\uDC4E\uDC4F\uDC50\uDC51\uDC52\uDC53\uDC54\u210E\uDC56\uDC57\uDC58\uDC59\uDC5A\uDC5B\uDC5C\uDC5D\uDC5F\uDC60\uDC61\uDC62\uDC63\uDC64\uDC65\uDC66\uDC67\uDEFC\uDEFD\uDEFE\uDEFF\uDF03\uDF11\uDF12\u2212(+)'
 //                          𝑏     𝑐     𝑑      𝑓     𝑔    𝑤     𝑦     𝑧
 const subTrailMissing = '\uDC4F\uDC50\uDC51\uDC53\uDC54\uDC64\uDC66\uDC67'
 
@@ -129,7 +145,7 @@ function getSubSups(str, i, delim) {
     let subOk = true
     for (j = i; j > 0 && (isAsciiDigit(str[j]) ||
         supTrailSurrogates.includes(str[j])); j--) {
-        if (str[j] >= '\uDC4E') {           // Find subsup span indices
+        if (str[j] > '\uDC00') {            // Find subsup span indices
             if (subTrailMissing.includes(str[j]))
                 subOk = false               // No Unicode subscript for str[j]
             j--                             // Bypass lead surrogate
