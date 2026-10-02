@@ -205,14 +205,12 @@ nUnicodeSup = s:([⁺⁻]?) n:[⁰¹²³⁴⁵⁶⁷⁸⁹]+ {
 }
 atomsUnicodeSup = a:[ᴬᴮꟲᴰᴱꟳᴳᴴᴵᴶᴷᴸᴹᴺᴼᴾᴿꟴᵀᵁⱽᵂᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻᵅᵝᵞᵟᶿᵠᵡ]+ {
     return {atoms: {chars: replaceMap("ᴬᴮꟲᴰᴱꟳᴳᴴᴵᴶᴷᴸᴹᴺᴼᴾꟴᴿᵀᵁⱽᵂᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻᵅᵝᵞᵟᶿᵠᵡ",
-                                      "ABCDEFGHIJKLMNOPQRTUVWabcdefghijklmnoprstuvwxyzαβγδθφχ", a)}};
-}
+                                      "ABCDEFGHIJKLMNOPQRTUVWabcdefghijklmnoprstuvwxyzαβγδθφχ", a)}};}
+    / a:"𐞥" {return {atoms: {chars: "q"}};}
 opUnicodeSup
     = o:"⁺⁻" {return {operator: "\u00B1"}}  // 4.1 Character Translations
     / o:"⁻⁺" {return {operator: "\u2213"}}
-    / o:[⁺⁻⁼] {
-        return {operator: replaceMap("⁺⁻⁼", "+−=", o)};
-    }
+    / o:[⁺⁻⁼] {return {operator: replaceMap("⁺⁻⁼", "+−=", o)};}
 factorUnicodeSup
     = atomsUnicodeSup
     / nUnicodeSup

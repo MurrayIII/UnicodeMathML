@@ -893,7 +893,7 @@ function testAutoBuildUp() {
     testUndo('"rate"', unicodeMathPartialText)
 }
 
-const clipExpect = "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mfrac><mi>𝑎</mi><mi>𝑏</mi></mfrac><mo>+</mo><mfrac><mi>𝑐</mi><mi>𝑑</mi></mfrac></math>"
+const clipExpect = "<math display=\"block\"><mfrac><mi>𝑎</mi><mi>𝑏</mi></mfrac><mo>+</mo><mfrac><mi>𝑐</mi><mi>𝑑</mi></mfrac></math>"
 
 // Right arrow tests including insertion of 'q' at the insertion point
 const endExpect = "𝑎/𝑏+𝑐/𝑑=Ⓐ(1)0"
@@ -1679,7 +1679,7 @@ const unicodeMathDictation = [
     '𝑎²+𝑏²=𝑐²',										        // 0
     '1/2𝜋 ∫_0^2𝜋 ⅆ𝜃/(𝑎+𝑏 sin⁡𝜃)=1/√(𝑎²−𝑏²)',			        // 1
     '∫_−∞^∞ 𝑒^−𝑥² ⅆ𝑥=√𝜋',							        // 2
-    '(𝑎+𝑏)^𝑛=∑_(𝑘=0)^𝑛 (𝑛¦𝑘)𝑎^𝑘 𝑏^〖𝑛−𝑘〗',			    	// 3
+    '(𝑎+𝑏)^𝑛=∑_(𝑘=0)^𝑛 (𝑛¦𝑘)𝑎ᵏ𝑏^〖𝑛−𝑘〗',			    	    // 3
     '𝑎̂ +𝑏̃ −𝑐̇ +𝑑̈ ',										// 4
     '{𝑎+𝑏}+[𝑐+𝑑]+(𝑞+𝑟)←→',									// 5
     '𝔥≠𝒽≠𝐇',												// 6

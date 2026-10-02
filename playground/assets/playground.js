@@ -999,7 +999,7 @@ function opAutocorrect(ip, delim) {
             let k = (delim == ' ') ? ip : ip - 1;
             input.value = input.value.substring(0, j) + s +
                 input.value.substring(k);
-            input.selectionStart = input.selectionEnd = j + s.length + 1
+            input.selectionStart = input.selectionEnd = j + s.length + (delim != ' ')
             return false;
         }
     }

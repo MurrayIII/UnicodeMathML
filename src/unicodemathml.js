@@ -83,7 +83,7 @@ const digitSuperscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
 const digitSubscripts = "₀₁₂₃₄₅₆₇₈₉";
 const charSubs = {
     // There are 17 lower-case Latin subscripts and 5 lower-case Greek
-    // subscripts 
+    // subscripts
     'a': 'ₐ', 'e': 'ₑ', 'h': 'ₕ', 'i': 'ᵢ', 'j': 'ⱼ', 'k': 'ₖ', 'l': 'ₗ',
     'm': 'ₘ', 'n': 'ₙ', 'o': 'ₒ', 'p': 'ₚ', 'r': 'ᵣ', 's': 'ₛ', 't': 'ₜ',
     'u': 'ᵤ', 'v': 'ᵥ', 'x': 'ₓ',
@@ -96,7 +96,7 @@ const charSups = {
     'A': 'ᴬ', 'B': 'ᴮ', 'C': 'ꟲ', 'D': 'ᴰ', 'E': 'ᴱ', 'F': 'ꟳ', 'G': 'ᴳ',
     'H': 'ᴴ', 'I': 'ᴵ', 'J': 'ᴶ', 'K': 'ᴷ', 'L': 'ᴸ', 'M': 'ᴹ', 'N': 'ᴺ',
     'O': 'ᴼ', 'P': 'ᴾ', 'Q': 'ꟴ', 'R': 'ᴿ', 'T': 'ᵀ', 'U': 'ᵁ', 'V': 'ⱽ',
-    'W': 'ᵂ', 
+    'W': 'ᵂ',
     'a': 'ᵃ', 'b': 'ᵇ', 'c': 'ᶜ', 'd': 'ᵈ', 'e': 'ᵉ', 'f': 'ᶠ', 'g': 'ᵍ',
     'h': 'ʰ', 'i': 'ⁱ', 'j': 'ʲ', 'k': 'ᵏ', 'l': 'ˡ', 'm': 'ᵐ', 'n': 'ⁿ',
     'o': 'ᵒ', 'p': 'ᵖ', 'q': '𐞥', 'r': 'ʳ', 's': 'ˢ', 't': 'ᵗ', 'u': 'ᵘ',
@@ -131,40 +131,88 @@ function getUniSubSup(op, str, k) {
     return (op == '^') ? charSups[ch] : charSubs[ch]
 }
 
-//                             𝐴     𝐵     𝐶     𝐷     𝐸     𝐹     𝐺     𝐻     𝐼     𝐽     𝐾     𝐿     𝑀     𝑁    𝑂     𝑃     𝑄     𝑅     𝑇     𝑈    𝑉     𝑊     𝑎     𝑏     𝑐     𝑑     𝑒     𝑓     𝑔     ℎ     𝑖      𝑗     𝑘     𝑙     𝑚     𝑛     𝑜     𝑝     𝑟     𝑠      𝑡     𝑢     𝑣     𝑤     𝑥     𝑦     𝑧     𝛼     𝛽     𝛾     𝛿     𝜃     𝜑     𝜒     -
-const supTrailSurrogates = '\uDC34\uDC35\uDC36\uDC37\uDC38\uDC39\uDC3A\uDC3B\uDC3C\uDC3D\uDC3E\uDC3F\uDC40\uDC41\uDC42\uDC43\uDC44\uDC45\uDC47\uDC48\uDC49\uDC4A\uDC4E\uDC4F\uDC50\uDC51\uDC52\uDC53\uDC54\u210E\uDC56\uDC57\uDC58\uDC59\uDC5A\uDC5B\uDC5C\uDC5D\uDC5F\uDC60\uDC61\uDC62\uDC63\uDC64\uDC65\uDC66\uDC67\uDEFC\uDEFD\uDEFE\uDEFF\uDF03\uDF11\uDF12\u2212(+)'
-//                          𝑏     𝑐     𝑑      𝑓     𝑔    𝑤     𝑦     𝑧
-const subTrailMissing = '\uDC4F\uDC50\uDC51\uDC53\uDC54\uDC64\uDC66\uDC67'
-
 function getSubSups(str, i, delim) {
-    // Return a span of subscript/superscript symbols. E.g., return '²' for
-    // '^2 ' (str[i - 1] = '^', str[i] = '2', delim = ' ')
-    if (!'+-=/^ )]}'.includes(delim))
+    // Return a span of subscript/superscript symbols. E.g., return '²'
+    // for '^2 ' (str[i - 1] = '^', str[i] = '2', delim = ' '). If the span
+    // is not null, it consists entirely of either Unicode subscripts or
+    // Unicode superscripts, and it is a valid UnicodeMath script argument.
+    if (!'+-=/ ]}'.includes(delim))
         return ''
     let cParen = 0
     let j
+    let op
+    let s = ''                              // Collect sub/sup span
     let subOk = true
-    for (j = i; j > 0 && (isAsciiDigit(str[j]) ||
-        supTrailSurrogates.includes(str[j])); j--) {
-        if (str[j] > '\uDC00') {            // Find subsup span indices
-            if (subTrailMissing.includes(str[j]))
-                subOk = false               // No Unicode subscript for str[j]
-            j--                             // Bypass lead surrogate
-        } else if (str[j] == '(') {
-            cParen--
-            if (cParen < 0)
-                return ''                   // Unmatched parens
-        } else if (str[j] == ')') {
-            cParen++
+    let supOk = true
+
+    // Collect a span of potential sub/sups. May start with + or - and
+    // can have +, -, and = inside matched parentheses
+    for (j = i; j > 0; j--) {               // Need at least 1 for subsup base
+        let ch = str[j]
+        if (ch > '\uDC00') {                // Supplementary-plane math italic?
+            j--                             // Move to lead surrogate
+            let code = str.codePointAt(j)
+            let ch1 = foldMathItalic(code)
+            if (!ch1 || !j)                 // Not math italic or no base
+                return ''
+            ch = ch1
         }
+        switch (ch) {
+            case '(':
+                cParen--                    // (Scanning backwards)
+                if (cParen < 0)
+                    return ''               // Unmatched parens
+                break
+            case ')':
+                cParen++
+                break
+            case '^':
+                if (!supOk)
+                    return ''               // Missing a Unicode superscript
+                op = ch
+                break
+            case '_':
+                if (!subOk)
+                    return ''               // Missing a Unicode subscript
+                op = ch
+                break;
+            case '-':                       // ASCII hyphen-dash →
+                ch = '−'                    //  U+2212
+                                            // Fall through to unary check
+            case '−':
+            case '+':
+                if (str[j - 1] == '_' || str[j - 1] == '^')
+                    break                   // Unary + or -
+                                            // Fall through paren check
+            case '=':
+                if (!cParen)
+                    return ''               // Not inside parens
+                break;
+            case 'α':
+            case 'δ':
+            case 'θ':
+                subOK = false               // No Unicode subscript for ch
+                break
+            case 'ρ':
+                supOK = false               // No Unicode superscript 'ρ'
+                break
+            case 'ℎ':                       // Math italic h is U+210E in BMP
+                ch = 'h'
+                break
+            default:
+                if (isAsciiAlphabetic(ch)) {
+                    if (!"aehijklmnoprstuvx".includes(ch))
+                        subOK = false       // No Unicode subscript for ch
+                } else if (!isAsciiDigit(ch) && !"−+=βγφχ".includes(ch))
+                    return ''               // No Unicode sub or sup for ch
+        }
+        if (op)
+            break;
+        s = ch + s;
     }
-    if (j == i)
-        return ''                           // Empty span
-    let op = str[j]                         // Char preceding span
-
-    if (op != '^' && (op != '_' || !subOk)) // Span not preceded by ^ or _,
-        return ''                           //  or _ but letter(s) w/o Unisubs
-
+    if (j == i || cParen || !op)
+        return ''                           // Empty span, unmatched parens,
+                                            //  or no sub/sup operator
     let opSupSub = (op == '^') ? '_' : '^'  // Opposite subsup operator
     let k = j - 1
 
@@ -176,22 +224,15 @@ function getSubSups(str, i, delim) {
     }
     if (k == j - 1)
         return ''                           // No base character(s)
-    //let ch = str[j - 1]                     // Check for base character
-    //if (ch < '\u3017' && !isAsciiAlphanumeric(ch) && !isDoubleStruck(ch) &&
-    //    !digitSubscripts.includes(ch) && !letterSubs.includes(ch)) {
-    //    return ''                           // Could allow other base chars...
-    //}
-    let s = ''                              // Collect sub/sup span
-    k = j + 1
-    for (; k < i + 1; k++) {
-        if (str[k] == '\uD835')
-            k++                             // Bypass lead surrogate
-        s += getUniSubSup(op, str, k)
-    }
-    if (s[0] == '⁽' && s[s.length - 1] == '⁾')
-        s = s.substring(1, s.length - 1)    // Eliminate outer parens
 
-    return [s, j]
+    let ss = ''
+    for (k = 0; k < s.length; k++) {
+        ss += getUniSubSup(op, s, k)
+    }
+    if (ss[0] == '⁽' && ss[ss.length - 1] == '⁾')
+        ss = ss.substring(1, ss.length - 1)    // Eliminate outer parens
+
+    return [ss, j]
 }
 
 function getFencedOps(value) {
