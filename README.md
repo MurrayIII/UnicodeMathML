@@ -139,6 +139,7 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Support LaTeX \operatorname, \tag, and \href control words.
 * Add \href(url&name) construction for hyperlinks to UnicodeMath.
 * Add \remark(base&comment) construction for commented strings to UnicodeMath.
+* In the input window, convert the subsup combination \_...^... to Unicode subscripts and superscripts if Unicode defines the corresponding subscripts and superscripts. For example, ∑_(𝑘=0)^𝑛 → ∑ₖ₌₀ⁿ.
 
 ## MathML intent-attribute support:
 * Derivative and partial-derivative intent attributes are defined for Leipzig and Euler derivative notations.

@@ -131,12 +131,15 @@ function getUniSubSup(op, str, k) {
     return (op == '^') ? charSups[ch] : charSubs[ch]
 }
 
-function getSubSups(str, i, delim) {
+function getSubSups(str, i, delim, needSub) {
     // Return a span of subscript/superscript symbols. E.g., return '²'
     // for '^2 ' (str[i - 1] = '^', str[i] = '2', delim = ' '). If the span
     // is not null, it consists entirely of either Unicode subscripts or
     // Unicode superscripts, and it is a valid UnicodeMath script argument.
-    if (!'+-=/ ]}'.includes(delim))
+    // Also convert the subsup combination _...^... if the ellipses consist
+    // of characters with corresponding Unicode subscripts and superscripts,
+    // respectively. For example, ∑_(𝑘=0)^𝑛 → ∑ₖ₌₀ⁿ.
+    if (!'+-=/ ▒]}'.includes(delim))
         return ''
     let cParen = 0
     let j
@@ -146,7 +149,7 @@ function getSubSups(str, i, delim) {
     let supOk = true
 
     // Collect a span of potential sub/sups. May start with + or - and
-    // can have +, -, and = inside matched parentheses
+    // may include +, -, and = inside matched parentheses
     for (j = i; j > 0; j--) {               // Need at least 1 for subsup base
         let ch = str[j]
         if (ch > '\uDC00') {                // Supplementary-plane math italic?
@@ -213,24 +216,32 @@ function getSubSups(str, i, delim) {
     if (j == i || cParen || !op)
         return ''                           // Empty span, unmatched parens,
                                             //  or no sub/sup operator
-    let opSupSub = (op == '^') ? '_' : '^'  // Opposite subsup operator
     let k = j - 1
+    let ss = ''
 
-    for (; k >= 0; k--) {
-        if (str[k] == opSupSub)
-            return ''                       // Handle _...^... ?
-        if (str[k] < '\u3017' && !isAsciiAlphanumeric(str[k]) && !isDoubleStruck(str[k]))
-            break                           // Could allow other letters...
+    if (op == '^') {                        // Check for x_...^...
+        if (needSub == true)
+            return ''
+        let [sb, jb] = getSubSups(str, j - 1, ' ', true);
+        if (sb) {
+            ss = sb
+            k = j = jb
+        }
     }
-    if (k == j - 1)
+    ch = str[k]
+    if (ch < '\u3017' && !isAsciiAlphanumeric(ch) && !isNary(ch) &&
+        ch != '_' && !isDoubleStruck(ch) && !isCloseDelimiter(ch) &&
+        ch != '∂')
         return ''                           // No base character(s)
 
-    let ss = ''
-    for (k = 0; k < s.length; k++) {
+    if (s[0] == '(' && s[s.length - 1] == ')')
+        s = s.substring(1, s.length - 1)    // Eliminate outer parens
+
+    // s is a valid superscript or subscript argument consisting of characters
+    // that correspond to Unicode superscripts or subscripts, respectively.
+    // Collect the latter in ss.
+    for (k = 0; k < s.length; k++)
         ss += getUniSubSup(op, s, k)
-    }
-    if (ss[0] == '⁽' && ss[ss.length - 1] == '⁾')
-        ss = ss.substring(1, ss.length - 1)    // Eliminate outer parens
 
     return [ss, j]
 }

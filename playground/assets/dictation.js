@@ -550,7 +550,6 @@ function dictationToUnicodeMath(dictation) {
 							unicodeMath = ") ";	// End limit subscript
 							limit = false;
 						} else if (nary == 'naryLim') {
-							unicodeMath = ' '
 							nary = 'naryand'	// End nary limits
 							let k = dictation.lastIndexOf('^', i)
 							if (k != -1 &&
@@ -674,13 +673,13 @@ function dictationToUnicodeMath(dictation) {
 	if (iEnd > 0)
 		dictation += ')'
 
-	// Polish the UnicodeMath extracted from dictation. Specifically, convert
-	// ASCII and lower-case Greek letters to math italic unless they comprise
-	// function names, and perform negation, mapped-pair, Unicode-fraction, and
-	// Unicode digit sub/superscript conversions. These conversions aren't
-	// needed for UnicodeMath converters, but they make the UnicodeMath look
-	// more like a mathematical notation, which is nice for use in email,
-	// programs, and plain-text applications in general.
+	// Pass 3. Polish the UnicodeMath extracted from dictation. Specifically,
+	// convert ASCII and lower-case Greek letters to math italic unless they
+	// comprise function names, and perform negation, mapped-pair, Unicode-
+	// fraction, and Unicode digit sub/superscript conversions. These conversions
+	// aren't needed for UnicodeMath converters, but they make the UnicodeMath
+	// look more like a mathematical notation, which is nice for use in email,
+	// computer programs, and plain-text applications in general.
 	let result = dictation
 	let quote = false						// No conversions inside double quotes
 	let result1 = ''						// Collects polished UnicodeMath
@@ -710,13 +709,13 @@ function dictationToUnicodeMath(dictation) {
 		} else {
 			ch = italicizeCharacter(ch);     // Might be lc Greek
 			if (ch == result[i]) {           // Isn't
-				if (result.length > i + 1) {
+				if ('+-=/ ▒]}'.includes(ch)) {
 					// Convert eg '^2 ' to '²'
-					let delim = result.length > i + 2 ? result[i + 2] : ' ';
-					let [chScriptDigit, k] = getSubSups(result, i + 1, delim)
-					if (chScriptDigit) {
-						result1 += chScriptDigit;
-						i += (delim == ' ' && result.length > i + 2) ? 2 : 1
+					let [s, k] = getSubSups(result1, result1.length - 1, ch)
+					if (s) {
+						result1 = result1.substring(0, k) + s
+						if (ch != ' ')
+							result1 += ch
 						continue
 					}
 				}

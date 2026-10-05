@@ -12,7 +12,7 @@ UnicodeMath is an **easy-to-read linear format** for mathematics initially devel
 
 ![](docs/readme-images/1-hero.png)
 
-*The initial development of UnicodeMathML was part of [my Master's thesis](docs/doersing-unicodemath-to-mathml.pdf).*
+*The initial development of UnicodeMathML was part of [Noah Doersing's Master's thesis](docs/doersing-unicodemath-to-mathml.pdf).*
 
 
 ### Status
