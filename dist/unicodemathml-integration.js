@@ -222,7 +222,7 @@ async function renderMarkedUnicodemath(node) {
     var results = {
     "0a+b": "<math><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></math>",
     "0lim▒_(n→∞) a_n": "<math><mrow intent=\":function\"><msub><mi>lim</mi><mrow><mi>𝑛</mi><mo stretchy=\"true\">→</mo><mi>∞</mi></mrow></msub><mo>⁡</mo><msub><mi>𝑎</mi><mi>𝑛</mi></msub></mrow></math>",
-    "1\"A collection of 729 UnicodeMath expressions from various sources\"": "<math display=\"block\"><mtext>A collection of 729 UnicodeMath expressions from various sources</mtext></math>",
+    "1\"A collection of 731 UnicodeMath expressions from various sources\"": "<math display=\"block\"><mtext>A collection of 731 UnicodeMath expressions from various sources</mtext></math>",
     "1\"So long\" ∧ \"thanks\"   ∀  \"🐟🐠🐡\".": "<math display=\"block\"><mtext>So long</mtext><mo>∧</mo><mtext>thanks</mtext><mo>&#x200a;&#x205f;</mo><mo>∀</mo><mo>&#x205f;</mo><mtext>🐟🐠🐡</mtext><mo>.</mo></math>",
     "1\"hex\"={■(0@1@2@3@4@5@6@7@8@9@A@B@C@D@E@F)┤ \" with \" |\"hex\"|=16": "<math display=\"block\"><mtext>hex</mtext><mo>=</mo><mrow intent=\":fenced\"><mo>{</mo><mtable intent=\":array(16,1)\"><mtr><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mn>1</mn></mtd></mtr><mtr><mtd><mn>2</mn></mtd></mtr><mtr><mtd><mn>3</mn></mtd></mtr><mtr><mtd><mn>4</mn></mtd></mtr><mtr><mtd><mn>5</mn></mtd></mtr><mtr><mtd><mn>6</mn></mtd></mtr><mtr><mtd><mn>7</mn></mtd></mtr><mtr><mtd><mn>8</mn></mtd></mtr><mtr><mtd><mn>9</mn></mtd></mtr><mtr><mtd><mi>𝐴</mi></mtd></mtr><mtr><mtd><mi>𝐵</mi></mtd></mtr><mtr><mtd><mi>𝐶</mi></mtd></mtr><mtr><mtd><mi>𝐷</mi></mtd></mtr><mtr><mtd><mi>𝐸</mi></mtd></mtr><mtr><mtd><mi>𝐹</mi></mtd></mtr></mtable><mo>​</mo></mrow><mtext> with </mtext><mrow intent=\"absolute-value($a)\"><mo>|</mo><mtext arg=\"a\">hex</mtext><mo>|</mo></mrow><mo>=</mo><mn>16</mn></math>",
     "1\"rate\" = \"distance\"/\"time\".":  "<math display=\"block\"><mtext>rate</mtext><mo>=</mo><mfrac><mtext>distance</mtext><mtext>time</mtext></mfrac><mo>.</mo></math>",
@@ -956,7 +956,8 @@ async function renderMarkedUnicodemath(node) {
     "1$$\\frac{a\\$b}{c}=0": "<math display=\"block\"><mfrac><mrow><mi>𝑎</mi><mo>$</mo><mi>𝑏</mi></mrow><mi>𝑐</mi></mfrac><mo>=</mo><mn>0</mn></math>",
     "1\\BbbW=\\Bbb W": "<math display=\"block\"><mi>𝕎</mi><mo>=</mo><mi>𝕎</mi></math>",
     "1𝑥ʰʲʳʷʸˡˢˣᴬᴮᴰᴱᴳᴴᴵᴶᴷᴸᴹᴺᴼᴾᴿᵀᵁᵂᵃᵅᵇᵈᵉᵍᵏᵐᵒᵖᵗᵘᵛᵝᵞᵟᵠᵡᶜᶠᶻᶿⁱⁿⱽꟲꟳꟴ": "<math display=\"block\"><msup><mi>𝑥</mi><mrow><mi>ℎ</mi><mi>𝑗</mi><mi>𝑟</mi><mi>𝑤</mi><mi>𝑦</mi><mi>𝑙</mi><mi>𝑠</mi><mi>𝑥</mi><mi>𝐴</mi><mi>𝐵</mi><mi>𝐷</mi><mi>𝐸</mi><mi>𝐺</mi><mi>𝐻</mi><mi>𝐼</mi><mi>𝐽</mi><mi>𝐾</mi><mi>𝐿</mi><mi>𝑀</mi><mi>𝑁</mi><mi>𝑂</mi><mi>𝑃</mi><mi>𝑅</mi><mi>𝑇</mi><mi>𝑈</mi><mi>𝑊</mi><mi>𝑎</mi><mi>𝛼</mi><mi>𝑏</mi><mi>𝑑</mi><mi>𝑒</mi><mi>𝑔</mi><mi>𝑘</mi><mi>𝑚</mi><mi>𝑜</mi><mi>𝑝</mi><mi>𝑡</mi><mi>𝑢</mi><mi>𝑣</mi><mi>𝛽</mi><mi>𝛾</mi><mi>𝛿</mi><mi>𝜑</mi><mi>𝜒</mi><mi>𝑐</mi><mi>𝑓</mi><mi>𝑧</mi><mi>𝜃</mi><mi>𝑖</mi><mi>𝑛</mi><mi>𝑉</mi><mi>𝐶</mi><mi>𝐹</mi><mi>𝑄</mi></mrow></msup></math>",
-    };
+    "1(𝑎+𝑏)ⁿ=∑ₖ₌₀ⁿ 𝑛⒞𝑘 𝑎ᵏ𝑏ⁿ⁻ᵏ": "<math display=\"block\"><msup><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow><mo>)</mo></mrow><mi>𝑛</mi></msup><mo>=</mo><mrow intent=\":largeop(𝑘,𝑛,$naryand)\"><munderover><mo>∑</mo><mrow><mi>𝑘</mi><mo>=</mo><mn>0</mn></mrow><mi>𝑛</mi></munderover><mrow arg=\"naryand\"><mrow intent=\"binomial-coefficient(𝑛,𝑘)\"><mo>(</mo><mfrac linethickness=\"0\"><mi>𝑛</mi><mi>𝑘</mi></mfrac><mo>)</mo></mrow><msup><mi>𝑎</mi><mi>𝑘</mi></msup><msup><mi>𝑏</mi><mrow><mi>𝑛</mi><mo>−</mo><mi>𝑘</mi></mrow></msup></mrow></mrow></math>",
+};
 
     // extract unicodemath expressions from node
     var unicodemathPlaceholders = Array.from(node.querySelectorAll("span.unicodemathml-placeholder"));
