@@ -175,8 +175,8 @@ function getSubSups(str, i, delim, needSub) {
                 op = ch
                 break
             case '_':
-                if (!subOk)
-                    return ''               // Missing a Unicode subscript
+                if (!subOk || !s)
+                    return ['', -1]         // '_' missing Unicode subscript
                 op = ch
                 break;
             case '-':                       // ASCII hyphen-dash →
@@ -222,11 +222,11 @@ function getSubSups(str, i, delim, needSub) {
     if (op == '^') {                        // Check for x_...^...
         if (needSub == true)
             return ''
-        let [sb, jb] = getSubSups(str, j - 1, ' ', true /* needSub */);
-        if (!sb)
-            return ''
-        ss = sb
-        k = j = jb
+        let [sb, jb] = getSubSups(str, j - 1, ' ', true /* needSub */,);
+        if (sb) {
+            ss = sb
+            k = j = jb
+        }
     }
     ch = str[k]
     if (ch < '\u3017' && !isAsciiAlphanumeric(ch) && !isNary(ch) &&
