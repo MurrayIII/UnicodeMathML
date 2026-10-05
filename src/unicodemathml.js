@@ -205,7 +205,7 @@ function getSubSups(str, i, delim, needSub) {
             default:
                 if (isAsciiAlphabetic(ch)) {
                     if (!"aehijklmnoprstuvx".includes(ch))
-                        subOK = false       // No Unicode subscript for ch
+                        subOk = false       // No Unicode subscript for ch
                 } else if (!isAsciiDigit(ch) && !"−+=βγφχ".includes(ch))
                     return ''               // No Unicode sub or sup for ch
         }
@@ -222,11 +222,11 @@ function getSubSups(str, i, delim, needSub) {
     if (op == '^') {                        // Check for x_...^...
         if (needSub == true)
             return ''
-        let [sb, jb] = getSubSups(str, j - 1, ' ', true);
-        if (sb) {
-            ss = sb
-            k = j = jb
-        }
+        let [sb, jb] = getSubSups(str, j - 1, ' ', true /* needSub */);
+        if (!sb)
+            return ''
+        ss = sb
+        k = j = jb
     }
     ch = str[k]
     if (ch < '\u3017' && !isAsciiAlphanumeric(ch) && !isNary(ch) &&
