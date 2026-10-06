@@ -25,14 +25,14 @@
         <h1>UnicodeMathML + HTML</h1>
         <p>If the following line looks like a proper formula that's centered and set in blue type, things are working the way they're supposed to:</p>
         <p>⁅ⅆy/ⅆx=[y-G(x)]/a(x,y)⁆</p>
-        <p>If not, you're either using a browser that doesn't natively support MathML (in which case it should still be blue – try Firefox!), or something went wrong.</p>
-        <p><em>See <code>README.md</code> of the <a href="https://github.com/doersino/UnicodeMathML">UnicodeMathML repository</a> for more information.</em></p>
+        <p><em>See <code>README.md</code> of the <a href="https://github.com/murrayIII/UnicodeMathML">UnicodeMathML repository</a> for more information.</em></p>
         <hr>
         <p>Here's a test of delimiter escapes: ⁅a+b⁆ testing \⁅a+b⁆ testing ⁅a+b\⁆ testing \⁅a+b\⁆ testing.</p>
         <p>And now a test of textstyle versus displaystyle math: ⁅lim▒_(n→∞) a_n⁆ and:</p>
         <p>⁅lim▒_(n→∞) a_n⁆</p>
         <h2>Benchmark</h2>
-        <p>Translating the following list (see <code>utils/benchmark.txt</code>) of UnicodeMath expressions – note that some of them are indeed supposed to yield errors – shouldn't take very long at all. Blink and you'll (ideally) miss it:</p>
+        <p>Translating the following list of UnicodeMath expressions into MathML 4.0 – note that some of them are indeed supposed to yield errors – shouldn't take very long at all. Blink and you'll (ideally) miss it:</p>
+        <p>If you Alt+RightClick/Inspect/Console, you can see if all the expressions have been translated to the expected MathML strings.</p>
         <p>⁅"A collection of 731 UnicodeMath expressions from various sources"⁆</p>
         <p>⁅x + 2y + 3z⁆</p>
         <p>⁅1+▭(⟡(1&1/2/3/4/5))⁆</p>
@@ -780,6 +780,7 @@
         <p>⁅𝑓 ̂(𝜉)=∫_(−∞)^∞▒〖𝑓(𝑥) 𝑒^(−2𝜋𝑖𝑥𝜉) 𝑑𝑥〗⁆</p>
         <p>⁅𝑥ʰʲʳʷʸˡˢˣᴬᴮᴰᴱᴳᴴᴵᴶᴷᴸᴹᴺᴼᴾᴿᵀᵁᵂᵃᵅᵇᵈᵉᵍᵏᵐᵒᵖᵗᵘᵛᵝᵞᵟᵠᵡᶜᶠᶻᶿⁱⁿⱽꟲꟳꟴ⁆</p>
         <p>⁅(𝑎+𝑏)ⁿ=∑ₖ₌₀ⁿ 𝑛⒞𝑘 𝑎ᵏ𝑏ⁿ⁻ᵏ⁆</p>
+        <p>⁅⒜(𝑥)≠ⓒ(𝑥)⁆</p>
         <!--        <p>⁅𝐸=𝑚𝑐^2#(1)
     𝐸=𝑚𝑐^2
     𝐸=𝑚𝑐^2#(3)⁆</p> -->

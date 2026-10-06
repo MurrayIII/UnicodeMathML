@@ -627,10 +627,21 @@ function applyMacro(tex, i) {
 
 function checkCardinalityIntent(intent, miContent) {
     if (intent) {
-        if (intent[0] == 'ⓒ')
-            intent = 'cardinality' + intent.substring(1)
-        if (miContent && intent.startsWith('cardinality'))
-            intent = 'cardinality(' + miContent + ')'
+        let s = ''
+        switch (intent[0]) {
+            case '⒜':
+                s = 'absolute-value'
+                break
+            case 'ⓒ':
+                s = 'cardinality'
+                break
+        }
+        if (s)
+            intent = s + intent.substring(1)
+        else
+            s = 'cardinality'               // For \intent
+        if (miContent && intent.startsWith(s))
+            intent = s + '(' + miContent + ')'
     }
     return intent
 }
@@ -4802,7 +4813,7 @@ function mtransform(dsty, puast) {
             //if (!value.open && !value.close)
             //    return {mrow: withAttrs(getAttrs(value, ''), content)};
 
-            if (useMfenced == 1) {          // Word needs mfenced
+            if (useMfenced == 1) {          // Word used to need mfenced
                 // (Can test using Ctrl+C in output window)
                 attrs = getAttrs(value, defaultIntent);
                 if (attrs.intent)
