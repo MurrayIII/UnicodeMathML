@@ -1674,6 +1674,7 @@ const mathDictation = [
     'Integral from A+B to C + D of DX.',
     'b all over c + d= 0',
     'x equals a + b all over c + d equals 0',
+    'a sub b sup c + a sub e sup 2 = 0',
 ];
 
 const unicodeMathDictation = [
@@ -1712,6 +1713,7 @@ const unicodeMathDictation = [
     '∫_(𝑎+𝑏)^(𝑐+ⅆ) 𝑑𝑥',                                     // 32
     '𝑏/(𝑐+𝑑)=0',                                            // 33
     '𝑥=(𝑎+𝑏)/(𝑐+𝑑)=0',                                      // 34
+    '𝑎_𝑏^𝑐+𝑎ₑ²=0',                                          // 35
 ];
 
 function testDictation() {

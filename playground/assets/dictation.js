@@ -211,6 +211,7 @@ const lexiconEn = {
 	'sub':						'_',		// Subscript
 	'sum':						'∑',		// Summation
 	'summation':				'∑',		// Summation
+    'sup':						'^',		// Superscript
 	'surface integral':			'∯',			// ∯
 	'tangent':					'tan⁡',		// tangent
 	'tau':						'τ',		// τ

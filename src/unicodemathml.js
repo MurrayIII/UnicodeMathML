@@ -222,7 +222,9 @@ function getSubSups(str, i, delim, needSub) {
     if (op == '^') {                        // Check for x_...^...
         if (needSub == true)
             return ''
-        let [sb, jb] = getSubSups(str, j - 1, ' ', true /* needSub */,);
+        let [sb, jb] = getSubSups(str, j - 1, ' ', true /* needSub */);
+        if (jb == -1)                       // Invalid subscript argument:
+            return ''                       //  no subsup buildup
         if (sb) {
             ss = sb
             k = j = jb
