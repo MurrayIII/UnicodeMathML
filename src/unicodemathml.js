@@ -231,7 +231,7 @@ function getSubSups(str, i, delim, needSub) {
     ch = str[k]
     if (ch < '\u3017' && !isAsciiAlphanumeric(ch) && !isNary(ch) &&
         ch != '_' && !isDoubleStruck(ch) && !isCloseDelimiter(ch) &&
-        ch != '∂')
+        ch != '∂' && ch != '|' && ch != '‖' && !letterLikeSymbols[ch])
         return ''                           // No base character(s)
 
     if (s[0] == '(' && s[s.length - 1] == ')')
@@ -3457,10 +3457,18 @@ function preprocess(dsty, uast, index, arr) {
                         break;
                     // If base contains more than one char and isn't a function
                     // name, make the subsup base be the end char. E.g., for
-                    // 𝐸 = 𝑚𝑐², make 𝑐 be the base, not 𝑚𝑐.
+                    // 𝐸 = 𝑚𝑐², make 𝑐 be the base, not 𝑚𝑐. Also, split off
+                    // leading spaces from the base and make them a separate atom.
                     let n = base.atoms.length;
                     if (n == undefined)
                         break;
+                    let ret0 = []
+                    if (n > 1) {
+                        if (base.atoms[0].spaces)
+                            ret0.push(base.atoms[0])
+                        ret.base.atoms.shift()
+                        n--
+                    }
                     let str = base.atoms[n - 1].chars;
                     if (str == undefined)
                         break;
@@ -3477,8 +3485,12 @@ function preprocess(dsty, uast, index, arr) {
                         // Return leading chars followed by scripted end char
                         ret.base.atoms[0].chars = str.substring(cch - cchCh);
                         delete ret.base.selanchor
-                        return [{atoms: {chars: str.substring(0, cch - cchCh)}},
-                                {script: ret}];
+                        ret0.push({ atoms: { chars: str.substring(0, cch - cchCh) } })
+                        ret0.push({ script: ret })
+                        return ret0
+                    } else if (ret0.length) {
+                        ret0.push({ script: ret })
+                        return ret0
                     }
                     if (ret.intent || str[0] != 'ⅅ' && !str.startsWith('𝜕') ||
                         !emitDefaultIntents) {
