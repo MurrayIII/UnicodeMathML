@@ -559,6 +559,14 @@ function testMathMLtoSpeech() {
     }
     let iFail = mathML.length - iSuccess;
     console.log("Test MathML to speech: " + iSuccess + " passes; " + iFail + " failures\n");
+
+    // TODO: add to mathML[]
+    let speech = '1 square millimeter+ 2 square millimeters= 3 square millimeters'
+    let result = MathMLtoSpeech("<math display=\"block\"><mn>1</mn><mtext intent=\":unit\" single=\"true\"> mm²</mtext><mo>+</mo><mn>2</mn><mtext intent=\":unit\"> mm²</mtext><mo>=</mo><mn>3</mn><mtext intent=\":unit\"> mm²</mtext></math>");
+    if (result != speech) {
+        console.log("Expect: " + speech + '\n')
+        console.log("Result: " + result + '\n\n')
+    }
 }
 
 function testMathMLtoBraille() {

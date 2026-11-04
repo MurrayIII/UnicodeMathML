@@ -2994,12 +2994,32 @@ function getSup(value) {
         value = value[0]
     if (Array.isArray(value))
         value = value[0]
+    if (value.number)
+        return value.number
     if (!value.atoms)
         return ''
     value = value.atoms
     if (Array.isArray(value))
         value = value[0]
     return value.chars ? value.chars : ''
+}
+
+function getUnit(val) {
+    // Get unit such as m or m³ from a term like 𝑚² or 𝑚³. Return
+    // the unit with a non-breaking space in front of it.
+    let power = ''
+
+    if (val.expr)
+        val = val.expr[0]
+    val = val[0]
+
+    if (val.script && val.script.high) {
+        power = getSup(val)
+        power = digitSuperscripts[power] ? digitSuperscripts[power] : power
+        val = val.script.base
+    }
+    val = val.atoms[0].chars
+    return '\u00A0' + foldMathItalics(val) + power
 }
 
 function isLeviCivita(base, low, arr, index) {
@@ -3650,8 +3670,9 @@ function preprocess(dsty, uast, index, arr) {
             if (value.symbol == 'ⓤ') {
                 if (index && arr[index - 1].number)
                     value.mask = arr[index - 1].number
+                value.of = getUnit(value.of)
             }
-            if (value.symbol >= "╱" && value.symbol <= "╳") {
+            else if (value.symbol >= "╱" && value.symbol <= "╳") {
                 // Set mask for \cancel, \bcancel, \xcancel
                 value.mask = (value.symbol == "╱") ? 79 : (value.symbol == "╲") ? 143 : 207;
             }
@@ -4407,15 +4428,10 @@ function mtransform(dsty, puast) {
                         dropOutermostParens(value.of)))}
             }
             else if (value.symbol == 'ⓤ') {
-                val = value.of
-                if (val.expr)
-                    val = val.expr[0]
-                val = val[0].atoms[0].chars
-                val = '\u00A0' + foldMathItalics(val)
                 attrs.intent = ':unit'
                 if (value.mask == '1')
                     attrs.single = true
-                return {mtext: withAttrs(attrs, val)}
+                return {mtext: withAttrs(attrs, value.of)}
             }
             mask = value.mask;
             attrs.notation = enclosureAttrs(mask, symbol);

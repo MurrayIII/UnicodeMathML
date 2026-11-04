@@ -520,8 +520,6 @@ const unitSpeechStrings = {
 	'bar': 'bars',
 	'cal': 'calories',
 	'cm': 'centimeters',
-	'cm²': 'square centimeters',
-	'cm³': 'cubic centimeters',
 	'd': 'days',
 	'fl oz': 'fluid ounces',
 	'ft': 'feet',
@@ -541,7 +539,6 @@ const unitSpeechStrings = {
 	'L': 'liters',
 	'lb': 'pounds',
 	'm': 'meters',
-	'm³': 'cubic meters',
 	'm/s': 'meters per second',
 	'mg': 'milligrams',
 	'mL': 'milliliters',
@@ -1423,7 +1420,13 @@ function symbolSpeech(ch, vs) {
 }
 
 function unitSpeech(unit, single) {
-	unit = unit.substring(6)				// Remove &nbsp;
+	unit = unit.substring(unit[0] == '\u00A0' ? 1 : 6)	// Remove &nbsp;
+    let prefix = ''
+	let n = unit[unit.length - 1]
+	if (n == '²' || n == '³') {
+		prefix = n == '²' ? 'square ' : 'cubic '
+        unit = unit.substring(0, unit.length - 1)
+	}
 	let speech = unitSpeechStrings[unit]
 
 	if (single) {
@@ -1433,7 +1436,7 @@ function unitSpeech(unit, single) {
 		else if (speech[speech.length - 1] == 's')
 			speech = speech.substring(0, speech.length - 1)
 	}
-	return speech;
+	return prefix + speech;
 }
 
 function resolveSpeechSymbols(text) {

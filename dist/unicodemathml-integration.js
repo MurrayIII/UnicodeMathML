@@ -959,7 +959,9 @@ async function renderMarkedUnicodemath(node) {
     "1(𝑎+𝑏)ⁿ=∑ₖ₌₀ⁿ 𝑛⒞𝑘 𝑎ᵏ𝑏ⁿ⁻ᵏ": "<math display=\"block\"><msup><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow><mo>)</mo></mrow><mi>𝑛</mi></msup><mo>=</mo><mrow intent=\":largeop(𝑘,𝑛,$naryand)\"><munderover><mo>∑</mo><mrow><mi>𝑘</mi><mo>=</mo><mn>0</mn></mrow><mi>𝑛</mi></munderover><mrow arg=\"naryand\"><mrow intent=\"binomial-coefficient(𝑛,𝑘)\"><mo>(</mo><mfrac linethickness=\"0\"><mi>𝑛</mi><mi>𝑘</mi></mfrac><mo>)</mo></mrow><msup><mi>𝑎</mi><mi>𝑘</mi></msup><msup><mi>𝑏</mi><mrow><mi>𝑛</mi><mo>−</mo><mi>𝑘</mi></mrow></msup></mrow></mrow></math>",
     "1⒜(𝑥)≠©(𝑥)": "<math display=\"block\"><mrow intent=\"absolute-value(𝑥)\"><mo>|</mo><mi>𝑥</mi><mo>|</mo></mrow><mo>≠</mo><mrow intent=\"cardinality(𝑥)\"><mo>|</mo><mi>𝑥</mi><mo>|</mo></mrow></math>",
     "1⟨𝜓│ℋ│𝜓⟩": "<math display=\"block\"><mrow intent=\":fenced\"><mo>⟨</mo><mrow><mi>𝜓</mi><mo>|</mo><mi>ℋ</mi><mo>|</mo><mi>𝜓</mi></mrow><mo>⟩</mo></mrow></math>",
-    };
+    "11ⓤ𝑚𝑚²+2ⓤ𝑚𝑚²=3ⓤ𝑚𝑚²": "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\" single=\"true\"> mm²</mtext><mo>+</mo><mn>2</mn><mtext intent=\":unit\"> mm²</mtext><mo>=</mo><mn>3</mn><mtext intent=\":unit\"> mm²</mtext></math>",
+    "11ⓤ𝑚𝑚+2ⓤ𝑚𝑚=3ⓤ𝑚𝑚": "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\" single=\"true\"> mm</mtext><mo>+</mo><mn>2</mn><mtext intent=\":unit\"> mm</mtext><mo>=</mo><mn>3</mn><mtext intent=\":unit\"> mm</mtext></math>",
+};
 
     // extract unicodemath expressions from node
     var unicodemathPlaceholders = Array.from(node.querySelectorAll("span.unicodemathml-placeholder"));
