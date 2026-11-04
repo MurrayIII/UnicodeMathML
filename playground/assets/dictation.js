@@ -37,6 +37,7 @@ const lexiconEn = {
 	'by':						'×',		// Times (U+00D7--looks like cross U+2A2F but isn't)
 	'cap':						'style',	// Capital letter shift
 	'capped':					'style',	// cap (autocorrect misspelled)
+	'cardinality':				'©',		// \card
 	'cases':					'Ⓒ\u3016',	// TeX cases
 	'chi':						'χ',		// χ
 	'choose':					'⒞',		// TeX binomial coefficient

@@ -307,7 +307,7 @@ diacritic
 αnOrNumber = ('-' / '−' / '+')? (αn+ / [0-9]+ / "∞")
 unicodeFraction = [↉½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅐⅛⅜⅝⅞⅑]
 opEnclosedMatrix = [⒨⒩ⓢⓈ⒱]
-opAbs = [⒜ⓒ]
+opAbs = [⒜©]
 opArray
     = "█"  // equation array
     / "■"  // matrix
@@ -328,7 +328,7 @@ opFraction
     / "\u2044"  // skewed fraction ¹/₂
     / "\u2215"  // linear fraction 1/2
     / "\u2298"  // small fraction
-opEnclosure = "▭" / "̄" / "▁" / "▢" / "◯" / "⟌" / "⃧" / "⬭" / "╱" / "╲" / "╳" / "ⓓ" / "ⓑ"
+opEnclosure = "▭" / "̄" / "▁" / "▢" / "◯" / "⟌" / "⃧" / "⬭" / "╱" / "╲" / "╳" / "ⓓ" / "ⓑ" / "ⓤ"
 opEqNumber = "#"
 opPhantom = "⟡" / "⬄" / "⇳"
 opSmash = "⬍" / "⬆" / "⬇" / "⬌"

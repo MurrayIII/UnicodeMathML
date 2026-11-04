@@ -760,7 +760,7 @@ async function renderMarkedUnicodemath(node) {
     "1Ⓐ(-1)Ⓕ(-2)sin⁡𝑥": "<math display=\"block\"><mrow intent=\":function\"><mi selanchor=\"-1\" selfocus=\"-2\">sin</mi><mo>⁡</mo><mi>𝑥</mi></mrow></math>",
     "1Ⓒ(a@b)": "<math display=\"block\"><mrow intent=\":piecewise\"><mo>{</mo><mtable intent=\":system-of-equations\" columnspacing=\"0pt\"><mtr><mtd style='padding-left:0;text-align:right;float:right;display:math'><mi>𝑎</mi></mtd></mtr><mtr><mtd style='padding-left:0;text-align:right;float:right;display:math'><mi>𝑏</mi></mtd></mtr></mtable><mo>​</mo></mrow></math>",
     "1ⓐx 𝑛⒞𝑘":  "<math display=\"block\"><mrow arg=\"x\" intent=\"binomial-coefficient(𝑛,𝑘)\"><mo>(</mo><mfrac linethickness=\"0\"><mi>𝑛</mi><mi>𝑘</mi></mfrac><mo>)</mo></mrow></math>",
-    "1ⓒ(𝑥)":  "<math display=\"block\"><mrow intent=\"cardinality(𝑥)\"><mo>|</mo><mi>𝑥</mi><mo>|</mo></mrow></math>",
+    "1©(𝑥)":  "<math display=\"block\"><mrow intent=\"cardinality(𝑥)\"><mo>|</mo><mi>𝑥</mi><mo>|</mo></mrow></math>",
     "1ⓘ(\"$op($a)\"ⓐ(a 𝐴)^ⓐopⓘ(\"transpose\"𝑇))=0":  "<math display=\"block\"><msup intent=\"$op($a)\"><mi arg=\"a\">𝐴</mi><mi arg=\"op\" intent=\"transpose\">𝑇</mi></msup><mo>=</mo><mn>0</mn></math>",
     "1ⓘ(\"Ackermann\"𝜙(𝑚,𝑛,𝑝))":  "<math display=\"block\"><mi intent=\"Ackermann\">𝜙</mi><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑚</mi><mo>,</mo><mi>𝑛</mi><mo>,</mo><mi>𝑝</mi></mrow><mo>)</mo></mrow></math>",
     "1ⓘ(\"Differential d\"ⅆ)+ⅆ+ⓘ(\"Euler's number\" ⅇ)+ⅇ":  "<math display=\"block\"><mi intent=\"Differential d\">𝑑</mi><mo>+</mo><mi intent=\"ⅆ\">𝑑</mi><mo>+</mo><mi intent=\"Euler's number\">𝑒</mi><mo>+</mo><mi intent=\"ⅇ\">𝑒</mi></math>",
@@ -957,8 +957,9 @@ async function renderMarkedUnicodemath(node) {
     "1\\BbbW=\\Bbb W": "<math display=\"block\"><mi>𝕎</mi><mo>=</mo><mi>𝕎</mi></math>",
     "1𝑥ʰʲʳʷʸˡˢˣᴬᴮᴰᴱᴳᴴᴵᴶᴷᴸᴹᴺᴼᴾᴿᵀᵁᵂᵃᵅᵇᵈᵉᵍᵏᵐᵒᵖᵗᵘᵛᵝᵞᵟᵠᵡᶜᶠᶻᶿⁱⁿⱽꟲꟳꟴ": "<math display=\"block\"><msup><mi>𝑥</mi><mrow><mi>ℎ</mi><mi>𝑗</mi><mi>𝑟</mi><mi>𝑤</mi><mi>𝑦</mi><mi>𝑙</mi><mi>𝑠</mi><mi>𝑥</mi><mi>𝐴</mi><mi>𝐵</mi><mi>𝐷</mi><mi>𝐸</mi><mi>𝐺</mi><mi>𝐻</mi><mi>𝐼</mi><mi>𝐽</mi><mi>𝐾</mi><mi>𝐿</mi><mi>𝑀</mi><mi>𝑁</mi><mi>𝑂</mi><mi>𝑃</mi><mi>𝑅</mi><mi>𝑇</mi><mi>𝑈</mi><mi>𝑊</mi><mi>𝑎</mi><mi>𝛼</mi><mi>𝑏</mi><mi>𝑑</mi><mi>𝑒</mi><mi>𝑔</mi><mi>𝑘</mi><mi>𝑚</mi><mi>𝑜</mi><mi>𝑝</mi><mi>𝑡</mi><mi>𝑢</mi><mi>𝑣</mi><mi>𝛽</mi><mi>𝛾</mi><mi>𝛿</mi><mi>𝜑</mi><mi>𝜒</mi><mi>𝑐</mi><mi>𝑓</mi><mi>𝑧</mi><mi>𝜃</mi><mi>𝑖</mi><mi>𝑛</mi><mi>𝑉</mi><mi>𝐶</mi><mi>𝐹</mi><mi>𝑄</mi></mrow></msup></math>",
     "1(𝑎+𝑏)ⁿ=∑ₖ₌₀ⁿ 𝑛⒞𝑘 𝑎ᵏ𝑏ⁿ⁻ᵏ": "<math display=\"block\"><msup><mrow intent=\":fenced\"><mo>(</mo><mrow><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></mrow><mo>)</mo></mrow><mi>𝑛</mi></msup><mo>=</mo><mrow intent=\":largeop(𝑘,𝑛,$naryand)\"><munderover><mo>∑</mo><mrow><mi>𝑘</mi><mo>=</mo><mn>0</mn></mrow><mi>𝑛</mi></munderover><mrow arg=\"naryand\"><mrow intent=\"binomial-coefficient(𝑛,𝑘)\"><mo>(</mo><mfrac linethickness=\"0\"><mi>𝑛</mi><mi>𝑘</mi></mfrac><mo>)</mo></mrow><msup><mi>𝑎</mi><mi>𝑘</mi></msup><msup><mi>𝑏</mi><mrow><mi>𝑛</mi><mo>−</mo><mi>𝑘</mi></mrow></msup></mrow></mrow></math>",
-    "1⒜(𝑥)≠ⓒ(𝑥)": "<math display=\"block\"><mrow intent=\"absolute-value(𝑥)\"><mo>|</mo><mi>𝑥</mi><mo>|</mo></mrow><mo>≠</mo><mrow intent=\"cardinality(𝑥)\"><mo>|</mo><mi>𝑥</mi><mo>|</mo></mrow></math>",
-};
+    "1⒜(𝑥)≠©(𝑥)": "<math display=\"block\"><mrow intent=\"absolute-value(𝑥)\"><mo>|</mo><mi>𝑥</mi><mo>|</mo></mrow><mo>≠</mo><mrow intent=\"cardinality(𝑥)\"><mo>|</mo><mi>𝑥</mi><mo>|</mo></mrow></math>",
+    "1⟨𝜓│ℋ│𝜓⟩": "<math display=\"block\"><mrow intent=\":fenced\"><mo>⟨</mo><mrow><mi>𝜓</mi><mo>|</mo><mi>ℋ</mi><mo>|</mo><mi>𝜓</mi></mrow><mo>⟩</mo></mrow></math>",
+    };
 
     // extract unicodemath expressions from node
     var unicodemathPlaceholders = Array.from(node.querySelectorAll("span.unicodemathml-placeholder"));

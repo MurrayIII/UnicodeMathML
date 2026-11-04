@@ -632,7 +632,7 @@ function checkCardinalityIntent(intent, miContent) {
             case '⒜':
                 s = 'absolute-value'
                 break
-            case 'ⓒ':
+            case '©':
                 s = 'cardinality'
                 break
         }
@@ -1267,7 +1267,7 @@ const controlWords = {
     'by':               '×',	// 00D7
     'cancel':           '╱',	// 2571
     'cap':              '∩',	// 2229
-    'card':             'ⓒ',   // 24D2 (UnicodeMath op)
+    'card':             '©',    // 00A9 (UnicodeMath op)
     'cases':            'Ⓒ',	// 24B8 (UnicodeMath op)
     'cbrt':             '∛',	    // 221B
     'ccwint':           '⨑',    // 2A11
@@ -1812,7 +1812,8 @@ const controlWords = {
     'underparen':       '⏝',	    // 23DD
     'underset':         'ⓤ',   // 24E4 (LaTeX UnicodeMath op)
     'undershell':       '⏡',	    // 23E1
-    'union':           '∪',	    // 222A
+    'union':            '∪',	// 222A
+    'unit':             'ⓤ',   // 24E4
     'uparrow':          '↑',	// 2191
     'updownarrow':      '↕',	// 2195
     'updownarrows':     '⇅',    	// 21C5
@@ -3646,6 +3647,10 @@ function preprocess(dsty, uast, index, arr) {
                 // For example, for '𝑎Ⓐ()^', value.mask = '^'
                 return {intend: {symbol: value.symbol, value: val, op: value.mask}}
             }
+            if (value.symbol == 'ⓤ') {
+                if (index && arr[index - 1].number)
+                    value.mask = arr[index - 1].number
+            }
             if (value.symbol >= "╱" && value.symbol <= "╳") {
                 // Set mask for \cancel, \bcancel, \xcancel
                 value.mask = (value.symbol == "╱") ? 79 : (value.symbol == "╲") ? 143 : 207;
@@ -4400,6 +4405,17 @@ function mtransform(dsty, puast) {
                 attrs.displaystyle = true
                 return {mstyle: withAttrs(attrs, mtransform(dsty,
                         dropOutermostParens(value.of)))}
+            }
+            else if (value.symbol == 'ⓤ') {
+                val = value.of
+                if (val.expr)
+                    val = val.expr[0]
+                val = val[0].atoms[0].chars
+                val = '\u00A0' + foldMathItalics(val)
+                attrs.intent = ':unit'
+                if (value.mask == '1')
+                    attrs.single = true
+                return {mtext: withAttrs(attrs, val)}
             }
             mask = value.mask;
             attrs.notation = enclosureAttrs(mask, symbol);
@@ -5647,7 +5663,7 @@ function dump(value, noAddParens) {
         }
         if (mrowIntent.startsWith('cardinality')) {
             ret = ret.substring(1, ret.length - 1) // Remove '|'s
-            return needParens(ret) ? 'ⓒ(' + ret + ')' : 'ⓒ' + ret + ' '
+            return needParens(ret) ? '©(' + ret + ')' : '©' + ret + ' '
         }
         if (mrowIntent.startsWith('binomial-coefficient') ||
             mrowIntent.endsWith('matrix') || mrowIntent.endsWith('determinant')) {

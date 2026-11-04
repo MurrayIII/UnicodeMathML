@@ -35,6 +35,7 @@ const symbolSpeechStrings = {
 	'}': 'close brace',
 	' ': 'space',							// 00A0
 	'¦': ', atop,',							// 00A6
+	'©': 'cardinality',						// 00A9
 	'¬': 'not',								// 00AC
 	'¯': 'overbar',							// 00AF
 	'°': 'degrees',							// 00B0
@@ -514,6 +515,66 @@ const symbolSpeechStrings = {
 	'＆': 'ampersand',						// FF06
 }
 
+const unitSpeechStrings = {
+	'atm': 'atmospheres',
+	'bar': 'bars',
+	'cal': 'calories',
+	'cm': 'centimeters',
+	'cm²': 'square centimeters',
+	'cm³': 'cubic centimeters',
+	'd': 'days',
+	'fl oz': 'fluid ounces',
+	'ft': 'feet',
+	'g': 'grams',
+	'gal': 'gallons',
+	'h': 'hours',
+	'in': 'inches',
+	'J': 'joules',
+	'K': 'kelvins',
+	'kJ': 'kilojoules',
+	'kPa': 'kilopascals',
+	'kWh': 'kilowatt-hours',
+	'kW': 'kilowatts',
+	'km': 'kilometers',
+	'km/h': 'kilometers per hour',
+	'kg': 'kilograms',
+	'L': 'liters',
+	'lb': 'pounds',
+	'm': 'meters',
+	'm³': 'cubic meters',
+	'm/s': 'meters per second',
+	'mg': 'milligrams',
+	'mL': 'milliliters',
+	'min': 'minutes',
+	'mm': 'millimeters',
+	'mph': 'miles per hour',
+	'ms': 'milliseconds',
+	'mi': 'miles',
+	'nm': 'nanometers',
+	'ns': 'nanoseconds',
+	'oz': 'ounces',
+	'Pa': 'pascals',
+	'ps': 'picoseconds',
+	'psi': 'pounds per square inch',
+	'pt': 'pints',
+	'qt': 'quarts',
+	's': 'seconds',
+	't': 'metric tons',
+	'yd': 'yards',
+	'°C': 'degrees celsius',
+	'°F': 'degrees fahrenheit',
+	'μm': 'microns',
+	'μs': 'microseconds',
+}
+
+const unitSpeechStrings1 = {
+	'ft': 'foot',
+	'in': 'inch',
+	'km/h': 'kilometer per hour',
+	'm/s': 'meter per second',
+	'psi': 'pound per square inch',
+}
+
 const functions = {
 	'cos': 'cosine',
 	'cot': 'cotangent',
@@ -613,9 +674,13 @@ function checkIntent(value) {
 	if (!intent)
 		return '';							// No intent
 	if (intent[0] == ':') {
+		if (intent == ':unit') {
+			let single = value.getAttribute('single')
+			return unitSpeech(value.innerHTML, single)
+		}
 		if (intent.indexOf('derivative') == -1)
 			return '';						// It's a property
-		intent = intent.substring(1);
+		intent = intent.substring(1)
 	}
 
 	let i = intent.indexOf('(');
@@ -1355,6 +1420,20 @@ function symbolSpeech(ch, vs) {
 	// Get speech for operators and other symbols
 	let ret = symbolSpeechStrings[ch];
 	return ret ? ret + ' ' : ch;
+}
+
+function unitSpeech(unit, single) {
+	unit = unit.substring(6)				// Remove &nbsp;
+	let speech = unitSpeechStrings[unit]
+
+	if (single) {
+		let speech1 = unitSpeechStrings1[unit]
+		if (speech1)
+			speech = speech1
+		else if (speech[speech.length - 1] == 's')
+			speech = speech.substring(0, speech.length - 1)
+	}
+	return speech;
 }
 
 function resolveSpeechSymbols(text) {
