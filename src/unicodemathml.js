@@ -3007,12 +3007,17 @@ function getSup(value) {
 function getUnit(val) {
     // Get unit such as m or m³ from a term like 𝑚² or 𝑚³. Return
     // the unit with a non-breaking space in front of it.
-    let power = ''
-
-    if (val.expr)
+    if (val.expr) {
         val = val.expr[0]
+        if (val.fraction) {                 // E.g., km/h
+            val = val.fraction.of
+            val = val[0][0].atoms[0].chars + '/' + val[1][0].atoms[0].chars
+            return '\u00A0' + foldMathItalics(val)
+        }
+    }
     val = val[0]
 
+    let power = ''
     if (val.script && val.script.high) {
         power = getSup(val)
         power = digitSuperscripts[power] ? digitSuperscripts[power] : power

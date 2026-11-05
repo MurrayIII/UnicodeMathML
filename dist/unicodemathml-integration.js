@@ -961,6 +961,7 @@ async function renderMarkedUnicodemath(node) {
     "1⟨𝜓│ℋ│𝜓⟩": "<math display=\"block\"><mrow intent=\":fenced\"><mo>⟨</mo><mrow><mi>𝜓</mi><mo>|</mo><mi>ℋ</mi><mo>|</mo><mi>𝜓</mi></mrow><mo>⟩</mo></mrow></math>",
     "11ⓤ𝑚𝑚²+2ⓤ𝑚𝑚²=3ⓤ𝑚𝑚²": "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\" single=\"true\"> mm²</mtext><mo>+</mo><mn>2</mn><mtext intent=\":unit\"> mm²</mtext><mo>=</mo><mn>3</mn><mtext intent=\":unit\"> mm²</mtext></math>",
     "11ⓤ𝑚𝑚+2ⓤ𝑚𝑚=3ⓤ𝑚𝑚": "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\" single=\"true\"> mm</mtext><mo>+</mo><mn>2</mn><mtext intent=\":unit\"> mm</mtext><mo>=</mo><mn>3</mn><mtext intent=\":unit\"> mm</mtext></math>",
+    "11ⓤ(𝑚/𝑠)+2ⓤ(𝑚/𝑠)=3ⓤ(𝑚/𝑠)":  "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\" single=\"true\"> m/s</mtext><mo>+</mo><mn>2</mn><mtext intent=\":unit\"> m/s</mtext><mo>=</mo><mn>3</mn><mtext intent=\":unit\"> m/s</mtext></math>",
 };
 
     // extract unicodemath expressions from node
