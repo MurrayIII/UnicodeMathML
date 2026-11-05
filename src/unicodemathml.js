@@ -3005,7 +3005,7 @@ function getSup(value) {
 }
 
 function getUnit(val) {
-    // Get unit such as m or m³ from a term like 𝑚² or 𝑚³. Return
+    // Get unit such as m or m³ from a term like 𝑚 or 𝑚³. Return
     // the unit with a non-breaking space in front of it.
     if (val.expr) {
         val = val.expr[0]
@@ -5614,6 +5614,13 @@ function dump(value, noAddParens) {
             break;
 
         case 'mtext':
+            if (intent == ':unit') {
+                ret = value.textContent
+                if (ret.indexOf('/') != -1)
+                    ret = '(' + ret + ')'
+                ret = 'ⓤ' + ret
+                break;
+            }
             ret = value.textContent.replace(/\"/g, '\\\"')
             ret = '"' + ret + '"';
             break;
@@ -5745,6 +5752,7 @@ function dump(value, noAddParens) {
 }
 
 function MathMLtoUnicodeMath(mathML, keepSelInfo) {
+    mathML = mathML.replace(/\&nbsp;/g, '')
     const doc = getMathMLDOM(mathML);
     return getUnicodeMath(doc.firstElementChild, keepSelInfo)
 }

@@ -542,6 +542,15 @@ function testMathMLtoUnicodeMath() {
         }
     }
     console.log("Test MathML to UnicodeMath: " + iSuccess + " passes; " + iFail + " failures\n");
+
+    // TODO: add to mathML[]
+    let mml = "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\" single=\"true\">&nbsp;mm²</mtext><mo>+</mo><mn>2</mn><mtext intent=\":unit\">&nbsp;mm²</mtext><mo>=</mo><mn>3</mn><mtext intent=\":unit\">&nbsp;mm²</mtext></math>"
+    let result = MathMLtoUnicodeMath(mml)
+    let uMath = '1ⓤmm²+2ⓤmm²=3ⓤmm²'
+    if (result != uMath) {
+        console.log("Expect: " + uMath + '\n')
+        console.log("Result: " + result + '\n\n')
+    }
 }
 
 function testMathMLtoSpeech() {
@@ -561,8 +570,9 @@ function testMathMLtoSpeech() {
     console.log("Test MathML to speech: " + iSuccess + " passes; " + iFail + " failures\n");
 
     // TODO: add to mathML[]
+    let mml = "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\" single=\"true\"> mm²</mtext><mo>+</mo><mn>2</mn><mtext intent=\":unit\"> mm²</mtext><mo>=</mo><mn>3</mn><mtext intent=\":unit\"> mm²</mtext></math>"
     let speech = '1 square millimeter+ 2 square millimeters= 3 square millimeters'
-    let result = MathMLtoSpeech("<math display=\"block\"><mn>1</mn><mtext intent=\":unit\" single=\"true\"> mm²</mtext><mo>+</mo><mn>2</mn><mtext intent=\":unit\"> mm²</mtext><mo>=</mo><mn>3</mn><mtext intent=\":unit\"> mm²</mtext></math>");
+    let result = MathMLtoSpeech(mml);
     if (result != speech) {
         console.log("Expect: " + speech + '\n')
         console.log("Result: " + result + '\n\n')
