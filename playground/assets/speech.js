@@ -446,6 +446,7 @@ const symbolSpeechStrings = {
 	'⒞': 'choose',							// 249E
 	'⒨': 'parenthesized matrix',			// 24A8
 	'⒩': 'normed matrix',					// 24A9
+    'ⓟ': 'per',								// 24DF
 	'⒭': 'root',							// 24AD
 	'⒱': 'determinant',						// 24B1
 	'Ⓐ': 'sel-anchor',						// 24B6
@@ -673,7 +674,7 @@ function checkIntent(value) {
 	if (intent[0] == ':') {
 		if (intent == ':unit') {
 			let single = value.getAttribute('single')
-			return unitSpeech(value.innerHTML, single)
+			return unitSpeech(value, single)
 		}
 		if (intent.indexOf('derivative') == -1)
 			return '';						// It's a property
@@ -1183,6 +1184,9 @@ function speech(value, noAddParens) {
 					case '&gt;':
 						val = '>';
 						break;
+					case '&nbsp;':
+						val = ' ';
+						break;
 				}
 			}
 			if (value.hasAttribute('title')) {
@@ -1419,13 +1423,30 @@ function symbolSpeech(ch, vs) {
 	return ret ? ret + ' ' : ch;
 }
 
-function unitSpeech(unit, single) {
-	unit = unit.substring(unit[0] == '\u00A0' ? 1 : 6)	// Remove &nbsp;
+function unitSpeech(value, single) {
     let prefix = ''
-	let n = unit[unit.length - 1]
-	if (n == '²' || n == '³') {
-		prefix = n == '²' ? 'square ' : 'cubic '
-        unit = unit.substring(0, unit.length - 1)
+	let suffix = ''
+	let unit
+	if (value.childElementCount) {
+		unit = value.firstElementChild.textContent
+		suffix = value.lastElementChild.textContent
+		if (value.nodeName == 'msup') {
+			prefix = suffix == '2' ? 'square ' : 'cubic '
+            suffix = ''
+		}
+	} else {
+		unit = value.textContent
+        let n = unit.indexOf('/')
+		if (n != -1) {
+			suffix = unit.substring(n + 1)
+            unit = unit.substring(0, n)
+		}
+		n = unit[unit.length - 1]
+		if (n == '²' || n == '³') {
+			prefix = n == '²' ? 'square ' : 'cubic '
+			unit = unit.substring(0, unit.length - 1)
+		}
+		unit = unit.substring(unit[0] == '\u00A0' ? 1 : 6)	// Remove &nbsp;
 	}
 	let speech = unitSpeechStrings[unit]
 
@@ -1436,7 +1457,8 @@ function unitSpeech(unit, single) {
 		else if (speech[speech.length - 1] == 's')
 			speech = speech.substring(0, speech.length - 1)
 	}
-	return prefix + speech;
+	speech = prefix + speech
+	return suffix ? speech + 'ⓟ' + suffix : speech
 }
 
 function resolveSpeechSymbols(text) {

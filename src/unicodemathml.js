@@ -4447,14 +4447,14 @@ function mtransform(dsty, puast) {
                     value = {msup: withAttrs(attrs,
                         [{mtext: noAttr(foldMathItalics(value.of.script.base.atoms[0].chars))},
                          {mn: noAttr(value.of.script.high.expr[0][0].number)}])}
-                    return [{mo: noAttr('\u2009')}, value]
+                    return [{mo: noAttr('\u00A0')}, value]
                 }
                 if (value.of.fraction) {    // E.g., 'Ⓤ(m/s)'
                     value = {mfrac: withAttrs(attrs,
                         [{mtext: noAttr(foldMathItalics(value.of.fraction.of[0][0].atoms[0].chars))},
                          {mtext: noAttr(foldMathItalics(value.of.fraction.of[1][0].atoms[0].chars))}])
                     }
-                    return [{mo: noAttr('\u2009')}, value]
+                    return [{mo: noAttr('\u00A0')}, value]
                 }
                 return {mtext: withAttrs(attrs, value.of)} // E.g., 'ⓤmm²'
             }
