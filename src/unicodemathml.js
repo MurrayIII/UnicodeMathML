@@ -1188,6 +1188,7 @@ const controlWords = {
     'Theta':            'Θ',	// 0398
     'Ubar':             '̳',	// 0333
     'Union':            '⋃',    	// 22C3
+    'Unit':             'Ⓤ',   // 24CA
     'Uparrow':          '⇑',    	// 21D1
     'Updownarrow':      '⇕',	    // 21D5
     'Upsilon':          'Υ',	// 03A5
@@ -3004,12 +3005,15 @@ function getSup(value) {
     return value.chars ? value.chars : ''
 }
 
-function getUnit(val) {
+function getUnit(value) {
     // Get unit such as m or m³ from a term like 𝑚 or 𝑚³. Return
     // the unit with a non-breaking space in front of it.
+    let val = value.of
     if (val.expr) {
         val = val.expr[0]
         if (val.fraction) {                 // E.g., km/h
+            if (value.symbol == 'Ⓤ')
+                return val
             val = val.fraction.of
             val = val[0][0].atoms[0].chars + '/' + val[1][0].atoms[0].chars
             return '\u00A0' + foldMathItalics(val)
@@ -3019,6 +3023,8 @@ function getUnit(val) {
 
     let power = ''
     if (val.script && val.script.high) {
+        if (value.symbol == 'Ⓤ')
+            return val
         power = getSup(val)
         power = digitSuperscripts[power] ? digitSuperscripts[power] : power
         val = val.script.base
@@ -3672,10 +3678,11 @@ function preprocess(dsty, uast, index, arr) {
                 // For example, for '𝑎Ⓐ()^', value.mask = '^'
                 return {intend: {symbol: value.symbol, value: val, op: value.mask}}
             }
-            if (value.symbol == 'ⓤ') {
+            if (value.symbol == 'ⓤ' || value.symbol == 'Ⓤ') {
                 if (index && arr[index - 1].number)
                     value.mask = arr[index - 1].number
-                value.of = getUnit(value.of)
+                value.of = getUnit(value)
+                return {enclosed: {mask: value.mask, symbol: value.symbol, intent: ':unit', arg: arg, of: value.of}};
             }
             else if (value.symbol >= "╱" && value.symbol <= "╳") {
                 // Set mask for \cancel, \bcancel, \xcancel
@@ -4432,11 +4439,24 @@ function mtransform(dsty, puast) {
                 return {mstyle: withAttrs(attrs, mtransform(dsty,
                         dropOutermostParens(value.of)))}
             }
-            else if (value.symbol == 'ⓤ') {
+            else if (value.symbol == 'ⓤ' || value.symbol == 'Ⓤ') {
                 attrs.intent = ':unit'
                 if (value.mask == '1')
                     attrs.single = true
-                return {mtext: withAttrs(attrs, value.of)}
+                if (value.of.script) {      // E.g., 'Ⓤmm²'
+                    value = {msup: withAttrs(attrs,
+                        [{mtext: noAttr(foldMathItalics(value.of.script.base.atoms[0].chars))},
+                         {mn: noAttr(value.of.script.high.expr[0][0].number)}])}
+                    return [{mo: noAttr('\u2009')}, value]
+                }
+                if (value.of.fraction) {    // E.g., 'Ⓤ(m/s)'
+                    value = {mfrac: withAttrs(attrs,
+                        [{mtext: noAttr(foldMathItalics(value.of.fraction.of[0][0].atoms[0].chars))},
+                         {mtext: noAttr(foldMathItalics(value.of.fraction.of[1][0].atoms[0].chars))}])
+                    }
+                    return [{mo: noAttr('\u2009')}, value]
+                }
+                return {mtext: withAttrs(attrs, value.of)} // E.g., 'ⓤmm²'
             }
             mask = value.mask;
             attrs.notation = enclosureAttrs(mask, symbol);
@@ -5086,7 +5106,7 @@ function pretty(mast) {
         case "mo":
         case "mtext":
         case "mspace":
-            if (value.comment)
+            if (value && value.comment)
                 value = value.base + `<!--` + value.comment + `-->`
             return tag(key, attributes, value);
         case "maligngroup":
