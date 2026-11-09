@@ -6,7 +6,7 @@ this document. The facility is discussed in the [help file](./playground/help.ht
 
 The repository provides a JavaScript-based translation of [UnicodeMath](https://www.unicode.org/notes/tn28/)
 to [MathML 4.0](https://w3c.github.io/mathml/), hence the name "UnicodeMathML".
-In addition, the facility supports dictation, speech, Nemeth braille, and LaTeX.
+In addition, the facility supports English dictation and speech, Nemeth math braille, and LaTeX.
 The interactive [playground](https://MurrayIII.github.io/UnicodeMathML/playground/)
 lets you experiment with UnicodeMath, LaTeX, speech, and braille and gives insight
 into the translation pipeline.
@@ -146,5 +146,6 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * The templates […,…], […,…[, ]…,…], and ]…,…[, produce closed-interval, closed-open-interval, open-closed-interval, and open-interval structures, respectively, each including the intent attribute with the interval name and arguments. The … can be a signed number, variable name or ∞. Similarly, the templates (…,…], and […,…) also produce open-closed-interval and closed-open-interval structures with the corresponding intent attribute values. The template (…,…) isn't given an intent attribute since it can be used for a math-function argument list or a point in a 2D plane.
 * The \intent (ⓘ) and \arg (ⓐ) options are defined for enclosures, factorials, fences, atoms, sub/superscripts, and other expressions, thereby enabling the user to add intents explicitly to these constructs.
 * \abs for unambiguous entry of absolute value with the absolute-value intent attribute. \choose along with its intent attribute (binomial-coefficient). Intent attributes are included for UnicodeMath equation arrays, matrices, and determinants.
-* Default intents are defined for \abs, \choose, \cases, fences, n-ary objects, math-function objects, transpose objects, and double-struck italic symbols like differential d (ⅆ). This improves MathML readablity and supports round-tripping these concepts via MathML.
+* Default intents are defined for \abs (for absolute value), \card (for cardinality) \choose, \cases, fences, n-ary objects, math-function objects, transpose objects, and double-struck italic symbols like differential d (ⅆ). This improves MathML readablity and supports round-tripping these concepts via MathML.
 * Context menu for user to add intents in output window.
+* Units can be entered in the input window with the \unit (ⓤ) and \Unit (Ⓤ) control words. \unit represents its unit with a Unicode string (in mtext), such as "mm", "mm²", and "km/s", whereas \Unit reprsents fractions and superscripts using MathML mfrac and msup.

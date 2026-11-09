@@ -3005,6 +3005,17 @@ function getSup(value) {
     return value.chars ? value.chars : ''
 }
 
+function foldScript(val) {
+    let power = ''
+    if (val.script && val.script.high) {
+        power = getSup(val)
+        power = digitSuperscripts[power] ? digitSuperscripts[power] : power
+        val = val.script.base
+    }
+    val = val.atoms[0].chars
+    return val + power
+}
+
 function getUnit(value) {
     // Get unit such as m or m³ from a term like 𝑚 or 𝑚³. Return
     // the unit with a non-breaking space in front of it.
@@ -3015,22 +3026,20 @@ function getUnit(value) {
             if (value.symbol == 'Ⓤ')
                 return val
             val = val.fraction.of
-            val = val[0][0].atoms[0].chars + '/' + val[1][0].atoms[0].chars
+            let d = val[1][0]
+            if (d.atoms)
+                d = val[1][0].atoms[0].chars
+            else if (d.script)
+                d = foldScript(d)
+            val = val[0][0].atoms[0].chars + '/' + d
             return '\u00A0' + foldMathItalics(val)
         }
     }
     val = val[0]
-
-    let power = ''
-    if (val.script && val.script.high) {
-        if (value.symbol == 'Ⓤ')
-            return val
-        power = getSup(val)
-        power = digitSuperscripts[power] ? digitSuperscripts[power] : power
-        val = val.script.base
-    }
-    val = val.atoms[0].chars
-    return '\u00A0' + foldMathItalics(val) + power
+    if (value.symbol == 'Ⓤ')
+        return val
+    val = foldScript(val)
+    return '\u00A0' + foldMathItalics(val)
 }
 
 function isLeviCivita(base, low, arr, index) {
@@ -4449,11 +4458,17 @@ function mtransform(dsty, puast) {
                          {mn: noAttr(value.of.script.high.expr[0][0].number)}])}
                     return [{mo: noAttr('\u00A0')}, value]
                 }
-                if (value.of.fraction) {    // E.g., 'Ⓤ(m/s)'
+                if (value.of.fraction) {    // E.g., 'Ⓤ(m/s)' or 'Ⓤ(m/s²)'
+                    let d = value.of.fraction.of[1][0] // denominator
+                    if (d.atoms)
+                        d = {mtext: noAttr(foldMathItalics(value.of.fraction.of[1][0].atoms[0].chars))}
+                    else if (d.script)
+                        d = {msup: noAttr(
+                                [{mtext: noAttr(foldMathItalics(d.script.base.atoms[0].chars))},
+                                 {mn: noAttr(d.script.high.expr[0][0].number)}])}
                     value = {mfrac: withAttrs(attrs,
                         [{mtext: noAttr(foldMathItalics(value.of.fraction.of[0][0].atoms[0].chars))},
-                         {mtext: noAttr(foldMathItalics(value.of.fraction.of[1][0].atoms[0].chars))}])
-                    }
+                            d])}
                     return [{mo: noAttr('\u00A0')}, value]
                 }
                 return {mtext: withAttrs(attrs, value.of)} // E.g., 'ⓤmm²'

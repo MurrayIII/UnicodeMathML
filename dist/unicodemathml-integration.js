@@ -222,7 +222,7 @@ async function renderMarkedUnicodemath(node) {
     var results = {
     "0a+b": "<math><mi>𝑎</mi><mo>+</mo><mi>𝑏</mi></math>",
     "0lim▒_(n→∞) a_n": "<math><mrow intent=\":function\"><msub><mi>lim</mi><mrow><mi>𝑛</mi><mo stretchy=\"true\">→</mo><mi>∞</mi></mrow></msub><mo>⁡</mo><msub><mi>𝑎</mi><mi>𝑛</mi></msub></mrow></math>",
-    "1\"A collection of 737 UnicodeMath expressions from various sources\"": "<math display=\"block\"><mtext>A collection of 737 UnicodeMath expressions from various sources</mtext></math>",
+    "1\"A collection of 738 UnicodeMath expressions from various sources\"": "<math display=\"block\"><mtext>A collection of 738 UnicodeMath expressions from various sources</mtext></math>",
     "1\"So long\" ∧ \"thanks\"   ∀  \"🐟🐠🐡\".": "<math display=\"block\"><mtext>So long</mtext><mo>∧</mo><mtext>thanks</mtext><mo>&#x200a;&#x205f;</mo><mo>∀</mo><mo>&#x205f;</mo><mtext>🐟🐠🐡</mtext><mo>.</mo></math>",
     "1\"hex\"={■(0@1@2@3@4@5@6@7@8@9@A@B@C@D@E@F)┤ \" with \" |\"hex\"|=16": "<math display=\"block\"><mtext>hex</mtext><mo>=</mo><mrow intent=\":fenced\"><mo>{</mo><mtable intent=\":array(16,1)\"><mtr><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mn>1</mn></mtd></mtr><mtr><mtd><mn>2</mn></mtd></mtr><mtr><mtd><mn>3</mn></mtd></mtr><mtr><mtd><mn>4</mn></mtd></mtr><mtr><mtd><mn>5</mn></mtd></mtr><mtr><mtd><mn>6</mn></mtd></mtr><mtr><mtd><mn>7</mn></mtd></mtr><mtr><mtd><mn>8</mn></mtd></mtr><mtr><mtd><mn>9</mn></mtd></mtr><mtr><mtd><mi>𝐴</mi></mtd></mtr><mtr><mtd><mi>𝐵</mi></mtd></mtr><mtr><mtd><mi>𝐶</mi></mtd></mtr><mtr><mtd><mi>𝐷</mi></mtd></mtr><mtr><mtd><mi>𝐸</mi></mtd></mtr><mtr><mtd><mi>𝐹</mi></mtd></mtr></mtable><mo>​</mo></mrow><mtext> with </mtext><mrow intent=\"absolute-value($a)\"><mo>|</mo><mtext arg=\"a\">hex</mtext><mo>|</mo></mrow><mo>=</mo><mn>16</mn></math>",
     "1\"rate\" = \"distance\"/\"time\".":  "<math display=\"block\"><mtext>rate</mtext><mo>=</mo><mfrac><mtext>distance</mtext><mtext>time</mtext></mfrac><mo>.</mo></math>",
@@ -963,6 +963,7 @@ async function renderMarkedUnicodemath(node) {
     "11ⓤ𝑚𝑚+2ⓤ𝑚𝑚=3ⓤ𝑚𝑚": "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\" single=\"true\"> mm</mtext><mo>+</mo><mn>2</mn><mtext intent=\":unit\"> mm</mtext><mo>=</mo><mn>3</mn><mtext intent=\":unit\"> mm</mtext></math>",
     "11ⓤ(𝑚/𝑠)+2ⓤ(𝑚/𝑠)=3ⓤ(𝑚/𝑠)":  "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\" single=\"true\"> m/s</mtext><mo>+</mo><mn>2</mn><mtext intent=\":unit\"> m/s</mtext><mo>=</mo><mn>3</mn><mtext intent=\":unit\"> m/s</mtext></math>",
     "12Ⓤ𝑚𝑚², 3Ⓤ(𝑘𝑚/ℎ𝑟)":  "<math display=\"block\"><mn>2</mn><mo> </mo><msup intent=\":unit\"><mtext>mm</mtext><mn>2</mn></msup><mo>,</mo><mn>3</mn><mo> </mo><mfrac intent=\":unit\"><mtext>km</mtext><mtext>hr</mtext></mfrac></math>",
+    "11Ⓤ(𝑚/𝑠²)+4Ⓤ(𝑚/𝑠²)":  "<math display=\"block\"><mn>1</mn><mo> </mo><mfrac intent=\":unit\" single=\"true\"><mtext>m</mtext><msup><mtext>s</mtext><mn>2</mn></msup></mfrac><mo>+</mo><mn>4</mn><mo> </mo><mfrac intent=\":unit\"><mtext>m</mtext><msup><mtext>s</mtext><mn>2</mn></msup></mfrac></math>",
 };
 
     // extract unicodemath expressions from node
