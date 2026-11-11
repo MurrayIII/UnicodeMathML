@@ -964,6 +964,7 @@ async function renderMarkedUnicodemath(node) {
     "11ⓤ(𝑚/𝑠)+2ⓤ(𝑚/𝑠)=3ⓤ(𝑚/𝑠)":  "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\" single=\"true\"> m/s</mtext><mo>+</mo><mn>2</mn><mtext intent=\":unit\"> m/s</mtext><mo>=</mo><mn>3</mn><mtext intent=\":unit\"> m/s</mtext></math>",
     "12Ⓤ𝑚𝑚², 3Ⓤ(𝑘𝑚/ℎ𝑟)":  "<math display=\"block\"><mn>2</mn><mo> </mo><msup intent=\":unit\"><mtext>mm</mtext><mn>2</mn></msup><mo>,</mo><mn>3</mn><mo> </mo><mfrac intent=\":unit\"><mtext>km</mtext><mtext>hr</mtext></mfrac></math>",
     "11Ⓤ(𝑚/𝑠²)+4Ⓤ(𝑚/𝑠²)":  "<math display=\"block\"><mn>1</mn><mo> </mo><mfrac intent=\":unit\" single=\"true\"><mtext>m</mtext><msup><mtext>s</mtext><mn>2</mn></msup></mfrac><mo>+</mo><mn>4</mn><mo> </mo><mfrac intent=\":unit\"><mtext>m</mtext><msup><mtext>s</mtext><mn>2</mn></msup></mfrac></math>",
+    "11ⓤ𝑚𝑠⁻¹≠2ⓤ𝑚𝑠⁻²":  "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\" single=\"true\"> m s⁻¹</mtext><mo>≠</mo><mn>2</mn><mtext intent=\":unit\"> m s⁻²</mtext></math>",
 };
 
     // extract unicodemath expressions from node

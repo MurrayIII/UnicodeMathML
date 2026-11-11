@@ -458,6 +458,8 @@ const symbolSpeechStrings = {
 	'ⓘ': 'intent',							// 24D8
 	'ⓢ': 'bracketed matrix',				// 24E2
 	'ⓣ': 'the',								// 24E3
+	'⓶': 'square',							// 24F6
+	'⓷': 'cubic',							// 24F7
 	'─': 'line on',							// 2500 (for partial box lead-in)
 	'━': 'line',							// 2501 (for matrix array)
 	'│': 'vertical bar',					// 2502
@@ -1395,6 +1397,12 @@ function speak(s) {
 	speechSynthesis.speak(utterance)
 }
 
+function removeTrailingS(str) {
+	if (str[str.length - 1] == 's')
+		str = str.substring(0, str.length - 1)
+	return str
+}
+
 function symbolSpeech(ch, vs) {
 	if (ch >= 'ℂ' && (ch <= 'ℴ' || ch > '〗')) {
 		// Get speech for math alphanumerics
@@ -1431,22 +1439,34 @@ function unitSpeech(value, single) {
 		unit = value.firstElementChild.textContent
 		suffix = value.lastElementChild.textContent
 		if (value.nodeName == 'msup') {
-			prefix = suffix == '2' ? 'square ' : 'cubic '
-            suffix = ''
+			prefix = suffix == '2' ? '⓶' : '⓷'
+			suffix = ''
+		} else {
+			suffix = removeTrailingS(unitSpeechStrings[suffix])
 		}
 	} else {
 		unit = value.textContent
         let n = unit.indexOf('/')
 		if (n != -1) {
-			suffix = unit.substring(n + 1)
+			suffix = unitSpeechStrings[unit.substring(n + 1)]
             unit = unit.substring(0, n)
+			suffix = removeTrailingS(suffix)
 		}
-		n = unit[unit.length - 1]
-		if (n == '²' || n == '³') {
-			prefix = n == '²' ? 'square ' : 'cubic '
-			unit = unit.substring(0, unit.length - 1)
+		let l = unit.length
+		n = unit[l - 1]
+		if ('¹²³'.includes(n)) {
+			if (l >= 4 && unit[l - 2] == '⁻') { // E.g., ' m s⁻²'
+				unit = unit.substring(0, l - 2)
+				suffix = removeTrailingS(unitSpeechStrings[unit[l - 3]])
+                if (n != '¹')
+					suffix += n
+				unit = unit.substring(0, l - 4)
+			} else {
+				prefix = n == '²' ? '⓶' : '⓷'
+				unit = unit.substring(0, l - 1)
+			}
 		}
-		unit = unit.substring(unit[0] == '\u00A0' ? 1 : 6)	// Remove &nbsp;
+		unit = unit.substring(unit[0] == '&' ? 6 : 1 )	// Remove &nbsp;
 	}
 	let speech = unitSpeechStrings[unit]
 

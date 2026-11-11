@@ -910,7 +910,7 @@ function getCh(str, i) {
         return ch1 && ch1 >= '\uDC00' && ch1 <= '\uDFFF' ? ch + ch1 : ch
     }
     let ch1 = str[i - 1]                    // Check for lead surrogate
-    return ch1 && ch1 >= '\uD800' && ch1 <= '\uBFFF' ? ch1 + ch : ch
+    return ch1 && ch1 >= '\uD800' && ch1 <= '\uDBFF' ? ch1 + ch : ch
 }
 
 function getChars(value) {
@@ -2995,6 +2995,10 @@ function getSup(value) {
         value = value[0]
     if (Array.isArray(value))
         value = value[0]
+    if (Array.isArray(value) && value.length == 2 &&
+        value[0].operator && value[1].number) { // E.g., 𝑠⁻¹
+        return value[0].operator + value[1].number
+    }
     if (value.number)
         return value.number
     if (!value.atoms)
@@ -3007,13 +3011,25 @@ function getSup(value) {
 
 function foldScript(val) {
     let power = ''
+    let prefix = ''
+
     if (val.script && val.script.high) {
         power = getSup(val)
+        if (power[0] == '−') {
+            prefix = '⁻'
+            power = power.substring(1)
+        }
         power = digitSuperscripts[power] ? digitSuperscripts[power] : power
         val = val.script.base
     }
     val = val.atoms[0].chars
-    return val + power
+    if (prefix && val) {                    // Insert NBSP before final char
+        let ch = getCh(val, val.length - 1)
+        let i = val.length - ch.length
+
+        val = val.substring(0, i) + ' ' + val.substring(i)
+    }
+    return val + prefix + power
 }
 
 function getUnit(value) {
