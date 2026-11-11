@@ -577,6 +577,13 @@ function testMathMLtoSpeech() {
         console.log("Expect: " + speech + '\n')
         console.log("Result: " + result + '\n\n')
     }
+    mml = "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\" single=\"true\"> m s⁻¹</mtext><mo>≠</mo><mn>2</mn><mtext intent=\":unit\"> m s⁻²</mtext></math>"
+    speech = '1 meter per second not equal 2 meters per second squared'
+    result = MathMLtoSpeech(mml);
+    if (result != speech) {
+        console.log("Expect: " + speech + '\n')
+        console.log("Result: " + result + '\n\n')
+    }
 }
 
 function testMathMLtoBraille() {
