@@ -553,6 +553,18 @@ function testMathMLtoUnicodeMath() {
     }
 }
 
+const mathML1 = [
+    "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\" single=\"true\"> mm²</mtext><mo>+</mo><mn>2</mn><mtext intent=\":unit\"> mm²</mtext><mo>=</mo><mn>3</mn><mtext intent=\":unit\"> mm²</mtext></math>",
+    "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\" single=\"true\"> m s⁻¹</mtext><mo>≠</mo><mn>2</mn><mtext intent=\":unit\"> m s⁻²</mtext></math>",
+    "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\" single=\"true\"> m s⁻¹</mtext><mo>+</mo><mn>2</mn><mtext intent=\":unit\"> m s⁻¹</mtext><mo>=</mo><mn>3</mn><mtext intent=\":unit\"> m s⁻¹</mtext></math>",
+    "<math display=\"block\"><mn>1</mn><mfrac intent=\":unit\" single=\"true\"><mtext>m</mtext><mtext>s</mtext></mfrac><mo>+</mo><mn>2</mn><mfrac intent=\":unit\"><mtext>m</mtext><mtext>s</mtext></mfrac><mo>=</mo><mn>3</mn><mfrac intent=\":unit\"><mtext>m</mtext><mtext>s</mtext></mfrac></math>",
+]
+const mathSpeech1 = [
+    '1 square millimeter+ 2 square millimeters= 3 square millimeters',
+    '1 meter per second not equal 2 meters per second squared',
+    '1 meter per second+ 2 meters per second= 3 meters per second',
+    '1 meter per second+ 2 meters per second= 3 meters per second',
+]
 function testMathMLtoSpeech() {
     let iSuccess = 0;
     ummlConfig.speakSelectionEnds = true
@@ -566,24 +578,19 @@ function testMathMLtoSpeech() {
             iSuccess++;
         }
     }
-    let iFail = mathML.length - iSuccess;
-    console.log("Test MathML to speech: " + iSuccess + " passes; " + iFail + " failures\n");
 
     // TODO: add to mathML[]
-    let mml = "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\" single=\"true\"> mm²</mtext><mo>+</mo><mn>2</mn><mtext intent=\":unit\"> mm²</mtext><mo>=</mo><mn>3</mn><mtext intent=\":unit\"> mm²</mtext></math>"
-    let speech = '1 square millimeter+ 2 square millimeters= 3 square millimeters'
-    let result = MathMLtoSpeech(mml);
-    if (result != speech) {
-        console.log("Expect: " + speech + '\n')
-        console.log("Result: " + result + '\n\n')
+    for (let i = 0; i < mathML1.length; i++) {
+        let result = MathMLtoSpeech(mathML1[i]);
+        if (result != mathSpeech1[i]) {
+            console.log("Expect: " + mathSpeech1[i] + '\n');
+            console.log("Result: " + result + '\n\n');
+        } else {
+            iSuccess++;
+        }
     }
-    mml = "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\" single=\"true\"> m s⁻¹</mtext><mo>≠</mo><mn>2</mn><mtext intent=\":unit\"> m s⁻²</mtext></math>"
-    speech = '1 meter per second not equal 2 meters per second squared'
-    result = MathMLtoSpeech(mml);
-    if (result != speech) {
-        console.log("Expect: " + speech + '\n')
-        console.log("Result: " + result + '\n\n')
-    }
+    let iFail = mathML.length + mathML1.length - iSuccess;
+    console.log("Test MathML to speech: " + iSuccess + " passes; " + iFail + " failures\n");
 }
 
 function testMathMLtoBraille() {

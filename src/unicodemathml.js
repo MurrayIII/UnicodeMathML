@@ -3704,10 +3704,7 @@ function preprocess(dsty, uast, index, arr) {
                 return {intend: {symbol: value.symbol, value: val, op: value.mask}}
             }
             if (value.symbol == 'ⓤ' || value.symbol == 'Ⓤ') {
-                if (index && arr[index - 1].number)
-                    value.mask = arr[index - 1].number
-                value.of = getUnit(value)
-                return {enclosed: {mask: value.mask, symbol: value.symbol, intent: ':unit', arg: arg, of: value.of}};
+                return {enclosed: {mask: value.mask, symbol: value.symbol, intent: ':unit', arg: arg, of: getUnit(value)}};
             }
             else if (value.symbol >= "╱" && value.symbol <= "╳") {
                 // Set mask for \cancel, \bcancel, \xcancel
@@ -4466,12 +4463,22 @@ function mtransform(dsty, puast) {
             }
             else if (value.symbol == 'ⓤ' || value.symbol == 'Ⓤ') {
                 attrs.intent = ':unit'
-                if (value.mask == '1')
-                    attrs.single = true
-                if (value.of.script) {      // E.g., 'Ⓤmm²'
+                if (value.of.script) {      // Must be Ⓤ
+                    val = value.of.script.high.expr[0][0]
+                    if (val.number)         // E.g., 'Ⓤmm²'
+                        val = {mn: noAttr(val.number)}
+                    else {                  // E.g., 'Ⓤms⁻²'
+                        let n = val[1].number
+                        if (n == 1) {       // E.g., 'Ⓤms⁻¹'
+                            let s = foldMathItalics(value.of.script.base.atoms[0].chars)
+                            return {mfrac: withAttrs(attrs,
+                                [{mtext: noAttr(s[0])}, {mtext: noAttr('' + s[1])}])}
+                        }
+                        val = {mtext: noAttr(val[0].operator + n)}
+                    }
                     value = {msup: withAttrs(attrs,
                         [{mtext: noAttr(foldMathItalics(value.of.script.base.atoms[0].chars))},
-                         {mn: noAttr(value.of.script.high.expr[0][0].number)}])}
+                         val])}
                     return [{mo: noAttr('\u00A0')}, value]
                 }
                 if (value.of.fraction) {    // E.g., 'Ⓤ(m/s)' or 'Ⓤ(m/s²)'

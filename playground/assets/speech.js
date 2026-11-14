@@ -454,10 +454,12 @@ const symbolSpeechStrings = {
 	'Ⓕ': 'sel-focus',						// 24BB
 	'Ⓘ': 'insertion point',					// 24BE
 	'Ⓢ': 'curly braced matrix',				// 24C8
+    'Ⓤ': 'unit',							// 24CA
 	'ⓒ': 'cardinality',						// 24D2
 	'ⓘ': 'intent',							// 24D8
 	'ⓢ': 'bracketed matrix',				// 24E2
 	'ⓣ': 'the',								// 24E3
+    'ⓤ': 'text unit',						// 24E4
 	'⓶': 'square',							// 24F6
 	'⓷': 'cubic',							// 24F7
 	'─': 'line on',							// 2500 (for partial box lead-in)
@@ -675,7 +677,10 @@ function checkIntent(value) {
 		return '';							// No intent
 	if (intent[0] == ':') {
 		if (intent == ':unit') {
-			let single = value.getAttribute('single')
+			let single
+			let prev = value.previousElementSibling
+			if (prev && prev.textContent == 1)
+				single = 1
 			return unitSpeech(value, single)
 		}
 		if (intent.indexOf('derivative') == -1)
