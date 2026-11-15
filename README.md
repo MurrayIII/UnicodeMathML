@@ -95,7 +95,7 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * Replace all var declarations by set or const unless they are currently needed globally
 
 ## New features
-* The identity matrix and n×m matrix short cuts are implemented.
+* The identity matrix and 𝑛×𝑚 matrix short cuts are implemented.
 * MathML tests are added to example.html with results displayed in the console.
 * The Playground calls resolveCW() defined in unicodemathml.js to resolve control words instead of having a duplicate control-word list. Similarly to convert characters to math styles, the Playground uses the mathFonts[] defined in unicodemathml.js. Greek upper-case letters that look like ASCII letters are removed from the Greek letter gallery and Greek lower-case letter variants are added. 
 * An autocomplete menu appears when a control word is entered partially. The user can use up/down arrows to select the desired control word and enter it by typing Enter, Tab, or a space. The most common choice is highlighted by default. Selected options are spoken.
@@ -148,4 +148,4 @@ Murray Sargent's forked version is located at https://github.com/MurrayIII/Unico
 * \abs for unambiguous entry of absolute value with the absolute-value intent attribute. \choose along with its intent attribute (binomial-coefficient). Intent attributes are included for UnicodeMath equation arrays, matrices, and determinants.
 * Default intents are defined for \abs (for absolute value), \card (for cardinality) \choose, \cases, fences, n-ary objects, math-function objects, transpose objects, and double-struck italic symbols like differential d (ⅆ). This improves MathML readablity and supports round-tripping these concepts via MathML.
 * Context menu for user to add intents in output window.
-* Units can be entered in the input window with the \unit (ⓤ) and \Unit (Ⓤ) control words. \unit represents its unit with a Unicode string (in mtext), such as "mm", "mm²", and "km/s", whereas \Unit represents fractions and superscripts using MathML mfrac and msup such as <math display="block"><mn>1</mn><mfrac intent=":unit"><mtext>m</mtext><mtext>s</mtext></mfrac></math>
+* Units can be entered in the input window with the \unit (ⓤ) and \Unit (Ⓤ) control words. \unit represents its unit with a Unicode string (in mtext), such as "mm", "mm²", and "km/s", whereas \Unit represents fractions and superscripts in built-up format using MathML mfrac and msup. MathCAT uses the latter format.

@@ -4484,11 +4484,15 @@ function mtransform(dsty, puast) {
                 if (value.of.fraction) {    // E.g., 'Ⓤ(m/s)' or 'Ⓤ(m/s²)'
                     let d = value.of.fraction.of[1][0] // denominator
                     if (d.atoms)
-                        d = {mtext: noAttr(foldMathItalics(value.of.fraction.of[1][0].atoms[0].chars))}
-                    else if (d.script)
+                        d = {mtext: noAttr(foldMathItalics(value.of.fraction.of[1][0].atoms[0].chars)) }
+                    else if (d.script) {
+                        let val = d.script.high
+                        if (val.expr)
+                            val = val.expr[0]
                         d = {msup: noAttr(
-                                [{mtext: noAttr(foldMathItalics(d.script.base.atoms[0].chars))},
-                                 {mn: noAttr(d.script.high.expr[0][0].number)}])}
+                                [{mtext: noAttr(foldMathItalics(d.script.base.atoms[0].chars)) },
+                                 {mn: noAttr(val[0].number)}])}
+                    }
                     value = {mfrac: withAttrs(attrs,
                         [{mtext: noAttr(foldMathItalics(value.of.fraction.of[0][0].atoms[0].chars))},
                             d])}

@@ -679,6 +679,8 @@ function checkIntent(value) {
 		if (intent == ':unit') {
 			let single
 			let prev = value.previousElementSibling
+			if (prev && prev.nodeName == 'mo') // Bypass NBSP
+				prev = prev.previousElementSibling
 			if (prev && prev.textContent == 1)
 				single = 1
 			return unitSpeech(value, single)
@@ -1196,6 +1198,14 @@ function speech(value, noAddParens) {
 						break;
 				}
 			}
+			if (val == '\u00A0') {
+				let nextChild = value.nextElementSibling
+				if (nextChild) {
+					let intnt = nextChild.getAttribute('intent')
+					if(intnt == ':unit')
+						val = ' '			// Change NBSP to ASCII space
+				}
+			}
 			if (value.hasAttribute('title')) {
 				// The DLMF title attribute implies the following intents
 				// (see also for 'mi')
@@ -1440,14 +1450,21 @@ function unitSpeech(value, single) {
     let prefix = ''
 	let suffix = ''
 	let unit
-	if (value.childElementCount) {
+	if (value.childElementCount) {			// msup or mfrac
+		let val = value.lastElementChild
 		unit = value.firstElementChild.textContent
-		suffix = value.lastElementChild.textContent
-		if (value.nodeName == 'msup') {
-			prefix = suffix == '2' ? '⓶' : '⓷'
-			suffix = ''
-		} else {
-			suffix = removeTrailingS(unitSpeechStrings[suffix])
+		if (value.nodeName == 'msup') {		// E.g., cm²
+			prefix = val.textContent == '2' ? '⓶' : '⓷'
+		} else {							// mfrac
+			if (val.nodeName == 'msup') {	// E.g., km/s²
+				suffix = val.lastElementChild.textContent
+				if (suffix == 2 || suffix == 3)
+					suffix = digitSuperscripts[suffix]
+				val = unitSpeechStrings[val.firstElementChild.textContent]
+				suffix = removeTrailingS(val) + suffix
+			} else {
+				suffix = removeTrailingS(unitSpeechStrings[val.textContent])
+			}
 		}
 	} else {
 		unit = value.textContent
