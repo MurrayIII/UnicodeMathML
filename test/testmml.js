@@ -554,10 +554,10 @@ function testMathMLtoUnicodeMath() {
 }
 
 const mathML1 = [
-    "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\" single=\"true\"> mm²</mtext><mo>+</mo><mn>2</mn><mtext intent=\":unit\"> mm²</mtext><mo>=</mo><mn>3</mn><mtext intent=\":unit\"> mm²</mtext></math>",
-    "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\" single=\"true\"> m s⁻¹</mtext><mo>≠</mo><mn>2</mn><mtext intent=\":unit\"> m s⁻²</mtext></math>",
-    "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\" single=\"true\"> m s⁻¹</mtext><mo>+</mo><mn>2</mn><mtext intent=\":unit\"> m s⁻¹</mtext><mo>=</mo><mn>3</mn><mtext intent=\":unit\"> m s⁻¹</mtext></math>",
-    "<math display=\"block\"><mn>1</mn><mfrac intent=\":unit\" single=\"true\"><mtext>m</mtext><mtext>s</mtext></mfrac><mo>+</mo><mn>2</mn><mfrac intent=\":unit\"><mtext>m</mtext><mtext>s</mtext></mfrac><mo>=</mo><mn>3</mn><mfrac intent=\":unit\"><mtext>m</mtext><mtext>s</mtext></mfrac></math>",
+    "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\"> mm²</mtext><mo>+</mo><mn>2</mn><mtext intent=\":unit\"> mm²</mtext><mo>=</mo><mn>3</mn><mtext intent=\":unit\"> mm²</mtext></math>",
+    "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\"> m s⁻¹</mtext><mo>≠</mo><mn>2</mn><mtext intent=\":unit\"> m s⁻²</mtext></math>",
+    "<math display=\"block\"><mn>1</mn><mtext intent=\":unit\"> m s⁻¹</mtext><mo>+</mo><mn>2</mn><mtext intent=\":unit\"> m s⁻¹</mtext><mo>=</mo><mn>3</mn><mtext intent=\":unit\"> m s⁻¹</mtext></math>",
+    "<math display=\"block\"><mn>1</mn><mfrac intent=\":unit\"><mtext>m</mtext><mtext>s</mtext></mfrac><mo>+</mo><mn>2</mn><mfrac intent=\":unit\"><mtext>m</mtext><mtext>s</mtext></mfrac><mo>=</mo><mn>3</mn><mfrac intent=\":unit\"><mtext>m</mtext><mtext>s</mtext></mfrac></math>",
     "<math display=\"block\"><mn>1</mn><mo> </mo><mfrac intent=\":unit\"><mtext>m</mtext><msup><mtext>s</mtext><mn>2</mn></msup></mfrac><mo>+</mo><mn>4</mn><mo> </mo><mfrac intent=\":unit\"><mtext>m</mtext><msup><mtext>s</mtext><mn>2</mn></msup></mfrac></math>",
 ]
 const mathSpeech1 = [

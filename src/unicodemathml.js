@@ -3042,30 +3042,27 @@ function getUnit(value) {
     // Get unit such as m or m³ from a term like 𝑚 or 𝑚³. Return
     // the unit with a non-breaking space in front of it.
     let val = value.of
-    if (val.expr) {
+    if (val.expr)
         val = val.expr
-        if (val[0].fraction) {              // E.g., km/h
-            val = val[0]
-            if (value.symbol == 'Ⓤ')
-                return val
-            val = val.fraction.of
-            let d = val[1][0]
-            if (d.atoms)
-                d = val[1][0].atoms[0].chars
-            else if (d.script)
-                d = foldScript(d)
-            val = val[0][0].atoms[0].chars + '/' + d
-            return '\u00A0' + foldMathItalics(val)
-        }
-        if (val.length > 1) {
-            let ret = val[0][0].atoms[0].chars
-            val = foldScript(val[1][0])
-            return '\u00A0' + foldMathItalics(ret + val)
-        }
+    if (val.length > 1 && value.symbol == 'ⓤ') {
+        // E.g., 1ⓤ(𝑚 𝑠⁻¹)
+        let ret = val[0][0].atoms[0].chars
+        val = foldScript(val[1][0])
+        return '\u00A0' + foldMathItalics(ret + val)
     }
+    val = val[0]
     if (value.symbol == 'Ⓤ')
         return val
-    val = val[0]
+    if (val.fraction) {              // E.g., km/h
+        val = val.fraction.of
+        let d = val[1][0]
+        if (d.atoms)
+            d = val[1][0].atoms[0].chars
+        else if (d.script)
+            d = foldScript(d)
+        val = val[0][0].atoms[0].chars + '/' + d
+        return '\u00A0' + foldMathItalics(val)
+    }
     val = foldScript(val)
     return '\u00A0' + foldMathItalics(val)
 }
