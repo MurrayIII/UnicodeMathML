@@ -2991,13 +2991,19 @@ function getSup(value) {
     value = value.script.high
     if (value.expr)
         value = value.expr
-    if (Array.isArray(value))
+    if (Array.isArray(value) && value.length == 1)
         value = value[0]
-    if (Array.isArray(value))
+    if (Array.isArray(value) && value.length == 1)
         value = value[0]
-    if (Array.isArray(value) && value.length == 2 &&
-        value[0].operator && value[1].number) { // E.g., 𝑠⁻¹
-        return value[0].operator + value[1].number
+    if (Array.isArray(value) && value.length == 2 && value[0].operator) {
+        let ret = value[1]
+        if (Array.isArray(value[1])) {
+            ret = value[1]
+            if (Array.isArray(ret))
+                ret = ret[0]
+        }
+        if (ret.number)                     // E.g., 𝑠⁻¹
+            return value[0].operator + ret.number
     }
     if (value.number)
         return value.number
@@ -3037,8 +3043,9 @@ function getUnit(value) {
     // the unit with a non-breaking space in front of it.
     let val = value.of
     if (val.expr) {
-        val = val.expr[0]
-        if (val.fraction) {                 // E.g., km/h
+        val = val.expr
+        if (val[0].fraction) {              // E.g., km/h
+            val = val[0]
             if (value.symbol == 'Ⓤ')
                 return val
             val = val.fraction.of
@@ -3050,10 +3057,15 @@ function getUnit(value) {
             val = val[0][0].atoms[0].chars + '/' + d
             return '\u00A0' + foldMathItalics(val)
         }
+        if (val.length > 1) {
+            let ret = val[0][0].atoms[0].chars
+            val = foldScript(val[1][0])
+            return '\u00A0' + foldMathItalics(ret + val)
+        }
     }
-    val = val[0]
     if (value.symbol == 'Ⓤ')
         return val
+    val = val[0]
     val = foldScript(val)
     return '\u00A0' + foldMathItalics(val)
 }
@@ -4471,8 +4483,10 @@ function mtransform(dsty, puast) {
                         let n = val[1].number
                         if (n == 1) {       // E.g., 'Ⓤms⁻¹'
                             let s = foldMathItalics(value.of.script.base.atoms[0].chars)
+                            let k = s.length
                             return {mfrac: withAttrs(attrs,
-                                [{mtext: noAttr(s[0])}, {mtext: noAttr('' + s[1])}])}
+                                [{mtext: noAttr(s.substring(0, k - 1))},
+                                 {mtext: noAttr('' + s[k - 1])}])}
                         }
                         val = {mtext: noAttr(val[0].operator + n)}
                     }
